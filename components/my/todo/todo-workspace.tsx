@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   CheckSquare,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Circle,
   Folder,
@@ -84,6 +85,7 @@ export function TodoWorkspace({
   smart,
   items,
   focusedItemId,
+  hasViewParam,
   assignedTasks,
 }: {
   folders: TodoFolderNode[];
@@ -93,6 +95,8 @@ export function TodoWorkspace({
   smart: SmartView | null;
   items: TodoItemFull[];
   focusedItemId: string | null;
+  // F12-K46: czy URL zawiera ?smart= albo ?listId= (decyduje o mobile view).
+  hasViewParam: boolean;
   // F12-K17: workspace tasks gdzie current user jest przypisany.
   // Empty gdy lista nie aktywna albo user nie ma żadnych assigned.
   assignedTasks: AssignedTaskRef[];
@@ -152,11 +156,28 @@ export function TodoWorkspace({
   const incomplete = optimisticItems.filter((i) => !i.completed);
   const completed = optimisticItems.filter((i) => i.completed);
 
+  // F12-K46: mobile screen state. Detail otwiera się state'em (selectedItem
+  // !== null), więc nadpisuje URL-based ekrany.
+  const mobileView: "sidebar" | "items" | "detail" = selectedItem
+    ? "detail"
+    : hasViewParam
+      ? "items"
+      : "sidebar";
+
   return (
     <div className="flex h-[calc(100dvh-0px)] overflow-hidden">
       {/* Left sidebar — smart views + flat folders with lists */}
-      <aside className="flex w-[280px] shrink-0 flex-col gap-3 overflow-y-auto border-r border-border bg-card/50 p-3">
-        <div className="px-2 pt-1 pb-2">
+      <aside
+        className={`flex w-full flex-col gap-3 overflow-y-auto border-r border-border bg-card/50 p-3 md:w-[280px] md:shrink-0 ${
+          mobileView !== "sidebar" ? "max-md:hidden" : ""
+        }`}
+      >
+        <div className="md:hidden flex items-center justify-between px-1 pb-3 pt-2">
+          <span className="font-display text-[1.7rem] font-bold tracking-[-0.02em]">
+            TO DO
+          </span>
+        </div>
+        <div className="max-md:hidden px-2 pt-1 pb-2">
           <span className="eyebrow">Prywatne TO DO</span>
         </div>
 
@@ -170,7 +191,7 @@ export function TodoWorkspace({
                 key={v.key}
                 href={`/my/todo?smart=${v.key}`}
                 data-active={active ? "true" : "false"}
-                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[0.88rem] transition-colors hover:bg-accent/60 data-[active=true]:bg-primary/10 data-[active=true]:text-foreground"
+                className="flex items-center gap-2 rounded-md px-2 py-2.5 text-[0.95rem] transition-colors hover:bg-accent/60 data-[active=true]:bg-primary/10 data-[active=true]:text-foreground md:py-1.5 md:text-[0.88rem]"
               >
                 <Icon size={14} className={v.accent} />
                 <span className="flex-1">{v.label}</span>
@@ -207,13 +228,31 @@ export function TodoWorkspace({
           F12-K22: MS-To-Do parity — main rozciągnięty na całą szerokość
           (minus sidebar i ewentualny detail panel). Add-task input
           przyklejony u dołu sticky. */}
-      <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-background px-8 py-4">
+      <section
+        className={`flex min-w-0 flex-1 flex-col overflow-hidden ${
+          mobileView !== "items" ? "max-md:hidden" : ""
+        }`}
+      >
+        {/* Mobile-only: back chevron header */}
+        <div className="md:hidden flex items-center gap-1 border-b border-border px-2 py-2">
+          <Link
+            href="/my/todo"
+            aria-label="Wróć do list"
+            className="flex items-center gap-1 rounded-md px-1 py-1 text-primary transition-colors hover:bg-accent"
+          >
+            <ChevronLeft size={22} />
+            <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em]">
+              Listy
+            </span>
+          </Link>
+        </div>
+
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-background px-4 py-3 md:px-8 md:py-4">
           <div className="flex flex-wrap items-center gap-3">
             {activeSmart && (
               <activeSmart.icon size={22} className={activeSmart.accent} aria-hidden />
             )}
-            <h1 className="font-display text-[1.8rem] font-bold leading-tight tracking-[-0.02em]">
+            <h1 className="font-display text-[1.5rem] font-bold leading-tight tracking-[-0.02em] md:text-[1.8rem]">
               {pageTitle}
             </h1>
             {smart !== "assigned" && (
@@ -280,7 +319,7 @@ export function TodoWorkspace({
           )}
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-8 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 md:px-8 md:py-4">
           {smart === "assigned" ? (
             <AssignedTasksPanel tasks={assignedTasks} />
           ) : items.length === 0 ? (
@@ -309,7 +348,7 @@ export function TodoWorkspace({
             tylko gdy lista jest aktywna (smart views nie mają kanonicznego
             targetu). */}
         {activeListId && (
-          <div className="shrink-0 border-t border-border bg-background/95 px-8 py-3 backdrop-blur-sm">
+          <div className="shrink-0 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm md:px-8">
             <QuickAddItem
               listId={activeListId}
               listName={activeListName ?? ""}
@@ -321,9 +360,28 @@ export function TodoWorkspace({
       </section>
 
       {/* F12-K22: prawy detail panel TYLKO gdy task wybrany. Inaczej
-          main jest na całą dostępną szerokość. */}
+          main jest na całą dostępną szerokość.
+          F12-K46: na mobile detail panel = full-screen + back-chevron
+          header (zamiast 380px sidecar). */}
       {selectedItem && (
-        <div className="w-[380px] shrink-0 border-l border-border bg-card/50 overflow-y-auto">
+        <div
+          className={`flex w-full flex-col overflow-y-auto md:w-[380px] md:shrink-0 md:border-l md:border-border md:bg-card/50 ${
+            mobileView !== "detail" ? "max-md:hidden" : ""
+          }`}
+        >
+          <div className="md:hidden flex items-center gap-1 border-b border-border bg-card/95 px-2 py-2 backdrop-blur-sm">
+            <button
+              type="button"
+              onClick={() => setSelectedItemId(null)}
+              aria-label="Wróć do listy"
+              className="flex items-center gap-1 rounded-md px-1 py-1 text-primary transition-colors hover:bg-accent"
+            >
+              <ChevronLeft size={22} />
+              <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em]">
+                Lista
+              </span>
+            </button>
+          </div>
           <TodoDetailPanel
             key={selectedItem.id}
             item={selectedItem}
@@ -354,12 +412,12 @@ function FolderBlock({
 
   return (
     <div className="flex flex-col">
-      <div className="group flex items-center gap-1 rounded-md px-1 py-1 text-[0.86rem] hover:bg-accent/40">
+      <div className="group flex items-center gap-1 rounded-md px-1 py-2 text-[0.95rem] hover:bg-accent/40 md:py-1 md:text-[0.86rem]">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Zwiń" : "Rozwiń"}
-          className="grid h-5 w-5 shrink-0 place-items-center rounded-sm text-muted-foreground"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-sm text-muted-foreground md:h-5 md:w-5"
         >
           {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         </button>
@@ -370,7 +428,7 @@ function FolderBlock({
           onClick={() => setShowAdd((v) => !v)}
           aria-label="Dodaj listę do folderu"
           title="Nowa lista w folderze"
-          className="grid h-5 w-5 shrink-0 place-items-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-sm text-muted-foreground transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 md:h-5 md:w-5 md:opacity-0 md:group-hover:opacity-100"
         >
           <Plus size={11} />
         </button>
@@ -382,7 +440,7 @@ function FolderBlock({
           <button
             type="submit"
             aria-label="Usuń folder"
-            className="grid h-5 w-5 shrink-0 place-items-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-sm text-muted-foreground transition-opacity hover:text-destructive focus-visible:opacity-100 md:h-5 md:w-5 md:opacity-0 md:group-hover:opacity-100"
           >
             <Trash2 size={11} />
           </button>
@@ -416,7 +474,7 @@ function ListLink({
       <Link
         href={`/my/todo?listId=${list.id}`}
         data-active={active ? "true" : "false"}
-        className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-2 py-1 text-[0.86rem] text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground data-[active=true]:bg-primary/10 data-[active=true]:text-foreground"
+        className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-2 py-2 text-[0.95rem] text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground data-[active=true]:bg-primary/10 data-[active=true]:text-foreground md:py-1 md:text-[0.86rem]"
       >
         <ListIcon size={12} className="shrink-0" />
         <span className="truncate">{list.name}</span>
@@ -429,7 +487,7 @@ function ListLink({
         <button
           type="submit"
           aria-label="Usuń listę"
-          className="grid h-5 w-5 shrink-0 place-items-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-sm text-muted-foreground transition-opacity hover:text-destructive focus-visible:opacity-100 md:h-5 md:w-5 md:opacity-0 md:group-hover:opacity-100"
         >
           <Trash2 size={11} />
         </button>
@@ -703,7 +761,9 @@ function ItemRow({
       </form>
 
       {/* F12-K28: pojedyncza opcja usunięcia zadania. Visible on row hover
-          (group-hover) — żeby nie pęknąć się z gwiazdką/słoneczkiem. */}
+          (group-hover) — żeby nie pęknąć się z gwiazdką/słoneczkiem.
+          F12-K46: ukryty na mobile (no-hover stack confuses tap-targety);
+          delete dostępny w detail panel po tapnięciu zadania. */}
       <form
         action={(fd) => startTransition(() => deleteTodoItemAction(fd))}
         onSubmit={(e) => {
@@ -711,7 +771,7 @@ function ItemRow({
             e.preventDefault();
           }
         }}
-        className="m-0 shrink-0"
+        className="m-0 shrink-0 max-md:hidden"
       >
         <input type="hidden" name="id" value={item.id} />
         <button

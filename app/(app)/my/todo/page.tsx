@@ -143,6 +143,12 @@ export default async function MyTodoPage({
   // can open the detail panel immediately without an extra fetch.
   const focusedItemId = params.itemId ?? null;
 
+  // F12-K46: mobile UX (iOS-Reminders/MS-To-Do parity) — bez żadnego URL
+  // param na mobile pokazujemy sidebar (foldery + listy + smart). Z param
+  // (smart= albo listId=) → items view. Selected item (state) → detail.
+  // Desktop nie używa tej flagi.
+  const hasViewParam = !!params.smart || !!params.listId;
+
   // F9-11: Fullwidth layout — no AppShell wrapper, no max-width cap.
   // Klient chciał "całą szerokość ekranu jak MS To Do". Title collapses
   // into the sidebar header; main area uses all horizontal space.
@@ -181,6 +187,7 @@ export default async function MyTodoPage({
           })),
         }))}
         focusedItemId={focusedItemId}
+        hasViewParam={hasViewParam}
         assignedTasks={assignedTasks.map((a) => ({
           id: a.task.id,
           title: a.task.title,
