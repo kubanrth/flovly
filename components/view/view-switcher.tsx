@@ -123,7 +123,7 @@ export function ViewSwitcher({
     <div
       role="tablist"
       aria-label="Widoki tablicy"
-      className={`inline-flex items-center rounded-lg border border-border bg-card shadow-sm ${containerPad}`}
+      className={`inline-flex flex-wrap items-center rounded-lg border border-border bg-card shadow-sm ${containerPad}`}
     >
       {views.map((v) => {
         const isActive = !activeViewId && v.name === active;

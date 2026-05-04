@@ -104,13 +104,11 @@ export default async function WorkspaceOverviewPage({
                 {board._count.tasks} {taskPl(board._count.tasks)}
               </span>
             </h2>
-            <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:overflow-visible md:px-0">
-              <ViewSwitcher
-                workspaceId={workspaceId}
-                boardId={board.id}
-                enabled={boardEnabled}
-              />
-            </div>
+            <ViewSwitcher
+              workspaceId={workspaceId}
+              boardId={board.id}
+              enabled={boardEnabled}
+            />
           </div>
 
           {board.tasks.length === 0 ? (
@@ -201,9 +199,9 @@ export default async function WorkspaceOverviewPage({
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex items-baseline gap-4">
+    <div className="flex items-baseline gap-3">
       <span className="eyebrow">{label}</span>
-      <span className="font-display text-[1.8rem] font-bold leading-none tracking-[-0.02em]">
+      <span className="font-display text-[1.4rem] font-bold leading-none tracking-[-0.02em] md:text-[1.8rem]">
         {value}
       </span>
     </div>

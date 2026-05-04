@@ -236,9 +236,10 @@ export function KanbanBoard({
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
     >
-      {/* F12-K47: mobile = scroll-snap (column-by-column) + negative margin
-          do brzegu ekranu, żeby kolumna mogła zająć full-width na 320–390px. */}
-      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:gap-4 md:snap-none md:px-0">
+      {/* F12-K47: mobile — negative margin do brzegu ekranu + free
+          horizontal scroll. F12-K47b: snap-mandatory zniesione bo
+          kolidowało z dnd-kit drag (przeskakiwało zamiast płynnie). */}
+      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:gap-4 md:px-0">
         {renderColumns.map(({ id, column }) => {
           const colTasks = columns.get(id) ?? [];
           return (
@@ -301,7 +302,7 @@ function Column({
   return (
     <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
       <div
-        className="flex w-[280px] shrink-0 snap-center flex-col gap-2 rounded-xl border border-border bg-muted/40 p-3 md:w-[300px] md:snap-none"
+        className="flex w-[280px] shrink-0 flex-col gap-2 rounded-xl border border-border bg-muted/40 p-3 md:w-[300px]"
       >
         <div className="flex items-center justify-between gap-2 px-1">
           <span
@@ -664,7 +665,7 @@ function AddKanbanColumnButton({
         type="button"
         onClick={() => (open ? closeReset() : openWithCoords())}
         aria-label="Dodaj kolumnę"
-        className="inline-flex h-[52px] w-[280px] shrink-0 snap-center self-start items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-muted/20 px-3 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted/40 hover:text-foreground md:w-[300px] md:snap-none"
+        className="inline-flex h-[52px] w-[280px] shrink-0 self-start items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-muted/20 px-3 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted/40 hover:text-foreground md:w-[300px]"
       >
         <Plus size={13} /> Dodaj kolumnę
       </button>

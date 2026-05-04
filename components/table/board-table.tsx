@@ -761,14 +761,10 @@ export function BoardTable({
         )}
       </div>
 
-    {/* F12-K47: mobile renderuje cards zamiast tabeli — desktop bez zmian. */}
-    <MobileTaskCards
-      workspaceId={workspaceId}
-      tasks={filteredSorted}
-      statusColumns={statusColumns}
-    />
-
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(10,10,40,0.04)] max-md:hidden">
+    {/* F12-K47b: mobile pokazuje prawdziwą tabelę z horizontal scroll
+        (klient chciał zobaczyć tabelę, nie karty). Wcześniejszy
+        MobileTaskCards usunięty — tabela ma już overflow-x-auto. */}
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(10,10,40,0.04)]">
       <div className="overflow-x-auto">
         <table
           ref={tableRef}
@@ -1646,126 +1642,6 @@ function AddRowInline({
         )}
       </td>
     </tr>
-  );
-}
-
-// F12-K47: mobile-first widok kart zamiast TanStack table'a. Pokazujemy
-// tytuł + status + osoby + termin + tagi w karcie. Tap = otwórz task.
-// Użyte tylko poniżej `md` breakpointa; desktop trzyma pełnowymiarową
-// tabelę z pickerami inline.
-function MobileTaskCards({
-  workspaceId,
-  tasks,
-  statusColumns,
-}: {
-  workspaceId: string;
-  tasks: BoardTableTask[];
-  statusColumns: BoardTableColumn[];
-}) {
-  if (tasks.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-card/50 px-4 py-10 text-center md:hidden">
-        <p className="font-display text-[0.95rem] font-semibold">Brak zadań.</p>
-        <p className="text-[0.82rem] text-muted-foreground">
-          Dodaj pierwsze z widoku desktop albo zmień filtry.
-        </p>
-      </div>
-    );
-  }
-  return (
-    <ul className="flex flex-col gap-2 md:hidden">
-      {tasks.map((t) => {
-        const status = t.statusColumnId
-          ? statusColumns.find((c) => c.id === t.statusColumnId) ?? null
-          : null;
-        const due = t.stopAt ? new Date(t.stopAt) : null;
-        const overdue = due && due.getTime() < Date.now();
-        return (
-          <li key={t.id}>
-            <Link
-              href={`/w/${workspaceId}/t/${t.id}`}
-              className="flex flex-col gap-2 rounded-xl border border-border bg-card px-4 py-3 transition-colors active:bg-accent/40"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <span className="font-display text-[1rem] font-semibold leading-tight tracking-[-0.01em]">
-                  {t.title}
-                </span>
-                {status && (
-                  <span
-                    className="shrink-0 rounded-full px-2 py-0.5 font-mono text-[0.6rem] font-medium uppercase tracking-[0.1em]"
-                    style={{
-                      background: `${status.colorHex}1A`,
-                      color: status.colorHex,
-                    }}
-                  >
-                    {status.name}
-                  </span>
-                )}
-              </div>
-
-              {(t.assignees.length > 0 || due || t.tags.length > 0) && (
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground">
-                  {t.assignees.length > 0 && (
-                    <span className="inline-flex items-center gap-1">
-                      <span className="flex -space-x-1.5">
-                        {t.assignees.slice(0, 3).map((a) => (
-                          <span
-                            key={a.id}
-                            title={a.name ?? a.email}
-                            className="grid h-5 w-5 place-items-center rounded-full border border-card bg-primary/20 text-[0.55rem] font-semibold text-primary"
-                          >
-                            {a.avatarUrl ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={a.avatarUrl}
-                                alt=""
-                                className="h-full w-full rounded-full object-cover"
-                                loading="lazy"
-                                decoding="async"
-                              />
-                            ) : (
-                              (a.name ?? a.email).slice(0, 1).toUpperCase()
-                            )}
-                          </span>
-                        ))}
-                      </span>
-                      {t.assignees.length > 3 && (
-                        <span>+{t.assignees.length - 3}</span>
-                      )}
-                    </span>
-                  )}
-                  {due && (
-                    <span className={overdue ? "text-destructive" : ""}>
-                      {due.toLocaleDateString("pl-PL", {
-                        day: "numeric",
-                        month: "short",
-                      })}
-                    </span>
-                  )}
-                  {t.tags.length > 0 && (
-                    <span className="inline-flex flex-wrap items-center gap-1">
-                      {t.tags.slice(0, 3).map((tag) => (
-                        <span
-                          key={tag.id}
-                          className="rounded-full px-1.5 py-0.5 text-[0.58rem] font-medium normal-case tracking-normal"
-                          style={{
-                            background: `${tag.colorHex}1A`,
-                            color: tag.colorHex,
-                          }}
-                        >
-                          {tag.name}
-                        </span>
-                      ))}
-                      {t.tags.length > 3 && <span>+{t.tags.length - 3}</span>}
-                    </span>
-                  )}
-                </div>
-              )}
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
   );
 }
 

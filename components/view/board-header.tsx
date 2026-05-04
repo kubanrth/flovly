@@ -51,7 +51,7 @@ export function BoardHeader({
               {board.description}
             </p>
           )}
-          <div className="-mx-4 flex items-center overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:-mx-0 md:flex-wrap md:overflow-visible md:px-0">
+          <div className="flex flex-wrap items-center gap-2">
             <ViewSwitcher
               workspaceId={workspaceId}
               boardId={boardId}
