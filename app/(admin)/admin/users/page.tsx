@@ -1,11 +1,21 @@
 import { db } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/admin-guard";
-import { Ban, Check, ShieldCheck, Trash2, UserCheck } from "lucide-react";
+import {
+  Ban,
+  Check,
+  ShieldCheck,
+  ShieldOff,
+  Trash2,
+  UserCheck,
+} from "lucide-react";
 import {
   softDeleteUserAction,
+  toggleSuperAdminAction,
   toggleUserBanAction,
 } from "@/app/(admin)/admin/actions";
 import { plPlural } from "@/lib/pluralize";
+import { CreateUserDialog } from "@/components/admin/create-user-dialog";
+import { ResetPasswordDialog } from "@/components/admin/reset-password-dialog";
 
 // Small helper so the columns don't balloon with Prisma types.
 async function loadUsers(query: string) {
@@ -52,21 +62,24 @@ export default async function AdminUsersPage({
               {users.length} {plPlural(users.length, "konto", "konta", "kont")}
             </h1>
           </div>
-          <form action="/admin/users" className="flex items-center gap-2">
-            <input
-              name="q"
-              type="search"
-              defaultValue={query}
-              placeholder="szukaj po email / imię…"
-              className="h-9 w-full rounded-md border border-border bg-card px-3 text-[0.88rem] outline-none focus:border-primary md:w-[260px]"
-            />
-            <button
-              type="submit"
-              className="inline-flex h-9 shrink-0 items-center rounded-md border border-border bg-card px-3 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Szukaj
-            </button>
-          </form>
+          <div className="flex flex-wrap items-center gap-2">
+            <form action="/admin/users" className="flex items-center gap-2">
+              <input
+                name="q"
+                type="search"
+                defaultValue={query}
+                placeholder="szukaj po email / imię…"
+                className="h-9 w-full rounded-md border border-border bg-card px-3 text-[0.88rem] outline-none focus:border-primary md:w-[260px]"
+              />
+              <button
+                type="submit"
+                className="inline-flex h-9 shrink-0 items-center rounded-md border border-border bg-card px-3 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Szukaj
+              </button>
+            </form>
+            <CreateUserDialog />
+          </div>
         </div>
 
         <div className="overflow-hidden rounded-xl border border-border bg-card"><div className="overflow-x-auto">
@@ -165,6 +178,22 @@ function UserRow({ user, isSelf }: { user: UserRow; isSelf: boolean }) {
           </span>
         ) : (
           <div className="flex items-center justify-end gap-1">
+            {!isDeleted && (
+              <ResetPasswordDialog userId={user.id} email={user.email} />
+            )}
+            {!isDeleted && (
+              <form action={toggleSuperAdminAction} className="m-0">
+                <input type="hidden" name="id" value={user.id} />
+                <button
+                  type="submit"
+                  className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  aria-label={user.isSuperAdmin ? "Odbierz super admin" : "Nadaj super admin"}
+                  title={user.isSuperAdmin ? "Odbierz super admin" : "Nadaj super admin"}
+                >
+                  {user.isSuperAdmin ? <ShieldOff size={13} /> : <ShieldCheck size={13} />}
+                </button>
+              </form>
+            )}
             {!isDeleted && (
               <form action={toggleUserBanAction} className="m-0">
                 <input type="hidden" name="id" value={user.id} />
