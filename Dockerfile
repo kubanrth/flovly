@@ -9,6 +9,9 @@ RUN apk add --no-cache libc6-compat openssl
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
+# F12-K49b: prisma schema potrzebna PRZED npm ci, bo postinstall hook
+# w package.json odpala `prisma generate` i bez schemy crashuje.
+COPY prisma ./prisma
 RUN npm ci
 
 # ---- Stage 2: build ----
