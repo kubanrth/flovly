@@ -164,57 +164,37 @@ export async function createBoardAction(
   redirect(`/w/${parsed.data.workspaceId}/b/${board.id}/${firstView}`);
 }
 
-// F12-K51: reorder tablic w obrębie workspace'u — UP/DOWN strzałki w UI.
-// Akcja swap'uje order'y dwóch sąsiednich boardów. Wymaga task.update
-// uprawnienia (czyli ADMIN albo MEMBER, nie VIEWER).
-async function swapBoardOrder(formData: FormData, direction: "up" | "down") {
-  const workspaceId = String(formData.get("workspaceId") ?? "");
-  const boardId = String(formData.get("boardId") ?? "");
-  if (!workspaceId || !boardId) return;
+// F12-K52: drag-and-drop reorder tablic. Klient wysyła nową kolejność
+// ID. Wymaga task.update permission (ADMIN/MEMBER, nie VIEWER).
+export async function reorderBoardsAction(workspaceId: string, orderedIds: string[]) {
+  if (!workspaceId || !Array.isArray(orderedIds) || orderedIds.length === 0) return;
 
   const ctx = await requireWorkspaceAction(workspaceId, "task.update");
 
-  const list = await db.board.findMany({
-    where: { workspaceId, deletedAt: null },
-    orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-    select: { id: true, order: true },
+  // Sprawdź że wszystkie ID są w tym workspace
+  const valid = await db.board.findMany({
+    where: { id: { in: orderedIds }, workspaceId, deletedAt: null },
+    select: { id: true },
   });
+  const validIds = new Set(valid.map((b) => b.id));
+  const filtered = orderedIds.filter((id) => validIds.has(id));
 
-  const idx = list.findIndex((b) => b.id === boardId);
-  if (idx === -1) return;
-
-  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-  if (swapIdx < 0 || swapIdx >= list.length) return;
-
-  const current = list[idx];
-  const swap = list[swapIdx];
-
-  await db.$transaction([
-    db.board.update({
-      where: { id: current.id },
-      data: { order: swap.order },
-    }),
-    db.board.update({
-      where: { id: swap.id },
-      data: { order: current.order },
-    }),
-  ]);
+  await db.$transaction(
+    filtered.map((id, idx) =>
+      db.board.update({
+        where: { id },
+        data: { order: (idx + 1) * 1000 },
+      }),
+    ),
+  );
 
   await writeAudit({
     workspaceId,
-    objectType: "Board",
-    objectId: boardId,
+    objectType: "Workspace",
+    objectId: workspaceId,
     actorId: ctx.userId,
-    action: "board.reordered",
+    action: "boards.reordered",
   });
 
   revalidatePath(`/w/${workspaceId}`);
-}
-
-export async function moveBoardUpAction(formData: FormData) {
-  await swapBoardOrder(formData, "up");
-}
-
-export async function moveBoardDownAction(formData: FormData) {
-  await swapBoardOrder(formData, "down");
 }

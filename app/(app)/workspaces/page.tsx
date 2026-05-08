@@ -1,23 +1,21 @@
-import Link from "next/link";
-import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { CreateWorkspaceDialog } from "@/components/workspaces/create-workspace-dialog";
 import { WorkspacesLayoutToggle } from "@/components/workspaces/workspaces-layout-toggle";
-import { boardPl, workspacePl } from "@/lib/pluralize";
-import { AppShell } from "@/components/layout/app-shell";
 import {
-  moveWorkspaceDownAction,
-  moveWorkspaceUpAction,
-} from "@/app/(app)/workspaces/actions";
+  SortableWorkspacesGrid,
+  SortableWorkspacesList,
+  type WorkspaceRow,
+} from "@/components/workspaces/sortable-workspaces";
+import { workspacePl } from "@/lib/pluralize";
+import { AppShell } from "@/components/layout/app-shell";
 
 export default async function WorkspacesPage() {
   const session = await auth();
   const user = session!.user;
 
-  // F12-K51: orderBy zmienione z joinedAt na workspace.order — ranking
-  // wg ustawionej kolejności (drag/strzałki). Fallback createdAt dla
-  // świeżo dodanych z tym samym order'em.
+  // F12-K51 + F12-K52: orderBy = workspace.order (drag-and-drop reorder).
+  // Fallback createdAt dla świeżo dodanych z domyślnym order=0.
   const memberships = await db.workspaceMembership.findMany({
     where: { userId: user.id, workspace: { deletedAt: null } },
     include: {
@@ -33,166 +31,45 @@ export default async function WorkspacesPage() {
     ],
   });
 
-  const rows = memberships.map(({ workspace, role }) => ({
+  const rows: WorkspaceRow[] = memberships.map(({ workspace, role }) => ({
     id: workspace.id,
     slug: workspace.slug,
     name: workspace.name,
     description: workspace.description,
     role,
     boardCount: workspace._count.boards,
-    updatedAt: workspace.updatedAt,
   }));
 
   return (
     <AppShell>
       <div className="mb-10 flex flex-col gap-3">
         <span className="eyebrow">Twoje przestrzenie</span>
-          <h1 className="font-display text-[2.4rem] font-bold leading-[1.05] tracking-[-0.03em]">
-            Cześć, {user.name?.split(" ")[0] ?? "kolego"}.
-          </h1>
-          <p className="max-w-[52ch] text-[0.98rem] leading-[1.6] text-muted-foreground">
-            Masz {memberships.length} {workspacePl(memberships.length)}. Wybierz
-            jedną, żeby kontynuować, albo utwórz nową.
-          </p>
-        </div>
+        <h1 className="font-display text-[2.4rem] font-bold leading-[1.05] tracking-[-0.03em]">
+          Cześć, {user.name?.split(" ")[0] ?? "kolego"}.
+        </h1>
+        <p className="max-w-[52ch] text-[0.98rem] leading-[1.6] text-muted-foreground">
+          Masz {memberships.length} {workspacePl(memberships.length)}. Wybierz
+          jedną, żeby kontynuować, albo utwórz nową. Złap za uchwyt po lewej i
+          przeciągnij żeby zmienić kolejność.
+        </p>
+      </div>
 
-        <WorkspacesLayoutToggle
-          grid={
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {rows.map((w, idx) => (
-                <div key={w.id} className="relative">
-                  <Link
-                    href={`/w/${w.id}`}
-                    className="group relative flex min-h-[180px] flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(10,10,40,0.04)] transition-all hover:-translate-y-[2px] hover:border-primary/30 hover:shadow-[0_12px_32px_-16px_rgba(123,104,238,0.35)] focus-visible:-translate-y-[2px] focus-visible:border-primary focus-visible:outline-none"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="eyebrow">{w.role.toLowerCase()}</span>
-                      <span className="font-mono text-[0.68rem] text-muted-foreground">
-                        /{w.slug}
-                      </span>
-                    </div>
-                    <h2 className="font-display text-[1.5rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">
-                      {w.name}
-                    </h2>
-                    {w.description && (
-                      <p className="line-clamp-2 text-[0.9rem] leading-[1.55] text-muted-foreground">
-                        {w.description}
-                      </p>
-                    )}
-                    <div className="mt-auto flex items-center justify-between pt-4">
-                      <span className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">
-                        {w.boardCount} {boardPl(w.boardCount)}
-                      </span>
-                      <span className="inline-flex items-center gap-1 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors group-hover:text-primary">
-                        wejdź <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
-                      </span>
-                    </div>
-                  </Link>
-                  {/* F12-K51: arrows do reorderingu poza Link'iem (żeby
-                      nie triggerowały nawigacji). Disabled na krawędziach. */}
-                  <div className="absolute right-3 top-3 flex flex-col gap-0.5">
-                    <form action={moveWorkspaceUpAction} className="m-0">
-                      <input type="hidden" name="id" value={w.id} />
-                      <button
-                        type="submit"
-                        disabled={idx === 0}
-                        aria-label="Przesuń w górę"
-                        title="Przesuń w górę"
-                        className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
-                      >
-                        <ChevronUp size={13} />
-                      </button>
-                    </form>
-                    <form action={moveWorkspaceDownAction} className="m-0">
-                      <input type="hidden" name="id" value={w.id} />
-                      <button
-                        type="submit"
-                        disabled={idx === rows.length - 1}
-                        aria-label="Przesuń w dół"
-                        title="Przesuń w dół"
-                        className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
-                      >
-                        <ChevronDown size={13} />
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              ))}
+      <WorkspacesLayoutToggle
+        grid={
+          <div className="flex flex-col gap-5">
+            <SortableWorkspacesGrid rows={rows} />
+            <CreateWorkspaceDialog />
+          </div>
+        }
+        list={
+          <div className="flex flex-col gap-4">
+            <SortableWorkspacesList rows={rows} />
+            <div className="grid max-w-md">
               <CreateWorkspaceDialog />
             </div>
-          }
-          list={
-            <div className="flex flex-col gap-4">
-              <ul className="overflow-hidden rounded-xl border border-border bg-card">
-                {rows.length === 0 && (
-                  <li className="px-5 py-6 text-center text-[0.9rem] text-muted-foreground">
-                    Brak przestrzeni — utwórz pierwszą poniżej.
-                  </li>
-                )}
-                {rows.map((w, idx) => (
-                  <li key={w.id} className="relative border-b border-border last:border-b-0">
-                    <Link
-                      href={`/w/${w.id}`}
-                      className="group grid grid-cols-[minmax(0,1fr)_90px_130px_60px_30px] items-center gap-4 px-5 py-3.5 transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none"
-                    >
-                      <div className="flex min-w-0 flex-col gap-0.5">
-                        <span className="truncate font-display text-[1.05rem] font-semibold leading-tight tracking-[-0.01em] transition-colors group-hover:text-primary">
-                          {w.name}
-                        </span>
-                        <span className="truncate font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
-                          /{w.slug}
-                          {w.description ? ` · ${w.description}` : ""}
-                        </span>
-                      </div>
-                      <span className="font-mono text-[0.68rem] uppercase tracking-[0.12em] text-muted-foreground">
-                        {w.role.toLowerCase()}
-                      </span>
-                      <span className="font-mono text-[0.68rem] uppercase tracking-[0.12em] text-muted-foreground">
-                        {w.boardCount} {boardPl(w.boardCount)}
-                      </span>
-                      <span aria-hidden /> {/* placeholder na arrows */}
-                      <ArrowRight
-                        size={14}
-                        className="justify-self-end text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
-                      />
-                    </Link>
-                    {/* F12-K51: arrows w 4 kolumnie (placeholder powyżej) — poza Link */}
-                    <div className="pointer-events-none absolute right-[36px] top-1/2 flex -translate-y-1/2 items-center gap-0.5">
-                      <form action={moveWorkspaceUpAction} className="pointer-events-auto m-0">
-                        <input type="hidden" name="id" value={w.id} />
-                        <button
-                          type="submit"
-                          disabled={idx === 0}
-                          aria-label="W górę"
-                          title="Przesuń w górę"
-                          className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
-                        >
-                          <ChevronUp size={13} />
-                        </button>
-                      </form>
-                      <form action={moveWorkspaceDownAction} className="pointer-events-auto m-0">
-                        <input type="hidden" name="id" value={w.id} />
-                        <button
-                          type="submit"
-                          disabled={idx === rows.length - 1}
-                          aria-label="W dół"
-                          title="Przesuń w dół"
-                          className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
-                        >
-                          <ChevronDown size={13} />
-                        </button>
-                      </form>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="grid max-w-md">
-                <CreateWorkspaceDialog />
-              </div>
-            </div>
-          }
-        />
+          </div>
+        }
+      />
     </AppShell>
   );
 }

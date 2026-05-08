@@ -245,57 +245,42 @@ export async function deleteWorkspaceAction(
   redirect("/workspaces");
 }
 
-// F12-K51: reorder workspace'ów — UP/DOWN strzałki w UI.
-// Akcja swap'uje order'y dwóch sąsiednich workspace'ów (proste, jednoznaczne).
-async function swapWorkspaceOrder(formData: FormData, direction: "up" | "down") {
+// F12-K52: reorder workspace'ów drag-and-drop.
+// Klient wysyła całą nową listę ID w kolejności (po drop'ie) — server
+// zapisuje order = idx * 1000 dla każdego. Prosta logika, brak ryzyka
+// rozjeżdżania się gdy wiele drag'ów na raz.
+export async function reorderWorkspacesAction(orderedIds: string[]) {
   const session = await auth();
   if (!session?.user) return;
   const userId = session.user.id;
 
-  const id = String(formData.get("id") ?? "");
-  if (!id) return;
+  if (!Array.isArray(orderedIds) || orderedIds.length === 0) return;
 
-  const list = await db.workspace.findMany({
+  // Sprawdź że user ma dostęp do każdego workspace'u na liście
+  // (nie pozwalamy reorderować cudzych przestrzeni).
+  const accessible = await db.workspace.findMany({
     where: {
+      id: { in: orderedIds },
       deletedAt: null,
       OR: [
         { ownerId: userId },
         { memberships: { some: { userId } } },
       ],
     },
-    orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-    select: { id: true, order: true },
+    select: { id: true },
   });
+  const accessibleIds = new Set(accessible.map((w) => w.id));
+  const valid = orderedIds.filter((id) => accessibleIds.has(id));
 
-  const idx = list.findIndex((w) => w.id === id);
-  if (idx === -1) return;
-
-  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-  if (swapIdx < 0 || swapIdx >= list.length) return; // już na krawędzi
-
-  const current = list[idx];
-  const swap = list[swapIdx];
-
-  // Swap order'ów obu workspace'ów. Float order ⇒ wymiana wartości
-  // wystarczy, bez przepisywania reszty kolumny.
-  await db.$transaction([
-    db.workspace.update({
-      where: { id: current.id },
-      data: { order: swap.order },
-    }),
-    db.workspace.update({
-      where: { id: swap.id },
-      data: { order: current.order },
-    }),
-  ]);
+  // Update order'ów w transakcji
+  await db.$transaction(
+    valid.map((id, idx) =>
+      db.workspace.update({
+        where: { id },
+        data: { order: (idx + 1) * 1000 },
+      }),
+    ),
+  );
 
   revalidatePath("/workspaces");
-}
-
-export async function moveWorkspaceUpAction(formData: FormData) {
-  await swapWorkspaceOrder(formData, "up");
-}
-
-export async function moveWorkspaceDownAction(formData: FormData) {
-  await swapWorkspaceOrder(formData, "down");
 }

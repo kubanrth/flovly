@@ -352,7 +352,7 @@ export function Sidebar({
                       </span>
                     )}
                   </Link>
-                  {!collapsed && canManage(ws.role) && (
+                  {!collapsed && canCreateBoard(ws.role) && (
                     <CreateBoardDialog
                       workspaceId={ws.id}
                       workspaceEnabledViews={ws.enabledViews}
@@ -622,4 +622,10 @@ function NavItem({
 
 function canManage(role: Role): boolean {
   return role === "ADMIN";
+}
+
+// F12-K52: tworzenie tablic dostępne dla ADMIN + MEMBER (zgodnie z lib/permissions
+// matrix). Wcześniej canManage blokowało wszystkich poza ADMIN'em — bug.
+function canCreateBoard(role: Role): boolean {
+  return role === "ADMIN" || role === "MEMBER";
 }
