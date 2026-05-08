@@ -196,5 +196,7 @@ export async function reorderBoardsAction(workspaceId: string, orderedIds: strin
     action: "boards.reordered",
   });
 
-  revalidatePath(`/w/${workspaceId}`);
+  // F12-K52b: invalidate cały layout — sidebar też pokazuje boardy
+  // wewnątrz workspace'u, nie tylko strona overview.
+  revalidatePath("/", "layout");
 }

@@ -282,5 +282,7 @@ export async function reorderWorkspacesAction(orderedIds: string[]) {
     ),
   );
 
-  revalidatePath("/workspaces");
+  // F12-K52b: invalidate cały layout (app) żeby sidebar też się odświeżył
+  // — sidebar fetchuje workspace'y w (app)/layout.tsx, nie w /workspaces page.
+  revalidatePath("/", "layout");
 }

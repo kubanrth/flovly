@@ -27,9 +27,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             // ADMIN sees all (handled below — fetch unrestricted then
             // gate per role). For MEMBER/VIEWER: only PUBLIC boards or
             // ones they have explicit BoardMembership on.
+            // F12-K52: orderBy: order (drag-drop reorder), createdAt fallback.
             boards: {
               where: { deletedAt: null },
-              orderBy: { createdAt: "asc" },
+              orderBy: [{ order: "asc" }, { createdAt: "asc" }],
               select: {
                 id: true,
                 name: true,
@@ -43,9 +44,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           },
         },
       },
-      // Note: we include workspace.enabledViews by virtue of `include:
-      // workspace` above (full row).
-      orderBy: { joinedAt: "asc" },
+      // F12-K52: orderBy workspace.order zamiast joinedAt — sidebar
+      // pokazuje workspace'y w kolejności ustawionej przez user'a.
+      orderBy: [
+        { workspace: { order: "asc" } },
+        { workspace: { createdAt: "asc" } },
+      ],
     }),
     db.notification.count({
       where: { userId: session.user.id, readAt: null },
