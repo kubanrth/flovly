@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 export interface CalendarEvent {
   id: string;
@@ -83,6 +83,12 @@ export function CalendarMonthGrid({
     year: today.getFullYear(),
     month: today.getMonth(),
   });
+  // F12-K55: expand-day modal state — gdy user klika '+N więcej' na
+  // komórce dnia, pokazujemy pełną listę wszystkich wydarzeń tego dnia.
+  const [expandedDay, setExpandedDay] = useState<{
+    date: Date;
+    events: CalendarEvent[];
+  } | null>(null);
 
   const grid = useMemo(() => {
     const first = new Date(cursor.year, cursor.month, 1);
@@ -241,14 +247,133 @@ export function CalendarMonthGrid({
                 );
               })}
               {showOverflow && (
-                <span className="px-1 font-mono text-[0.55rem] uppercase tracking-[0.12em] text-muted-foreground md:text-[0.6rem]">
+                <button
+                  type="button"
+                  onClick={() => setExpandedDay({ date: cell.date, events: dayEvents })}
+                  className="px-1 text-left font-mono text-[0.55rem] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-primary md:text-[0.6rem]"
+                >
                   +{dayEvents.length - 2}
                   <span className="hidden md:inline"> więcej</span>
-                </span>
+                </button>
               )}
             </div>
           );
         })}
+      </div>
+
+      {/* F12-K55: full-day expand modal — klik w '+N więcej' otwiera
+          listę WSZYSTKICH wydarzeń + zadań z tego dnia, scrollowalna,
+          pełne tytuły bez truncate. */}
+      {expandedDay && (
+        <DayExpandDialog
+          day={expandedDay.date}
+          events={expandedDay.events}
+          onClose={() => setExpandedDay(null)}
+          onEventClick={(id) => {
+            setExpandedDay(null);
+            onEventClick?.(id);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// F12-K55: dialog z pełną listą eventów + zadań z konkretnego dnia.
+// Wywoływany przez klik w "+N więcej" na komórce miesięcznego gridu.
+function DayExpandDialog({
+  day,
+  events,
+  onClose,
+  onEventClick,
+}: {
+  day: Date;
+  events: CalendarEvent[];
+  onClose: () => void;
+  onEventClick: (entityId: string) => void;
+}) {
+  const dayLabel = day.toLocaleDateString("pl-PL", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+      className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4 backdrop-blur-sm"
+    >
+      <div className="relative flex max-h-[80vh] w-[min(520px,100%)] flex-col gap-3 rounded-2xl border border-border bg-card p-6 shadow-[0_24px_48px_-12px_rgba(10,10,40,0.35)]">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Zamknij"
+          className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <X size={14} />
+        </button>
+
+        <div className="flex flex-col gap-1">
+          <span className="eyebrow">Dzień</span>
+          <h2 className="font-display text-[1.3rem] font-bold leading-tight tracking-[-0.02em] capitalize">
+            {dayLabel}
+          </h2>
+          <p className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
+            {events.length} {events.length === 1 ? "pozycja" : "pozycji"}
+          </p>
+        </div>
+
+        <ul className="flex flex-col gap-1.5 overflow-y-auto">
+          {events.map((ev) => {
+            const isEvent = ev.kind === "event";
+            const rawId = ev.entityId ?? ev.id.replace(/^(task|event):/, "");
+            const className =
+              "flex flex-col gap-0.5 rounded-md border border-border bg-background px-3 py-2 text-left transition-colors hover:border-primary/60";
+            const accent = ev.statusColor ?? "var(--primary)";
+            const inner = (
+              <>
+                <span className="flex items-center gap-2">
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ background: accent }}
+                  />
+                  <span className="text-[0.92rem] font-semibold">{ev.title}</span>
+                </span>
+                <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+                  {ev.workspaceName} · {ev.boardName}
+                </span>
+              </>
+            );
+            return (
+              <li key={ev.id}>
+                {isEvent ? (
+                  <button
+                    type="button"
+                    onClick={() => onEventClick(rawId)}
+                    className={`${className} w-full`}
+                  >
+                    {inner}
+                  </button>
+                ) : (
+                  <Link
+                    href={`/w/${ev.workspaceId}/t/${rawId}`}
+                    className={className}
+                  >
+                    {inner}
+                  </Link>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </div>
     </div>
   );

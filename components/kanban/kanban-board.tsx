@@ -3,9 +3,12 @@
 import { startTransition, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { createTaskAction } from "@/app/(app)/w/[workspaceId]/t/actions";
-import { createStatusColumnAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
+import {
+  createStatusColumnAction,
+  reorderStatusColumnsAction,
+} from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
 import { PRESET_COLORS } from "@/components/table/status-column-manager";
 import {
   DndContext,
@@ -240,8 +243,13 @@ export function KanbanBoard({
           horizontal scroll. F12-K47b: snap-mandatory zniesione bo
           kolidowało z dnd-kit drag (przeskakiwało zamiast płynnie). */}
       <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:gap-4 md:px-0">
-        {renderColumns.map(({ id, column }) => {
+        {renderColumns.map(({ id, column }, idx) => {
           const colTasks = columns.get(id) ?? [];
+          // F12-K55: lista samych prawdziwych kolumn (bez NO_STATUS)
+          // do reorderowania — NO_STATUS to virtualna kolumna, nie ma
+          // jej w DB.
+          const realColumns = renderColumns.filter((rc) => rc.id !== NO_STATUS);
+          const realIdx = realColumns.findIndex((rc) => rc.id === id);
           return (
             <Column
               key={id}
@@ -250,6 +258,10 @@ export function KanbanBoard({
               tasks={colTasks}
               workspaceId={workspaceId}
               boardId={boardId}
+              canReorder={canManageBoard && id !== NO_STATUS}
+              isFirstReal={realIdx === 0}
+              isLastReal={realIdx === realColumns.length - 1}
+              realColumnIds={realColumns.map((rc) => rc.id)}
               getHotkeyProps={(t) =>
                 assign.rowProps(
                   t.id,
@@ -279,6 +291,10 @@ function Column({
   tasks,
   workspaceId,
   boardId,
+  canReorder,
+  isFirstReal,
+  isLastReal,
+  realColumnIds,
   getHotkeyProps,
 }: {
   id: string;
@@ -286,6 +302,11 @@ function Column({
   tasks: KanbanTask[];
   workspaceId: string;
   boardId: string;
+  // F12-K55: reorderowanie kolumn statusu. UP/DOWN swap'uje z sąsiadem.
+  canReorder?: boolean;
+  isFirstReal?: boolean;
+  isLastReal?: boolean;
+  realColumnIds?: string[];
   getHotkeyProps?: (task: KanbanTask) => {
     onMouseEnter: () => void;
     onMouseLeave: () => void;
@@ -305,12 +326,63 @@ function Column({
         className="flex w-[280px] shrink-0 flex-col gap-2 rounded-xl border border-border bg-muted/40 p-3 md:w-[300px]"
       >
         <div className="flex items-center justify-between gap-2 px-1">
-          <span
-            className="inline-flex h-6 items-center rounded-full px-2 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.12em]"
-            style={{ color, background: `${color}22` }}
-          >
-            {name}
-          </span>
+          <div className="flex items-center gap-1">
+            {/* F12-K55: arrows do przesuwania kolumn statusu w lewo/prawo.
+                Pokazujemy tylko admin'owi i tylko dla prawdziwych kolumn
+                (NO_STATUS jest virtualny). */}
+            {canReorder && realColumnIds && realColumnIds.length > 1 && (
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isFirstReal) return;
+                    const fromIdx = realColumnIds.indexOf(id);
+                    if (fromIdx <= 0) return;
+                    const next = [...realColumnIds];
+                    [next[fromIdx - 1], next[fromIdx]] = [next[fromIdx], next[fromIdx - 1]];
+                    const fd = new FormData();
+                    fd.set("workspaceId", workspaceId);
+                    fd.set("boardId", boardId);
+                    fd.set("ids", next.join(","));
+                    startTransition(() => reorderStatusColumnsAction(fd));
+                  }}
+                  disabled={isFirstReal}
+                  aria-label="W lewo"
+                  title="Przesuń kolumnę w lewo"
+                  className="grid h-5 w-5 place-items-center rounded-sm text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+                >
+                  <ChevronLeft size={11} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isLastReal) return;
+                    const fromIdx = realColumnIds.indexOf(id);
+                    if (fromIdx < 0 || fromIdx >= realColumnIds.length - 1) return;
+                    const next = [...realColumnIds];
+                    [next[fromIdx], next[fromIdx + 1]] = [next[fromIdx + 1], next[fromIdx]];
+                    const fd = new FormData();
+                    fd.set("workspaceId", workspaceId);
+                    fd.set("boardId", boardId);
+                    fd.set("ids", next.join(","));
+                    startTransition(() => reorderStatusColumnsAction(fd));
+                  }}
+                  disabled={isLastReal}
+                  aria-label="W prawo"
+                  title="Przesuń kolumnę w prawo"
+                  className="grid h-5 w-5 place-items-center rounded-sm text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+                >
+                  <ChevronRight size={11} />
+                </button>
+              </div>
+            )}
+            <span
+              className="inline-flex h-6 items-center rounded-full px-2 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.12em]"
+              style={{ color, background: `${color}22` }}
+            >
+              {name}
+            </span>
+          </div>
           <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
             {tasks.length}
           </span>

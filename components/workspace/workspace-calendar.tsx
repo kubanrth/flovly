@@ -1,10 +1,11 @@
 "use client";
 
 import { startTransition, useState } from "react";
-import { Calendar as CalendarIcon, Clock, Plus, Trash2, User as UserIcon, X } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Pencil, Plus, Trash2, User as UserIcon, X } from "lucide-react";
 import {
   createWorkspaceEventAction,
   deleteWorkspaceEventAction,
+  updateWorkspaceEventAction,
 } from "@/app/(app)/w/[workspaceId]/calendar/actions";
 import {
   CalendarMonthGrid,
@@ -127,10 +128,11 @@ export function WorkspaceCalendar({
   );
 }
 
-// F12-K31: dialog ze szczegółami wydarzenia. Reuse'uje akcje z
-// `calendar/actions.ts` — delete jest tylko dla creatora (sprawdza
-// uprawnienie po stronie servera). Dla MVP nie edytujemy w miejscu —
-// klient może usunąć i utworzyć nowe.
+// F12-K31 + F12-K55: dialog ze szczegółami wydarzenia.
+// View mode (default) → przycisk Edytuj przełącza na inline form
+// (title, description, start/end, allDay, color). Submit → updateWorkspaceEventAction
+// → revalidate. Tylko creator widzi guziki edit/delete (sprawdzane
+// dodatkowo server-side).
 function EventDetailDialog({
   event,
   onClose,
@@ -138,6 +140,12 @@ function EventDetailDialog({
   event: WorkspaceCalendarEvent;
   onClose: () => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  if (editing) {
+    return (
+      <EditEventForm event={event} onCancel={() => setEditing(false)} onSaved={onClose} />
+    );
+  }
   const dateRange = formatRange(event.startAt, event.endAt, event.allDay);
   return (
     <div
@@ -198,6 +206,13 @@ function EventDetailDialog({
         )}
 
         <div className="flex items-center justify-end gap-2 border-t border-border pt-3">
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-background px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
+          >
+            <Pencil size={12} /> Edytuj
+          </button>
           <form
             action={(fd) =>
               startTransition(async () => {
@@ -227,6 +242,161 @@ function EventDetailDialog({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// F12-K55: form edycji istniejącego wydarzenia. Inline w EventDetailDialog
+// — toggle widoku z view mode na edit, te same pola co w NewEventForm
+// (poniżej, F12-K31), tylko dispatching do updateWorkspaceEventAction.
+function EditEventForm({
+  event,
+  onCancel,
+  onSaved,
+}: {
+  event: WorkspaceCalendarEvent;
+  onCancel: () => void;
+  onSaved: () => void;
+}) {
+  const [allDay, setAllDay] = useState(event.allDay);
+  const [color, setColor] = useState(event.color);
+  const [startAt, setStartAt] = useState<string | null>(event.startAt);
+  const [endAt, setEndAt] = useState<string | null>(event.endAt);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onCancel();
+      }}
+      className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4 backdrop-blur-sm"
+    >
+      <form
+        action={(fd) =>
+          startTransition(async () => {
+            await updateWorkspaceEventAction(fd);
+            onSaved();
+          })
+        }
+        className="relative flex w-[min(560px,100%)] flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-[0_24px_48px_-12px_rgba(10,10,40,0.35)]"
+        style={{ borderTop: `4px solid ${color}` }}
+      >
+        <input type="hidden" name="id" value={event.id} />
+        <input type="hidden" name="color" value={color} />
+        {startAt && <input type="hidden" name="startAt" value={startAt} />}
+        {endAt && <input type="hidden" name="endAt" value={endAt} />}
+        {allDay && <input type="hidden" name="allDay" value="on" />}
+
+        <button
+          type="button"
+          onClick={onCancel}
+          aria-label="Anuluj"
+          className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <X size={14} />
+        </button>
+
+        <div className="flex flex-col gap-1.5">
+          <span className="eyebrow">Edycja wydarzenia</span>
+        </div>
+
+        <label className="flex flex-col gap-1.5">
+          <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+            Tytuł *
+          </span>
+          <input
+            name="title"
+            type="text"
+            required
+            maxLength={200}
+            defaultValue={event.title}
+            className="h-9 rounded-md border border-border bg-background px-3 text-[0.92rem] outline-none focus:border-primary"
+          />
+        </label>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+              Start
+            </span>
+            <DateTimePicker
+              name="_startAt_picker"
+              defaultValue={event.startAt}
+              onChange={setStartAt}
+              label="Data startu"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+              Koniec
+            </span>
+            <DateTimePicker
+              name="_endAt_picker"
+              defaultValue={event.endAt}
+              onChange={setEndAt}
+              label="Data końca"
+            />
+          </div>
+        </div>
+
+        <label className="flex items-center gap-2 text-[0.86rem]">
+          <Checkbox
+            ariaLabel="Cały dzień"
+            checked={allDay}
+            onChange={(e) => setAllDay(e.currentTarget.checked)}
+          />
+          <span>Cały dzień (ignoruje godziny)</span>
+        </label>
+
+        <label className="flex flex-col gap-1.5">
+          <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+            Opis
+          </span>
+          <textarea
+            name="description"
+            rows={3}
+            maxLength={2000}
+            defaultValue={event.description ?? ""}
+            className="rounded-md border border-border bg-background px-3 py-2 text-[0.9rem] leading-relaxed outline-none focus:border-primary"
+          />
+        </label>
+
+        <div className="flex flex-col gap-1.5">
+          <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+            Kolor
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {PALETTE.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setColor(c)}
+                aria-label={`Wybierz kolor ${c}`}
+                data-active={color === c ? "true" : "false"}
+                className="h-7 w-7 rounded-md ring-2 ring-transparent transition-all data-[active=true]:ring-primary"
+                style={{ background: c }}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t border-border pt-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="inline-flex h-9 items-center rounded-md border border-border bg-background px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Anuluj
+          </button>
+          <button
+            type="submit"
+            className="inline-flex h-9 items-center rounded-md bg-brand-gradient px-4 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px]"
+          >
+            Zapisz zmiany
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

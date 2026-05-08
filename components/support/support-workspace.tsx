@@ -113,6 +113,44 @@ export function SupportWorkspace({
   // attachments[]). Look up po id z tickets[] daje świeży obiekt na
   // każdy re-render.
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // F12-K55: resizable columns — szerokości per kolumna, persist w
+  // localStorage żeby user zachował układ między reload'ami.
+  const STORAGE_KEY = "support-table-col-widths.v1";
+  const DEFAULT_WIDTHS: Record<string, number> = {
+    title: 320,
+    status: 140,
+    priority: 120,
+    due: 170,
+    reporter: 150,
+    assignee: 170,
+    resolvedIn: 170,
+    actions: 90,
+  };
+  const [colWidths, setColWidths] = useState<Record<string, number>>(DEFAULT_WIDTHS);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Record<string, number>;
+        setColWidths({ ...DEFAULT_WIDTHS, ...parsed });
+      }
+    } catch {
+      /* ignore */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const setColWidth = (key: string, width: number) => {
+    setColWidths((prev) => {
+      const next = { ...prev, [key]: Math.max(60, Math.round(width)) };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
   const editing = editingId
     ? tickets.find((t) => t.id === editingId) ?? null
     : null;
@@ -178,17 +216,17 @@ export function SupportWorkspace({
       ) : (
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(10,10,40,0.04)]">
           <div className="overflow-x-auto">
-            <table className="w-full text-[0.88rem]">
+            <table className="text-[0.88rem]" style={{ tableLayout: "fixed", width: "max-content", minWidth: "100%" }}>
               <thead>
                 <tr className="border-b border-border bg-muted/40">
-                  <Th>Tytuł</Th>
-                  <Th width={140}>Status</Th>
-                  <Th width={120}>Priorytet</Th>
-                  <Th width={170}>Termin</Th>
-                  <Th width={150}>Zgłaszający</Th>
-                  <Th width={170}>Odpowiedzialny</Th>
-                  <Th width={170}>Zamknięte w</Th>
-                  <Th width={90} align="right">Akcje</Th>
+                  <Th colKey="title" width={colWidths.title} onResize={setColWidth}>Tytuł</Th>
+                  <Th colKey="status" width={colWidths.status} onResize={setColWidth}>Status</Th>
+                  <Th colKey="priority" width={colWidths.priority} onResize={setColWidth}>Priorytet</Th>
+                  <Th colKey="due" width={colWidths.due} onResize={setColWidth}>Termin</Th>
+                  <Th colKey="reporter" width={colWidths.reporter} onResize={setColWidth}>Zgłaszający</Th>
+                  <Th colKey="assignee" width={colWidths.assignee} onResize={setColWidth}>Odpowiedzialny</Th>
+                  <Th colKey="resolvedIn" width={colWidths.resolvedIn} onResize={setColWidth}>Zamknięte w</Th>
+                  <Th colKey="actions" width={colWidths.actions} onResize={setColWidth} align="right">Akcje</Th>
                 </tr>
               </thead>
               <tbody>
@@ -220,23 +258,61 @@ export function SupportWorkspace({
   );
 }
 
+// F12-K55: resizable th. Drag handle po prawej stronie zmienia width
+// kolumny. Persistence (localStorage) trzymana w SupportWorkspace state.
 function Th({
   children,
+  colKey,
   width,
   align,
+  onResize,
 }: {
   children: React.ReactNode;
-  width?: number;
+  colKey: string;
+  width: number;
   align?: "left" | "right";
+  onResize: (key: string, width: number) => void;
 }) {
+  const startX = useRef(0);
+  const startW = useRef(0);
+  const [resizing, setResizing] = useState(false);
+
+  useEffect(() => {
+    if (!resizing) return;
+    const onMove = (e: MouseEvent) => {
+      const delta = e.clientX - startX.current;
+      onResize(colKey, startW.current + delta);
+    };
+    const onUp = () => setResizing(false);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [resizing, colKey, onResize]);
+
   return (
     <th
-      className={`h-10 px-4 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground ${
+      className={`relative h-10 select-none px-4 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground ${
         align === "right" ? "text-right" : "text-left"
       }`}
-      style={width ? { width: `${width}px` } : undefined}
+      style={{ width: `${width}px`, minWidth: `${width}px` }}
     >
       {children}
+      <span
+        role="separator"
+        aria-label={`Zmień szerokość ${colKey}`}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          startX.current = e.clientX;
+          startW.current = width;
+          setResizing(true);
+        }}
+        className={`absolute right-0 top-0 z-10 h-full w-1 cursor-col-resize transition-colors hover:bg-primary/40 ${
+          resizing ? "bg-primary" : ""
+        }`}
+      />
     </th>
   );
 }

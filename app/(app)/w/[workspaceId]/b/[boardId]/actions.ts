@@ -224,7 +224,11 @@ export async function reorderStatusColumnsAction(formData: FormData) {
       db.statusColumn.update({ where: { id }, data: { order: idx } }),
     ),
   );
+  // F12-K55: revalidate też kanban + roadmap (kolejność statusów to
+  // kolejność kolumn w kanban, przedziałów w roadmap'ie).
   revalidatePath(`/w/${workspaceId}/b/${parsed.data.boardId}/table`);
+  revalidatePath(`/w/${workspaceId}/b/${parsed.data.boardId}/kanban`);
+  revalidatePath(`/w/${workspaceId}/b/${parsed.data.boardId}/roadmap`);
 }
 
 // F8b: create a named BoardView so the user can have multiple views of
