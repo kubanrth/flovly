@@ -2,11 +2,29 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   Bell,
   BookOpen,
   FileText,
+  GripVertical,
   LifeBuoy,
   CalendarDays,
   CheckSquare,
@@ -27,6 +45,8 @@ import {
 } from "lucide-react";
 import type { Role } from "@/lib/generated/prisma/enums";
 import { signOutAction } from "@/app/(app)/actions";
+import { reorderWorkspacesAction } from "@/app/(app)/workspaces/actions";
+import { reorderBoardsAction } from "@/app/(app)/w/[workspaceId]/b/actions";
 import { CreateBoardDialog } from "@/components/workspaces/create-board-dialog";
 import { DeleteBoardDialog } from "@/components/workspaces/delete-board-dialog";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -77,6 +97,40 @@ export function Sidebar({
   const [expandedIds, setExpandedIds] = useState<Set<string>>(
     new Set(activeWorkspaceId ? [activeWorkspaceId] : []),
   );
+
+  // F12-K58: drag-and-drop reorder dla workspace'ów w sidebarze (klient
+  // chciał przesuwać kolejność przez "łapanie i ciągnięcie" — analog do
+  // tego co już działa na /workspaces overview). Lokalny state trzyma
+  // optimistic kolejność; useEffect re-sync'uje gdy prop się zmieni
+  // (po revalidatePath z server action). Boards mają własny nested
+  // SortableContext per workspace, patrz SortableBoardsList niżej.
+  const [workspaceItems, setWorkspaceItems] = useState(workspaces);
+  useEffect(() => {
+    setWorkspaceItems(workspaces);
+  }, [workspaces]);
+
+  const sensors = useSensors(
+    // 5px aktywuje drag — pod tym progiem clicki przechodzą do <Link>
+    // (klient może klikać workspace żeby wejść, bez przypadkowego dragu).
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const onWorkspaceDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setWorkspaceItems((prev) => {
+      const oldIdx = prev.findIndex((w) => w.id === active.id);
+      const newIdx = prev.findIndex((w) => w.id === over.id);
+      if (oldIdx < 0 || newIdx < 0) return prev;
+      const next = arrayMove(prev, oldIdx, newIdx);
+      const orderedIds = next.map((w) => w.id);
+      startTransition(() => {
+        void reorderWorkspacesAction(orderedIds);
+      });
+      return next;
+    });
+  };
 
   // Auto-close drawer przy zmianie route'a — nie chcemy żeby drawer
   // zostawał otwarty po klik'u w link.
@@ -325,148 +379,29 @@ export function Sidebar({
           </div>
         )}
         <div className="flex flex-col gap-0.5">
-          {workspaces.map((ws) => {
-            const expanded = expandedIds.has(ws.id);
-            const isInWorkspace = ws.id === activeWorkspaceId;
-            // F12-K19: workspace row highlighted ONLY gdy jesteś na
-            // workspace overview / sub-link (Wiki/Support/itd.). Gdy
-            // jesteś na konkretnej tablicy → highlight idzie do tej
-            // tablicy, workspace traci accent (zostaje rozwinięty).
-            const onBoardInWs = pathname.startsWith(`/w/${ws.id}/b/`);
-            const isActive = isInWorkspace && !onBoardInWs;
-            return (
-              <div key={ws.id} className="flex flex-col">
-                <div
-                  data-active={isActive ? "true" : "false"}
-                  className="group relative flex items-center gap-1 rounded-sm data-[active=true]:bg-sidebar-accent"
-                >
-                  {isActive && (
-                    <span
-                      aria-hidden
-                      className="absolute -left-2 top-1 bottom-1 w-[2px] bg-primary"
-                    />
-                  )}
-                  <Link
-                    href={`/w/${ws.id}`}
-                    // F12-K57b: większy padding + text na mobile.
-                    className="flex min-w-0 flex-1 items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] transition-colors hover:bg-sidebar-accent max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
-                  >
-                    <FolderOpen size={15} className="shrink-0 text-muted-foreground max-md:size-[18px]" />
-                    {!collapsed && (
-                      <span className="min-w-0 flex-1 truncate tracking-tight">
-                        {ws.name}
-                      </span>
-                    )}
-                  </Link>
-                  {!collapsed && canCreateBoard(ws.role) && (
-                    <CreateBoardDialog
-                      workspaceId={ws.id}
-                      workspaceEnabledViews={ws.enabledViews}
-                    />
-                  )}
-                  {!collapsed && (
-                    <button
-                      type="button"
-                      onClick={() => toggleWorkspace(ws.id)}
-                      // F12-K57b: 28px → 44px tap target na mobile.
-                      className="grid h-7 w-7 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground max-md:h-11 max-md:w-11 max-md:rounded-md"
-                      aria-label={expanded ? "Zwiń" : "Rozwiń"}
-                      aria-expanded={expanded}
-                    >
-                      <ChevronDown
-                        size={13}
-                        className={`transition-transform max-md:size-[18px] ${expanded ? "rotate-0" : "-rotate-90"}`}
-                      />
-                    </button>
-                  )}
-                </div>
-
-                {!collapsed && expanded && (
-                  <div className="mt-1 flex flex-col gap-0.5 pl-7">
-                    {ws.boards.length === 0 && (
-                      <span className="px-2 py-1 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground/70">
-                        brak tablic
-                      </span>
-                    )}
-                    {ws.boards.map((b) => {
-                      // F12-K19: aktywna tablica = pathname zaczyna się
-                      // od /w/<wid>/b/<bid> (czyli table/kanban/roadmap/
-                      // gantt/whiteboard/v/* dla tej tablicy).
-                      const boardActive = pathname.startsWith(
-                        `/w/${ws.id}/b/${b.id}`,
-                      );
-                      return (
-                        <div
-                          key={b.id}
-                          data-active={boardActive ? "true" : "false"}
-                          className="group relative flex items-center gap-1 rounded-sm data-[active=true]:bg-sidebar-accent"
-                        >
-                          {boardActive && (
-                            <span
-                              aria-hidden
-                              className="absolute -left-[18px] top-1 bottom-1 w-[2px] bg-primary"
-                            />
-                          )}
-                          <Link
-                            href={`/w/${ws.id}/b/${b.id}/table`}
-                            // F12-K57b: bigger tap target on mobile.
-                            className={`min-w-0 flex-1 truncate rounded-sm px-2 py-1 text-[0.82rem] transition-colors hover:bg-sidebar-accent hover:text-foreground max-md:rounded-md max-md:px-3 max-md:py-2.5 max-md:text-[0.95rem] ${
-                              boardActive
-                                ? "font-semibold text-foreground"
-                                : "text-muted-foreground"
-                            }`}
-                          >
-                            {b.name}
-                          </Link>
-                          {canManage(ws.role) && (
-                            <DeleteBoardDialog
-                              workspaceId={ws.id}
-                              boardId={b.id}
-                              boardName={b.name}
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-                    <WsSubLink
-                      href={`/w/${ws.id}/wiki`}
-                      icon={<BookOpen size={11} />}
-                      label="Wiki"
-                      active={pathname.startsWith(`/w/${ws.id}/wiki`)}
-                    />
-                    <WsSubLink
-                      href={`/w/${ws.id}/support`}
-                      icon={<LifeBuoy size={11} />}
-                      label="Support"
-                      active={pathname.startsWith(`/w/${ws.id}/support`)}
-                      badge={ws.openSupportCount}
-                    />
-                    <WsSubLink
-                      href={`/w/${ws.id}/briefs`}
-                      icon={<FileText size={11} />}
-                      label="Creative Board"
-                      active={pathname.startsWith(`/w/${ws.id}/briefs`)}
-                    />
-                    <WsSubLink
-                      href={`/w/${ws.id}/calendar`}
-                      icon={<CalendarDays size={11} />}
-                      label="Kalendarz"
-                      active={pathname.startsWith(`/w/${ws.id}/calendar`)}
-                    />
-                    {canManage(ws.role) && (
-                      <WsSubLink
-                        href={`/w/${ws.id}/settings`}
-                        icon={<Settings size={11} />}
-                        label="Ustawienia"
-                        active={pathname.startsWith(`/w/${ws.id}/settings`)}
-                      />
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-          {workspaces.length === 0 && (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={onWorkspaceDragEnd}
+          >
+            <SortableContext
+              items={workspaceItems.map((w) => w.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {workspaceItems.map((ws) => (
+                <SortableWorkspaceRow
+                  key={ws.id}
+                  workspace={ws}
+                  pathname={pathname}
+                  activeWorkspaceId={activeWorkspaceId}
+                  expanded={expandedIds.has(ws.id)}
+                  onToggle={() => toggleWorkspace(ws.id)}
+                  collapsed={collapsed}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+          {workspaceItems.length === 0 && (
             <div className="px-2 py-3 text-[0.82rem] text-muted-foreground">
               {!collapsed && "Brak przestrzeni. Utwórz pierwszą."}
             </div>
@@ -641,4 +576,301 @@ function canManage(role: Role): boolean {
 // matrix). Wcześniej canManage blokowało wszystkich poza ADMIN'em — bug.
 function canCreateBoard(role: Role): boolean {
   return role === "ADMIN" || role === "MEMBER";
+}
+
+// F12-K58: pojedynczy wiersz workspace'u w sidebarze + jego rozwinięte
+// boardy. Drag handle pojawia się on-hover (desktop) / zawsze (mobile),
+// {...listeners} są tylko na buttonie, więc click w nazwę nadal działa
+// jak link (dnd-kit aktywuje drag dopiero przy ruchu >5px — patrz sensors
+// w komponencie Sidebar).
+function SortableWorkspaceRow({
+  workspace: ws,
+  pathname,
+  activeWorkspaceId,
+  expanded,
+  onToggle,
+  collapsed,
+}: {
+  workspace: SidebarWorkspace;
+  pathname: string;
+  activeWorkspaceId: string | null;
+  expanded: boolean;
+  onToggle: () => void;
+  collapsed: boolean;
+}) {
+  // F12-K58: gdy collapsed (desktop wąski tryb), nie ma jak wyświetlić
+  // grip handle obok wąskich ikon → drag wyłączony. Klient i tak musi
+  // rozwinąć żeby zobaczyć listę.
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: ws.id, disabled: collapsed });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : "auto",
+  } as const;
+
+  const isInWorkspace = ws.id === activeWorkspaceId;
+  // F12-K19: workspace row highlighted ONLY gdy jesteś na workspace
+  // overview / sub-link (Wiki/Support/itd.). Gdy jesteś na konkretnej
+  // tablicy → highlight idzie do tej tablicy, workspace traci accent.
+  const onBoardInWs = pathname.startsWith(`/w/${ws.id}/b/`);
+  const isActive = isInWorkspace && !onBoardInWs;
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex flex-col">
+      <div
+        data-active={isActive ? "true" : "false"}
+        className="group relative flex items-center gap-1 rounded-sm data-[active=true]:bg-sidebar-accent"
+      >
+        {isActive && (
+          <span
+            aria-hidden
+            className="absolute -left-2 top-1 bottom-1 w-[2px] bg-primary"
+          />
+        )}
+        {!collapsed && (
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            aria-label="Przeciągnij przestrzeń"
+            title="Przeciągnij aby zmienić kolejność"
+            // Desktop: opacity-0 default, group-hover:opacity-60 + hover:opacity-100
+            // żeby grip nie szumiał wizualnie gdy user nie wskazuje wiersza.
+            // Mobile: opacity-50 zawsze (brak hover = trzeba afordancji).
+            className="grid h-7 w-7 shrink-0 cursor-grab place-items-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-sidebar-accent group-hover:opacity-60 hover:!opacity-100 active:cursor-grabbing max-md:h-10 max-md:w-10 max-md:rounded-md max-md:opacity-50"
+          >
+            <GripVertical size={13} className="max-md:size-[16px]" />
+          </button>
+        )}
+        <Link
+          href={`/w/${ws.id}`}
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] transition-colors hover:bg-sidebar-accent max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
+        >
+          <FolderOpen size={15} className="shrink-0 text-muted-foreground max-md:size-[18px]" />
+          {!collapsed && (
+            <span className="min-w-0 flex-1 truncate tracking-tight">
+              {ws.name}
+            </span>
+          )}
+        </Link>
+        {!collapsed && canCreateBoard(ws.role) && (
+          <CreateBoardDialog
+            workspaceId={ws.id}
+            workspaceEnabledViews={ws.enabledViews}
+          />
+        )}
+        {!collapsed && (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground max-md:h-11 max-md:w-11 max-md:rounded-md"
+            aria-label={expanded ? "Zwiń" : "Rozwiń"}
+            aria-expanded={expanded}
+          >
+            <ChevronDown
+              size={13}
+              className={`transition-transform max-md:size-[18px] ${expanded ? "rotate-0" : "-rotate-90"}`}
+            />
+          </button>
+        )}
+      </div>
+
+      {!collapsed && expanded && (
+        <SortableBoardsList
+          workspaceId={ws.id}
+          boards={ws.boards}
+          pathname={pathname}
+          role={ws.role}
+          openSupportCount={ws.openSupportCount}
+        />
+      )}
+    </div>
+  );
+}
+
+// F12-K58: nested SortableContext dla boardów w obrębie jednego workspace'u.
+// Każdy expanded workspace ma własny lokalny state + DndContext — to upraszcza
+// logikę (drop tylko w obrębie tego samego workspace'u, brak cross-workspace
+// reorderu) i jest zgodne z server action sygnaturą (workspaceId, orderedIds).
+function SortableBoardsList({
+  workspaceId,
+  boards: boardsProp,
+  pathname,
+  role,
+  openSupportCount,
+}: {
+  workspaceId: string;
+  boards: { id: string; name: string }[];
+  pathname: string;
+  role: Role;
+  openSupportCount?: number;
+}) {
+  const [boards, setBoards] = useState(boardsProp);
+  useEffect(() => {
+    setBoards(boardsProp);
+  }, [boardsProp]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setBoards((prev) => {
+      const oldIdx = prev.findIndex((b) => b.id === active.id);
+      const newIdx = prev.findIndex((b) => b.id === over.id);
+      if (oldIdx < 0 || newIdx < 0) return prev;
+      const next = arrayMove(prev, oldIdx, newIdx);
+      const orderedIds = next.map((b) => b.id);
+      startTransition(() => {
+        void reorderBoardsAction(workspaceId, orderedIds);
+      });
+      return next;
+    });
+  };
+
+  // Drag boardów: ADMIN + MEMBER (matching reorderBoardsAction's
+  // requireWorkspaceAction("task.update")). VIEWER nie może.
+  const canDragBoards = canCreateBoard(role);
+
+  return (
+    <div className="mt-1 flex flex-col gap-0.5 pl-7">
+      {boards.length === 0 && (
+        <span className="px-2 py-1 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground/70">
+          brak tablic
+        </span>
+      )}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={onDragEnd}
+      >
+        <SortableContext
+          items={boards.map((b) => b.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {boards.map((b) => (
+            <SortableBoardRow
+              key={b.id}
+              workspaceId={workspaceId}
+              board={b}
+              pathname={pathname}
+              role={role}
+              canDrag={canDragBoards}
+            />
+          ))}
+        </SortableContext>
+      </DndContext>
+      <WsSubLink
+        href={`/w/${workspaceId}/wiki`}
+        icon={<BookOpen size={11} />}
+        label="Wiki"
+        active={pathname.startsWith(`/w/${workspaceId}/wiki`)}
+      />
+      <WsSubLink
+        href={`/w/${workspaceId}/support`}
+        icon={<LifeBuoy size={11} />}
+        label="Support"
+        active={pathname.startsWith(`/w/${workspaceId}/support`)}
+        badge={openSupportCount}
+      />
+      <WsSubLink
+        href={`/w/${workspaceId}/briefs`}
+        icon={<FileText size={11} />}
+        label="Creative Board"
+        active={pathname.startsWith(`/w/${workspaceId}/briefs`)}
+      />
+      <WsSubLink
+        href={`/w/${workspaceId}/calendar`}
+        icon={<CalendarDays size={11} />}
+        label="Kalendarz"
+        active={pathname.startsWith(`/w/${workspaceId}/calendar`)}
+      />
+      {canManage(role) && (
+        <WsSubLink
+          href={`/w/${workspaceId}/settings`}
+          icon={<Settings size={11} />}
+          label="Ustawienia"
+          active={pathname.startsWith(`/w/${workspaceId}/settings`)}
+        />
+      )}
+    </div>
+  );
+}
+
+function SortableBoardRow({
+  workspaceId,
+  board: b,
+  pathname,
+  role,
+  canDrag,
+}: {
+  workspaceId: string;
+  board: { id: string; name: string };
+  pathname: string;
+  role: Role;
+  canDrag: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: b.id, disabled: !canDrag });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : "auto",
+  } as const;
+
+  // F12-K19: aktywna tablica = pathname zaczyna się od /w/<wid>/b/<bid>.
+  const boardActive = pathname.startsWith(`/w/${workspaceId}/b/${b.id}`);
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      data-active={boardActive ? "true" : "false"}
+      className="group relative flex items-center gap-1 rounded-sm data-[active=true]:bg-sidebar-accent"
+    >
+      {boardActive && (
+        <span
+          aria-hidden
+          className="absolute -left-[18px] top-1 bottom-1 w-[2px] bg-primary"
+        />
+      )}
+      {canDrag && (
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          aria-label="Przeciągnij tablicę"
+          title="Przeciągnij aby zmienić kolejność"
+          className="grid h-6 w-6 shrink-0 cursor-grab place-items-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-sidebar-accent group-hover:opacity-60 hover:!opacity-100 active:cursor-grabbing max-md:h-9 max-md:w-9 max-md:rounded-md max-md:opacity-50"
+        >
+          <GripVertical size={12} className="max-md:size-[14px]" />
+        </button>
+      )}
+      <Link
+        href={`/w/${workspaceId}/b/${b.id}/table`}
+        className={`min-w-0 flex-1 truncate rounded-sm px-2 py-1 text-[0.82rem] transition-colors hover:bg-sidebar-accent hover:text-foreground max-md:rounded-md max-md:px-3 max-md:py-2.5 max-md:text-[0.95rem] ${
+          boardActive
+            ? "font-semibold text-foreground"
+            : "text-muted-foreground"
+        }`}
+      >
+        {b.name}
+      </Link>
+      {canManage(role) && (
+        <DeleteBoardDialog
+          workspaceId={workspaceId}
+          boardId={b.id}
+          boardName={b.name}
+        />
+      )}
+    </div>
+  );
 }
