@@ -199,7 +199,8 @@ export function Sidebar({
           chevron był 'overflow-clipped' przez parent overflow-hidden i
           klient nie miał jak rozwinąć sidebar'a z powrotem. */}
       <div
-        className={`flex gap-2 border-b border-sidebar-border px-3 py-3 ${
+        // F12-K57b: większy padding header'a + avatar/name na mobile.
+        className={`flex gap-2 border-b border-sidebar-border px-3 py-3 max-md:gap-3 max-md:px-4 max-md:py-4 ${
           collapsed
             ? "flex-col items-center"
             : "items-center justify-between"
@@ -207,9 +208,9 @@ export function Sidebar({
       >
         <Link
           href="/profile"
-          className="flex min-w-0 items-center gap-2.5 rounded-sm px-1.5 py-1 transition-colors hover:bg-sidebar-accent focus-visible:bg-sidebar-accent focus-visible:outline-none"
+          className="flex min-w-0 items-center gap-2.5 rounded-sm px-1.5 py-1 transition-colors hover:bg-sidebar-accent focus-visible:bg-sidebar-accent focus-visible:outline-none max-md:gap-3.5 max-md:rounded-md max-md:px-2 max-md:py-2"
         >
-          <span className="relative grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.72rem] font-bold text-white">
+          <span className="relative grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.72rem] font-bold text-white max-md:h-11 max-md:w-11 max-md:text-[0.95rem]">
             {user.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
@@ -219,10 +220,10 @@ export function Sidebar({
           </span>
           {!collapsed && (
             <div className="min-w-0 flex-1 leading-tight">
-              <div className="truncate font-display text-[0.92rem] font-semibold tracking-[-0.01em]">
+              <div className="truncate font-display text-[0.92rem] font-semibold tracking-[-0.01em] max-md:text-[1.12rem]">
                 {user.name ?? user.email.split("@")[0]}
               </div>
-              <div className="truncate font-mono text-[0.64rem] uppercase tracking-[0.14em] text-muted-foreground">
+              <div className="truncate font-mono text-[0.64rem] uppercase tracking-[0.14em] text-muted-foreground max-md:text-[0.72rem]">
                 {user.isSuperAdmin ? "super admin" : "member"}
               </div>
             </div>
@@ -311,14 +312,15 @@ export function Sidebar({
       {/* Workspaces — accordion */}
       <div className="flex-1 overflow-y-auto px-2 py-2">
         {!collapsed && (
-          <div className="mb-2 flex items-center justify-between px-2">
-            <span className="eyebrow">Przestrzenie</span>
+          // F12-K57b: większy eyebrow + plus tap-target na mobile.
+          <div className="mb-2 flex items-center justify-between px-2 max-md:mb-3 max-md:px-3 max-md:pt-2">
+            <span className="eyebrow max-md:text-[0.78rem] max-md:tracking-[0.12em]">Przestrzenie</span>
             <Link
               href="/workspaces"
               aria-label="Nowa przestrzeń"
-              className="grid h-5 w-5 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
+              className="grid h-5 w-5 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground max-md:h-10 max-md:w-10 max-md:rounded-md"
             >
-              <Plus size={13} />
+              <Plus size={13} className="max-md:size-[18px]" />
             </Link>
           </div>
         )}
@@ -346,9 +348,10 @@ export function Sidebar({
                   )}
                   <Link
                     href={`/w/${ws.id}`}
-                    className="flex min-w-0 flex-1 items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] transition-colors hover:bg-sidebar-accent"
+                    // F12-K57b: większy padding + text na mobile.
+                    className="flex min-w-0 flex-1 items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] transition-colors hover:bg-sidebar-accent max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
                   >
-                    <FolderOpen size={15} className="shrink-0 text-muted-foreground" />
+                    <FolderOpen size={15} className="shrink-0 text-muted-foreground max-md:size-[18px]" />
                     {!collapsed && (
                       <span className="min-w-0 flex-1 truncate tracking-tight">
                         {ws.name}
@@ -365,13 +368,14 @@ export function Sidebar({
                     <button
                       type="button"
                       onClick={() => toggleWorkspace(ws.id)}
-                      className="grid h-7 w-7 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
+                      // F12-K57b: 28px → 44px tap target na mobile.
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground max-md:h-11 max-md:w-11 max-md:rounded-md"
                       aria-label={expanded ? "Zwiń" : "Rozwiń"}
                       aria-expanded={expanded}
                     >
                       <ChevronDown
                         size={13}
-                        className={`transition-transform ${expanded ? "rotate-0" : "-rotate-90"}`}
+                        className={`transition-transform max-md:size-[18px] ${expanded ? "rotate-0" : "-rotate-90"}`}
                       />
                     </button>
                   )}
@@ -405,7 +409,8 @@ export function Sidebar({
                           )}
                           <Link
                             href={`/w/${ws.id}/b/${b.id}/table`}
-                            className={`min-w-0 flex-1 truncate rounded-sm px-2 py-1 text-[0.82rem] transition-colors hover:bg-sidebar-accent hover:text-foreground ${
+                            // F12-K57b: bigger tap target on mobile.
+                            className={`min-w-0 flex-1 truncate rounded-sm px-2 py-1 text-[0.82rem] transition-colors hover:bg-sidebar-accent hover:text-foreground max-md:rounded-md max-md:px-3 max-md:py-2.5 max-md:text-[0.95rem] ${
                               boardActive
                                 ? "font-semibold text-foreground"
                                 : "text-muted-foreground"
@@ -494,9 +499,10 @@ export function Sidebar({
         <form action={signOutAction} className="w-full">
           <button
             type="submit"
-            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
+            // F12-K57b: dopasowane do nav-row'a (większy padding + text na mobile).
+            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
           >
-            <LogOut size={15} className="shrink-0" />
+            <LogOut size={15} className="shrink-0 max-md:size-[18px]" />
             {!collapsed && <span className="truncate">Wyloguj</span>}
           </button>
         </form>
@@ -528,7 +534,8 @@ function WsSubLink({
     <Link
       href={href}
       data-active={active ? "true" : "false"}
-      className="group relative inline-flex items-center gap-1.5 rounded-sm px-2 py-1 font-mono text-[0.78rem] uppercase tracking-[0.12em] text-muted-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:font-semibold data-[active=true]:text-foreground"
+      // F12-K57b: większy padding + text + ikony na mobile.
+      className="group relative inline-flex items-center gap-1.5 rounded-sm px-2 py-1 font-mono text-[0.78rem] uppercase tracking-[0.12em] text-muted-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:font-semibold data-[active=true]:text-foreground max-md:gap-2.5 max-md:rounded-md max-md:px-3 max-md:py-2.5 max-md:text-[0.86rem] [&>svg]:max-md:size-4"
     >
       {active && (
         <span
@@ -571,7 +578,7 @@ function NavItem({
 
   const content = (
     <>
-      <span className="relative shrink-0 text-muted-foreground group-hover:text-foreground group-data-[active=true]:text-foreground">
+      <span className="relative shrink-0 text-muted-foreground group-hover:text-foreground group-data-[active=true]:text-foreground [&>svg]:max-md:size-[18px]">
         {icon}
         {collapsed && badge !== undefined && badge > 0 && (
           // Fixed width: badge never changes size when count jumps
@@ -597,8 +604,11 @@ function NavItem({
     </>
   );
 
+  // F12-K57b: na mobile wszystkie nav-rowy są ~30% większe (padding,
+  // gap, font) — klient pisał że layout fullscreen wygląda za luźno
+  // z malutkimi rzędami. Desktop bez zmian.
   const cls =
-    "group flex items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] data-[active=true]:bg-sidebar-accent data-[active=true]:text-foreground";
+    "group flex items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] data-[active=true]:bg-sidebar-accent data-[active=true]:text-foreground max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]";
 
   if (disabled) {
     return (

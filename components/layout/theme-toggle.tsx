@@ -70,9 +70,10 @@ export function ThemeToggle({
         <button
           type="button"
           aria-label="Tryb"
-          className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] text-muted-foreground"
+          // F12-K57b: dopasowane do innych nav-rowów w sidebarze.
+          className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] text-muted-foreground max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
         >
-          <Sun size={15} className="shrink-0" />
+          <Sun size={15} className="shrink-0 max-md:size-[18px]" />
           {!collapsed && <span className="truncate">Tryb…</span>}
         </button>
       );
@@ -102,9 +103,10 @@ export function ThemeToggle({
         onClick={toggle}
         aria-label={label}
         title={label}
-        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
+        // F12-K57b: dopasowane do innych nav-rowów w sidebarze.
+        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
       >
-        <Icon size={15} className="shrink-0" />
+        <Icon size={15} className="shrink-0 max-md:size-[18px]" />
         {!collapsed && <span className="truncate">{label}</span>}
       </button>
     );
