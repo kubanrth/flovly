@@ -9,7 +9,7 @@ export default async function ProfilePage() {
   if (!user) throw new Error("User not found");
 
   return (
-    <main className="flex-1 px-8 py-12 md:px-14 md:py-16">
+    <main className="flex-1 px-4 py-6 md:px-14 md:py-16">
       <div className="mx-auto flex max-w-[640px] flex-col gap-10">
         <div className="flex flex-col gap-2">
           <span className="eyebrow">Ustawienia konta</span>

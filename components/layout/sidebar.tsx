@@ -159,21 +159,16 @@ export function Sidebar({
           // F12-K41: z-[80] — wyżej niż NotificationToaster (z-70) i
           // ReminderPopups (z-60), żeby toast'y nie zasłaniały hamburger'a
           // gdy lecą w prawym górnym rogu.
-          className="fixed right-3 top-3 z-[80] grid h-10 w-10 place-items-center rounded-lg border border-border bg-card/95 text-foreground shadow-lg backdrop-blur transition-colors hover:bg-accent md:hidden"
+          // F12-K57: h-11 w-11 = 44px tap target (Apple HIG min).
+          className="fixed right-3 top-3 z-[80] grid h-11 w-11 place-items-center rounded-lg border border-border bg-card/95 text-foreground shadow-lg backdrop-blur transition-colors hover:bg-accent md:hidden"
         >
-          <Menu size={18} />
+          <Menu size={20} />
         </button>
       )}
 
-      {/* Mobile backdrop — zamyka drawer na klik. */}
-      {mobileOpen && (
-        <button
-          type="button"
-          aria-label="Zamknij menu"
-          onClick={() => setMobileOpen(false)}
-          className="fixed inset-0 z-30 bg-foreground/40 backdrop-blur-sm md:hidden"
-        />
-      )}
+      {/* F12-K57: drawer jest fullscreen na mobile, więc backdrop nie
+          jest już potrzebny (klient i tak nic za drawer'em nie widzi).
+          Zostawiamy strukturę gotową, ale render'ujemy null na max-md. */}
 
       <aside
       data-collapsed={collapsed ? "true" : "false"}
@@ -191,7 +186,12 @@ export function Sidebar({
       // bije `md:translate-x-0` (0,1,0) i sidebar zostaje schowany na
       // desktop'ie. `max-md:` generuje regułę tylko w `@media (max-width)`
       // więc na md+ rules po prostu nie istnieją.
-      className="group/sidebar flex h-dvh flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[transform,width] duration-200 max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:w-[280px] max-md:data-[mobile-open=false]:-translate-x-full max-md:data-[mobile-open=true]:translate-x-0 md:sticky md:top-0 md:self-start data-[collapsed=true]:md:w-[68px] data-[collapsed=false]:md:w-[248px]"
+      //
+      // F12-K57: drawer fullscreen (max-md:inset-0 + max-md:w-full) —
+      // klient narzekał że stary 280px-szeroki drawer wyglądał mega
+      // wąsko obok blur'owanego tła. Pełny ekran = jasna afordancja
+      // "to jest menu, X żeby zamknąć".
+      className="group/sidebar flex h-dvh flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[transform,width] duration-200 max-md:fixed max-md:inset-0 max-md:z-40 max-md:w-full max-md:border-r-0 max-md:data-[mobile-open=false]:-translate-x-full max-md:data-[mobile-open=true]:translate-x-0 md:sticky md:top-0 md:self-start data-[collapsed=true]:md:w-[68px] data-[collapsed=false]:md:w-[248px]"
     >
       {/* Top: profile + collapse toggle */}
       {/* F12-K41d: gdy collapsed, header przełącza się w pion (avatar
@@ -229,14 +229,17 @@ export function Sidebar({
           )}
         </Link>
         <div className="flex shrink-0 items-center gap-1">
-          {/* F12-K41: mobile X (zamyka drawer) — schowany na md+. */}
+          {/* F12-K41: mobile X (zamyka drawer) — schowany na md+.
+              F12-K57: bump tap-target z 28px → 44px (Apple HIG / Material min)
+              i powiększony chevron icon. Bez backdrop'a X jest jedyną drogą
+              zamknięcia drawer'a na mobile (+ Esc), więc musi być żeby trafić. */}
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground md:hidden"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground md:hidden"
             aria-label="Zamknij menu"
           >
-            <X size={14} />
+            <X size={20} />
           </button>
           {/* Desktop chevron — collapse/expand sidebar, schowany na mobile. */}
           <button

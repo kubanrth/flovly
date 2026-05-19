@@ -128,7 +128,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         workspaces={workspaces}
         unreadNotificationCount={unreadNotifs}
       />
-      <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+      {/* F12-K57: max-md:pt-14 (56px) clear'uje fixed hamburger (top-3 h-11
+          = y:12-56) na mobile — bez tego h1 nagłówków na każdej stronie
+          chowało się pod przyciskiem. Desktop sidebar inline'owy nie używa
+          hamburger'a, więc md+ bez paddingu. */}
+      <div className="flex min-w-0 flex-1 flex-col max-md:pt-14">{children}</div>
 
       <ReminderPopups
         userId={user.id}
