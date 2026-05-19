@@ -48,6 +48,9 @@ export interface InboxNotification {
     ticketId?: string;
     ticketTitle?: string;
     status?: string;
+    // F12-K62: task.status.changed nazwy statusów.
+    fromStatusName?: string | null;
+    toStatusName?: string | null;
   };
   // F9-13: server pre-computes the assigneeIds for the task this
   // notification refers to, so the hotkey popup can mark them as
@@ -171,6 +174,9 @@ function NotificationRow({
   const isSupportResolved = type === "support.resolved";
   const isSupportAssigned = type === "support.assigned";
   const isSupportCreated = type === "support.created";
+  // F12-K62: task lifecycle notyfikacje dla całego workspace'u.
+  const isTaskCreated = type === "task.created";
+  const isTaskStatusChanged = type === "task.status.changed";
   const href =
     isSupportResolved || isSupportAssigned || isSupportCreated
       ? payload.workspaceId
@@ -254,6 +260,45 @@ function NotificationRow({
         <span className="font-semibold text-foreground">
           {payload.ticketTitle ?? "?"}
         </span>
+        .
+      </>
+    ) : isTaskCreated ? (
+      <>
+        <span className="font-semibold text-foreground">{payload.actorName ?? "Ktoś"}</span>
+        {" stworzył(a) zadanie "}
+        <span className="font-semibold text-foreground">{payload.taskTitle ?? "?"}</span>
+        {payload.boardName && (
+          <>
+            {" na tablicy "}
+            <span className="font-semibold text-foreground">{payload.boardName}</span>
+          </>
+        )}
+        .
+      </>
+    ) : isTaskStatusChanged ? (
+      <>
+        <span className="font-semibold text-foreground">{payload.actorName ?? "Ktoś"}</span>
+        {" zmienił(a) status zadania "}
+        <span className="font-semibold text-foreground">{payload.taskTitle ?? "?"}</span>
+        {payload.fromStatusName || payload.toStatusName ? (
+          <>
+            {": "}
+            <span className="font-mono text-[0.78rem] uppercase tracking-[0.1em] text-muted-foreground">
+              {payload.fromStatusName ?? "—"}
+            </span>
+            {" → "}
+            <span className="font-mono text-[0.78rem] uppercase tracking-[0.1em] text-foreground">
+              {payload.toStatusName ?? "—"}
+            </span>
+          </>
+        ) : null}
+        {payload.boardName && (
+          <>
+            {" (tablica "}
+            <span className="font-semibold text-foreground">{payload.boardName}</span>
+            {")"}
+          </>
+        )}
         .
       </>
     ) : (

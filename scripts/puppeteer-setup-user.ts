@@ -36,6 +36,21 @@ async function main() {
   });
   console.log("user:", user.email, user.id);
 
+  // F12-K62: drugi user żeby test'ować notyfikacje task lifecycle. Kuba
+  // jest creatorem/actorem; "Anna" dostaje powiadomienia bo jest member.
+  const recipient = await db.user.upsert({
+    where: { email: "puppeteer-recipient@flovly.local" },
+    update: { passwordHash, name: "Anna", emailVerified: new Date() },
+    create: {
+      email: "puppeteer-recipient@flovly.local",
+      name: "Anna",
+      passwordHash,
+      isSuperAdmin: false,
+      emailVerified: new Date(),
+    },
+  });
+  console.log("recipient:", recipient.email, recipient.id);
+
   // 2 workspace'y + board z view'ami żeby było widać sidebar swatches
   // + view switcher na board page.
   const boardSlugs: string[] = [];
@@ -52,6 +67,12 @@ async function main() {
       where: { workspaceId_userId: { workspaceId: ws.id, userId: user.id } },
       update: { role: Role.ADMIN },
       create: { workspaceId: ws.id, userId: user.id, role: Role.ADMIN },
+    });
+    // F12-K62: recipient też membership żeby dostawał notyfikacje.
+    await db.workspaceMembership.upsert({
+      where: { workspaceId_userId: { workspaceId: ws.id, userId: recipient.id } },
+      update: { role: Role.MEMBER },
+      create: { workspaceId: ws.id, userId: recipient.id, role: Role.MEMBER },
     });
     console.log("workspace:", slug, ws.id);
 

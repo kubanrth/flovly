@@ -8,6 +8,7 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { requireWorkspaceAction } from "@/lib/workspace-guard";
 import { broadcastUserChange, broadcastWorkspaceChange } from "@/lib/realtime";
 import { sendNotificationEmail } from "@/lib/notify-email";
+import { notifyBoardEvent } from "@/lib/notify-task-event";
 import { writeAudit } from "@/lib/audit";
 import {
   createTagSchema,
@@ -135,6 +136,24 @@ export async function createTaskAction(
     taskId: task.id,
     boardId: task.boardId,
   });
+
+  // F12-K62: notyfikacja do całego workspace'u (minus creator) — Daniel
+  // zażyczył sobie żeby team widział nowe zadania w inbox panelu.
+  const [board, actor] = await Promise.all([
+    db.board.findUnique({ where: { id: task.boardId }, select: { name: true } }),
+    db.user.findUnique({ where: { id: ctx.userId }, select: { name: true, email: true } }),
+  ]);
+  await notifyBoardEvent({
+    workspaceId: task.workspaceId,
+    taskId: task.id,
+    taskTitle: task.title,
+    boardId: task.boardId,
+    boardName: board?.name ?? null,
+    actorId: ctx.userId,
+    actorName: actor?.name ?? actor?.email ?? null,
+    type: "task.created",
+  });
+
   return { ok: true, taskId: task.id };
 }
 
@@ -389,6 +408,12 @@ export async function patchTaskAction(formData: FormData) {
 
   if (!hasChange) return;
 
+  // F12-K62: zapamiętuję poprzedni status PRZED update'em żeby móc
+  // wykryć zmianę i wysłać powiadomienie z "X → Y".
+  const statusChanged =
+    "statusColumnId" in data && data.statusColumnId !== existing.statusColumnId;
+  const previousStatusColumnId = existing.statusColumnId;
+
   const updated = await db.task.update({
     where: { id },
     data: { ...data, version: { increment: 1 } },
@@ -416,6 +441,40 @@ export async function patchTaskAction(formData: FormData) {
     taskId: updated.id,
     boardId: updated.boardId,
   });
+
+  // F12-K62: notyfikacja do workspace'u (minus actor) o zmianie statusu.
+  // Tylko gdy faktycznie statusColumnId się zmieniło — patch może być
+  // czysto title/date i nie chcemy spamować w takim przypadku.
+  if (statusChanged) {
+    const [board, actor, fromCol, toCol] = await Promise.all([
+      db.board.findUnique({ where: { id: updated.boardId }, select: { name: true } }),
+      db.user.findUnique({ where: { id: ctx.userId }, select: { name: true, email: true } }),
+      previousStatusColumnId
+        ? db.statusColumn.findUnique({
+            where: { id: previousStatusColumnId },
+            select: { name: true },
+          })
+        : Promise.resolve(null),
+      updated.statusColumnId
+        ? db.statusColumn.findUnique({
+            where: { id: updated.statusColumnId },
+            select: { name: true },
+          })
+        : Promise.resolve(null),
+    ]);
+    await notifyBoardEvent({
+      workspaceId: updated.workspaceId,
+      taskId: updated.id,
+      taskTitle: updated.title,
+      boardId: updated.boardId,
+      boardName: board?.name ?? null,
+      actorId: ctx.userId,
+      actorName: actor?.name ?? actor?.email ?? null,
+      type: "task.status.changed",
+      fromStatusName: fromCol?.name ?? null,
+      toStatusName: toCol?.name ?? null,
+    });
+  }
 }
 
 export async function toggleAssigneeAction(formData: FormData) {

@@ -38,6 +38,22 @@ interface TaskAssignedPayload {
   actorName?: string | null;
 }
 
+// F12-K62: task.created + task.status.changed — emitowane przez
+// createTaskAction i patchTaskAction (przez notifyBoardEvent helper).
+// Idą do wszystkich członków workspace'u (minus actor).
+interface TaskBoardEventPayload {
+  workspaceId?: string;
+  taskId?: string;
+  taskTitle?: string;
+  boardId?: string;
+  boardName?: string | null;
+  actorId?: string;
+  actorName?: string | null;
+  // Tylko dla task.status.changed.
+  fromStatusName?: string | null;
+  toStatusName?: string | null;
+}
+
 // F12-K25: support.resolved — emitowane przez updateSupportTicketAction
 // gdy admin oznacza ticket reporter'a jako RESOLVED lub CLOSED.
 interface SupportResolvedPayload {
@@ -134,6 +150,7 @@ export default async function InboxPage() {
     const payload = (n.payload ?? {}) as MentionPayload &
       PollCreatedPayload &
       TaskAssignedPayload &
+      TaskBoardEventPayload &
       SupportResolvedPayload;
     return {
       id: n.id,
@@ -154,6 +171,9 @@ export default async function InboxPage() {
         ticketId: payload.ticketId,
         ticketTitle: payload.ticketTitle,
         status: payload.status,
+        // F12-K62: task.status.changed payload extra pól.
+        fromStatusName: payload.fromStatusName ?? undefined,
+        toStatusName: payload.toStatusName ?? undefined,
       },
       assigneeIds: payload.taskId
         ? assigneesByTask.get(payload.taskId) ?? []
