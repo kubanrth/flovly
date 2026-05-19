@@ -72,6 +72,7 @@ export async function BoardHeaderServer({
       enabledViews={effectiveEnabled}
       customViews={customViews}
       canManageViews={canManage}
+      canEditName={canManage}
       defaultViewIds={defaultViewIds}
       createViewButton={
         canManage ? (

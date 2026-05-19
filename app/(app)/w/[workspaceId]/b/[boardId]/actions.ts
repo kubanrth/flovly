@@ -28,18 +28,26 @@ const NICE_COLORS = [
 
 export async function renameBoardAction(formData: FormData) {
   const workspaceId = String(formData.get("workspaceId") ?? "");
+  // F12-K61: coerce null → undefined dla `description` żeby schema'owe
+  // `.optional()` zaakceptowało brak pola w FormData (formData.get() zwraca
+  // null gdy brak; null nie pasuje do z.string().optional()).
+  const descRaw = formData.get("description");
   const parsed = renameBoardSchema.safeParse({
     id: formData.get("id"),
     name: formData.get("name"),
-    description: formData.get("description"),
+    description: descRaw === null ? undefined : descRaw,
   });
   if (!parsed.success) return;
   const ctx = await requireWorkspaceAction(workspaceId, "board.update");
+  // F12-K61: skip description gdy nie podane (Prisma undefined = "don't
+  // update this column"). Inline-edit-name nie powinien wymazywać opisu.
   const board = await db.board.update({
     where: { id: parsed.data.id },
     data: {
       name: parsed.data.name,
-      description: parsed.data.description || null,
+      ...(parsed.data.description !== undefined
+        ? { description: parsed.data.description || null }
+        : {}),
     },
   });
   await writeAudit({

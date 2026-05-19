@@ -4,6 +4,7 @@ import {
   type CustomViewDescriptor,
   type ViewName,
 } from "@/components/view/view-switcher";
+import { EditableBoardName } from "@/components/board/editable-board-name";
 
 // Unified board header: title + optional description + ViewSwitcher + right-
 // side actions slot. Typography and spacing are fixed so all 5 views look
@@ -17,6 +18,7 @@ export function BoardHeader({
   enabledViews,
   customViews,
   canManageViews,
+  canEditName,
   createViewButton,
   actions,
   extra,
@@ -30,6 +32,10 @@ export function BoardHeader({
   enabledViews?: ViewName[];
   customViews?: CustomViewDescriptor[];
   canManageViews?: boolean;
+  // F12-K61: kontroluje czy h2 to inline-editable button czy plain text.
+  // Domyślnie false — bezpieczny default, parent server component
+  // (BoardHeaderServer) ustawia true gdy `can(role, "board.update")`.
+  canEditName?: boolean;
   createViewButton?: ReactNode;
   actions?: ReactNode;
   extra?: ReactNode;
@@ -43,8 +49,14 @@ export function BoardHeader({
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-2">
+          {/* F12-K61: inline edit — klik w h2, Enter zapisuje (board.update perm). */}
           <h2 className="font-display text-[1.2rem] font-bold leading-[1.15] tracking-[-0.02em] md:text-[1.5rem]">
-            {board.name}
+            <EditableBoardName
+              workspaceId={workspaceId}
+              boardId={boardId}
+              name={board.name}
+              canEdit={!!canEditName}
+            />
           </h2>
           {board.description && (
             <p className="text-[0.85rem] leading-[1.5] text-muted-foreground max-md:line-clamp-2 md:text-[0.9rem] md:leading-[1.55]">

@@ -154,6 +154,35 @@ export async function createWorkspaceAction(
   redirect(`/w/${workspace.id}`);
 }
 
+// F12-K61: inline rename z heading'a workspace overview. Pojedyncze pole
+// (name), zero error UI — fire-and-forget z optimistic UI po stronie klienta.
+// Trzyma się z dala od `updateWorkspaceAction` (useActionState/full settings
+// form) żeby nie komplikować response shape'u dla prostego "edit and save".
+export async function renameWorkspaceAction(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const rawName = String(formData.get("name") ?? "").trim();
+  if (!id || !rawName) return;
+  // Same constraints jak updateWorkspaceSchema: 1-80 chars.
+  const name = rawName.slice(0, 80);
+  if (name.length < 1) return;
+
+  const ctx = await requireWorkspaceAction(id, "workspace.updateSettings");
+
+  const workspace = await db.workspace.update({
+    where: { id },
+    data: { name },
+  });
+  await writeAudit({
+    workspaceId: workspace.id,
+    objectType: "Workspace",
+    objectId: workspace.id,
+    actorId: ctx.userId,
+    action: "workspace.renamed",
+    diff: { name: workspace.name },
+  });
+  revalidatePath("/", "layout");
+}
+
 export async function updateWorkspaceAction(
   _prev: WorkspaceFormState,
   formData: FormData,
