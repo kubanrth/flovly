@@ -240,10 +240,13 @@ export const ShapeNode = memo(function ShapeNode({
         nodeId={id}
         width={d.width}
         height={d.height}
-        // F12-K37c: TEXT shape historycznie używał colorHex jako koloru
-        // tekstu. Nowy textColorHex bierze precedence — picker tekstu
-        // dotyczy tej samej "rzeczy" niezależnie od shape'a.
-        colorHex={d.textColorHex || d.colorHex}
+        // F12-K64: TEXT shape teraz spójny z innymi shape'ami — colorHex
+        // to TŁO, textColorHex (z auto-contrast fallback'iem) to kolor
+        // tekstu. Wcześniej colorHex był text-color → klient nie miał
+        // jak ustawić tła. Dwa picker'y w toolbarze (PALETTE → tło,
+        // TextColorPicker → tekst) działają teraz na obu wymiarach.
+        bgColorHex={d.colorHex}
+        textColorHex={d.textColorHex ?? null}
         label={label}
         editing={!!d.editing}
         selected={!!selected}
@@ -663,7 +666,8 @@ function TextShape({
   nodeId,
   width,
   height,
-  colorHex,
+  bgColorHex,
+  textColorHex,
   label,
   editing,
   selected,
@@ -673,7 +677,11 @@ function TextShape({
   nodeId: string;
   width: number;
   height: number;
-  colorHex: string;
+  // F12-K64: bgColorHex = tło shape'a (white default, dowolny vibrant kolor
+  // z PALETTE). textColorHex = explicit kolor tekstu, null = auto-contrast
+  // od tła.
+  bgColorHex: string;
+  textColorHex: string | null;
   label: string;
   editing: boolean;
   selected: boolean;
@@ -687,7 +695,9 @@ function TextShape({
     initialLabel: label,
     isEditing: editing,
   });
-  const ink = isPaleHex(colorHex) ? "#1F2937" : colorHex;
+  // F12-K64: tekst = explicit override albo auto-contrast od tła. Pale bg
+  // → ciemny tekst, dark bg → biały tekst. Mirror logiki z innych shape'ów.
+  const ink = textColorHex ?? (isPaleHex(bgColorHex) ? "#1F2937" : "#FFFFFF");
   const fontSize = fontSizeOverride ?? Math.max(14, Math.min(48, height * 0.36));
   return (
     <>
@@ -697,6 +707,9 @@ function TextShape({
         style={{
           width,
           height,
+          // F12-K64: tło. Pusty/transparent = brak fillu (text-only overlay).
+          background:
+            bgColorHex && bgColorHex !== "transparent" ? bgColorHex : "transparent",
           boxShadow: selected
             ? "0 0 0 2px color-mix(in oklch, var(--primary) 40%, transparent)"
             : "none",

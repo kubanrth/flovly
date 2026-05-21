@@ -128,15 +128,26 @@ type RFEdgeData = { style: "solid" | "dashed"; endStyle: CanvasEdgeEnd };
 type RFNode = Node<ShapeNodeData>;
 type RFEdge = Edge<RFEdgeData>;
 
+// F12-K64: vibrant brand palette — klient zażyczył sobie "żywe mocne
+// kolory" dla tła i tekstu. Wcześniej PALETTE było 8 pastelowych kolorów
+// (cream, sky-50, mint-50 itp.) — wizualnie dawały takie "spłowiale"
+// karty. Teraz Tailwind 500-weight + Apple system, czyste nasycone hue.
+// 12 kolorów żeby pokryć cały spektrum (red→orange→yellow→lime→green→
+// teal→cyan→blue→indigo→violet→pink→magenta) + black/white na końcach.
 const PALETTE = [
-  "#FFFFFF",
-  "#F5F5F5",
-  "#FEF3C7",
-  "#DBEAFE",
-  "#DCFCE7",
-  "#FCE7F3",
-  "#EDE9FE",
-  "#FEE2E2",
+  "#FFFFFF", // white (transparent baseline)
+  "#000000", // black
+  "#EF4444", // red 500
+  "#F97316", // orange 500
+  "#FACC15", // yellow 500
+  "#84CC16", // lime 500
+  "#22C55E", // green 500
+  "#14B8A6", // teal 500
+  "#06B6D4", // cyan 500
+  "#3B82F6", // blue 500
+  "#6366F1", // indigo 500
+  "#8B5CF6", // violet 500
+  "#EC4899", // pink 500
 ];
 
 // Default size per shape. Sticky notes are small & square; frames are big
@@ -150,8 +161,12 @@ const SHAPE_DEFAULTS: Record<ShapeKind, { width: number; height: number; color: 
   // F12-K37: image — ten default jest tylko fallback'iem; rzeczywisty
   // rozmiar ustawiamy w handleImageUpload po PUT'cie pliku.
   IMAGE: { width: 280, height: 200, color: "#FFFFFF" },
-  // F10-W: TEXT carries its color in colorHex (text color, not bg).
-  TEXT: { width: 220, height: 60, color: "#1F2937" },
+  // F12-K64: TEXT shape teraz traktuje colorHex jako BACKGROUND (jak
+  // inne shape'y) + osobne textColorHex jako kolor tekstu. Wcześniej
+  // colorHex był używany jako kolor tekstu — klient zgłosił że nie
+  // można zmienić ani tła ani tekstu w opcji "Dodaj tekst", więc
+  // ujednolicamy z resztą shape'ów. White = clean default.
+  TEXT: { width: 220, height: 60, color: "#FFFFFF" },
 };
 
 // F10-W: 8-color sticky palette (Mural-feel — yellow / pink / orange /
