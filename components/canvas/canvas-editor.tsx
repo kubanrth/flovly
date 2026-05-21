@@ -1595,7 +1595,13 @@ function CanvasEditorInner({
       </div>
 
       {canEdit && singleSelectedNode && (
+        // F12-K65: key na nodeId — wybór innego węzła remountuje panel
+        // (świeży collapsed=false), więc klient zawsze widzi rozwinięty
+        // panel po klikaniu nowego kształtu. Bez key state collapse'a
+        // przeszedłby między selekcjami i klient by nie widział że ma
+        // jakieś taski na nowym węźle.
         <TaskLinksPanel
+          key={singleSelectedNode.id}
           nodeLabel={singleSelectedNode.data.label}
           linkedTasks={singleSelectedNode.data.linkedTasks ?? []}
           workspaceTasks={workspaceTasks}
@@ -1675,6 +1681,12 @@ function TaskLinksPanel({
   error: string | null;
 }) {
   const [query, setQuery] = useState("");
+  // F12-K65: klient zgłosił że panel zasłania szpace na canvas'ie /
+  // toolbar. Collapse state pozwala zminimalizować panel do chipa
+  // (icon + count) trzymanego w tym samym rogu. Klik chip → expand.
+  // Key={nodeId} w parent'cie resetuje state przy zmianie selekcji,
+  // więc nowy węzeł zawsze startuje rozwinięty.
+  const [collapsed, setCollapsed] = useState(false);
   const linkedIds = useMemo(() => new Set(linkedTasks.map((t) => t.taskId)), [linkedTasks]);
   const q = query.trim().toLowerCase();
   const filtered = useMemo(
@@ -1686,13 +1698,49 @@ function TaskLinksPanel({
     [workspaceTasks, linkedIds, q],
   );
 
+  // F12-K65: collapsed render — mały chip pokazujący tylko link icon
+  // i count. Klik rozwija panel. Sama lokalizacja (right-3 top-3) ta
+  // sama co dla pełnego widoku, żeby klient wiedział gdzie szukać.
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        onClick={() => setCollapsed(false)}
+        title="Rozwiń panel zadań na węźle"
+        aria-label="Rozwiń panel zadań na węźle"
+        className="pointer-events-auto absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-card/95 px-3 py-1.5 shadow-lg backdrop-blur transition-colors hover:border-primary/60"
+      >
+        <Link2 size={12} className="text-primary" />
+        <span className="font-mono text-[0.66rem] uppercase tracking-[0.12em] text-muted-foreground">
+          Zadania
+        </span>
+        <span className="font-mono text-[0.7rem] font-semibold tabular-nums text-foreground">
+          {linkedTasks.length}
+        </span>
+      </button>
+    );
+  }
+
   return (
     <div className="pointer-events-auto absolute right-3 top-3 flex w-[300px] flex-col gap-2 rounded-lg border border-border bg-card/95 p-3 shadow-lg backdrop-blur">
       <div className="flex items-center justify-between gap-2">
         <span className="eyebrow text-primary">Zadania na węźle</span>
-        <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground">
-          {linkedTasks.length}
-        </span>
+        <div className="flex items-center gap-1">
+          <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground">
+            {linkedTasks.length}
+          </span>
+          {/* F12-K65: minimize button — zwija panel do chipa żeby nie
+              zasłaniał zawartości canvas'u. Reopen przez klik w chip. */}
+          <button
+            type="button"
+            onClick={() => setCollapsed(true)}
+            aria-label="Zminimalizuj panel"
+            title="Zminimalizuj (panel chowa się do małego chipa)"
+            className="grid h-6 w-6 place-items-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <X size={12} />
+          </button>
+        </div>
       </div>
 
       <span className="truncate text-[0.8rem] text-muted-foreground">
