@@ -2480,6 +2480,10 @@ function TextColorPicker({
 // F12-K63: rozmiar fontu w shape labelu. Klient zażyczył sobie żeby
 // móc zmienić wielkość tekstu w kształcie (wcześniej tylko height
 // shape'a sterował fontem przez auto-calc). 5 presetów + reset (Auto).
+// F12-K63b: Word-style font-size picker — number input (typing dowolnej
+// wartości 6-200px) + stepper − / + (krok 1px) + preset chips (Word ma
+// 9/10/11/12/14/16/18/20/24/28/36/48/72) + Auto reset. Klient: "cos jak
+// masz w wordzie".
 function FontSizePicker({
   selectedNodes,
   onPick,
@@ -2489,6 +2493,30 @@ function FontSizePicker({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  // Aktualny rozmiar do wyświetlenia w polu input. null = mixed selection
+  // albo Auto (klient nigdy nie ustawił override'a).
+  const currentSize = (() => {
+    if (selectedNodes.length === 0) return null;
+    const first = (selectedNodes[0]?.data.fontSize as number | null | undefined) ?? null;
+    const allSame = selectedNodes.every(
+      (n) => ((n.data.fontSize as number | null | undefined) ?? null) === first,
+    );
+    return allSame ? first : null;
+  })();
+
+  // Local input draft — separuje typowanie od commit'u (Enter / blur).
+  // Inicjalizujemy "" gdy null żeby placeholder "Auto" pokazał intent.
+  // Domyślny preview gdy nic nie wybrano: 15 (baseline shape labela).
+  const [draft, setDraft] = useState<string>(() =>
+    currentSize !== null ? String(currentSize) : "",
+  );
+
+  // Re-sync draft gdy selection albo currentSize się zmienia (np. user
+  // wybrał inny node, kliknął preset, zrobił Auto).
+  useEffect(() => {
+    setDraft(currentSize !== null ? String(currentSize) : "");
+  }, [currentSize, selectedNodes.length]);
 
   useEffect(() => {
     if (!open) return;
@@ -2506,25 +2534,33 @@ function FontSizePicker({
     };
   }, [open]);
 
-  // Aktualny rozmiar do podświetlenia w popoverze (jeśli wszystkie
-  // selected mają tę samą wartość — inaczej null = mixed/auto display).
-  const currentSize = (() => {
-    if (selectedNodes.length === 0) return null;
-    const first = (selectedNodes[0]?.data.fontSize as number | null | undefined) ?? null;
-    const allSame = selectedNodes.every(
-      (n) => ((n.data.fontSize as number | null | undefined) ?? null) === first,
-    );
-    return allSame ? first : null;
-  })();
-
   const disabled = selectedNodes.length === 0;
-  const PRESETS: { px: number; label: string }[] = [
-    { px: 12, label: "S" },
-    { px: 16, label: "M" },
-    { px: 22, label: "L" },
-    { px: 30, label: "XL" },
-    { px: 44, label: "XXL" },
-  ];
+  // Hard clamp na sensowny zakres — pod tym żadne shape nie ma sensu
+  // jako "tekst", nad tym renderer się zacznie crashować na grid layoucie.
+  const MIN_PX = 6;
+  const MAX_PX = 200;
+
+  // Word ma w dropdownie 9/10/11/12/14/16/18/20/24/28/36/48/72. Trzymamy
+  // 6 chipów zoptymalizowanych na 1-rzędowy popover.
+  const PRESETS = [12, 14, 18, 24, 36, 48];
+
+  const baselineForStepper = currentSize ?? 15;
+
+  const commit = (raw: string) => {
+    const n = parseInt(raw, 10);
+    if (Number.isNaN(n)) {
+      // Pusty input → Auto reset.
+      onPick(null);
+      return;
+    }
+    const clamped = Math.max(MIN_PX, Math.min(MAX_PX, n));
+    onPick(clamped);
+  };
+
+  const step = (delta: number) => {
+    const next = Math.max(MIN_PX, Math.min(MAX_PX, baselineForStepper + delta));
+    onPick(next);
+  };
 
   return (
     <div ref={ref} className="relative">
@@ -2538,30 +2574,74 @@ function FontSizePicker({
       >
         <span className="font-display text-[0.62rem] font-bold leading-none">A</span>
         <span className="font-display text-[0.92rem] font-bold leading-none">A</span>
+        {currentSize !== null && (
+          <span className="font-mono text-[0.6rem] text-muted-foreground">
+            {currentSize}
+          </span>
+        )}
       </button>
       {open && !disabled && (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-[60] flex w-[200px] flex-col gap-1.5 rounded-lg border border-border bg-popover p-2 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)]">
-          <div className="flex flex-wrap gap-1.5">
+        <div className="absolute left-0 top-[calc(100%+6px)] z-[60] flex w-[220px] flex-col gap-2 rounded-lg border border-border bg-popover p-2 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)]">
+          {/* Number input + stepper. Word-style: typuj liczbę albo
+              użyj − / + (krok 1px). Enter / blur commit'uje. */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => step(-1)}
+              aria-label="Zmniejsz"
+              title="Zmniejsz o 1px"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-border bg-background font-display text-[1rem] leading-none text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
+            >
+              −
+            </button>
+            <input
+              type="number"
+              min={MIN_PX}
+              max={MAX_PX}
+              step={1}
+              inputMode="numeric"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={() => commit(draft)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  commit(draft);
+                  setOpen(false);
+                }
+              }}
+              placeholder="Auto"
+              aria-label="Rozmiar fontu w px"
+              className="h-8 w-full rounded-md border border-border bg-background px-2 text-center font-mono text-[0.86rem] outline-none placeholder:text-muted-foreground/60 focus:border-primary"
+            />
+            <button
+              type="button"
+              onClick={() => step(1)}
+              aria-label="Powiększ"
+              title="Powiększ o 1px"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-border bg-background font-display text-[1rem] leading-none text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
+            >
+              +
+            </button>
+          </div>
+          {/* Quick-pick chips (Word presets). */}
+          <div className="flex flex-wrap gap-1">
             {PRESETS.map((p) => (
               <button
-                key={p.px}
+                key={p}
                 type="button"
                 onClick={() => {
-                  onPick(p.px);
+                  onPick(p);
                   setOpen(false);
                 }}
-                className={`inline-flex h-7 items-center justify-center rounded-md border px-2 font-display text-[0.78rem] font-semibold transition-colors hover:border-primary/60 ${
-                  currentSize === p.px
+                className={`inline-flex h-7 min-w-[36px] items-center justify-center rounded-md border px-2 font-mono text-[0.72rem] transition-colors hover:border-primary/60 ${
+                  currentSize === p
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-border text-muted-foreground"
                 }`}
-                style={{ minWidth: 40 }}
-                title={`${p.label} (${p.px}px)`}
+                title={`${p} px`}
               >
-                {p.label}
-                <span className="ml-1 font-mono text-[0.6rem] opacity-60">
-                  {p.px}
-                </span>
+                {p}
               </button>
             ))}
           </div>
@@ -2571,8 +2651,10 @@ function FontSizePicker({
               onPick(null);
               setOpen(false);
             }}
-            className={`mt-1 inline-flex h-7 items-center justify-center rounded-md border border-border bg-background px-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] transition-colors hover:border-primary/60 ${
-              currentSize === null ? "border-primary text-primary" : "text-muted-foreground"
+            className={`inline-flex h-7 items-center justify-center rounded-md border bg-background px-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] transition-colors hover:border-primary/60 ${
+              currentSize === null
+                ? "border-primary text-primary"
+                : "border-border text-muted-foreground"
             }`}
           >
             Auto (domyślny)
