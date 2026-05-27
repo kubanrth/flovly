@@ -2,13 +2,9 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
-// Klient zgłosił że dymki przypomnień nie wyskakują —
-// poprzednio layout fetchował due reminders RAZ przy SSR i renderował
-// statyczną listę. Tworząc reminder na "za 5 minut" user nie widział
-// popupu bez ręcznego refresha.
-//
-// Ten endpoint zwraca aktualnie wymagalne reminders dla zalogowanego
-// usera; ReminderPopups poll'uje go co 60s i merge'uje nowe entry.
+// Due personal reminders dla zalogowanego usera. ReminderPopups poll'uje
+// co 60s — bez tego SSR-fetched static lista nie pokazywałaby nowych
+// reminderów bez ręcznego refresha.
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {

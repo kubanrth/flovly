@@ -8,8 +8,7 @@ import { BoardHeaderServer } from "@/components/view/board-header-server";
 import { BoardLinksServer } from "@/components/board/board-links-server";
 import { parseEnabledViews } from "@/lib/board-views";
 
-// One canvas per board. Auto-created on first visit so users never see an
-// empty state — gives the per-board whiteboard "zero config" feel.
+// One canvas per board, auto-created on first visit (zero-config whiteboard).
 async function ensureBoardCanvas(
   boardId: string,
   workspaceId: string,
@@ -110,8 +109,7 @@ export default async function BoardWhiteboardPage({
           workspaceId={workspaceId}
           canvasId={canvas.id}
           initialNodes={canvas.nodes.map((n) => {
-            // F10-W2/W3: dataJson stores reactions + locked (and any
-            // future per-node extras). Tolerate any shape.
+            // dataJson stores reactions/locked and other per-node extras; tolerate any shape.
             const meta =
               n.dataJson && typeof n.dataJson === "object"
                 ? (n.dataJson as {
@@ -150,8 +148,7 @@ export default async function BoardWhiteboardPage({
             style: e.style === "dashed" ? "dashed" : "solid",
           }))}
           initialStrokes={(canvas.strokes ?? []).flatMap((s) => {
-            // Server stores points as JSON; we tolerate both flat number[]
-            // and legacy [{x,y}, ...] shapes here.
+            // points JSON is flat number[]; tolerate legacy [{x,y}, ...] too.
             const raw = s.points as unknown;
             const flat: number[] = [];
             if (Array.isArray(raw)) {

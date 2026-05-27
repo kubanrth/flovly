@@ -168,13 +168,10 @@ function NotificationRow({
 }) {
   const { payload, type, unread, assigneeIds } = notification;
   const isPoll = type === "poll.created";
-  // Render notyfikacji o przypisaniu do task'a.
   const isAssigned = type === "task.assigned";
-  // F12-K25/K26/K38: support notyfikacje.
   const isSupportResolved = type === "support.resolved";
   const isSupportAssigned = type === "support.assigned";
   const isSupportCreated = type === "support.created";
-  // Task lifecycle notyfikacje dla całego workspace'u.
   const isTaskCreated = type === "task.created";
   const isTaskStatusChanged = type === "task.status.changed";
   const href =

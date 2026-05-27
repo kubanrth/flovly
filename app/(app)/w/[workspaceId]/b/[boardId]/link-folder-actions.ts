@@ -6,9 +6,8 @@ import { db } from "@/lib/db";
 import { requireWorkspaceAction } from "@/lib/workspace-guard";
 import { writeAudit } from "@/lib/audit";
 
-// Folder linków = named container + user-defined table (columns
-// + rows + cells). All actions scope by the folder's board → workspace.
-
+// Link folders are named containers + user-defined tables (columns/rows/cells).
+// All mutations scope by folder → board → workspace.
 const revalidateBoard = (workspaceId: string, boardId: string) => {
   const base = `/w/${workspaceId}/b/${boardId}`;
   for (const p of ["table", "kanban", "roadmap", "gantt", "whiteboard"]) {
@@ -39,8 +38,7 @@ export async function createLinkFolderAction(formData: FormData) {
     orderBy: { order: "desc" },
     select: { order: true },
   });
-  // Seed every new folder with three sensible default columns so the
-  // user isn't staring at an empty table immediately after creating it.
+  // Seed three default columns so the user doesn't land on an empty table.
   const folder = await db.linkFolder.create({
     data: {
       boardId: parsed.data.boardId,
@@ -250,7 +248,7 @@ export async function setLinkFolderCellAction(formData: FormData) {
     value: formData.get("value") ?? "",
   });
   if (!parsed.success) return;
-  // Row + column must be part of the same folder.
+  // Row and column must belong to the same folder.
   const row = await db.linkFolderRow.findUnique({
     where: { id: parsed.data.rowId },
     include: { folder: { include: { board: { select: { workspaceId: true, id: true } } } } },

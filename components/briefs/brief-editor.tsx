@@ -97,9 +97,6 @@ export function BriefEditor({
 
   return (
     <div className="flex flex-col">
-      {/* F11-21: kolorowy nagłówek (klient zażądał „zaznaczania kolorem
-          nagłówka"). Pełna szerokość, gradient z header color do
-          fade-out, plus emoji + tytuł. */}
       <header
         className="flex flex-col gap-3 border-b border-border px-8 py-8"
         style={{

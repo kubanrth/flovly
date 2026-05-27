@@ -40,22 +40,12 @@ export async function broadcastWorkspaceChange(
   }
 }
 
-// Per-user broadcast — kanał `user:<userId>`. Używane do live
-// powiadomień (toast w prawym górnym rogu), żeby klik nie czekał 20s
-// na poll. Recipient subskrybuje przez `useUserRealtime` w
-// `<UserToaster>` rendowanym z `app/(app)/layout.tsx`.
+// Per-user broadcast — kanał `user:<userId>`. Live powiadomienia
+// (toast) bez poll. Subskrypcja przez `useUserRealtime` w `<UserToaster>`.
+// Payload niesie tylko ID — klient dofetchuje szczegóły.
 export type UserRealtimePayload =
-  | {
-      kind: "notification.new";
-      // Notification.id — klient pobiera szczegóły przez fetch po
-      // odebraniu broadcast'u.
-      id: string;
-    }
-  | {
-      kind: "reminder.due";
-      // PersonalReminder.id, analogicznie.
-      id: string;
-    };
+  | { kind: "notification.new"; id: string }
+  | { kind: "reminder.due"; id: string };
 
 export async function broadcastUserChange(
   userId: string,

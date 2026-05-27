@@ -22,8 +22,7 @@ export type ShapeKind =
   | "STICKY"
   | "FRAME"
   | "TEXT"
-  // Image upload do whiteboard. data.imagePath wskazuje storage
-  // key w Supabase bucket'cie attachments.
+  // data.imagePath points to storage key in Supabase `attachments` bucket.
   | "IMAGE";
 
 export interface ShapeNodeData {
@@ -34,37 +33,22 @@ export interface ShapeNodeData {
   height: number;
   linkedTasks?: NodeTaskChip[];
   workspaceId?: string;
-  // F10-W2: emoji reaction counts. Keyed by emoji char, value = count.
+  // Emoji reaction counts keyed by emoji char.
   reactions?: Record<string, number>;
-  // F10-W3: when true, the node is locked (no drag/resize/delete in UI).
+  // Locked nodes have no drag/resize/delete in UI.
   locked?: boolean;
-  // In-place label edit. Gdy true, node renderuje contentEditable
-  // input zamiast labela (autofocus, blur/Enter zapisuje). Klient: prompt
-  // dwukrotnym kliknięciem był 'dziwny', chce wpisywać 'od razu tam'.
+  // In-place label edit — contentEditable replaces label; blur/Enter saves.
   editing?: boolean;
-  // Dla shape="IMAGE" — storage key w Supabase. Renderowane
-  // jako `/api/canvas-image/<key>` (route handler robi signed redirect).
+  // Storage key in Supabase for IMAGE shapes — served via /api/canvas-image/<key> signed redirect.
   imagePath?: string;
-  // C: opcjonalny override koloru tekstu. Gdy null/undef,
-  // tekst jest auto-contrast (czarny na jasnym fillu, biały na ciemnym).
-  // Klient może wybrać explicit kolor (czerwony tytuł na białym fillu itp).
+  // null/undef = auto-contrast text color from fill.
   textColorHex?: string | null;
-  // Opcjonalny override rozmiaru fontu w labelu shape'a.
-  // Gdy null/undef:
-  //  - dla RECT/DIAMOND/CIRCLE/STICKY: domyślne text-[0.94rem] (~15px)
-  //  - dla TEXT shape'a: auto-calc Math.max(14, Math.min(48, height*0.36))
-  // Klient zgłosił że nie ma jak zmienić wielkości fontu tekstu w
-  // kształcie — F12-K63 wystawia 5 presetów (12/14/18/24/32 px) +
-  // "auto" reset, sterowane przez toolbar w canvas-editor.tsx.
+  // null/undef = baseline (text-[0.94rem]); for TEXT shapes auto-calc from height.
   fontSize?: number | null;
   [key: string]: unknown;
 }
 
-// 4 connection handles — wszystkie SOURCE; w połączeniu z
-// `connectionMode={ConnectionMode.Loose}` w canvas-editor każdy handle
-// jest też targetem. Klient: 'mogę połączyć tylko do kropki górnej, chcę
-// żeby do każdej'. Każdy handle ma stabilne id, żeby React Flow nie miał
-// problemu z DnD trafianiem.
+// All SOURCE handles — ConnectionMode.Loose in canvas-editor makes each handle a target too.
 function ShapeHandles() {
   return (
     <>
@@ -76,10 +60,7 @@ function ShapeHandles() {
   );
 }
 
-// NodeResizer — pozwala drag-em zmieniać szerokość/wysokość.
-// onResize aktualizuje data.width/data.height (nasze shape'y używają
-// tych pól zamiast RF's measured size, więc musimy je zsync'ować).
-// Resizer renderuje się tylko gdy node jest selected.
+// Syncs data.width/data.height alongside RF's measured size — our shapes read from data.* directly.
 function ShapeResizer({
   nodeId,
   visible,
@@ -136,9 +117,7 @@ function ShapeResizer({
   );
 }
 
-// Inline-edit hook — gdy data.editing=true, node renderuje
-// contentEditable. Enter / blur zapisuje label, Escape anuluje. Po zapisie
-// czyścimy flagę editing w store'rze RF.
+// Enter/blur saves and clears editing flag; Escape cancels.
 function useInlineEdit({
   nodeId,
   initialLabel,
@@ -158,12 +137,10 @@ function useInlineEdit({
   const [draft, setDraft] = useState(initialLabel);
   const ref = useRef<HTMLDivElement | null>(null);
 
-  // Reset draft when editing mode opens.
   useEffect(() => {
     if (isEditing) {
       setDraft(initialLabel);
-      // Autofocus + select-all w mikrotasku, żeby contentEditable był już
-      // zamontowany.
+      // Autofocus + select-all in next frame — contentEditable must be mounted first.
       requestAnimationFrame(() => {
         const el = ref.current;
         if (!el) return;
@@ -187,8 +164,7 @@ function useInlineEdit({
           : n,
       ),
     );
-    // Notify canvas-editor żeby zsync'ował z Yjs (RF onNodesChange
-    // nie emituje data-delta'ów, więc bez tego label nie persistowałby).
+    // RF onNodesChange doesn't emit data-deltas — fire custom event so canvas-editor can sync to Yjs.
     if (typeof window !== "undefined") {
       window.dispatchEvent(
         new CustomEvent("canvas-node:commit", { detail: { nodeId } }),
@@ -207,10 +183,6 @@ function useInlineEdit({
   return { draft, setDraft, ref, commit, cancel };
 }
 
-// / F12-K37: shapes z solid fill (vibrant palette wymaga prostszego
-// rendering'u — gradient z white-mix wybielał fill). Każdy kształt ma
-// teraz: solid background = data.colorHex, automatic-contrast text color,
-// darker accent border. Plus NodeResizer + inline edit.
 export const ShapeNode = memo(function ShapeNode({
   id,
   data,
@@ -240,18 +212,12 @@ export const ShapeNode = memo(function ShapeNode({
         nodeId={id}
         width={d.width}
         height={d.height}
-        // TEXT shape teraz spójny z innymi shape'ami — colorHex
-        // to TŁO, textColorHex (z auto-contrast fallback'iem) to kolor
-        // tekstu. Wcześniej colorHex był text-color → klient nie miał
-        // jak ustawić tła. Dwa picker'y w toolbarze (PALETTE → tło,
-        // TextColorPicker → tekst) działają teraz na obu wymiarach.
         bgColorHex={d.colorHex}
         textColorHex={d.textColorHex ?? null}
         label={label}
         editing={!!d.editing}
         selected={!!selected}
         locked={!!d.locked}
-        // Override fontSize; null = fallback do auto-calc po height.
         fontSize={d.fontSize ?? null}
       />
     );
@@ -270,8 +236,6 @@ export const ShapeNode = memo(function ShapeNode({
     );
   }
 
-  // C: text color = user-override (data.textColorHex) albo
-  // auto-contrast od fillu (textColorFor).
   const textColor = d.textColorHex || textColorFor(d.colorHex);
   const accent = accentFor(d.colorHex);
   const selectedRing = selected
@@ -405,9 +369,7 @@ export const ShapeNode = memo(function ShapeNode({
   );
 });
 
-// ContentEditable label dla wszystkich shape'ów (poza TEXT/FRAME
-// które mają własne renderery). Klucz: gdy data.editing=true, focus +
-// select-all natychmiast — user może wpisywać od razu po utworzeniu node'a.
+// ContentEditable label for all shapes (TEXT/FRAME use their own renderers).
 function ShapeLabel({
   nodeId,
   label,
@@ -421,9 +383,7 @@ function ShapeLabel({
   editing: boolean;
   textColor: string;
   isSticky: boolean;
-  // Gdy null → fallback do domyślnego text-[0.94rem] (~15px);
-  // gdy liczba → override przez inline style. Tailwind text-* nie da się
-  // dynamic'znie computować z runtime'a, więc fontSize idzie przez style.
+  // null = Tailwind baseline class; number = inline style override (Tailwind text-* can't be runtime-computed).
   fontSize: number | null;
 }) {
   const { ref, commit, cancel } = useInlineEdit({
@@ -435,7 +395,6 @@ function ShapeLabel({
   const fontFamily = isSticky
     ? "ui-serif, Georgia, 'Times New Roman', serif"
     : undefined;
-  // Tailwind class jest baseline (~15px); inline fontSize go nadpisuje.
   const fontSizeClass = fontSize ? "" : "text-[0.94rem]";
 
   if (editing) {
@@ -499,9 +458,6 @@ function RectangleShape({
       style={{
         width,
         height,
-        // Solid fill (zamiast gradient white-mix → colorHex).
-        // Vibrant brand palette potrzebuje czystego koloru żeby nie wyglądał
-        // "spłowiale". Klient: 'kolor wybranego kółka/kwadratu wygląda mega źle'.
         background: colorHex,
         borderRadius: 12,
         border: `1.5px solid ${selected ? "var(--primary)" : accent}`,
@@ -532,12 +488,8 @@ function DiamondShape({
   ringShadow: string;
   children: React.ReactNode;
 }) {
-  // B: prawdziwy romb przez SVG polygon zamiast rotate(45deg).
-  // Klient: 'napraw ten kształt żeby to był romb' — rotacja całego diva
-  // dawała przekrzywiony rectangle (bounds wystawały poza shape, label
-  // był rotowany razem z fillem co dawało dziwny efekt rounded
-  // corner'ów). Polygon idealnie się dopasowuje do width/height.
-  const inset = 2; // marginesik na stroke żeby nie był przycinany krawędziami
+  // SVG polygon instead of rotate(45deg) — proper diamond bounds (no rotated-rectangle overflow).
+  const inset = 2;
   const points = `${width / 2},${inset} ${width - inset},${height / 2} ${width / 2},${height - inset} ${inset},${height / 2}`;
   return (
     <div
@@ -626,9 +578,6 @@ function StickyShape({
   selected: boolean;
   children: React.ReactNode;
 }) {
-  // Sticky: paper feel via subtle gradient (here we keep light mix because
-  // sticky-note backgrounds są tradycyjnie pastelowe — tu colorHex z
-  // canvas-editor PALETTE jest już jasny, OK).
   const tilt = ((Math.abs(hashFromString(colorHex)) % 5) - 2) * 0.6;
   const text = textColorFor(colorHex);
   return (
@@ -677,17 +626,14 @@ function TextShape({
   nodeId: string;
   width: number;
   height: number;
-  // BgColorHex = tło shape'a (white default, dowolny vibrant kolor
-  // z PALETTE). textColorHex = explicit kolor tekstu, null = auto-contrast
-  // od tła.
+  // textColorHex null = auto-contrast from bg.
   bgColorHex: string;
   textColorHex: string | null;
   label: string;
   editing: boolean;
   selected: boolean;
   locked: boolean;
-  // Gdy null/undef, używamy auto-calc (height*0.36 clamped 14..48).
-  // Gdy ustawiony, klient wybrał konkretny rozmiar z toolbara.
+  // null = auto-calc from height (clamped 14..48).
   fontSize: number | null;
 }) {
   const { ref, commit, cancel } = useInlineEdit({
@@ -695,8 +641,6 @@ function TextShape({
     initialLabel: label,
     isEditing: editing,
   });
-  // Tekst = explicit override albo auto-contrast od tła. Pale bg
-  // → ciemny tekst, dark bg → biały tekst. Mirror logiki z innych shape'ów.
   const ink = textColorHex ?? (isPaleHex(bgColorHex) ? "#1F2937" : "#FFFFFF");
   const fontSize = fontSizeOverride ?? Math.max(14, Math.min(48, height * 0.36));
   return (
@@ -707,7 +651,7 @@ function TextShape({
         style={{
           width,
           height,
-          // Tło. Pusty/transparent = brak fillu (text-only overlay).
+          // Empty/transparent bg = text-only overlay.
           background:
             bgColorHex && bgColorHex !== "transparent" ? bgColorHex : "transparent",
           boxShadow: selected
@@ -858,9 +802,7 @@ function FrameShape({
   );
 }
 
-// Image node. data.imagePath = storage key w bucket'cie
-// attachments. Render via `/api/canvas-image/<key>` (signed redirect).
-// Resizable jak inne shape'y; brak label'a / colorHex.
+// Rendered via /api/canvas-image/<key> (signed redirect); no label/colorHex.
 function ImageShape({
   nodeId,
   width,
@@ -900,11 +842,7 @@ function ImageShape({
         className="grid place-items-center"
       >
         {imagePath ? (
-          // F12-K44 P8: loading="lazy" + decoding="async" — Next.js Image
-          // niemożliwy bo /api/canvas-image robi signed redirect (Image
-          // optimization wymaga static URL). Browser-native lazy + async
-          // decode redukuje main-thread blocking przy dużych canvasach
-          // z wieloma obrazami.
+          // Next.js Image won't work — signed redirect breaks its static-URL requirement.
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={`/api/canvas-image/${encodeURI(imagePath)}`}

@@ -1,20 +1,7 @@
 "use client";
 
-// Dedykowany date+time picker. Trzecia iteracja: poprzednia
-// (native datetime-local) miała ohydny browser-specific UI a dwa
-// wcześniejsze popovery same nie otwierały się przez containing-block
-// trap (backdrop-blur na ancestorze → position:fixed pozycjonowane do
-// niego zamiast viewportu). Ten:
-//
-// - trigger button = nasz styl, reszta UI w portalu do document.body
-//   (omija backdrop-blur trap)
-// - calendar = react-day-picker v9 z locale pl (date-fns)
-// - osobne HH/MM inputy pod kalendarzem (datetime-local nie ma czystego
-//   sposobu na ładny time)
-// - quick-actions: Dziś (today 09:00) + Wyczyść
-//
-// Emituje hidden `<input name>` z ISO string (lub "" dla pustego)
-// żeby parent <form action> dostał tę samą formę co dotychczas.
+// Popover renders in a portal to document.body — avoids backdrop-blur containing-block trap.
+// Emits a hidden <input name> with ISO string so parent <form action> picks it up.
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -29,14 +16,9 @@ export interface DateTimePickerProps {
   disabled?: boolean;
   placeholder?: string;
   label?: string;
-  // "cell" variant for inline use in table rows — strips the
-  // input-style border + calendar icon so the cell is just the date text
-  // (with click-to-open and hover clear-X). "input" is the default
-  // (modal/form) look.
+  // "cell" strips input-style border + calendar icon for inline table use.
   variant?: "input" | "cell";
-  // Optional change callback — fires whenever the date changes (day pick,
-  // time edit, today, clear). Useful for cells that auto-save without a
-  // wrapping <form> — pass an ISO string ("" when cleared).
+  // Fires on every edit (day pick, time, today, clear) — useful for autosave cells without wrapping form.
   onChange?: (iso: string) => void;
 }
 
@@ -48,7 +30,6 @@ function isoToDate(iso: string | null): Date | null {
 
 function formatDisplay(date: Date | null): string {
   if (!date) return "";
-  // pl-PL: "4 maj 2026, 14:30"
   return date.toLocaleString("pl-PL", {
     day: "numeric",
     month: "short",
@@ -87,10 +68,7 @@ export function DateTimePicker({
     setDate(isoToDate(defaultValue));
   }, [defaultValue]);
 
-  // Notify parent whenever the user actually edits the date so
-  // table cells (or other auto-save consumers) can persist immediately
-  // without a wrapping <form>. Skip the first render so we don't fire on
-  // mount with the initial value.
+  // Skip first render so auto-save cells don't fire on mount.
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   const initialIsoRef = useRef(date ? date.toISOString() : "");

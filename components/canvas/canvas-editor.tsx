@@ -98,15 +98,13 @@ export interface EditorInitialNode {
   height: number;
   colorHex: string;
   linkedTasks: NodeTaskChip[];
-  // F10-W2: emoji reactions persisted on the node.
   reactions?: Record<string, number>;
-  // F10-W3: when true, node is locked (no drag/resize/delete).
+  // When true, node is locked (no drag/resize/delete).
   locked?: boolean;
   // Shape="IMAGE" stores Supabase Storage key here.
   imagePath?: string | null;
-  // C: explicit text color override (default = auto contrast).
+  // Explicit text color override (default = auto contrast).
   textColorHex?: string | null;
-  // Explicit font-size override (px) dla shape labela.
   fontSize?: number | null;
 }
 
@@ -128,12 +126,6 @@ type RFEdgeData = { style: "solid" | "dashed"; endStyle: CanvasEdgeEnd };
 type RFNode = Node<ShapeNodeData>;
 type RFEdge = Edge<RFEdgeData>;
 
-// Vibrant brand palette — klient zażyczył sobie "żywe mocne
-// kolory" dla tła i tekstu. Wcześniej PALETTE było 8 pastelowych kolorów
-// (cream, sky-50, mint-50 itp.) — wizualnie dawały takie "spłowiale"
-// karty. Teraz Tailwind 500-weight + Apple system, czyste nasycone hue.
-// 12 kolorów żeby pokryć cały spektrum (red→orange→yellow→lime→green→
-// teal→cyan→blue→indigo→violet→pink→magenta) + black/white na końcach.
 const PALETTE = [
   "#FFFFFF", // white (transparent baseline)
   "#000000", // black
@@ -150,28 +142,18 @@ const PALETTE = [
   "#EC4899", // pink 500
 ];
 
-// Default size per shape. Sticky notes are small & square; frames are big
-// containers (effectively canvas regions).
 const SHAPE_DEFAULTS: Record<ShapeKind, { width: number; height: number; color: string }> = {
   RECTANGLE: { width: 160, height: 80, color: "#FFFFFF" },
   DIAMOND: { width: 160, height: 80, color: "#FFFFFF" },
   CIRCLE: { width: 120, height: 120, color: "#FFFFFF" },
   STICKY: { width: 150, height: 150, color: "#FEF3C7" },
   FRAME: { width: 520, height: 320, color: "#F1F5F9" },
-  // Image — ten default jest tylko fallback'iem; rzeczywisty
-  // rozmiar ustawiamy w handleImageUpload po PUT'cie pliku.
+  // Fallback only — real size set in handleImageUpload after the PUT.
   IMAGE: { width: 280, height: 200, color: "#FFFFFF" },
-  // TEXT shape teraz traktuje colorHex jako BACKGROUND (jak
-  // inne shape'y) + osobne textColorHex jako kolor tekstu. Wcześniej
-  // colorHex był używany jako kolor tekstu — klient zgłosił że nie
-  // można zmienić ani tła ani tekstu w opcji "Dodaj tekst", więc
-  // ujednolicamy z resztą shape'ów. White = clean default.
+  // TEXT uses colorHex as background + separate textColorHex for text color.
   TEXT: { width: 220, height: 60, color: "#FFFFFF" },
 };
 
-// F10-W: 8-color sticky palette (Mural-feel — yellow / pink / orange /
-// green / blue / purple / red / gray) — clicking a color while a sticky
-// is selected recolors it. Hover shows the swatch grow.
 const STICKY_COLORS = [
   "#FEF3C7", // yellow
   "#FBCFE8", // pink
@@ -183,8 +165,7 @@ const STICKY_COLORS = [
   "#E5E7EB", // gray
 ];
 
-// Pen tool palette — 8 inks for free drawing. Stays parallel to STICKY_COLORS
-// in count so the format-toolbar layout doesn't reflow when switching tools.
+// Kept parallel to STICKY_COLORS count so toolbar layout doesn't reflow when switching tools.
 const PEN_COLORS = [
   "#1F2937", // ink
   "#EF4444", // red
@@ -202,8 +183,6 @@ type PenSize = (typeof PEN_SIZES)[number];
 // Snap grid step — same as the visual Background gap.
 const SNAP_STEP = 8;
 
-// Tool modes — Mural-style left rail. "select" is the default mouse,
-// "pen" turns on free-draw, "eraser" removes strokes on click.
 type ToolMode = "select" | "pen" | "eraser";
 
 export interface EditorInitialStroke {
@@ -214,15 +193,11 @@ export interface EditorInitialStroke {
   points: number[];
 }
 
-// F12-K44 P7: NodeTypes map jest static — dependency [] w useMemo
-// niepotrzebny, hoisting do module-level oszczędza alloc + porównanie
-// referencji per render. Stabilna referencja = React Flow nie reset'uje
-// internal state przy każdym renderze parent'a.
+// Module-level constant — stable reference prevents React Flow internal state resets on parent re-render.
 const REACT_FLOW_NODE_TYPES: NodeTypes = { shape: ShapeNode };
 
 function cuidish(): string {
-  // Small client-side id with enough entropy for a short editor session.
-  // The server re-accepts the same id on save so we keep RF ↔ DB identity.
+  // Server re-accepts the same id on save so we keep RF ↔ DB identity.
   const bytes = new Uint8Array(8);
   crypto.getRandomValues(bytes);
   const rand = Array.from(bytes)
@@ -231,10 +206,7 @@ function cuidish(): string {
   return `n_${Date.now().toString(36)}${rand}`;
 }
 
-// Map our internal end-style token to React Flow's MarkerType + custom
-// SVG markers for variants React Flow doesn't ship natively (diamond,
-// circle). React Flow's default markers only cover `Arrow` and
-// `ArrowClosed`, so we register a <defs> block below via SVG.
+// React Flow ships only Arrow/ArrowClosed natively; diamond/circle markers are registered in <defs>.
 function markerForEnd(end: CanvasEdgeEnd): Edge["markerEnd"] {
   if (end === "arrow") return { type: MarkerType.ArrowClosed, width: 16, height: 16 };
   if (end === "diamond") return "url(#canvas-marker-diamond)";
@@ -259,7 +231,6 @@ function toRFNode(n: EditorInitialNode, workspaceId: string): RFNode {
       locked: n.locked,
       imagePath: n.imagePath ?? undefined,
       textColorHex: n.textColorHex ?? undefined,
-      // FontSize override (px) z Y.js snapshotu.
       fontSize:
         typeof (n as { fontSize?: number | null }).fontSize === "number"
           ? (n as { fontSize: number }).fontSize
@@ -267,10 +238,8 @@ function toRFNode(n: EditorInitialNode, workspaceId: string): RFNode {
     },
     width: n.width,
     height: n.height,
-    // FRAME sits behind other nodes so it acts as a backdrop you can drop
-    // shapes over. React Flow honours negative `zIndex` on a per-node basis.
+    // FRAME sits behind other nodes as a backdrop (negative zIndex per-node).
     zIndex: n.shape === "FRAME" ? -10 : 0,
-    // F10-W3: locked nodes can't be moved or selected for delete.
     draggable: !n.locked,
     selectable: true,
   };
@@ -330,10 +299,8 @@ function CanvasEditorInner({
 }) {
   const router = useRouter();
   const reactFlow = useReactFlow();
-  // F12-K44 P7: zob. REACT_FLOW_NODE_TYPES (module-level const).
   const nodeTypes = REACT_FLOW_NODE_TYPES;
   const flowWrapperRef = useRef<HTMLDivElement>(null);
-  // File picker dla 'Dodaj obraz' button.
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const [nodes, setNodes, rfOnNodesChange] = useNodesState<RFNode>(
@@ -349,28 +316,16 @@ function CanvasEditorInner({
   const [isConnected, setIsConnected] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
 
-  // F10-W: tool mode + per-tool config. The pen tool draws in the
-  // selected color/size; switching tool mode swaps cursor + react-flow
-  // interaction (pen mode disables panOnDrag/selectionOnDrag).
   const [toolMode, setToolMode] = useState<ToolMode>("select");
   const [penColor, setPenColor] = useState<string>(PEN_COLORS[0]);
   const [penSize, setPenSize] = useState<PenSize>(PEN_SIZES[1]);
-  // Right-click context menu position (viewport coords).
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
-  // Alignment guides shown while dragging a node.
   const [guides, setGuides] = useState<{ vx: number[]; hy: number[] }>({ vx: [], hy: [] });
-  // F10-W2: remote cursors keyed by clientId. Updated by the provider
-  // presence pipe; rendered as labeled dots that pan/zoom with the canvas.
   const [remoteCursors, setRemoteCursors] = useState<Map<string, CanvasPresenceState>>(
     () => new Map(),
   );
-  // Stable handle to provider so the mousemove listener can broadcast
-  // without rebinding on every render.
   const providerRef = useRef<CanvasProviderHandle | null>(null);
-  // Stable client identity (color + name suffix). Color picked from a
-  // small palette so concurrent users get distinguishable cursors.
-  // Lazy useState init keeps Math.random() out of render path (React
-  // Compiler flags impure calls during render).
+  // Lazy init keeps Math.random() out of render path (React Compiler flags impure calls during render).
   const [myCursorIdentity] = useState(() => {
     const palette = ["#7B68EE", "#10B981", "#F59E0B", "#EF4444", "#3B82F6", "#EC4899"];
     const idx = Math.floor(Math.random() * palette.length);
@@ -380,8 +335,7 @@ function CanvasEditorInner({
     };
   });
 
-  // Y.Doc is the shared source of truth between concurrent editors; the
-  // React Flow hooks above are an interactive view on top.
+  // Y.Doc is the shared source of truth between concurrent editors; React Flow hooks above are a view on top.
   const yRefsRef = useRef<CanvasYRefs | null>(null);
   if (yRefsRef.current === null) {
     const refs = createCanvasYDoc();
@@ -427,7 +381,6 @@ function CanvasEditorInner({
             locked: n.locked,
             imagePath: n.imagePath ?? undefined,
             textColorHex: n.textColorHex ?? undefined,
-            // Zachowaj fontSize override przy re-render z snapshotu.
             fontSize:
               typeof (n as { fontSize?: number | null }).fontSize === "number"
                 ? (n as { fontSize: number }).fontSize
@@ -473,9 +426,7 @@ function CanvasEditorInner({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvasId, workspaceId]);
 
-  // F10-W2: track local cursor + broadcast presence at ~30Hz. Listening
-  // on flowWrapperRef ensures we capture mousemove anywhere over the
-  // canvas without conflicting with React Flow's own pointer handlers.
+  // Listening on flowWrapperRef captures mousemove anywhere over canvas without conflicting with React Flow's pointer handlers.
   useEffect(() => {
     if (!canEdit) return;
     const wrap = flowWrapperRef.current;
@@ -487,7 +438,6 @@ function CanvasEditorInner({
       last = now;
       const provider = providerRef.current;
       if (!provider) return;
-      // Convert page coords → world coords via React Flow.
       const world = reactFlow.screenToFlowPosition({ x: e.clientX, y: e.clientY });
       provider.broadcastPresence({
         x: world.x,
@@ -500,17 +450,14 @@ function CanvasEditorInner({
     return () => wrap.removeEventListener("mousemove", onMove);
   }, [canEdit, reactFlow, myCursorIdentity]);
 
-  // Nasłuch custom-eventu z ShapeNode po inline-edit / resize.
-  // RF nie emituje data-delta'ów przez onNodesChange, więc shape-node
-  // dispatch'uje 'canvas-node:commit' żeby wymusić sync do Yjs.
+  // RF doesn't emit data-deltas via onNodesChange; ShapeNode dispatches 'canvas-node:commit' to force Yjs sync.
   useEffect(() => {
     if (!canEdit) return;
     const onCommit = (e: Event) => {
       const ce = e as CustomEvent<{ nodeId: string }>;
       const id = ce.detail?.nodeId;
       if (!id) return;
-      // setNodes z funkcją żeby dostać aktualny state — odczyt z closure'a
-      // nodes mógłby być stale.
+      // Functional setNodes — closure read could be stale.
       setNodes((ns) => {
         const target = ns.find((n) => n.id === id);
         if (target) commitNodeToY(target);
@@ -536,7 +483,6 @@ function CanvasEditorInner({
           colorHex: node.data.colorHex,
           imagePath: node.data.imagePath ?? null,
           textColorHex: node.data.textColorHex ?? null,
-          // Persist fontSize override do Y.js (per-key merge).
           fontSize:
             typeof node.data.fontSize === "number" ? node.data.fontSize : null,
           reactions: node.data.reactions,
@@ -591,8 +537,6 @@ function CanvasEditorInner({
     },
     [yRefs],
   );
-  // Bulk-clear strokes — used by the toolbar button when in pen mode.
-  // Per-stroke eraser tool is W2.
   const clearAllStrokes = useCallback(() => {
     if (strokes.length === 0) return;
     if (!confirm(`Usunąć ${strokes.length} rysunki?`)) return;
@@ -637,9 +581,7 @@ function CanvasEditorInner({
           height: defaults.height,
           linkedTasks: [],
           workspaceId,
-          // Ustawiamy editing=true od razu — node renderuje
-          // contentEditable z autofocus, klient może wpisywać natychmiast
-          // bez podwójnego kliknięcia.
+          // Start in edit mode so user can type immediately without double-click.
           editing: true,
         },
         width: defaults.width,
@@ -653,8 +595,7 @@ function CanvasEditorInner({
     [setNodes, workspaceId, commitNodeToY],
   );
 
-  // Upload obrazu do whiteboard'u. 3-step: requestUpload (signed
-  // URL) → PUT → utwórz IMAGE node z imagePath = storageKey.
+  // 3-step upload: requestUpload (signed URL) → PUT → create IMAGE node with imagePath = storageKey.
   const handleImageUpload = useCallback(
     async (file: File) => {
       const req = await requestCanvasImageUploadAction(
@@ -686,7 +627,6 @@ function CanvasEditorInner({
         return;
       }
 
-      // Default rozmiar 280x200 — user może zaraz przeskalować.
       const id = cuidish();
       const x = 120 + Math.random() * 180;
       const y = 120 + Math.random() * 140;
@@ -716,9 +656,7 @@ function CanvasEditorInner({
   );
 
   const deleteSelected = useCallback(() => {
-    // F10-W3: locked nodes are immune to delete via this flow. Edges
-    // attached to a locked node also stay (otherwise deleting an edge
-    // would orphan the locked node visually).
+    // Locked nodes are immune to delete; edges attached to a locked node stay too (avoid visual orphans).
     const removedNodeIds = new Set(
       nodes.filter((n) => n.selected && !n.data.locked).map((n) => n.id),
     );
@@ -733,9 +671,7 @@ function CanvasEditorInner({
     for (const id of removedEdgeIds) deleteEdgeFromY(id);
   }, [nodes, edges, setNodes, setEdges, deleteNodeFromY, deleteEdgeFromY]);
 
-  // F10-W: clone selected nodes 24px down/right with fresh ids. Edges
-  // between *both* duplicated endpoints get cloned too — single-end
-  // duplicates would make orphan edges.
+  // Edges only clone when *both* endpoints are duplicated — single-end clones would orphan edges.
   const duplicateSelected = useCallback(() => {
     const selected = nodes.filter((n) => n.selected);
     if (selected.length === 0) return;
@@ -765,8 +701,6 @@ function CanvasEditorInner({
     for (const e of newEdges) commitEdgeToY(e);
   }, [nodes, edges, setNodes, setEdges, commitNodeToY, commitEdgeToY]);
 
-  // F10-W: bring selected nodes to top of stack (highest zIndex). React
-  // Flow uses zIndex inline so we just bump above the current max.
   const bringSelectedToFront = useCallback(() => {
     const maxZ = nodes.reduce((m, n) => Math.max(m, n.zIndex ?? 0), 0);
     setNodes((ns) =>
@@ -774,8 +708,6 @@ function CanvasEditorInner({
     );
   }, [nodes, setNodes]);
 
-  // F10-W2: toggle an emoji reaction on every selected node. Increments
-  // count if missing/zero, decrements (and clears at 0) if already there.
   const toggleReaction = useCallback(
     (emoji: string) => {
       const touched: RFNode[] = [];
@@ -804,8 +736,6 @@ function CanvasEditorInner({
     [setNodes, commitNodeToY],
   );
 
-  // F10-W3: toggle locked flag on selected nodes. Locked → undraggable,
-  // can't be deleted by Delete key, can't be marquee-selected for delete.
   const toggleLockSelected = useCallback(() => {
     const touched: RFNode[] = [];
     setNodes((ns) =>
@@ -824,10 +754,6 @@ function CanvasEditorInner({
     for (const n of touched) commitNodeToY(n);
   }, [setNodes, commitNodeToY]);
 
-  // Rename = ustaw flagę editing=true na zaznaczonym node'cie.
-  // ShapeNode (zawiera contentEditable + autofocus) odpala edit mode
-  // od razu po renderze. window.prompt usunięty — klient zgłosił że
-  // wpisywanie tekstu w prompt'cie było 'dziwne'.
   const renameSelected = useCallback(() => {
     const target = nodes.find((n) => n.selected);
     if (!target) return;
@@ -856,8 +782,7 @@ function CanvasEditorInner({
     [setNodes, commitNodeToY],
   );
 
-  // C: zmiana koloru TEKSTU na zaznaczonych shape'ach. `hex = null`
-  // = reset do auto-contrast (textColorFor od fillu).
+  // `hex = null` resets to auto-contrast (textColorFor of fill).
   const recolorTextSelected = useCallback(
     (hex: string | null) => {
       const touched: RFNode[] = [];
@@ -877,9 +802,7 @@ function CanvasEditorInner({
     [setNodes, commitNodeToY],
   );
 
-  // Zmiana rozmiaru FONTU na zaznaczonych shape'ach. `size = null`
-  // = reset do baseline (text-[0.94rem] dla RECT/CIRCLE/STICKY/DIAMOND, lub
-  // auto-calc po height dla TEXT). Liczba (12-72) = explicit override.
+  // `size = null` resets to baseline; number sets explicit override.
   const resizeFontSelected = useCallback(
     (size: number | null) => {
       const touched: RFNode[] = [];
@@ -899,7 +822,6 @@ function CanvasEditorInner({
     [setNodes, commitNodeToY],
   );
 
-  // Change the end marker of all selected edges in one commit.
   const setEdgeEndStyle = useCallback(
     (endStyle: CanvasEdgeEnd) => {
       const touched: RFEdge[] = [];
@@ -995,9 +917,7 @@ function CanvasEditorInner({
     });
   }, [canvasId, nodes, edges, strokes]);
 
-  // Apply a template: batches a set of pre-arranged nodes + edges onto
-  // the canvas, offset from current bounds so we don't overlap existing
-  // content. Single transaction = one undo step + one broadcast.
+  // Single Yjs transaction = one undo step + one broadcast.
   const applyTemplate = useCallback(
     (key: TemplateKey) => {
       const offset = nodes.length > 0 ? getNodesBounds(nodes) : null;
@@ -1072,16 +992,12 @@ function CanvasEditorInner({
         }
       }, LOCAL_ORIGIN);
 
-      // Fit new content into view.
       setTimeout(() => reactFlow.fitView({ padding: 0.2, duration: 400 }), 50);
     },
     [nodes, setNodes, setEdges, yRefs, workspaceId, reactFlow],
   );
 
-  // Render the current viewport as PNG and trigger download. We grab the
-  // `.react-flow__viewport` element because it contains nodes + edges in
-  // their transformed coordinate space — html-to-image captures exactly
-  // what the user sees.
+  // Grab .react-flow__viewport — contains nodes+edges in transformed space, so html-to-image captures what user sees.
   const exportPng = useCallback(async () => {
     const root = flowWrapperRef.current;
     if (!root) return;
@@ -1138,12 +1054,7 @@ function CanvasEditorInner({
 
   const [linkError, setLinkError] = useState<string | null>(null);
 
-  // The three task-link callbacks below are deliberate manual memos over
-  // server-action invocations + state setter chains. React Compiler can't
-  // preserve the existing memoization here (singleSelectedNode is a
-  // derived array filter that mutates each render), and rewriting to fit
-  // its model would force a substantial refactor for zero runtime gain.
-  // Suppress its warnings rather than churn the file.
+  // Deliberate manual memos — React Compiler can't preserve memoization when singleSelectedNode is a derived filter.
   /* eslint-disable react-hooks/preserve-manual-memoization */
   const handleLinkTask = useCallback(
     async (taskId: string) => {
@@ -1251,30 +1162,18 @@ function CanvasEditorInner({
         maxZoom={2}
         fitView
         proOptions={{ hideAttribution: true }}
-        // F10-W2: smoothstep edges route around obstacles cleanly (90° bends),
-        // much closer to Mural's connector behaviour than raw bezier.
         defaultEdgeOptions={{ type: "smoothstep" }}
-        // ConnectionMode=Loose pozwala upuścić strzałkę na DOWOLNY
-        // handle (target lub source) — wcześniej można było tylko na top/left,
-        // bo right/bottom były source-only.
+        // Loose allows dropping arrow onto any handle (target or source) — default forces target-only.
         connectionMode={ConnectionMode.Loose}
-        // F10-W: marquee/lasso selection on left-drag (Mural-style),
-        // pan with middle/right or Space+drag. Disabled in pen mode so
-        // the overlay can capture pointer events.
         selectionOnDrag={canEdit && toolMode === "select"}
         panOnDrag={toolMode === "select" ? [1, 2] : false}
-        // Pan kółkiem/trackpadem (klient: 'nawigacja po tym jest
-        // mega rozjebana'). Default RF12 = scroll = zoom; my flippujemy.
+        // Default RF12 scroll = zoom; we flip so scroll pans (trackpad-friendly).
         panOnScroll
         zoomOnScroll={false}
-        // Pinch (ctrl/cmd + scroll) dalej zoomuje — to jest standardowy
-        // gesture na trackpadzie.
         zoomOnPinch
         zoomOnDoubleClick={false}
-        // Snap to 8px grid for clean alignment.
         snapToGrid={canEdit && toolMode === "select"}
         snapGrid={[SNAP_STEP, SNAP_STEP]}
-        // Right-click context menus.
         onPaneContextMenu={(e) => {
           if (!canEdit) return;
           e.preventDefault();
@@ -1325,15 +1224,11 @@ function CanvasEditorInner({
         onPaneClick={() => setContextMenu(null)}
       >
         <Background gap={24} size={1} />
-        {/* F12-K37: custom controls — natywne <Controls /> z react-flow miało
-            jasne tło zawsze, w dark mode niewidoczne (klient: 'przy zmianie
-            trybu na ciemny przyciski plus/minus nie zmieniają koloru'). */}
+        {/* Custom controls — native <Controls/> has no dark-mode parity. */}
         <CanvasZoomControls />
         <MiniMap pannable zoomable className="!bg-card" />
         <StrokeViewportLayer strokes={strokes} />
         <AlignmentGuides vx={guides.vx} hy={guides.hy} />
-        {/* F10-W2: remote cursors — peers' mouse pointers drawn at world
-            coords, so they pan/zoom with the canvas. */}
         <RemoteCursorsLayer cursors={remoteCursors} />
       </ReactFlow>
 
@@ -1366,9 +1261,6 @@ function CanvasEditorInner({
       {canEdit && (
         <div className="pointer-events-none absolute left-1/2 top-3 flex -translate-x-1/2 flex-col items-center gap-2">
           <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-border bg-card/95 p-1 shadow-lg backdrop-blur">
-            {/* F10-W: tool-mode toggle group (Mural-style). Pen mode
-                disables React Flow interactions and routes pointer
-                events to the overlay. */}
             <ToolButton
               label="Wskaźnik (V)"
               active={toolMode === "select"}
@@ -1403,7 +1295,6 @@ function CanvasEditorInner({
             <ToolButton label="Ramka" onClick={() => addShape("FRAME")}>
               <FrameIcon size={14} />
             </ToolButton>
-            {/* F12-K37: dodaj obraz — file picker → upload → IMAGE node. */}
             <ToolButton
               label="Obraz"
               onClick={() => imageInputRef.current?.click()}
@@ -1421,9 +1312,6 @@ function CanvasEditorInner({
                 e.target.value = "";
               }}
             />
-            {/* F10-W: contextual palette. In pen mode → pen ink colors +
-                size pickers. With a sticky selected → 8-color sticky
-                palette. Otherwise → general fill palette. */}
             <span className="mx-1 h-5 w-px bg-border" aria-hidden />
             {toolMode === "pen" ? (
               <div className="flex items-center gap-1 px-1">
@@ -1492,15 +1380,10 @@ function CanvasEditorInner({
                     title={`Tło ${c}`}
                   />
                 ))}
-                {/* F12-K37c: text color picker — popover, oddzielny od fill.
-                    Klient: 'brakuje zmieniania koloru tekstu w pisaniu i w
-                    kółku/kwadracie'. */}
                 <TextColorPicker
                   selectedNodes={selectedNodes}
                   onPick={recolorTextSelected}
                 />
-                {/* F12-K63: font-size picker — klient zażyczył sobie zmiany
-                    wielkości tekstu w shape'cie (S/M/L/XL/XXL + Auto). */}
                 <FontSizePicker
                   selectedNodes={selectedNodes}
                   onPick={resizeFontSelected}
@@ -1595,11 +1478,7 @@ function CanvasEditorInner({
       </div>
 
       {canEdit && singleSelectedNode && (
-        // Key na nodeId — wybór innego węzła remountuje panel
-        // (świeży collapsed=false), więc klient zawsze widzi rozwinięty
-        // panel po klikaniu nowego kształtu. Bez key state collapse'a
-        // przeszedłby między selekcjami i klient by nie widział że ma
-        // jakieś taski na nowym węźle.
+        // key={nodeId} remounts panel (fresh collapsed=false) when selection changes.
         <TaskLinksPanel
           key={singleSelectedNode.id}
           nodeLabel={singleSelectedNode.data.label}
@@ -1681,11 +1560,6 @@ function TaskLinksPanel({
   error: string | null;
 }) {
   const [query, setQuery] = useState("");
-  // Klient zgłosił że panel zasłania szpace na canvas'ie /
-  // toolbar. Collapse state pozwala zminimalizować panel do chipa
-  // (icon + count) trzymanego w tym samym rogu. Klik chip → expand.
-  // Key={nodeId} w parent'cie resetuje state przy zmianie selekcji,
-  // więc nowy węzeł zawsze startuje rozwinięty.
   const [collapsed, setCollapsed] = useState(false);
   const linkedIds = useMemo(() => new Set(linkedTasks.map((t) => t.taskId)), [linkedTasks]);
   const q = query.trim().toLowerCase();
@@ -1698,9 +1572,6 @@ function TaskLinksPanel({
     [workspaceTasks, linkedIds, q],
   );
 
-  // Collapsed render — mały chip pokazujący tylko link icon
-  // i count. Klik rozwija panel. Sama lokalizacja (right-3 top-3) ta
-  // sama co dla pełnego widoku, żeby klient wiedział gdzie szukać.
   if (collapsed) {
     return (
       <button
@@ -1729,8 +1600,6 @@ function TaskLinksPanel({
           <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground">
             {linkedTasks.length}
           </span>
-          {/* F12-K65: minimize button — zwija panel do chipa żeby nie
-              zasłaniał zawartości canvas'u. Reopen przez klik w chip. */}
           <button
             type="button"
             onClick={() => setCollapsed(true)}
@@ -1859,10 +1728,7 @@ function ToolButton({
   );
 }
 
-// F10-W: SVG layer that renders all strokes inside React Flow's
-// transformed viewport. Uses useViewport() to mirror pan/zoom — the SVG
-// itself is full-bleed but its inner <g> applies the same transform as
-// React Flow nodes, so points stay in world coordinates.
+// Inner <g> mirrors React Flow's pan/zoom transform so stroke points stay in world coordinates.
 function StrokeViewportLayer({ strokes }: { strokes: CanvasStrokeValue[] }) {
   const { x, y, zoom } = useViewport();
   return (
@@ -1874,7 +1740,6 @@ function StrokeViewportLayer({ strokes }: { strokes: CanvasStrokeValue[] }) {
         width: "100%",
         height: "100%",
         pointerEvents: "none",
-        // Below nodes (z-index 0) but above the dotted background.
         zIndex: 0,
       }}
     >
@@ -1902,11 +1767,7 @@ function StrokeViewportLayer({ strokes }: { strokes: CanvasStrokeValue[] }) {
   );
 }
 
-// F10-W: live alignment guide rendering during drag. Lines are world-
-// coordinate values; we transform them with the viewport so they align
-// with the dragged node's world position. Pure visual feedback —
-// snapping itself happens via React Flow's snapToGrid + this just
-// shows the user "your edge is aligned with X".
+// Pure visual feedback — actual snapping happens via React Flow's snapToGrid.
 function AlignmentGuides({ vx, hy }: { vx: number[]; hy: number[] }) {
   const { x, y, zoom } = useViewport();
   if (vx.length === 0 && hy.length === 0) return null;
@@ -1952,9 +1813,7 @@ function AlignmentGuides({ vx, hy }: { vx: number[]; hy: number[] }) {
   );
 }
 
-// F10-W: pen-tool input layer. Sits above React Flow when toolMode='pen';
-// converts screen → world coords via reactFlow.screenToFlowPosition,
-// builds a points array, and commits as a stroke on pointerup.
+// Sits above React Flow when toolMode='pen'; commits stroke to Yjs on pointerup.
 function PenOverlay({
   color,
   size,
@@ -1991,7 +1850,7 @@ function PenOverlay({
       onPointerMove={(e) => {
         if (!drawing) return;
         const p = ptr(e);
-        // Skip points within 1.5px to keep stroke smooth without bloat.
+        // Skip points within 1.5px — keeps stroke smooth without bloat.
         const last = drawing.points;
         const lx = last[last.length - 2];
         const ly = last[last.length - 1];
@@ -2012,7 +1871,7 @@ function PenOverlay({
       }}
       onPointerCancel={() => setDrawing(null)}
     >
-      {/* In-progress stroke — drawn outside Yjs until pointerup commits */}
+      {/* In-progress stroke — drawn outside Yjs until pointerup commits. */}
       {drawing && drawing.points.length >= 4 && (
         <DrawingPreview points={drawing.points} color={color} size={size} />
       )}
@@ -2050,8 +1909,6 @@ function DrawingPreview({
   );
 }
 
-// F10-W: right-click context menu. Floats at viewport coords; closes on
-// outside click, escape, or after firing an action.
 const REACTION_EMOJIS = ["👍", "❤️", "🎉", "🔥", "💯", "🤔", "👀", "✨"];
 
 function ContextMenu({
@@ -2080,8 +1937,7 @@ function ContextMenu({
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
-      // `Node` is shadowed by @xyflow's Node type in this file —
-      // use globalThis.Node for the DOM check.
+      // `Node` is shadowed by @xyflow's Node type — use globalThis.Node for the DOM check.
       if (!ref.current?.contains(e.target as globalThis.Node)) onClose();
     };
     const onKey = (e: KeyboardEvent) => {
@@ -2167,10 +2023,7 @@ function ContextMenu({
   );
 }
 
-// F10-W3: pure-UI countdown timer pinned in the toolbar. State lives
-// only in this client (not synced) — it's a workshop nudge, not data.
-// Click the clock to expand a popover with start/pause/reset and a
-// preset list (1/3/5/10 min). Default 5 min.
+// State lives only in this client (not synced) — it's a workshop nudge, not data.
 function TimerWidget() {
   const [open, setOpen] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(5 * 60);
@@ -2183,8 +2036,6 @@ function TimerWidget() {
       setSecondsLeft((s) => {
         if (s <= 1) {
           setRunning(false);
-          // Tiny audio cue when the timer hits 0 — workshops appreciate the
-          // beep. Web Audio API is enough; no asset needed.
           try {
             const ctx = new (window.AudioContext ||
               (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext!)();
@@ -2286,9 +2137,6 @@ function TimerWidget() {
   );
 }
 
-// F10-W2: remote cursors. Renders one labeled dot per peer at their
-// world position; uses the React Flow viewport transform so cursors
-// match the same canvas as the local user.
 function RemoteCursorsLayer({
   cursors,
 }: {
@@ -2326,7 +2174,6 @@ function RemoteCursorsLayer({
               transformOrigin: "0 0",
             }}
           >
-            {/* Mouse pointer SVG */}
             <svg
               width="18"
               height="18"
@@ -2384,10 +2231,7 @@ function CtxItem({
   );
 }
 
-// Custom zoom controls — natywne <Controls /> z react-flow
-// nie ma dark-mode parity (białe na jasnym tle, niewidoczne w dark
-// mode). Tu używamy bg-card/border-border/text-muted-foreground które
-// poprawnie się przełączają przez --css vars.
+// Native <Controls/> from react-flow has no dark-mode parity; we use semantic vars instead.
 function CanvasZoomControls() {
   const rf = useReactFlow();
   return (
@@ -2430,9 +2274,6 @@ function ControlButton({
   );
 }
 
-// C: text color picker popover. Trigger pokazuje literkę 'A' z
-// underline'm w kolorze aktualnie ustawionego tekstu (albo 'auto'). Klik
-// otwiera panel z paletą + 'Auto' (= reset do contrast od fillu) + black/white.
 function TextColorPicker({
   selectedNodes,
   onPick,
@@ -2459,8 +2300,7 @@ function TextColorPicker({
     };
   }, [open]);
 
-  // Show currently selected text color (jeśli wszystkie selected nodes
-  // mają tę samą wartość — inaczej fallback).
+  // Returns null when selection has mixed text colors.
   const currentColor = (() => {
     if (selectedNodes.length === 0) return null;
     const first = selectedNodes[0]?.data.textColorHex ?? null;
@@ -2471,7 +2311,6 @@ function TextColorPicker({
   })();
 
   const disabled = selectedNodes.length === 0;
-  // Popover palette = brand vibrant 8 + neutral black/white + auto.
   const TEXT_PALETTE = [
     ...PALETTE,
     "#000000",
@@ -2540,13 +2379,6 @@ function TextColorPicker({
   );
 }
 
-// Rozmiar fontu w shape labelu. Klient zażyczył sobie żeby
-// móc zmienić wielkość tekstu w kształcie (wcześniej tylko height
-// shape'a sterował fontem przez auto-calc). 5 presetów + reset (Auto).
-// B: Word-style font-size picker — number input (typing dowolnej
-// wartości 6-200px) + stepper − / + (krok 1px) + preset chips (Word ma
-// 9/10/11/12/14/16/18/20/24/28/36/48/72) + Auto reset. Klient: "cos jak
-// masz w wordzie".
 function FontSizePicker({
   selectedNodes,
   onPick,
@@ -2557,8 +2389,7 @@ function FontSizePicker({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Aktualny rozmiar do wyświetlenia w polu input. null = mixed selection
-  // albo Auto (klient nigdy nie ustawił override'a).
+  // null = mixed selection or Auto (no override set).
   const currentSize = (() => {
     if (selectedNodes.length === 0) return null;
     const first = (selectedNodes[0]?.data.fontSize as number | null | undefined) ?? null;
@@ -2568,15 +2399,11 @@ function FontSizePicker({
     return allSame ? first : null;
   })();
 
-  // Local input draft — separuje typowanie od commit'u (Enter / blur).
-  // Inicjalizujemy "" gdy null żeby placeholder "Auto" pokazał intent.
-  // Domyślny preview gdy nic nie wybrano: 15 (baseline shape labela).
+  // Local draft separates typing from commit (Enter / blur).
   const [draft, setDraft] = useState<string>(() =>
     currentSize !== null ? String(currentSize) : "",
   );
 
-  // Re-sync draft gdy selection albo currentSize się zmienia (np. user
-  // wybrał inny node, kliknął preset, zrobił Auto).
   useEffect(() => {
     setDraft(currentSize !== null ? String(currentSize) : "");
   }, [currentSize, selectedNodes.length]);
@@ -2598,13 +2425,9 @@ function FontSizePicker({
   }, [open]);
 
   const disabled = selectedNodes.length === 0;
-  // Hard clamp na sensowny zakres — pod tym żadne shape nie ma sensu
-  // jako "tekst", nad tym renderer się zacznie crashować na grid layoucie.
   const MIN_PX = 6;
   const MAX_PX = 200;
 
-  // Word ma w dropdownie 9/10/11/12/14/16/18/20/24/28/36/48/72. Trzymamy
-  // 6 chipów zoptymalizowanych na 1-rzędowy popover.
   const PRESETS = [12, 14, 18, 24, 36, 48];
 
   const baselineForStepper = currentSize ?? 15;
@@ -2612,7 +2435,6 @@ function FontSizePicker({
   const commit = (raw: string) => {
     const n = parseInt(raw, 10);
     if (Number.isNaN(n)) {
-      // Pusty input → Auto reset.
       onPick(null);
       return;
     }
@@ -2645,8 +2467,6 @@ function FontSizePicker({
       </button>
       {open && !disabled && (
         <div className="absolute left-0 top-[calc(100%+6px)] z-[60] flex w-[220px] flex-col gap-2 rounded-lg border border-border bg-popover p-2 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)]">
-          {/* Number input + stepper. Word-style: typuj liczbę albo
-              użyj − / + (krok 1px). Enter / blur commit'uje. */}
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -2687,7 +2507,6 @@ function FontSizePicker({
               +
             </button>
           </div>
-          {/* Quick-pick chips (Word presets). */}
           <div className="flex flex-wrap gap-1">
             {PRESETS.map((p) => (
               <button

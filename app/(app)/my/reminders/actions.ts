@@ -33,8 +33,7 @@ export async function createReminderAction(formData: FormData) {
   const due = new Date(parsed.data.dueAt);
   if (Number.isNaN(due.getTime())) return;
 
-  // Recipient must be someone we share at least one workspace with —
-  // prevents users from assigning random strangers.
+  // Recipient must share at least one workspace with us — prevents reminders to strangers.
   if (parsed.data.recipientId !== userId) {
     const shared = await db.workspaceMembership.findFirst({
       where: {
@@ -59,10 +58,8 @@ export async function createReminderAction(formData: FormData) {
     },
     select: { id: true, recipientId: true, dueAt: true },
   });
-  // Jeśli reminder ma due-at <= now (np. user kliknął 'za 5
-  // minut' i refreshuje 6 minut później; albo cross-device — recipient
-  // ma otwartą inną kartę), broadcastuj user-realtime żeby <ReminderPopups>
-  // refetchowało od razu zamiast czekać 20s na poll.
+  // If due-at already passed, broadcast immediately so ReminderPopups
+  // refetches without waiting for its 20s poll.
   if (reminder.dueAt.getTime() <= Date.now()) {
     await broadcastUserChange(reminder.recipientId, {
       kind: "reminder.due",
@@ -74,8 +71,7 @@ export async function createReminderAction(formData: FormData) {
 
 const dismissSchema = z.object({ id: z.string().min(1) });
 
-// Recipient-only action — hides the popup for them by stamping
-// dismissedAt. Does NOT delete the row (creator still sees it).
+// Recipient-only: stamps dismissedAt so the popup hides for them; row stays for creator.
 export async function dismissReminderAction(formData: FormData) {
   const userId = await currentUserId();
   if (!userId) return;
@@ -88,7 +84,7 @@ export async function dismissReminderAction(formData: FormData) {
   revalidatePath("/my/reminders");
 }
 
-// Creator-only permanent delete (klient: "tylko twórca może usunąć").
+// Creator-only permanent delete.
 export async function deleteReminderAction(formData: FormData) {
   const userId = await currentUserId();
   if (!userId) return;
@@ -100,8 +96,7 @@ export async function deleteReminderAction(formData: FormData) {
   revalidatePath("/my/reminders");
 }
 
-// Klient zażądał edycji istniejących przypomnień. Tylko
-// twórca może edytować — recipient ma już dismiss/snooze.
+// Creator-only edit; recipient has dismiss/snooze.
 const updateReminderSchema = z.object({
   id: z.string().min(1),
   title: z.string().trim().min(1).max(200),
@@ -126,8 +121,7 @@ export async function updateReminderAction(formData: FormData) {
   const due = new Date(parsed.data.dueAt);
   if (Number.isNaN(due.getTime())) return;
 
-  // Same membership guard as create — prevents creator from re-routing
-  // to a stranger.
+  // Same membership guard as create — prevents re-routing to a stranger.
   if (parsed.data.recipientId !== userId) {
     const shared = await db.workspaceMembership.findFirst({
       where: {
@@ -149,7 +143,7 @@ export async function updateReminderAction(formData: FormData) {
       body: parsed.data.body || null,
       dueAt: due,
       recipientId: parsed.data.recipientId,
-      // Reset dismissedAt so a re-armed reminder pops up again.
+      // Clear dismissedAt so a re-armed reminder pops up again.
       dismissedAt: null,
     },
   });

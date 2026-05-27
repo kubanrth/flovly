@@ -6,8 +6,7 @@ import { db } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/admin-guard";
 import { writeAdminAudit } from "@/lib/admin-audit";
 
-// Bcrypt cost 12 — zgodne z resztą apki (invite signup, password
-// reset). Cost niżej = szybciej dla atakującego brute-force.
+// Bcrypt cost 12 — matches invite signup and password reset. Lower cost = faster brute-force.
 const BCRYPT_COST = 12;
 
 // ── Users ─────────────────────────────────────────────────────────
@@ -88,9 +87,7 @@ export async function softDeleteUserAction(formData: FormData) {
   revalidatePath("/admin/actions");
 }
 
-// Utworz konto user'a bezposrednio z UI (bez invite flow).
-// Dla super-adminow ktorzy musza dodac kogos szybko, np. testowe konto
-// dla klienta. User tworzony jest aktywny, isSuperAdmin opcjonalne.
+// Create user directly from UI, bypassing invite flow. User is active immediately.
 export async function createUserAction(formData: FormData): Promise<
   | { ok: true; userId: string }
   | { ok: false; error: string }
@@ -101,7 +98,6 @@ export async function createUserAction(formData: FormData): Promise<
   const password = String(formData.get("password") ?? "");
   const isSuperAdmin = formData.get("isSuperAdmin") === "true";
 
-  // Walidacja
   if (!email || !email.includes("@") || email.length < 5)
     return { ok: false, error: "Niepoprawny email." };
   if (!name || name.length < 2)
@@ -117,8 +113,7 @@ export async function createUserAction(formData: FormData): Promise<
 
   const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
 
-  // Jeśli istnieje soft-deleted user z tym emailem — przywracamy
-  // (zamiast unique constraint conflict).
+  // Restore soft-deleted user with this email instead of hitting unique constraint.
   let userId: string;
   if (existing?.deletedAt) {
     const restored = await db.user.update({
@@ -163,9 +158,8 @@ export async function createUserAction(formData: FormData): Promise<
   return { ok: true, userId };
 }
 
-// Reset hasla istniejacego user'a (bez wysylki maila/invite).
-// Super admin podaje nowe haslo; user dostaje je inną drogą (Slack/SMS).
-// Soft-deleted users — odmawiamy resetu.
+// Super admin sets a new password directly; user receives it out-of-band (Slack/SMS).
+// Soft-deleted users are rejected — restore first.
 export async function resetUserPasswordAction(formData: FormData): Promise<
   | { ok: true }
   | { ok: false; error: string }
@@ -195,13 +189,12 @@ export async function resetUserPasswordAction(formData: FormData): Promise<
       where: { id },
       data: {
         passwordHash,
-        // Reset 2FA — jeśli user zapomniał hasła, prawdopodobnie też
-        // utracił TOTP authenticator. Super admin reset = pełny reset.
+        // Forgotten password usually means lost TOTP authenticator too — admin reset is a full reset.
         totpSecret: null,
         totpEnabledAt: null,
       },
     }),
-    // Wyloguj wszystkie aktywne sesje — nowe hasło = nowe sesje only.
+    // Kill active sessions so the new password takes effect everywhere.
     db.session.deleteMany({ where: { userId: id } }),
   ]);
 

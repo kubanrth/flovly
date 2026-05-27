@@ -25,10 +25,7 @@ export default async function MembersPage({
   });
   if (!workspace) notFound();
 
-  // Load all boards (admin sees all; non-admin still gets the
-  // tab but limited to boards they can manage — currently none unless
-  // they're workspace ADMIN). For simplicity we hide the tab entirely
-  // for non-admins below.
+  // Tab visibility for non-admins is hidden below; we still load boards here.
   const [memberships, invitations, boards] = await Promise.all([
     db.workspaceMembership.findMany({
       where: { workspaceId },
@@ -62,14 +59,13 @@ export default async function MembersPage({
   const activeTab: "workspace" | "boards" =
     tab === "boards" && canManageBoardMembers ? "boards" : "workspace";
 
-  // Resolve selected board for the boards tab (default = first board).
+  // Default selected board = first one in the list.
   const selectedBoard =
     activeTab === "boards"
       ? boards.find((b) => b.id === selectedBoardId) ?? boards[0] ?? null
       : null;
 
-  // Per-board membership + pending board invites for the
-  // selected board. Cheap query — only runs when boards tab is open.
+  // Per-board membership; only runs when boards tab is open.
   const boardMembers = selectedBoard
     ? await db.boardMembership.findMany({
         where: { boardId: selectedBoard.id },

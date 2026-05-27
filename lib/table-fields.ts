@@ -1,7 +1,6 @@
-// F10-A: Airtable-style field type system for the Tabela view.
-// All cell values are stored as text in TaskCustomValue.valueText.
-// Per-type encoding is documented next to each FieldType below; the
-// helpers at the bottom provide canonical encode/decode/parse pairs.
+// Airtable-style field type system for the Tabela view.
+// All cell values stored as text in TaskCustomValue.valueText.
+// Per-type encoding helpers at the bottom (encode/decode/parse).
 
 import {
   AlignLeft,
@@ -66,11 +65,9 @@ export const COMPUTED_FIELD_TYPES = new Set<FieldType>([
 ]);
 
 export interface SelectOption {
-  // User-visible label, also acts as stable key. Renaming an option
-  // updates every cell that referenced it (we update the option, the
-  // cells already store the same string).
+  // User-visible label AND stable key — renaming would orphan cells, so
+  // we update the option in place while cells keep referencing the string.
   value: string;
-  // Hex color e.g. "#10B981". Picked from a fixed palette in the UI.
   color: string;
 }
 
@@ -198,14 +195,9 @@ export const FIELD_TYPE_META: Record<FieldType, FieldTypeMeta> = {
   },
 };
 
-// Default option palette — same hexes used elsewhere (tags, statuses)
-// so the picker feels consistent across the app.
-// Paleta przeniesiona do `lib/colors.ts` (BRAND_PALETTE) —
-// re-eksport pod tą samą nazwą.
 export { SELECT_PALETTE } from "@/lib/colors";
 
-// Parse a stored cell value (always a string) into typed JS data.
-// Always tolerant — callers handle null/empty as "blank".
+// Decode stored string → typed JS. Tolerant; callers treat null as blank.
 export function decodeCellValue(
   type: FieldType,
   raw: string | null | undefined,
@@ -245,7 +237,7 @@ export function decodeCellValue(
   }
 }
 
-// Inverse — JS value → string for storage. Empty string = clear cell.
+// Encode JS value → string for storage. Empty string = clear cell.
 export function encodeCellValue(type: FieldType, value: unknown): string {
   if (value === null || value === undefined) return "";
   switch (type) {
@@ -264,8 +256,7 @@ export function encodeCellValue(type: FieldType, value: unknown): string {
   }
 }
 
-// Format a typed value for display. Used by read-only cells, exports,
-// and grouping headers.
+// Format typed value for display (read-only cells, exports, group headers).
 export function formatCellValue(
   type: FieldType,
   value: unknown,
@@ -316,7 +307,6 @@ export function formatCellValue(
   }
 }
 
-// Parse the raw `options` JSON column into a typed object.
 export function parseFieldOptions(raw: unknown): FieldOptions {
   if (!raw || typeof raw !== "object") return {};
   return raw as FieldOptions;

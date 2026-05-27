@@ -11,8 +11,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const session = await auth();
   if (!session?.user) redirect("/secure-access-portal");
 
-  // Read fresh User to ensure sidebar avatar/name reflect recent profile changes
-  // (JWT session is cached; DB is source of truth).
+  // Fresh user read — JWT session is cached, DB is source of truth for avatar/name.
   const [user, memberships, unreadNotifs, openSupportTickets, dueReminders] = await Promise.all([
     db.user.findUnique({
       where: { id: session.user.id },
@@ -23,11 +22,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       include: {
         workspace: {
           include: {
-            // Filter boards user can actually see. Workspace
-            // ADMIN sees all (handled below — fetch unrestricted then
-            // gate per role). For MEMBER/VIEWER: only PUBLIC boards or
-            // ones they have explicit BoardMembership on.
-            // OrderBy: order (drag-drop reorder), createdAt fallback.
+            // Fetch all boards unrestricted; filter per role below
+            // (ADMIN sees all, MEMBER/VIEWER sees PUBLIC + explicit memberships).
             boards: {
               where: { deletedAt: null },
               orderBy: [{ order: "asc" }, { createdAt: "asc" }],
@@ -44,8 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           },
         },
       },
-      // OrderBy workspace.order zamiast joinedAt — sidebar
-      // pokazuje workspace'y w kolejności ustawionej przez user'a.
+      // Order by workspace.order (user-set) instead of joinedAt.
       orderBy: [
         { workspace: { order: "asc" } },
         { workspace: { createdAt: "asc" } },
@@ -54,10 +49,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     db.notification.count({
       where: { userId: session.user.id, readAt: null },
     }),
-    // Licznik aktywnych zgłoszeń supportu per workspace, do
-    // badge'a w sidebar'ze. OPEN+IN_PROGRESS — RESOLVED/CLOSED nie są
-    // 'do załatwienia'. Group-by jest jednym zapytaniem niezależnie od
-    // liczby workspace'ów (vs N+1 count per ws).
+    // Active support ticket counts (OPEN + IN_PROGRESS) per workspace for
+    // the sidebar badge. Single groupBy avoids N+1 over workspaces.
     db.supportTicket.groupBy({
       by: ["workspaceId"],
       where: {
@@ -69,8 +62,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       },
       _count: true,
     }),
-    // Active reminder popups — due + not dismissed. Capped so a runaway
-    // creator can't DoS the recipient's top-right corner.
+    // Due, undismissed reminder popups; capped to prevent a runaway creator
+    // from DoSing the recipient's top-right corner.
     db.personalReminder.findMany({
       where: {
         recipientId: session.user.id,
@@ -94,8 +87,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   );
 
   const workspaces: SidebarWorkspace[] = memberships.map((m) => {
-    // Per-board visibility filter. ADMINs bypass; everyone else
-    // sees PUBLIC boards + boards where they have an explicit membership.
+    // ADMINs see all boards; others see PUBLIC + explicit memberships.
     const visibleBoards = m.workspace.boards.filter((b) => {
       if (m.role === "ADMIN") return true;
       if (b.visibility === "PUBLIC") return true;
@@ -107,7 +99,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       slug: m.workspace.slug,
       role: m.role,
       boards: visibleBoards.map((b) => ({ id: b.id, name: b.name })),
-      // Map lowercase ViewName → uppercase ViewType expected by sidebar.
+      // Sidebar expects uppercase ViewType.
       enabledViews: parseEnabledViews(m.workspace.enabledViews).map((v) =>
         v.toUpperCase(),
       ) as SidebarWorkspace["enabledViews"],
@@ -116,10 +108,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   });
 
   return (
-    // Subtle radial gradient za całym (app) layoutem — purple
-    // top-left + soft pink bottom-right, plus base bg. Daje sidebar
-    // glass'owi coś do "blur'owania", inaczej szkło wygląda płasko
-    // na flat-color background'zie. Pure CSS, niezależne od theme'a.
+    // Subtle radial gradient gives the sidebar glass something to blur over
+    // — flat color makes the glass look flat. Theme-independent.
     <div
       style={{
         background:
@@ -138,10 +128,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         workspaces={workspaces}
         unreadNotificationCount={unreadNotifs}
       />
-      {/* F12-K57: max-md:pt-14 (56px) clear'uje fixed hamburger (top-3 h-11
-          = y:12-56) na mobile — bez tego h1 nagłówków na każdej stronie
-          chowało się pod przyciskiem. Desktop sidebar inline'owy nie używa
-          hamburger'a, więc md+ bez paddingu. */}
+      {/* max-md:pt-14 clears the fixed hamburger (top-3 h-11) on mobile so
+          page h1s aren't hidden behind it. Desktop sidebar is inline so no padding. */}
       <div className="flex min-w-0 flex-1 flex-col max-md:pt-14">{children}</div>
 
       <ReminderPopups
@@ -154,9 +142,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           isSelfAuthored: r.creator.id === session.user.id,
         }))}
       />
-      {/* F12-K35: globalny toast dla nowych notyfikacji (mention/assign/
-          poll/support). Niezależny od `<ReminderPopups>` — różne źródła
-          danych (Notification vs PersonalReminder), różne UX. */}
+      {/* Global notification toaster (mention/assign/poll/support). Independent
+          from ReminderPopups — different data source (Notification vs PersonalReminder). */}
       <NotificationToaster userId={user.id} />
     </div>
   );

@@ -1,12 +1,5 @@
 "use client";
 
-// F10-B: filter / sort / group toolbar for the Tabela view.
-//
-// Renders chip-style filters (one chip per active filter, click to
-// edit, X to remove), a "+ filtr" dropdown to add, plus single-select
-// dropdowns for sort and group. State is owned by the parent (BoardTable)
-// so the same array drives both the toolbar and the row pipeline.
-
 import { startTransition, useEffect, useRef, useState } from "react";
 import {
   ArrowDownAZ,
@@ -37,10 +30,7 @@ export interface ToolbarColumnRef {
   statusOptions?: { id: string; label: string; color: string }[];
 }
 
-// Opcjonalne presety grupowania (Data dodania / Data startu /
-// Data zakończenia / Tagi A→Z) renderowane jako osobna sekcja nad listą
-// kolumn w GroupPicker'ze. Empty / undefined = brak sekcji (wstecz-
-// kompatybilne z wszelkimi miejscami które kiedyś używały toolbar'a).
+// Empty / undefined GroupPreset = no preset section (backwards compat).
 export interface GroupPreset {
   id: string;
   label: string;

@@ -1,6 +1,4 @@
-// Serve obrazy z whiteboard'u przez signed redirect. Pattern
-// taki sam jak /api/brief-image — handler weryfikuje workspace membership
-// i 302-redirectuje na świeży signed download URL z Supabase Storage.
+// Whiteboard images via signed redirect — see /api/brief-image.
 
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";

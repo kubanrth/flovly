@@ -1,13 +1,10 @@
 "use server";
 
-// Per-task time tracking — start / pause / complete. Klient:
-// 'do każdego zadania muszę dodać start/stop'. Trzy stany:
-//   - Idle:      timerStartedAt=null, timerCompletedAt=null
-//   - Running:   timerStartedAt set
-//   - Completed: timerCompletedAt set (lock — Reset to reopen, ale
-//                tego nie zrobiłem na MVP — klient tego nie prosił)
-//
-// Permission: task.update — analogicznie do reszty mutacji w t/actions.ts.
+// Per-task time tracking — start / pause / complete. Three states:
+//   Idle       — timerStartedAt=null, timerCompletedAt=null
+//   Running    — timerStartedAt set
+//   Completed  — timerCompletedAt set (locked; no Reset path yet)
+// Permission: task.update.
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -31,8 +28,7 @@ async function loadTaskForTimer(id: string) {
   });
 }
 
-// Idempotent — gdy timer już chodzi, nic nie robi (drugie
-// kliknięcie 'Rozpocznij' nie podwoi czasu).
+// Idempotent: a second 'Start' click never doubles tracked time.
 export async function startTaskTimerAction(formData: FormData) {
   const parsed = timerSchema.safeParse({ id: formData.get("id") });
   if (!parsed.success) return;
@@ -41,7 +37,6 @@ export async function startTaskTimerAction(formData: FormData) {
   if (!task) return;
   const ctx = await requireWorkspaceAction(task.workspaceId, "task.update");
 
-  // Już zakończone albo już chodzi → noop.
   if (task.timerCompletedAt) return;
   if (task.timerStartedAt) return;
 
@@ -63,9 +58,8 @@ export async function startTaskTimerAction(formData: FormData) {
   revalidatePath(`/w/${task.workspaceId}/t/${task.id}`);
 }
 
-// Pause = dodaj elapsed do akumulatora + wyzeruj timerStartedAt.
-// Po pauzie ten sam Task wraca do stanu Idle z accumulated > 0; user
-// może 'Rozpocznij' znowu i akumulator dalej rośnie.
+// Pause adds elapsed to the accumulator and clears timerStartedAt;
+// task returns to Idle with accumulated > 0 and can be resumed.
 export async function pauseTaskTimerAction(formData: FormData) {
   const parsed = timerSchema.safeParse({ id: formData.get("id") });
   if (!parsed.success) return;
@@ -74,7 +68,6 @@ export async function pauseTaskTimerAction(formData: FormData) {
   if (!task) return;
   const ctx = await requireWorkspaceAction(task.workspaceId, "task.update");
 
-  // Nie chodzi → noop.
   if (!task.timerStartedAt) return;
   if (task.timerCompletedAt) return;
 
@@ -103,8 +96,7 @@ export async function pauseTaskTimerAction(formData: FormData) {
   revalidatePath(`/w/${task.workspaceId}/t/${task.id}`);
 }
 
-// Complete = jeśli running → zliczamy elapsed do akumulatora,
-// potem locked. Po Zakończ user nie ma już przycisków (timer zamrożony).
+// Complete flushes any running session to the accumulator and locks the timer.
 export async function completeTaskTimerAction(formData: FormData) {
   const parsed = timerSchema.safeParse({ id: formData.get("id") });
   if (!parsed.success) return;
@@ -113,7 +105,6 @@ export async function completeTaskTimerAction(formData: FormData) {
   if (!task) return;
   const ctx = await requireWorkspaceAction(task.workspaceId, "task.update");
 
-  // Już zakończone → noop.
   if (task.timerCompletedAt) return;
 
   const now = new Date();

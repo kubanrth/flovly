@@ -7,7 +7,6 @@ export type TemplateKey =
   | "userflow"
   | "wireframe"
   | "retro"
-  // F10-W3: workshop facilitation templates inspired by Mural.
   | "eisenhower"
   | "lean-canvas"
   | "fishbone"
@@ -15,8 +14,7 @@ export type TemplateKey =
   | "kanban-swimlane"
   | "mvp-launch";
 
-// Mutable scratchpad used by the editor to pair up node↔edge indices
-// when committing a template. `__assignedId` is set during apply.
+// `__assignedId` is set during apply; used by the editor to pair node↔edge indices.
 export interface TemplateNodeSpec {
   shape: ShapeKind;
   label: string;
@@ -43,7 +41,6 @@ export interface TemplateDef {
   build: () => { nodes: TemplateNodeSpec[]; edges: TemplateEdgeSpec[] };
 }
 
-// Small helper — makes the layout tables below readable.
 const rect = (label: string, x: number, y: number): TemplateNodeSpec => ({
   shape: "RECTANGLE",
   label,
@@ -96,7 +93,6 @@ export const TEMPLATES: TemplateDef[] = [
     label: "Mindmap",
     glyph: "◉",
     build: () => {
-      // Root circle + 4 branches.
       const nodes: TemplateNodeSpec[] = [
         circle("Temat", 400, 260),
         rect("Obszar A", 100, 120),
@@ -163,7 +159,6 @@ export const TEMPLATES: TemplateDef[] = [
     label: "Wireframe",
     glyph: "▣",
     build: () => {
-      // Stacked "page" regions — treat as annotated frames.
       const nodes: TemplateNodeSpec[] = [
         frame("Header", 40, 40, 720, 90),
         frame("Hero", 40, 150, 720, 220),
@@ -195,7 +190,6 @@ export const TEMPLATES: TemplateDef[] = [
     label: "Macierz Eisenhowera",
     glyph: "▦",
     build: () => {
-      // 2×2 priority matrix: urgent×important.
       const nodes: TemplateNodeSpec[] = [
         frame("Pilne · Ważne (zrób)", 40, 40, 360, 320),
         frame("Niepilne · Ważne (planuj)", 420, 40, 360, 320),
@@ -210,7 +204,7 @@ export const TEMPLATES: TemplateDef[] = [
     label: "Lean Canvas",
     glyph: "▥",
     build: () => {
-      // Ash Maurya's 9-block. Layout matches the standard sheet.
+      // Ash Maurya's 9-block layout.
       const nodes: TemplateNodeSpec[] = [
         frame("1. Problem", 40, 40, 200, 240),
         frame("2. Segmenty klientów", 880, 40, 200, 240),
@@ -230,7 +224,6 @@ export const TEMPLATES: TemplateDef[] = [
     label: "Diagram Ishikawy",
     glyph: "🠷",
     build: () => {
-      // Spine (effect on right) + 4 ribs (causes).
       const nodes: TemplateNodeSpec[] = [
         rect("Problem / Skutek", 760, 240),
         rect("Ludzie", 60, 60),
@@ -252,7 +245,6 @@ export const TEMPLATES: TemplateDef[] = [
     label: "Customer Journey",
     glyph: "↦",
     build: () => {
-      // 5 stages × 3 rows (action / thoughts / emotion). Sticky cells.
       const stages = ["Świadomość", "Rozważanie", "Decyzja", "Użycie", "Polecanie"];
       const colW = 200;
       const stageY = 40;
@@ -288,7 +280,6 @@ export const TEMPLATES: TemplateDef[] = [
     label: "MVP Launch",
     glyph: "▶",
     build: () => {
-      // Linear pipeline: idea → validate → MVP → launch → measure.
       const nodes: TemplateNodeSpec[] = [
         circle("Pomysł", 40, 200),
         rect("Walidacja", 220, 200),
@@ -310,10 +301,7 @@ export const TEMPLATES: TemplateDef[] = [
   },
 ];
 
-// Apply one of the preset templates by invoking `commit` with the node +
-// edge specs. The caller is expected to assign real ids, commit to Y.Doc
-// and update React Flow state in a single transaction — keeping that
-// logic in the editor rather than here because it owns the Y refs.
+// Caller assigns real ids, commits to Y.Doc, and updates React Flow in a single transaction.
 export function applyCanvasTemplate(
   key: TemplateKey,
   commit: (nodes: TemplateNodeSpec[], edges: TemplateEdgeSpec[]) => void,

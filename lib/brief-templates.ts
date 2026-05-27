@@ -1,12 +1,5 @@
-// 11 templates dla "Creative Board" — wzorowane na ClickUp
-// Design Brief Templates page'u który klient wskazał jako referencję.
-// Każdy template to gotowy Tiptap doc (contentJson) + metadane do
-// renderowania w pickerze (emoji + opis + akcent kolorystyczny).
-//
-// Templates są semantycznie różne (Design / Marketing / Logo / Social /
-// Web / Pitch / Whiteboard / Ideation) żeby pokrywać typowe creative
-// requesty agencji. Tiptap JSON jest verbose — helpery h2/h3/p/ul/table
-// trzymają strukturę czytelnie.
+// Creative Board templates — Tiptap doc + picker metadata (emoji, opis,
+// akcent). Helpery h2/h3/p/ul/table trzymają verbose JSON czytelnie.
 
 type TT = Record<string, unknown>;
 
@@ -62,14 +55,10 @@ export interface BriefTemplate {
   id: string;
   name: string;
   emoji: string;
-  // Akcent koloru używany w UI pickera (header bar, glow). Hex.
   color: string;
   description: string;
-  // Tiptap JSON doc — startowa zawartość briefu po wybraniu template'a.
   doc: TT;
-  // headerColor (Brief.headerColor) sugerowany dla tego template'a.
   defaultHeaderColor: string;
-  // Domyślny emoji widoczny w nagłówku briefu (Brief.emoji).
   defaultEmoji: string;
 }
 

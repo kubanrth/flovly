@@ -7,10 +7,9 @@ import { BoardLinkKind } from "@/lib/generated/prisma/enums";
 import { requireWorkspaceAction } from "@/lib/workspace-guard";
 import { writeAudit } from "@/lib/audit";
 
-// Infer the link kind from URL hostname + path so the user never has to
-// tag it manually. Falls back to OTHER for non-Google URLs. Not exported
-// — Next.js 16 requires every export from a "use server" module to be
-// async, and this is a pure sync helper.
+// Infers BoardLinkKind from URL host/path so the user never tags manually.
+// Not exported: every export from a "use server" module must be async, and
+// this is a pure sync helper. Falls back to OTHER for unknown hosts.
 function detectLinkKind(url: string): BoardLinkKind {
   try {
     const u = new URL(url);
@@ -24,7 +23,7 @@ function detectLinkKind(url: string): BoardLinkKind {
     if (host.includes("sheets.google.com")) return BoardLinkKind.SHEETS;
     if (host.includes("slides.google.com")) return BoardLinkKind.SLIDES;
   } catch {
-    /* bad URL — fall through */
+    /* bad URL — fall through to OTHER */
   }
   return BoardLinkKind.OTHER;
 }
@@ -34,7 +33,7 @@ const createSchema = z.object({
   boardId: z.string().min(1),
   url: z.string().url().max(2048),
   label: z.string().trim().max(120).optional(),
-  // Optional override — when missing we auto-detect.
+  // Optional override; otherwise we auto-detect.
   kind: z.nativeEnum(BoardLinkKind).optional(),
 });
 

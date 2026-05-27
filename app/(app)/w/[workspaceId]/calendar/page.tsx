@@ -2,10 +2,8 @@ import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { WorkspaceCalendar } from "@/components/workspace/workspace-calendar";
 
-// Workspace-level calendar — pokazuje WSZYSTKIE zadania
-// w workspace'ie + custom events. Każdy member widzi pełny kalendarz
-// projektu, nie tylko własne assignedTasks.
-
+// Workspace-wide calendar: every task + custom events visible to all members,
+// not only the viewer's assigned tasks.
 export default async function WorkspaceCalendarPage({
   params,
 }: {

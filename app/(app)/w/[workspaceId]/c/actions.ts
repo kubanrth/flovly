@@ -25,16 +25,13 @@ import {
   type SaveCanvasSnapshotInput,
 } from "@/lib/schemas/canvas";
 
-// F10-W2/W3: collapse the node's optional reactions + locked flags into
-// a JSON blob for ProcessNode.dataJson. Returns DbNull when nothing
-// non-default is set so we don't bloat rows with empty objects.
-// ImagePath dla shape="IMAGE" też tu się ląduje.
+// Collapses optional node metadata (reactions, locked, imagePath, textColorHex)
+// into ProcessNode.dataJson. Returns DbNull when nothing non-default is set.
 function nodeMeta(n: NodeSnapshotInput): Prisma.InputJsonValue | typeof Prisma.DbNull {
   const meta: Record<string, unknown> = {};
   if (n.reactions && Object.keys(n.reactions).length > 0) meta.reactions = n.reactions;
   if (n.locked) meta.locked = true;
   if (n.imagePath) meta.imagePath = n.imagePath;
-  // C: text color override w ProcessNode.dataJson.
   if (n.textColorHex) meta.textColorHex = n.textColorHex;
   if (Object.keys(meta).length === 0) return Prisma.DbNull;
   return meta as Prisma.InputJsonValue;
@@ -148,9 +145,9 @@ export type SaveSnapshotResult =
   | { ok: false; error: string };
 
 // Full-canvas snapshot save. Diff against existing rows so node identities
-// survive between saves — critical for ProcessNodeTaskLink (onDelete:
-// Cascade would nuke the links if we did a naive delete-all-and-recreate).
-// Edges are cheap to rewrite so we still do delete-all for them.
+// survive across saves — critical for ProcessNodeTaskLink (onDelete: Cascade
+// would nuke the links on a naive delete-and-recreate). Edges are rewritten
+// since they have no downstream FKs.
 export async function saveCanvasSnapshotAction(
   input: SaveCanvasSnapshotInput,
 ): Promise<SaveSnapshotResult> {
@@ -186,13 +183,12 @@ export async function saveCanvasSnapshotAction(
   const toDelete = [...existingNodeIds].filter((id) => !snapshotNodeIds.has(id));
 
   await db.$transaction([
-    // Edges first — cascades on node delete would hit them anyway.
+    // Drop edges first — node cascades would hit them anyway.
     db.processEdge.deleteMany({ where: { canvasId: canvas.id } }),
     // Prune nodes the client no longer has (cascades their task links).
     ...(toDelete.length > 0
       ? [db.processNode.deleteMany({ where: { canvasId: canvas.id, id: { in: toDelete } } })]
       : []),
-    // Insert brand-new nodes.
     ...(toCreate.length > 0
       ? [
           db.processNode.createMany({
@@ -212,7 +208,7 @@ export async function saveCanvasSnapshotAction(
           }),
         ]
       : []),
-    // Update existing nodes in place — preserves ProcessNodeTaskLink.
+    // In-place updates preserve ProcessNodeTaskLink.
     ...toUpdate.map((n) =>
       db.processNode.update({
         where: { id: n.id },
@@ -229,7 +225,6 @@ export async function saveCanvasSnapshotAction(
         },
       }),
     ),
-    // Recreate all edges — no downstream FKs so delete-then-insert is fine.
     ...(parsed.data.edges.length > 0
       ? [
           db.processEdge.createMany({
@@ -245,8 +240,7 @@ export async function saveCanvasSnapshotAction(
           }),
         ]
       : []),
-    // F10-W: strokes (pen-tool drawings). Same delete-and-recreate
-    // approach as edges — no FKs hanging off them.
+    // Pen-tool strokes: delete-and-recreate like edges (no downstream FKs).
     db.processStroke.deleteMany({ where: { canvasId: canvas.id } }),
     ...(parsed.data.strokes && parsed.data.strokes.length > 0
       ? [
@@ -283,13 +277,11 @@ export async function saveCanvasSnapshotAction(
     },
   });
 
-  // Revalidate rarely — the editor already has the fresh state client-side
-  // and server snapshots are read only on page-load.
+  // Cheap revalidate — editor holds fresh state client-side; server snapshot is page-load only.
   revalidatePath(`/w/${canvas.workspaceId}/c/${canvas.id}`);
   return { ok: true, nodeCount: parsed.data.nodes.length, edgeCount: parsed.data.edges.length };
 }
 
-// Used by the smoke test + future read-only viewers.
 export async function getCanvasSnapshotAction(id: string) {
   const canvas = await db.processCanvas.findUnique({
     where: { id },
@@ -304,11 +296,10 @@ export async function getCanvasSnapshotAction(id: string) {
   return { nodes, edges };
 }
 
-// Image upload do whiteboard. Pattern jak `requestBriefImageUploadAction`:
-// klient żąda signed URL → PUT pliku → osadza imagePath w node.data.imagePath →
-// rendering przez `/api/canvas-image/<path>` z signed-redirect (handler weryfikuje
-// workspace membership na każdy request, więc signed URL nigdy nie wycieka do JSON'a).
-
+// Whiteboard image upload. Client requests signed URL → PUTs file → embeds
+// imagePath in node.data.imagePath. Rendering goes through /api/canvas-image/<path>
+// with signed-redirect (handler re-verifies workspace membership per request),
+// so the signed URL never leaks to client JSON.
 const uploadImageSchema = z.object({
   canvasId: z.string().min(1),
   filename: z.string().trim().min(1).max(200),
@@ -370,14 +361,13 @@ export async function requestCanvasImageUploadAction(
   }
 }
 
-// Wywoływane TYLKO z `/api/canvas-image/[...path]/route.ts` — handler dostaje
-// session.user.id, my walidujemy że storageKey wskazuje workspace gdzie user
-// jest member'em.
+// Called ONLY from /api/canvas-image/[...path]/route.ts. Handler passes
+// session.user.id; we verify storageKey belongs to a workspace the user is in.
 export async function getCanvasImageDownloadUrl(
   storageKey: string,
   userId: string,
 ): Promise<string | null> {
-  // Storage key form: w/<wid>/canvas/<canvasId>/<rand-name>
+  // Expected storage key form: w/<wid>/canvas/<canvasId>/<rand-name>
   const match = storageKey.match(/^w\/([^/]+)\/canvas\//);
   if (!match) return null;
   const workspaceId = match[1];
@@ -388,8 +378,7 @@ export async function getCanvasImageDownloadUrl(
   });
   if (!member) return null;
 
-  // Sanity check — file musi istnieć w bucket'cie (storageObjectExists
-  // pattern, ale z Supabase listingu robotgo prosto).
+  // Verify file exists in bucket before issuing a signed download URL.
   try {
     const sb = supabaseAdmin();
     const { data } = await sb.storage

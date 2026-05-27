@@ -7,10 +7,8 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Prisma } from "@/lib/generated/prisma/client";
 
-// Private per-user Notes module (Apple-Notes parity). All
-// actions scope by session user — the module is intentionally
-// single-player.
-
+// Private per-user Notes (Apple-Notes parity). Intentionally single-player —
+// every action scopes by session user.
 async function currentUserId(): Promise<string | null> {
   const session = await auth();
   return session?.user?.id ?? null;
@@ -88,7 +86,6 @@ export async function createNoteAction(formData: FormData) {
   });
   if (!parsed.success) return;
 
-  // Validate folder ownership if provided.
   let folderId: string | null = null;
   if (parsed.data.folderId) {
     const f = await db.noteFolder.findFirst({
@@ -101,7 +98,6 @@ export async function createNoteAction(formData: FormData) {
   const note = await db.note.create({
     data: { userId, folderId, title: "Nowa notatka" },
   });
-  // Auto-open the new note — user starts typing immediately.
   redirect(`/my/notes?noteId=${note.id}`);
 }
 
@@ -109,8 +105,7 @@ const updateNoteSchema = z.object({
   id: z.string().min(1),
   title: z.string().max(200).optional(),
   content: z.string().max(50_000).optional(),
-  // Tiptap JSON for rich text. Plain `content` kept as
-  // search-friendly snippet (derived from JSON on save).
+  // Tiptap JSON for rich text. Plain `content` is a search-friendly snippet derived on save.
   contentJson: z.string().max(100_000).optional().or(z.literal("")),
 });
 
@@ -132,7 +127,7 @@ export async function updateNoteAction(formData: FormData) {
       const parsedDoc = JSON.parse(parsed.data.contentJson);
       if (parsedDoc && typeof parsedDoc === "object") {
         data.contentJson = parsedDoc as Prisma.InputJsonValue;
-        // Derive plain text snippet from doc — used for search + list preview.
+        // Plain text snippet for search + list preview.
         const plain = extractPlainText(parsedDoc).slice(0, 50_000);
         data.content = plain;
       }
@@ -148,8 +143,10 @@ export async function updateNoteAction(formData: FormData) {
   revalidatePath("/my/notes");
 }
 
-// Walk a Tiptap doc collecting all `text` leaves into a single string.
-// Newlines between block-level nodes so the snippet stays readable.
+/**
+ * Walks a Tiptap doc collecting `text` leaves into a single string.
+ * Inserts whitespace between block-level nodes so the snippet stays readable.
+ */
 function extractPlainText(node: unknown): string {
   if (!node || typeof node !== "object") return "";
   const n = node as { type?: string; text?: string; content?: unknown[] };
@@ -198,8 +195,8 @@ export async function moveNoteAction(formData: FormData) {
 
 const deleteNoteSchema = z.object({ id: z.string().min(1) });
 
-// Soft delete — moves note to Kosz. iOS Notes parity.
-// Permanent delete is via emptyTrashAction or restoreNoteAction → delete.
+// Soft-delete moves note to Trash (iOS Notes parity); permanent delete via
+// emptyTrashAction or permanentDeleteNoteAction.
 export async function deleteNoteAction(formData: FormData) {
   const userId = await currentUserId();
   if (!userId) return;

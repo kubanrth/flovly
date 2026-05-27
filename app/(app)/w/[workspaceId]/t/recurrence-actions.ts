@@ -1,8 +1,7 @@
 "use server";
 
-// Set / clear the recurrenceRule on a task. Stored as
-// JSON so we can extend (e.g. cron expression, end date) without a
-// migration. Cron `/api/cron/spawn-recurring` reads + spawns instances.
+// recurrenceRule is JSON so future fields (cron expression, end date) don't
+// require a migration. /api/cron/spawn-recurring reads it and spawns instances.
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";

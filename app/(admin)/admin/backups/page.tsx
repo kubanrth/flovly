@@ -2,15 +2,11 @@ import { db } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/admin-guard";
 import { BackupsClient } from "@/app/(admin)/admin/backups/backups-client";
 
-// Panel admina z listą wszystkich workspace'ów + ich dziennych
-// backupów. Fetch zwraca tylko index (WorkspaceBackup metadata) — pliki
-// JSON są w Supabase Storage, pobrane on-demand przez signed URL.
-
 export default async function AdminBackupsPage() {
   await requireSuperAdmin();
 
-  // 1 query: wszystkie workspace'y (włącznie z soft-deleted, jeśli mają
-  // backupy — chcemy widzieć historię nawet po usunięciu workspace'u).
+  // Include soft-deleted workspaces if they still have backups — history
+  // remains visible after a workspace is removed.
   const workspaces = await db.workspace.findMany({
     where: {
       OR: [

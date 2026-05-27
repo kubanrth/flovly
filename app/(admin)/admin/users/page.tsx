@@ -17,7 +17,6 @@ import { plPlural } from "@/lib/pluralize";
 import { CreateUserDialog } from "@/components/admin/create-user-dialog";
 import { ResetPasswordDialog } from "@/components/admin/reset-password-dialog";
 
-// Small helper so the columns don't balloon with Prisma types.
 async function loadUsers(query: string) {
   return db.user.findMany({
     where: query

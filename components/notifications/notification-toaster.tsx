@@ -59,11 +59,7 @@ export function NotificationToaster({ userId }: { userId: string }) {
 
   useUserRealtime(userId, onChange);
 
-  // Auto-dismiss timer — co 1s sprawdza czy któryś toast przekroczył TTL
-  // (i nie jest hovered).
-  // F12-K44 P5: pause interval gdy tab jest hidden — bez tego tika w tle
-  // i triggeruje re-renders mimo że user nie widzi UI. Pattern z
-  // reminder-popups.tsx (visibilitychange listener).
+  // Pause interval when tab is hidden — avoids background re-renders.
   useEffect(() => {
     if (items.length === 0) return;
     let id: ReturnType<typeof setInterval> | null = null;

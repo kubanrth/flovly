@@ -1,11 +1,6 @@
 // Shared template + sender dla in-app notification emails.
-// Klient: 'jak zostaniesz przypisany do jakiegoś zadania, support
-// powiadomienia cokolwiek komentarz to dostajesz maila'.
-//
-// Każdy notification type ma swój subject, eyebrow + CTA — całość
-// sklejana w spójny wizualnie email (paleta zgodna z resztą produktu,
-// gradient brand-purple jako CTA). Szablon pożyczony z patternu
-// `app/api/cron/send-reminders/route.ts`.
+// Każdy notification type podaje subject + eyebrow + CTA;
+// wizualnie spójny z send-reminders email.
 
 import "server-only";
 import { db } from "@/lib/db";
@@ -13,16 +8,14 @@ import { sendEmail } from "@/lib/email";
 import { escapeHtml as escape } from "@/lib/html-escape";
 
 interface NotifyEmailInput {
-  // Recipient — albo pełny obiekt (mamy z poprzedniego query), albo
-  // tylko userId (helper dofetchuje email).
+  // Recipient — pełny obiekt albo userId (helper dofetchuje email).
   to: { email: string; name: string | null } | { userId: string };
-  eyebrow: string; // np. "Nowe zgłoszenie", "Przypisanie", "@wzmianka"
-  title: string;  // bold heading
-  body: string;   // 1-3 zdania kontekstu
-  ctaLabel: string; // np. "Zobacz zadanie"
-  ctaPath: string;  // np. "/w/<wid>/t/<tid>" (pełny URL składamy z appBase)
+  eyebrow: string;
+  title: string;
+  body: string;
+  ctaLabel: string;
+  ctaPath: string;
   subject: string;
-  // Opcjonalny text "od kogo" (eg. 'od Anny K.') — pokazane w eyebrow.
   attribution?: string;
 }
 
@@ -82,5 +75,3 @@ function renderNotificationHtml(p: {
   </div>
 </body></html>`;
 }
-
-// F12-K43 L4: escape przeniesione do lib/html-escape.ts.

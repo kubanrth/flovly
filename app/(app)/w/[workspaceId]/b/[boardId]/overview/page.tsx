@@ -9,9 +9,8 @@ import { backgroundToCss, type BackgroundConfig } from "@/lib/schemas/background
 import { BoardOverviewEditor } from "@/components/view/board-overview-editor";
 import type { RichTextDoc } from "@/components/task/rich-text-editor";
 
-// 'Opis ogólny' — per-board wiki/notes page. Tiptap rich-text
-// edytor wewnątrz BoardShell, tak żeby wszystkie 5 zwykłych view'ów +
-// Opis pojawiały się w tym samym layoucie.
+// Per-board wiki/notes (Tiptap) rendered inside BoardShell so all views +
+// the Overview tab share one layout.
 export default async function BoardOverviewPage({
   params,
 }: {

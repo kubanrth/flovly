@@ -5,9 +5,8 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
-// All mutations scope by session.user.id — there's no sharing model for
-// TODO (it's intentionally private). If the user doesn't own the row,
-// the row isn't touched.
+// All TODO mutations scope by session.user.id — TODO is intentionally private,
+// no sharing model. Rows owned by other users are never touched.
 async function currentUserId(): Promise<string | null> {
   const session = await auth();
   return session?.user?.id ?? null;
@@ -19,9 +18,8 @@ const createFolderSchema = z.object({
   name: z.string().trim().min(1).max(80),
 });
 
-// Client feedback was that folders should only contain lists,
-// not nested sub-folders (MS To Do parity). We ignore any parentId
-// that might have been posted by a legacy form.
+// Folders contain lists only — no nested sub-folders (MS To Do parity).
+// Any parentId posted by a legacy form is ignored.
 export async function createTodoFolderAction(formData: FormData) {
   const userId = await currentUserId();
   if (!userId) return;
@@ -118,7 +116,7 @@ export async function createTodoItemAction(formData: FormData) {
   });
   if (!parsed.success) return;
 
-  // Ownership guard: the list must belong to current user.
+  // Ownership: list must belong to current user.
   const list = await db.todoList.findFirst({
     where: { id: parsed.data.listId, userId },
     select: { id: true },
@@ -172,9 +170,7 @@ export async function deleteTodoItemAction(formData: FormData) {
   revalidatePath("/my/todo");
 }
 
-// Bulk-delete completed items na liście. Optional listId
-// (gdy pusty/brak — usuwa wszystkie completed użytkownika, np. ze
-// smart view'u). Klient: 'usuń wszystkie wykonane zadania'.
+// Bulk-delete completed items. Empty listId clears across the user's items (smart view).
 const bulkDeleteCompletedSchema = z.object({
   listId: z.string().optional(),
 });
@@ -196,13 +192,9 @@ export async function bulkDeleteCompletedTodoItemsAction(formData: FormData) {
   revalidatePath("/my/todo");
 }
 
-// F8c — MS To Do parity ==================================================
-
 const itemIdSchema = z.object({ id: z.string().min(1) });
 
-// Toggle star / Ważne. `next` is the target state so the UI button can
-// pass "true"/"false" explicitly — prevents racy double-toggles when the
-// user clicks fast.
+// `next` is the explicit target state — prevents racy double-toggles on fast clicks.
 const toggleBoolSchema = z.object({
   id: z.string().min(1),
   next: z.enum(["true", "false"]),
@@ -223,9 +215,8 @@ export async function toggleTodoImportantAction(formData: FormData) {
   revalidatePath("/my/todo");
 }
 
-// Add to / remove from "Mój dzień". Setting timestamp = now lets us
-// expire membership at the next day boundary without a cron — the page
-// filters by `myDayAt >= todayStart`.
+// Setting myDayAt = now lets the page filter by `myDayAt >= todayStart` and
+// auto-expire at the next day boundary without a cron.
 export async function toggleTodoMyDayAction(formData: FormData) {
   const userId = await currentUserId();
   if (!userId) return;
@@ -287,7 +278,7 @@ export async function setTodoReminderAction(formData: FormData) {
   }
   await db.todoItem.updateMany({
     where: { id: parsed.data.id, userId },
-    // Clearing reminderSentAt when time changes so cron re-fires.
+    // Clear reminderSentAt so the cron re-fires after the time changes.
     data: { reminderAt: at, reminderSentAt: null },
   });
   revalidatePath("/my/todo");
@@ -349,7 +340,6 @@ export async function createTodoStepAction(formData: FormData) {
   });
   if (!parsed.success) return;
 
-  // Ownership: parent item must belong to current user.
   const owner = await db.todoItem.findFirst({
     where: { id: parsed.data.itemId, userId },
     select: { id: true },
@@ -385,7 +375,6 @@ export async function toggleTodoStepAction(formData: FormData) {
   });
   if (!parsed.success) return;
 
-  // Ownership via item → user.
   const step = await db.todoStep.findUnique({
     where: { id: parsed.data.id },
     include: { item: { select: { userId: true } } },
@@ -415,8 +404,6 @@ export async function deleteTodoStepAction(formData: FormData) {
   revalidatePath("/my/todo");
 }
 
-// Notes per subtask. Klient zażądał opisów dla każdego
-// pod-zadania, nie tylko parent task'a.
 const updateStepNotesSchema = z.object({
   id: z.string().min(1),
   notes: z.string().max(5000),

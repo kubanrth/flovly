@@ -1,12 +1,8 @@
-// Serializer dla dziennego workspace backup'u. Czysty server-side
-// moduł — używany przez:
-//   - cron `/api/cron/workspace-backup` (raz dziennie wszystkie workspace'y)
-//   - admin actions `triggerWorkspaceBackupAction` / `triggerAllBackupsAction`
-//
-// **Co backupujemy:** wszystkie workspace-scoped tabele (DB metadata).
-// **Czego NIE backupujemy:** fizyczne pliki w Supabase Storage (Attachment +
-// SupportTicketAttachment + brief images mają tylko metadane / storageKey),
-// user-scoped data (Notification / Todo* / Note* / PersonalReminder).
+// Serializer dla dziennego workspace backup'u. Server-only.
+// Backup = wszystkie workspace-scoped tabele (DB metadata).
+// NIE backupowane: pliki w Supabase Storage (Attachment metadata zostaje,
+// fizyczne bajty nie), user-scoped data (Notification, Todo*, Note*,
+// PersonalReminder).
 
 import { db } from "@/lib/db";
 
@@ -20,9 +16,8 @@ export interface WorkspaceBackupPayload {
   counts: Record<string, number>;
 }
 
-// Nie typujemy tu sztywno arraye z Prisma'y — payload to JSON dump, więc
-// `unknown[]` jest OK. Konsumenci (admin UI / restore w przyszłości) i tak
-// będą parsować.
+// `unknown[]` zamiast Prisma typów — payload to JSON dump i konsumenci
+// (admin UI / future restore) i tak parsują przy odczycie.
 export interface WorkspaceBackupData {
   workspace: unknown;
   memberships: unknown[];
@@ -68,8 +63,7 @@ export interface WorkspaceBackupData {
   wikiPage: unknown;
 }
 
-// `polishDayKey` zwraca YYYY-MM-DD w strefie Europe/Warsaw — używane jako
-// dayKey w WorkspaceBackup. 'sv-SE' format = ISO date bez czasu.
+// YYYY-MM-DD w strefie Europe/Warsaw (sv-SE locale daje ISO date bez czasu).
 export function polishDayKey(d: Date): string {
   return new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Europe/Warsaw",
@@ -79,10 +73,9 @@ export function polishDayKey(d: Date): string {
   }).format(d);
 }
 
-// Buduje payload dla jednego workspace'u. Wszystkie zapytania scope'owane
-// do tego workspace'u (bezpośrednio przez workspaceId, albo through
-// taskId/boardId/canvasId/briefId/ticketId IN [...]). Nie filtrujemy po
-// `deletedAt` — backup zachowuje też usunięte rekordy (audit-friendly).
+// Wszystkie zapytania scope'owane do workspaceId (bezpośrednio albo
+// przez parent FK IN [...]). NIE filtrujemy po deletedAt — backup
+// zachowuje usunięte rekordy (audit-friendly).
 export async function buildWorkspaceBackup(
   workspaceId: string,
 ): Promise<WorkspaceBackupPayload> {
@@ -91,10 +84,8 @@ export async function buildWorkspaceBackup(
     throw new Error(`Workspace ${workspaceId} not found.`);
   }
 
-  // Bulk fetch all workspace-scoped rows. Niektóre tabele scope'ujemy
-  // przez bezpośrednie workspaceId, inne przez parent FK (np. komentarze
-  // przez taskId, ProcessNode przez canvasId). Najpierw zbieramy listy
-  // ID-ków rodziców, potem leaf-table queries.
+  // Bulk fetch: workspace-scoped tables direct, child tables (komentarze,
+  // ProcessNode) via parent FK IN [...]. Parent ID list first, then leaves.
 
   const [
     memberships,

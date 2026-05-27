@@ -3,10 +3,7 @@ import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { SupportWorkspace } from "@/components/support/support-workspace";
 
-// Support module — internal helpdesk for the workspace.
-// Klient zażądał osobnej tabeli zgłoszeń, podobnej do Przypomnień.
-// Każdy member może zgłosić; admini (task.update perm) mogą obsłużyć.
-
+// Internal helpdesk per workspace. Any member can report; admins (task.update) handle.
 export default async function SupportPage({
   params,
 }: {

@@ -4,9 +4,8 @@ import { db } from "@/lib/db";
 import { RemindersWorkspace } from "@/components/my/reminders/reminders-workspace";
 import { AppShell } from "@/components/layout/app-shell";
 
-// "Dodaj przypomnienie" — list of reminders the user created OR
-// received. Separate from task reminders (which go through email cron).
-// These show up as in-app popups in the top-right corner.
+// Personal reminders sent OR received. Separate from task reminders (which
+// run through the email cron); these surface as in-app popups.
 export default async function MyRemindersPage() {
   const session = await auth();
   if (!session?.user) redirect("/secure-access-portal");
@@ -23,7 +22,7 @@ export default async function MyRemindersPage() {
       orderBy: { dueAt: "asc" },
       include: { creator: { select: { id: true, name: true, email: true } } },
     }),
-    // Only people who share a workspace with this user can be assignees.
+    // Assignee pool: only users who share a workspace with the current user.
     db.user.findMany({
       where: {
         OR: [

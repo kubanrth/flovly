@@ -1,6 +1,5 @@
-// Human-readable duration formatter dla "Zamknięte w X" w
-// support module. PL-friendly krótki format. Round down do najbliższej
-// jednostki czasu — NIE pokazuje "0 dni 2 godz", tylko "2 godz".
+// PL human-readable duration formatter. Round down do najbliższej
+// jednostki — NIE pokazuje "0 dni 2 godz", tylko "2 godz".
 
 const MIN = 60 * 1000;
 const HOUR = 60 * MIN;
@@ -17,7 +16,7 @@ function plMinutes(n: number): string {
 
 function plHours(n: number): string {
   if (n === 1) return "godz";
-  return "godz"; // używamy formy skróconej dla zwięzłości w tabeli
+  return "godz";
 }
 
 function plDays(n: number): string {

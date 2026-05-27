@@ -16,8 +16,7 @@ import { BoardLinksServer } from "@/components/board/board-links-server";
 import { parseEnabledViews, viewTypeToName } from "@/lib/board-views";
 import { backgroundToCss, type BackgroundConfig } from "@/lib/schemas/background";
 
-// Unified route for any custom BoardView. Picks the right renderer based
-// on BoardView.type. Data queries mirror the per-type default pages.
+// Unified route for any custom BoardView; renderer is picked by BoardView.type.
 export default async function CustomBoardViewPage({
   params,
 }: {
@@ -122,8 +121,6 @@ export default async function CustomBoardViewPage({
   );
 }
 
-// --- Type-specific renderers ---
-
 async function TableRenderer({
   workspaceId,
   boardId,
@@ -143,8 +140,7 @@ async function TableRenderer({
     orderBy: { joinedAt: "asc" },
   });
 
-  // Same workspace-wide tag list as the default /table route so
-  // the in-cell tag picker has options to choose from in custom views.
+  // Same workspace-wide tag list as the default /table route.
   const allTags = await db.tag.findMany({
     where: { OR: [{ workspaceId }, { workspaceId: null }] },
     orderBy: [{ workspaceId: { sort: "desc", nulls: "last" } }, { name: "asc" }],
@@ -165,7 +161,7 @@ async function TableRenderer({
           },
           tags: { include: { tag: true } },
           customValues: true,
-          // 'Załączniki' built-in column needs file metadata.
+          // Built-in 'Załączniki' column needs file metadata.
           attachments: {
             where: { deletedAt: null },
             select: {
@@ -459,9 +455,8 @@ async function WhiteboardRenderer({
   userId: string;
   boardName: string;
 }) {
-  // Custom whiteboards share the same per-board canvas as the default
-  // /whiteboard route — they're the same drawing, just reachable through
-  // a labelled pill. Lets teams "star" a canvas without duplicating it.
+  // Custom whiteboards share the per-board canvas with the default /whiteboard
+  // route — same drawing, just reachable through a labelled pill.
   let canvas = await db.processCanvas.findFirst({
     where: { boardId, deletedAt: null },
     include: {

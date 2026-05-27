@@ -1,9 +1,6 @@
-// Serve obrazy z briefów przez signed redirect. URL osadzony
-// w contentJson briefu ma postać `/api/brief-image/w/<wid>/briefs/<bid>/...`
-// — handler weryfikuje workspace membership użytkownika i 302-redirectuje
-// na świeży signed download URL z Supabase Storage. Dzięki temu signed
-// URL nigdy nie wycieka do persystowanego dokumentu (gdyby tak było,
-// wygasłby po 1h i obrazy by się popsuły w briefie).
+// Brief images via signed redirect. Handler weryfikuje workspace
+// membership i 302-redirectuje na świeży Supabase signed URL — signed
+// URL nigdy nie ląduje w persisted contentJson (gdzie by wygasł po 1h).
 
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
@@ -28,7 +25,5 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // 302 → przeglądarka cachuje na chwilę; po wygaśnięciu dostaje nowy
-  // signed URL przy kolejnym uderzeniu w handler.
   return NextResponse.redirect(signedUrl, 302);
 }

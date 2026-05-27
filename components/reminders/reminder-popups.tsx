@@ -57,12 +57,9 @@ export function ReminderPopups({
 
   useEffect(() => {
     cancelledRef.current = false;
-    // Immediate poll po mount żeby świeże remindery pojawiły się bez
-    // czekania na pierwsze interval-tick.
+    // Immediate poll on mount so fresh reminders appear without waiting.
     void refetch();
-    // F12-K44 P4: poll co 60s (było 20s). Mamy realtime (useUserRealtime
-    // z eventem reminder.due) jako primary mechanism — poll to fallback
-    // dla awarii Supabase Realtime. 3× mniej network noise + battery.
+    // Realtime (useUserRealtime reminder.due) is primary; this 60s poll is the fallback.
     const id = setInterval(refetch, 60_000);
 
     const onVisibility = () => {
@@ -70,9 +67,7 @@ export function ReminderPopups({
     };
     document.addEventListener("visibilitychange", onVisibility);
 
-    // Custom event hook — wszystko w apce co tworzy/edytuje reminder
-    // może wywołać `window.dispatchEvent(new Event('reminder:created'))`
-    // żeby popups wyrównały się natychmiast (bez czekania na 20s tick).
+    // Dispatch `reminder:created` event to force immediate refetch.
     const onReminderCreated = () => void refetch();
     window.addEventListener("reminder:created", onReminderCreated);
 

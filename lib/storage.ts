@@ -4,11 +4,10 @@ export const ATTACHMENTS_BUCKET = "attachments";
 export const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
 export const SIGNED_DOWNLOAD_TTL_SECONDS = 15 * 60; // 15-minute download URL per brief
 
-// F12-K43 H2: SVG (image/svg+xml) celowo wycięte — może zawierać
-// <script> i event handler'y które wykonują się w kontekście naszej
-// domeny gdy plik jest serwowany inline (signed URL z Supabase nie
-// dodaje Content-Disposition: attachment). Stored XSS atak. Klient
-// może dalej uploadować JPEG/PNG/WebP/GIF — pokrywa 99% use case'ów.
+// SVG (image/svg+xml) celowo wycięte — może zawierać <script>/event
+// handler'y wykonywane w kontekście naszej domeny gdy plik jest
+// serwowany inline (Supabase signed URL nie dodaje Content-Disposition:
+// attachment). Stored XSS.
 export const ALLOWED_ATTACHMENT_MIMES = new Set([
   "image/png",
   "image/jpeg",
@@ -61,7 +60,6 @@ function sanitizeFilename(name: string): string {
 }
 
 function randomId(): string {
-  // 12-char URL-safe random. crypto is available in Node 22+ and Edge.
   const bytes = new Uint8Array(9);
   crypto.getRandomValues(bytes);
   return Buffer.from(bytes).toString("base64url");
@@ -129,8 +127,8 @@ export function isAllowedMime(mime: string): boolean {
 }
 
 export function isImageMime(mime: string): boolean {
-  // F12-K43 H2: explicit reject SVG. `startsWith("image/")` przyjmowało
-  // image/svg+xml, co umożliwia stored XSS przy serwowaniu inline.
+  // Explicit reject SVG — startsWith("image/") would let it through,
+  // enabling stored XSS via inline serving.
   if (mime === "image/svg+xml") return false;
   return mime.startsWith("image/");
 }

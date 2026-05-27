@@ -44,9 +44,11 @@ function parseDate(v: FormDataEntryValue | null): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-// Resolve the user-chosen reminder offset into an absolute timestamp.
-// Returns null when reminder is cleared OR when there is no stopAt to
-// anchor the offset to — we never schedule a reminder without a deadline.
+/**
+ * Resolves the user-chosen reminder offset into an absolute timestamp.
+ * Returns null when reminder is cleared or when there is no stopAt to
+ * anchor the offset to — we never schedule a reminder without a deadline.
+ */
 function resolveReminder(offset: string | undefined, stopAt: Date | null): Date | null {
   if (!offset || offset === "none" || offset === "") return null;
   if (!stopAt) return null;
@@ -84,8 +86,7 @@ export async function createTaskAction(
   const limit = await checkLimit("task.create", ctx.userId);
   if (!limit.ok) return { ok: false, error: limit.error };
 
-  // Prefer explicit status column from caller (Kanban inline-add),
-  // fall back to board's first column for the legacy modal flow.
+  // Prefer caller-supplied column (Kanban inline-add); fall back to board's first column.
   let pickedColumn: { id: string } | null = null;
   if (parsed.data.statusColumnId) {
     const explicit = await db.statusColumn.findFirst({
@@ -102,7 +103,6 @@ export async function createTaskAction(
     });
   }
 
-  // Compute next rowOrder — last-in-column + 1 (or 1 if empty).
   const lastTask = pickedColumn
     ? await db.task.findFirst({
         where: { statusColumnId: pickedColumn.id, deletedAt: null },
@@ -110,9 +110,8 @@ export async function createTaskAction(
       })
     : null;
 
-  // Next displayId per-workspace. Max+1, fallback 1.
-  // Włącza też soft-deleted task'y w max() żeby usunięte numery nie były
-  // reużyte (uniknięcie konfliktów historycznych w audit log'u).
+  // Next displayId per-workspace; max+1 including soft-deleted so numbers
+  // are never reused (prevents audit log conflicts).
   const lastDisplay = await db.task.findFirst({
     where: { workspaceId: parsed.data.workspaceId },
     orderBy: { displayId: "desc" },
@@ -148,8 +147,6 @@ export async function createTaskAction(
     boardId: task.boardId,
   });
 
-  // Notyfikacja do całego workspace'u (minus creator) — Daniel
-  // zażyczył sobie żeby team widział nowe zadania w inbox panelu.
   const [board, actor] = await Promise.all([
     db.board.findUnique({ where: { id: task.boardId }, select: { name: true } }),
     db.user.findUnique({ where: { id: ctx.userId }, select: { name: true, email: true } }),
@@ -203,14 +200,13 @@ export async function updateTaskAction(
     where: { id: parsed.data.id },
     data: {
       title: parsed.data.title,
-      // Note: descriptionJson is handled by updateTaskDescriptionAction.
+      // descriptionJson is handled by updateTaskDescriptionAction.
       statusColumnId: parsed.data.statusColumnId || null,
       startAt: parseDate(formData.get("startAt")),
       stopAt,
       reminderAt,
-      // Changing reminderAt re-arms the cron — clear previous "sent" flag so
-      // the new reminder will fire. Leaving it set blocks re-sends when the
-      // user tweaks other fields.
+      // Re-arm cron when reminderAt moves: clear reminderSentAt so the new
+      // reminder will fire. Keeping it set would block re-sends.
       reminderSentAt:
         reminderAt &&
         existing.reminderAt &&
@@ -230,9 +226,7 @@ export async function updateTaskAction(
     diff: { title: updated.title },
   });
 
-  // F12-K44 P6: tylko task page revalidate. Workspace overview dostaje
-  // refresh przez broadcastWorkspaceChange + router.refresh w klientach
-  // — podwójny revalidate był kosztownym duplikatem.
+  // Only task-page revalidate; workspace overview refreshes via broadcastWorkspaceChange.
   revalidatePath(`/w/${updated.workspaceId}/t/${updated.id}`);
   await broadcastWorkspaceChange(updated.workspaceId, {
     type: "task.changed",
@@ -247,16 +241,13 @@ export async function deleteTaskAction(formData: FormData) {
   const formWorkspaceId = String(formData.get("workspaceId") ?? "");
   if (!id || !formWorkspaceId) return;
 
-  // F12-K43 H1: zamiast ufać workspaceId z form'y, fetch'ujemy task'a
-  // z DB i guardujemy na jego REALNY workspaceId. Bez tego user z
-  // task.delete w workspace A mógł wysłać id task'a z workspace B
-  // (gdzie nie jest member'em) i guard sprawdzał A — IDOR.
+  // IDOR guard: don't trust workspaceId from form. Fetch task and authorize
+  // against its real workspaceId, then require the form value to match.
   const existing = await db.task.findUnique({
     where: { id },
     select: { id: true, workspaceId: true, deletedAt: true },
   });
   if (!existing || existing.deletedAt) return;
-  // Defensive: form workspaceId musi się zgadzać z tym w bazie.
   if (existing.workspaceId !== formWorkspaceId) return;
 
   const ctx = await requireWorkspaceAction(existing.workspaceId, "task.delete");
@@ -277,8 +268,7 @@ export async function deleteTaskAction(formData: FormData) {
   redirect(`/w/${existing.workspaceId}`);
 }
 
-// F10-X T2.2: bulk operations from the table multi-select toolbar.
-// Stays on the same page (no redirect) — caller refreshes.
+// Bulk operations from the table multi-select toolbar; caller refreshes.
 export async function bulkDeleteTasksAction(formData: FormData) {
   const workspaceId = String(formData.get("workspaceId") ?? "");
   const idsRaw = String(formData.get("ids") ?? "");
@@ -326,9 +316,8 @@ export async function bulkUpdateStatusAction(formData: FormData) {
   await broadcastWorkspaceChange(workspaceId, { type: "task.changed" });
 }
 
-// Dedicated description save — lets the task-detail UI flip
-// description to "view mode" (rendered prose) after save without
-// round-tripping other fields.
+// Dedicated description save — lets the task detail UI flip back to view mode
+// after save without round-tripping other fields.
 const updateDescriptionSchema = z.object({
   id: z.string().min(1),
   descriptionJson: z.string().max(50_000).optional().or(z.literal("")),
@@ -376,13 +365,9 @@ export async function updateTaskDescriptionAction(formData: FormData) {
   revalidatePath(`/w/${existing.workspaceId}/t/${existing.id}`);
 }
 
-// Need z import for the new schema above.
-// (z is imported at top of file via "zod"? let's check)
-
 // Small-field patches used by the Table view's inline-edit cells.
-// Unlike updateTaskAction, this updates only the fields present in
-// the FormData, so a click-to-edit title or a status dropdown can
-// each fire their own action without round-tripping the whole task.
+// Unlike updateTaskAction, this updates only the fields present in the
+// FormData, so each click-to-edit cell can fire independently.
 export async function patchTaskAction(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
@@ -419,8 +404,7 @@ export async function patchTaskAction(formData: FormData) {
 
   if (!hasChange) return;
 
-  // Zapamiętuję poprzedni status PRZED update'em żeby móc
-  // wykryć zmianę i wysłać powiadomienie z "X → Y".
+  // Capture previous status before update so we can notify with from → to.
   const statusChanged =
     "statusColumnId" in data && data.statusColumnId !== existing.statusColumnId;
   const previousStatusColumnId = existing.statusColumnId;
@@ -439,13 +423,9 @@ export async function patchTaskAction(formData: FormData) {
     diff: data as Prisma.InputJsonValue,
   });
 
-  // F12-K44 P6: dropujemy revalidatePath('/w/<wid>') — task page revalidate
-  // + layout-level (board) revalidate już pokrywają wszystkie views.
-  // Workspace overview łapie zmianę przez broadcastWorkspaceChange.
   revalidatePath(`/w/${updated.workspaceId}/t/${updated.id}`);
-  // Layout-level revalidation covers /table + /kanban + /v/[viewId]
-  // + /roadmap + /gantt with one call. Without it, edits made in the task
-  // modal stay invisible on custom views until a hard reload.
+  // Layout-level revalidation covers /table, /kanban, /v/[viewId], /roadmap,
+  // /gantt in one call. Without it, modal edits stay stale on custom views.
   revalidatePath(`/w/[workspaceId]/b/[boardId]`, "layout");
   await broadcastWorkspaceChange(updated.workspaceId, {
     type: "task.changed",
@@ -453,9 +433,7 @@ export async function patchTaskAction(formData: FormData) {
     boardId: updated.boardId,
   });
 
-  // Notyfikacja do workspace'u (minus actor) o zmianie statusu.
-  // Tylko gdy faktycznie statusColumnId się zmieniło — patch może być
-  // czysto title/date i nie chcemy spamować w takim przypadku.
+  // Only notify when statusColumnId actually changed — patches may be title/date only.
   if (statusChanged) {
     const [board, actor, fromCol, toCol] = await Promise.all([
       db.board.findUnique({ where: { id: updated.boardId }, select: { name: true } }),
@@ -520,11 +498,7 @@ export async function toggleAssigneeAction(formData: FormData) {
     await db.taskAssignee.create({
       data: { taskId: parsed.data.taskId, userId: parsed.data.userId },
     });
-    // Notyfikacja w inbox'ie dla osoby przypisanej. Skip jeśli
-    // user przypisał sam siebie (no point notyfikować). Klient zgłosił
-    // 'mimo tego ze jestem przypisany do kilku zadan to nic mi sie w
-    // panelu powiadomien nie pokazuje' — wcześniej assign nie tworzył
-    // żadnej Notification (tylko mention'y i poll'e to robiły).
+    // Notify assignee; skip if user assigned themselves.
     if (parsed.data.userId !== ctx.userId) {
       const board = await db.board.findUnique({
         where: { id: task.boardId },
@@ -550,12 +524,10 @@ export async function toggleAssigneeAction(formData: FormData) {
         },
         select: { id: true, userId: true },
       });
-      // Live toast w prawym górnym rogu recipienta.
       await broadcastUserChange(notif.userId, {
         kind: "notification.new",
         id: notif.id,
       });
-      // Email do recipient'a.
       const actorLabel = actor?.name ?? actor?.email ?? "Ktoś";
       await sendNotificationEmail({
         to: { userId: parsed.data.userId },
@@ -582,10 +554,8 @@ export async function toggleAssigneeAction(formData: FormData) {
   });
 
   revalidatePath(`/w/${task.workspaceId}/t/${task.id}`);
-  // Layout-level revalidation covers default /table + /kanban
-  // AND custom views /v/[viewId], /roadmap, /gantt — without it, custom
-  // views show stale assignees until manual reload. Pattern form is
-  // required by Next.js when path contains dynamic segments + 'layout'.
+  // Layout-level revalidation covers /table, /kanban, /v/[viewId], /roadmap,
+  // /gantt. Dynamic-segment pattern + "layout" is required by Next.js.
   revalidatePath(`/w/[workspaceId]/b/[boardId]`, "layout");
   await broadcastWorkspaceChange(task.workspaceId, {
     type: "task.changed",
@@ -630,8 +600,7 @@ export async function toggleTagAction(formData: FormData) {
   });
 
   revalidatePath(`/w/${task.workspaceId}/t/${task.id}`);
-  // Same layout revalidation as toggleAssigneeAction so tags
-  // toggled in the task modal propagate to all board views.
+  // Layout revalidate so tag changes propagate to all board views.
   revalidatePath(`/w/[workspaceId]/b/[boardId]`, "layout");
   await broadcastWorkspaceChange(task.workspaceId, {
     type: "task.changed",

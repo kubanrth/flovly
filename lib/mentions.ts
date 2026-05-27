@@ -2,7 +2,6 @@ import { db } from "@/lib/db";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { sendEmail } from "@/lib/email";
 import { broadcastUserChange } from "@/lib/realtime";
-// F12-K43 L4: shared HTML escape (zob. lib/html-escape.ts).
 import { escapeHtml } from "@/lib/html-escape";
 
 // Walk a ProseMirror doc and collect every `mention` node's attrs.id.
@@ -46,8 +45,6 @@ export async function syncCommentMentions(params: {
   taskId: string;
   workspaceId: string;
   newIds: string[];
-  // Optional doc used to build a notification/email snippet. Passing the
-  // raw body keeps the caller's call site tidy (the extract is idempotent).
   bodyDoc?: unknown;
 }): Promise<{ added: string[]; removed: string[] }> {
   const { commentId, authorId, taskId, workspaceId, newIds, bodyDoc } = params;
@@ -112,8 +109,8 @@ export async function syncCommentMentions(params: {
       snippet,
     } as const;
 
-    // Tworzymy per-user żeby dostać id'ki — `<UserToaster>` po
-    // realtime broadcast'cie pobiera szczegóły konkretnego notyfikacji.
+    // Per-user create żeby dostać id'ki — broadcast wysyła id, klient
+    // dofetchuje szczegóły.
     const created = await Promise.all(
       notifyIds.map((userId) =>
         db.notification.create({
@@ -132,9 +129,7 @@ export async function syncCommentMentions(params: {
       ),
     );
 
-    // Email — best-effort, non-blocking semantics (we still await so
-    // server action returns after the promise settles, but we don't
-    // throw on email failure).
+    // Email — best-effort; we await to flush before returning but never throw.
     const taskUrl = `/w/${workspaceId}/t/${taskId}`;
     await Promise.all(
       notifyIds.map(async (userId) => {

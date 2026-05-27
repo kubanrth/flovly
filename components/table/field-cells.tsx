@@ -1,13 +1,5 @@
 "use client";
 
-// F10-A: per-type cell renderers for the Tabela view. Each cell
-// receives the raw stored string (TaskCustomValue.valueText) plus the
-// column's FieldOptions and is responsible for parsing → editing →
-// encoding back through `setTaskCustomValueAction`. Keeping every type
-// in one file avoids 12 tiny components and lets the dispatcher tree-
-// shake what it doesn't render — TanStack Table only mounts visible
-// cells anyway.
-
 import { startTransition, useLayoutEffect, useRef, useState } from "react";
 import { Check, ChevronDown, ExternalLink, Mail, Phone, Star, X } from "lucide-react";
 import { setTaskCustomValueAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";

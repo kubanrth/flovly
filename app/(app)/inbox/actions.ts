@@ -5,8 +5,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
-// Mark a single notification read — only for the recipient; we scope by
-// userId so a doctored form body can't flip someone else's state.
+// Recipient-only: scoped by userId so a doctored form can't flip another user's state.
 export async function markNotificationReadAction(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
@@ -29,8 +28,6 @@ export async function markAllNotificationsReadAction() {
   revalidatePath("/inbox");
 }
 
-// Toggle read/unread (klik powtórny zaznacza ponownie jako
-// nieprzeczytane).
 export async function toggleNotificationReadAction(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
@@ -48,8 +45,7 @@ export async function toggleNotificationReadAction(formData: FormData) {
   revalidatePath("/inbox");
 }
 
-// Usuń pojedynczą notyfikację. Recipient-only — admin nie może
-// czyścić cudzego inbox'u.
+// Recipient-only — admins cannot clear other users' inboxes.
 export async function deleteNotificationAction(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
@@ -61,8 +57,6 @@ export async function deleteNotificationAction(formData: FormData) {
   revalidatePath("/inbox");
 }
 
-// Bulk-delete wszystkich przeczytanych — typowy use case
-// 'wyczyść inbox po sprintu'.
 export async function deleteAllReadNotificationsAction() {
   const session = await auth();
   if (!session?.user) return;
@@ -74,13 +68,11 @@ export async function deleteAllReadNotificationsAction() {
 
 const updateNoteSchema = z.object({
   id: z.string().min(1),
-  // Empty = remove note. Limit 500 znaków — to ma być adnotacja, nie esej.
+  // Empty = remove note.
   userNote: z.string().max(500),
 });
 
-// Edytuj user-note doklejony do notyfikacji. Klient: 'zapisane
-// powiadomienie musi mieć możliwość edycji'. Sam payload (auto-generowany)
-// zostaje nietknięty; user może dopisać własną notatkę.
+// User-editable annotation tacked onto a notification; auto-generated payload is untouched.
 export async function updateNotificationNoteAction(input: {
   id: string;
   userNote: string;
@@ -100,9 +92,8 @@ export async function updateNotificationNoteAction(input: {
   return { ok: true };
 }
 
-// Fetchuje 1 notyfikację dla `<UserToaster>` po realtime
-// broadcast'cie (kanał `user:<userId>` przesyła tylko id, klient pobiera
-// szczegóły żeby renderować toast).
+// Fetches one notification for the toaster after a realtime broadcast.
+// The user:<id> channel transmits only the notification id; details are loaded here.
 export interface ToastNotificationPayload {
   id: string;
   type: string;
@@ -183,8 +174,6 @@ export async function getNotificationForToastAction(input: {
       if (workspaceId && ticketId) href = `/w/${workspaceId}/support`;
       break;
     case "support.created":
-      // Nowe zgłoszenie supportu — toast dla każdego workspace
-      // member'a poza reporter'em.
       iconKind = "support";
       title = `Nowe zgłoszenie od ${actorName ?? "użytkownika"}`;
       body = ticketTitle ?? null;

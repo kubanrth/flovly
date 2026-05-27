@@ -22,8 +22,7 @@ export type SendEmailState =
   | { ok: false; error: string }
   | null;
 
-// 40 MB hard cap on Resend attachments; we stop pushing new ones once we
-// exceed the cap and fall back to a signed-URL list for the remainder.
+// Resend hard cap: 40 MB total attachments. Overflow falls back to signed-URL list.
 const MAX_ATTACHMENT_BYTES = 40 * 1024 * 1024;
 
 function renderTaskHtml(task: {
@@ -69,12 +68,9 @@ function renderTaskHtml(task: {
 </body></html>`;
 }
 
-// F12-K43 L4: escape przeniesione do lib/html-escape.ts (html-escaper).
-
-// Very lightweight ProseMirror → HTML for the email body. We only handle
-// paragraph + text + bullet/ordered list + heading + bold/italic/code.
-// Anything unknown is dropped silently (email recipients shouldn't see
-// raw node types).
+// Minimal ProseMirror → HTML renderer for email bodies. Handles paragraph,
+// text, bullet/ordered list, heading, bold/italic/code. Unknown nodes are
+// dropped silently.
 function prosemirrorToHtml(doc: unknown): string {
   if (!doc || typeof doc !== "object") return "";
   const node = doc as { type?: string; content?: unknown[]; text?: string; marks?: { type: string }[]; attrs?: { level?: number } };
@@ -137,7 +133,7 @@ export async function sendTaskByEmailAction(
 
   const ctx = await requireWorkspaceAction(task.workspaceId, "task.sendEmail");
 
-  // 10 send/hour per user to avoid becoming a spam relay.
+  // Rate-limit so we can't be turned into a spam relay.
   const rate = await checkLimit("task.sendEmail", ctx.userId);
   if (!rate.ok) {
     return { ok: false, error: rate.error };
@@ -166,8 +162,7 @@ export async function sendTaskByEmailAction(
       attachments.push({ filename: a.filename, content: buf });
       totalBytes += a.sizeBytes;
     } catch {
-      // If we can't fetch bytes, fall back to link so the recipient still
-      // gets it. Signed URL expires per SIGNED_DOWNLOAD_TTL_SECONDS (15m).
+      // Fall back to a signed link (expires per SIGNED_DOWNLOAD_TTL_SECONDS, 15m).
       const { createSignedDownloadUrl } = await import("@/lib/storage");
       const url = await createSignedDownloadUrl(a.storageKey).catch(() => null);
       if (url) overflowLinks.push({ filename: a.filename, url });

@@ -16,9 +16,7 @@ export const SHAPES = [
   "CIRCLE",
   "STICKY",
   "FRAME",
-  // F10-W: Mural-feel additions.
   "TEXT",
-  // Image upload — data.imagePath = Supabase Storage key.
   "IMAGE",
 ] as const;
 export type CanvasShape = (typeof SHAPES)[number];
@@ -34,22 +32,16 @@ export interface CanvasNodeValue {
   width: number;
   height: number;
   colorHex: string;
-  // F10-W2: emoji reaction counts on this node. Keyed by emoji char,
-  // value is the count. Plain Record so Yjs sync stays cheap (no Y.Map
-  // per node — reactions are infrequent, full overwrite is fine).
+  // Emoji → count. Plain Record (nie Y.Map) — reactions są rzadkie,
+  // full overwrite tańszy niż per-node Y.Map.
   reactions?: Record<string, number>;
-  // F10-W3: when locked, the node can't be moved, resized, or deleted
-  // via React Flow's normal interactions. The UI shows a lock icon.
+  // Locked node = nie da się move/resize/delete via React Flow.
   locked?: boolean;
-  // Dla shape="IMAGE" — Supabase Storage key (path relatywny
-  // do bucket'u attachments). Renderowane przez `/api/canvas-image/<key>`.
+  // shape="IMAGE" only — Supabase Storage key relatywny do attachments.
   imagePath?: string | null;
-  // C: explicit text color override. Gdy null/undef, ShapeNode
-  // używa auto-contrast od colorHex.
+  // null/undef = auto-contrast od colorHex.
   textColorHex?: string | null;
-  // Explicit font-size override (px). Gdy null/undef, label używa
-  // bazowego rozmiaru (~15px dla RECT/CIRCLE/STICKY/DIAMOND, auto-calc
-  // po height dla TEXT shape'a). Klient zażyczył sobie zmiany wielkości.
+  // null/undef = bazowy rozmiar (15px albo auto-calc po height dla TEXT).
   fontSize?: number | null;
 }
 
@@ -65,11 +57,8 @@ export interface CanvasEdgeValue {
 export type InitialNode = CanvasNodeValue;
 export type InitialEdge = CanvasEdgeValue;
 
-// F10-W: free-drawing strokes (pen tool). Each stroke is one continuous
-// pointer drag captured as an array of {x,y} world-coordinates. Stored
-// as Y.Map keyed by stroke id so deletes merge cleanly when multiple
-// users erase simultaneously. Points are flat number[] in [x0,y0,x1,y1…]
-// form to avoid the JSON parse/stringify roundtrip per stroke.
+// Pen-tool strokes. Y.Map keyed by stroke id so concurrent erases merge
+// cleanly. Points flat [x0,y0,x1,y1…] — avoids JSON parse/stringify per stroke.
 export interface CanvasStrokeValue {
   id: string;
   colorHex: string;
@@ -122,11 +111,8 @@ function toNodeYMap(node: CanvasNodeValue): Y.Map<unknown> {
   m.set("colorHex", node.colorHex);
   if (node.reactions) m.set("reactions", node.reactions);
   if (node.locked) m.set("locked", true);
-  // ImagePath dla shape="IMAGE".
   if (node.imagePath) m.set("imagePath", node.imagePath);
-  // C: explicit text color override.
   if (node.textColorHex) m.set("textColorHex", node.textColorHex);
-  // Explicit font-size override (px).
   if (typeof node.fontSize === "number") m.set("fontSize", node.fontSize);
   return m;
 }
@@ -147,8 +133,8 @@ export function setNodeValue(
 ): void {
   const existing = nodesMap.get(node.id);
   if (existing) {
-    // Field-level writes so other peers touching unrelated fields merge
-    // cleanly (Yjs is per-key on a Y.Map).
+    // Field-level writes — Yjs is per-key on Y.Map, peers editing unrelated
+    // fields merge cleanly.
     if (existing.get("shape") !== node.shape) existing.set("shape", node.shape);
     if (existing.get("label") !== node.label) existing.set("label", node.label);
     if (existing.get("x") !== node.x) existing.set("x", node.x);
@@ -156,7 +142,7 @@ export function setNodeValue(
     if (existing.get("width") !== node.width) existing.set("width", node.width);
     if (existing.get("height") !== node.height) existing.set("height", node.height);
     if (existing.get("colorHex") !== node.colorHex) existing.set("colorHex", node.colorHex);
-    // Reactions are an object — compare via JSON to avoid spurious writes.
+    // Object compare via JSON to avoid spurious writes.
     const prevReactions = existing.get("reactions");
     const nextReactions = node.reactions ?? {};
     if (JSON.stringify(prevReactions ?? {}) !== JSON.stringify(nextReactions)) {
@@ -165,20 +151,16 @@ export function setNodeValue(
     if ((existing.get("locked") ?? false) !== Boolean(node.locked)) {
       existing.set("locked", Boolean(node.locked));
     }
-    // ImagePath sync. Tylko gdy się zmienił żeby nie spamować
-    // peerów niepotrzebnymi update'ami.
     const prevImagePath = existing.get("imagePath") ?? null;
     const nextImagePath = node.imagePath ?? null;
     if (prevImagePath !== nextImagePath) {
       existing.set("imagePath", nextImagePath);
     }
-    // C: textColorHex sync.
     const prevTextColor = existing.get("textColorHex") ?? null;
     const nextTextColor = node.textColorHex ?? null;
     if (prevTextColor !== nextTextColor) {
       existing.set("textColorHex", nextTextColor);
     }
-    // FontSize sync (px override).
     const prevFontSize =
       typeof existing.get("fontSize") === "number"
         ? (existing.get("fontSize") as number)
@@ -209,10 +191,8 @@ export function setEdgeValue(
   }
 }
 
-// F10-W: pen-tool stroke helpers. Strokes are immutable once finalized
-// (no point-by-point CRDT merge — pen drags are atomic), so we always
-// replace the Y.Map on write. Storing points as a Y.Array would buy us
-// nothing here.
+// Strokes are immutable post-finalize (pen drags are atomic — no
+// point-by-point CRDT merge), so we always overwrite.
 function toStrokeYMap(stroke: CanvasStrokeValue): Y.Map<unknown> {
   const m = new Y.Map<unknown>();
   m.set("colorHex", stroke.colorHex);
@@ -225,7 +205,6 @@ export function setStrokeValue(
   strokesMap: Y.Map<Y.Map<unknown>>,
   stroke: CanvasStrokeValue,
 ): void {
-  // Always overwrite — strokes don't mutate after creation.
   strokesMap.set(stroke.id, toStrokeYMap(stroke));
 }
 
@@ -236,9 +215,8 @@ export function deleteStroke(
   strokesMap.delete(id);
 }
 
-// Read-back: returns a deterministic plain-object snapshot. Used by the
-// observer to re-derive React Flow state and by save actions to write
-// ProcessNode/ProcessEdge/ProcessStroke rows.
+// Deterministic plain-object snapshot. Consumed by the observer
+// (React Flow state derive) and save actions (DB row writes).
 export function readCanvasSnapshot(refs: CanvasYRefs): {
   nodes: CanvasNodeValue[];
   edges: CanvasEdgeValue[];
@@ -261,7 +239,6 @@ export function readCanvasSnapshot(refs: CanvasYRefs): {
       colorHex: asString(value.get("colorHex"), "#FFFFFF"),
       imagePath: asNullString(value.get("imagePath")) ?? undefined,
       textColorHex: asNullString(value.get("textColorHex")) ?? undefined,
-      // Read fontSize override z Y mapy.
       fontSize:
         typeof value.get("fontSize") === "number"
           ? (value.get("fontSize") as number)
@@ -341,7 +318,7 @@ function asReactions(v: unknown): Record<string, number> {
   return out;
 }
 
-// Byte-level update helpers — used by the Realtime provider to move
+// Byte-level update helpers — Realtime provider uses these to move
 // state between peers.
 export function encodeUpdate(ydoc: Y.Doc): Uint8Array {
   return Y.encodeStateAsUpdate(ydoc);

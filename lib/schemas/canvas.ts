@@ -4,12 +4,9 @@ export const NODE_SHAPES = [
   "RECTANGLE",
   "DIAMOND",
   "CIRCLE",
-  // Whimsical-lite additions.
   "STICKY",
   "FRAME",
-  // F10-W: Mural-feel additions.
   "TEXT",
-  // Image upload do whiteboard — data.imagePath = storage key.
   "IMAGE",
 ] as const;
 export type NodeShape = (typeof NODE_SHAPES)[number];
@@ -37,8 +34,8 @@ export const deleteCanvasSchema = z.object({
 
 // Client-sent node + edge snapshots for a full canvas save.
 const nodeSnapshotSchema = z.object({
-  // id is the React Flow node id (matches ProcessNode.id). For brand-new
-  // nodes client assigns a cuid-looking id client-side; server normalises.
+  // React Flow node id (matches ProcessNode.id). Client assigns
+  // cuid-looking id dla nowych nodów; server normalises.
   id: z.string().min(1).max(64),
   shape: z.enum(NODE_SHAPES),
   label: z.string().max(400).nullable().optional(),
@@ -48,14 +45,12 @@ const nodeSnapshotSchema = z.object({
   width: z.number().finite().positive().max(5000).default(160),
   height: z.number().finite().positive().max(5000).default(80),
   colorHex: z.string().regex(HEX_RE, "Kolor musi być #RRGGBB.").default("#FFFFFF"),
-  // F10-W2/W3: optional per-node metadata. Server stores under
-  // ProcessNode.dataJson. Reactions: emoji → count map. Locked: bool.
+  // Per-node metadata persisted to ProcessNode.dataJson.
   reactions: z.record(z.string().max(8), z.number().int().min(0).max(9999)).optional(),
   locked: z.boolean().optional(),
-  // Dla shape="IMAGE" — Supabase Storage key (path relatywny do
-  // bucket'u attachments). Persistowany w ProcessNode.dataJson.imagePath.
+  // shape="IMAGE" only — Supabase Storage key relative to attachments bucket.
   imagePath: z.string().max(500).nullable().optional(),
-  // C: explicit text color override (#RRGGBB albo null = auto).
+  // Explicit text color override (null = auto from background).
   textColorHex: z.string().regex(HEX_RE).nullable().optional(),
 });
 
@@ -68,9 +63,8 @@ const edgeSnapshotSchema = z.object({
   endStyle: z.enum(EDGE_ENDS).default("arrow"),
 });
 
-// F10-W: pen-tool stroke (free-draw) snapshot. Points are flat number[]
-// in [x0,y0,x1,y1,…] form to keep the JSON small (~30% smaller than
-// {x,y} object array for typical strokes).
+// Pen-tool stroke. Points are flat [x0,y0,x1,y1,…] — ~30% smaller
+// JSON than {x,y} array for typical strokes.
 const strokeSnapshotSchema = z.object({
   id: z.string().min(1).max(64),
   colorHex: z.string().regex(HEX_RE, "Kolor musi być #RRGGBB.").default("#1F2937"),

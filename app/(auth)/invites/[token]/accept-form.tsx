@@ -24,10 +24,8 @@ export function AcceptInviteForm({
     null,
   );
 
-  // Client-side fallback. Server zazwyczaj redirect()'uje przy
-  // ok=true (`signIn(...redirectTo)` lub `redirect("/w/<id>")`), ale
-  // jeśli z jakiegoś powodu odpowiedź wraca z ok:true bez redirect'u —
-  // klient od razu nawiguje do workspace'u zamiast utknąć na pendingu.
+  // Fallback: server normally redirects on ok=true, but if a response
+  // slips through without one, navigate client-side to avoid sitting in pending.
   useEffect(() => {
     if (state?.ok) {
       router.replace(`/w/${workspaceId}`);

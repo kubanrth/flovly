@@ -1,13 +1,6 @@
 "use client";
 
-// F10-X: rich Airtable-style header cell. Single component handles:
-// - field type icon next to label (so users see WHAT the column is at a glance)
-// - inline rename via double-click → input → Enter/blur saves
-// - right-click context menu with sort/filter/hide/duplicate/delete/change-type
-//
-// Built-in columns (status/title/dates/etc.) get a subset of actions
-// since they aren't user-creatable: rename + delete + change-type are
-// disabled for them.
+// Built-in columns (status/title/dates/etc.) get a subset of actions — rename/delete/change-type disabled.
 
 import { startTransition, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";

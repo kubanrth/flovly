@@ -19,10 +19,8 @@ function inferReminderOffset(stopAt: Date | null, reminderAt: Date | null): stri
   return null;
 }
 
-// Task.descriptionJson was historically stored as `{ plain: "text" }` (F1f).
-// Now it holds ProseMirror doc JSON (F4a). Convert legacy entries on read so
-// the editor renders them as a paragraph; otherwise pass through a valid doc;
-// anything else collapses to null (empty editor).
+// Task.descriptionJson legacy shape was `{ plain: "text" }`; now holds
+// ProseMirror doc JSON. Convert legacy on read; invalid collapses to null.
 function normalizeDescription(raw: unknown): RichTextDoc | null {
   if (!raw || typeof raw !== "object") return null;
   const obj = raw as { type?: unknown; plain?: unknown };
@@ -57,16 +55,12 @@ export async function fetchTaskDetail(
             orderBy: [{ orderIndex: "asc" }, { startAt: "asc" }],
             select: { id: true, title: true, startAt: true, stopAt: true },
           },
-          // Custom kolumny z tabeli — pokazujemy je w karcie
-          // zadania nad sekcją "Czas pracy", w tej samej kolejności
-          // co w widoku tabeli.
           customColumns: { orderBy: { order: "asc" } },
         },
       },
       assignees: { select: { userId: true } },
       tags: { select: { tagId: true } },
       subtasks: { orderBy: { order: "asc" } },
-      // Custom values per-task (klucz = TableColumn.id)
       customValues: true,
       poll: {
         include: {
@@ -78,9 +72,8 @@ export async function fetchTaskDetail(
   });
   if (!task) notFound();
 
-  // Also gate by per-board access. Without this, a workspace
-  // MEMBER who knows a task ID on a PRIVATE board (e.g. shared link
-  // before they were removed) could still load the task page.
+  // Gate by per-board access — workspace MEMBER who knows a task ID on
+  // a PRIVATE board could otherwise still load the task page.
   if (!(await userCanAccessBoard(task.boardId, ctx.userId, ctx.role))) notFound();
 
   const [members, tags, comments, auditEntries, attachmentRows] = await Promise.all([
@@ -121,10 +114,9 @@ export async function fetchTaskDetail(
     }),
   ]);
 
-  // Pre-sign image thumbnails at render time so the browser can render them
-  // without an extra round-trip. Non-image URLs are minted on demand from
-  // the download action so we don't waste signatures on files that aren't
-  // rendered inline.
+  // Pre-sign image thumbnails so browser renders them without round-trip.
+  // Non-image URLs minted on demand — don't waste signatures on files
+  // that aren't rendered inline.
   const attachmentPayload = await Promise.all(
     attachmentRows.map(async (a) => {
       const thumbnailUrl = isImageMime(a.mimeType)
@@ -148,7 +140,6 @@ export async function fetchTaskDetail(
     role: ctx.role,
     task: {
       id: task.id,
-      // Ludzki ID (1, 2, 3...) zamiast obciętego cuid'a.
       displayId: task.displayId,
       title: task.title,
       descriptionJson: normalizeDescription(task.descriptionJson),
@@ -166,7 +157,6 @@ export async function fetchTaskDetail(
             })
           : null,
       recurrenceParentId: task.recurrenceParentId,
-      // Time tracking — komponent TaskTimer odczytuje te 3 pola.
       timeTrackedSeconds: task.timeTrackedSeconds,
       timerStartedAt: task.timerStartedAt
         ? task.timerStartedAt.toISOString()
@@ -236,11 +226,9 @@ export async function fetchTaskDetail(
       : null,
     canManagePoll: can(ctx.role, "poll.manage"),
     canVote: can(ctx.role, "poll.vote"),
-    // Custom kolumny + ich wartości dla bieżącego task'a
     customColumns: task.board.customColumns.map((c) => ({
       id: c.id,
       name: c.name,
-      // Prisma string enum → cast na FieldType union (te same wartości).
       type: c.type as import("@/lib/table-fields").FieldType,
       options: c.options as unknown,
     })),

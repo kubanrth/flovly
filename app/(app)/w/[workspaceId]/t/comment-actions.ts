@@ -112,7 +112,7 @@ export async function updateCommentAction(
   if (!existing || existing.deletedAt) return { ok: false, error: "Komentarz nie istnieje." };
 
   const ctx = await requireWorkspaceMembership(existing.task.workspaceId);
-  // Only the author may edit (admins can delete, not rewrite).
+  // Only author can edit — admins can delete but not rewrite.
   if (existing.authorId !== ctx.userId) throw new ForbiddenError("task.comment");
 
   await db.comment.update({
@@ -161,8 +161,8 @@ export async function deleteCommentAction(formData: FormData) {
   const ctx = await requireWorkspaceMembership(existing.task.workspaceId);
   const canAct = existing.authorId === ctx.userId || ctx.role === "ADMIN";
   if (!canAct) throw new ForbiddenError("task.comment");
-  // Sanity: admins still need the comment capability (future-proof: if we
-  // ever strip it from ADMIN, this prevents silent privilege creep).
+  // Defensive: admins still need task.comment so stripping it from ADMIN
+  // later doesn't silently re-grant delete.
   assertCan(ctx.role, "task.comment");
 
   await db.comment.update({

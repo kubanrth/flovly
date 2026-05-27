@@ -65,15 +65,11 @@ export interface SidebarWorkspace {
   role: Role;
   boards: { id: string; name: string }[];
   enabledViews: Array<"TABLE" | "KANBAN" | "ROADMAP" | "GANTT" | "WHITEBOARD">;
-  // Licznik aktywnych zgłoszeń supportu (status=OPEN, IN_PROGRESS;
-  // bez RESOLVED/CLOSED). Renderowany jako badge przy linku Support.
+  // Count of OPEN + IN_PROGRESS support tickets (excludes RESOLVED/CLOSED).
   openSupportCount?: number;
 }
 
-// C: bumped key od ".collapsed" → ".collapsed.v2". Klient miał
-// stary collapsed=1 z poprzednich sesji w localStorage; nowy key
-// = ignoring tego state'u i startujemy expanded jak default. User
-// dalej może zwijać przez chevron — nowe ustawienie persistuje pod v2.
+// Bumped v2 to ignore stale localStorage from prior sessions; users start expanded.
 const STORAGE_KEY = "danielos.sidebar.collapsed.v2";
 
 export function Sidebar({
@@ -88,29 +84,19 @@ export function Sidebar({
   const pathname = usePathname();
   const activeWorkspaceId = pathname.match(/^\/w\/([^/]+)/)?.[1] ?? null;
   const [collapsed, setCollapsed] = useState(false);
-  // Mobile drawer state. Na desktopie sidebar jest zawsze
-  // visible (sticky inline w flex'ie); na mobile (md-) sidebar jest
-  // domyślnie schowany (translate-x-[-100%]) i otwierany przyciskiem
-  // hamburger w prawym górnym rogu.
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(
     new Set(activeWorkspaceId ? [activeWorkspaceId] : []),
   );
 
-  // Drag-and-drop reorder dla workspace'ów w sidebarze (klient
-  // chciał przesuwać kolejność przez "łapanie i ciągnięcie" — analog do
-  // tego co już działa na /workspaces overview). Lokalny state trzyma
-  // optimistic kolejność; useEffect re-sync'uje gdy prop się zmieni
-  // (po revalidatePath z server action). Boards mają własny nested
-  // SortableContext per workspace, patrz SortableBoardsList niżej.
+  // Optimistic local order; useEffect re-syncs after revalidatePath from server action.
   const [workspaceItems, setWorkspaceItems] = useState(workspaces);
   useEffect(() => {
     setWorkspaceItems(workspaces);
   }, [workspaces]);
 
   const sensors = useSensors(
-    // 5px aktywuje drag — pod tym progiem clicki przechodzą do <Link>
-    // (klient może klikać workspace żeby wejść, bez przypadkowego dragu).
+    // 5px threshold — clicks under it pass through to <Link>; no accidental drag.
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
@@ -131,13 +117,11 @@ export function Sidebar({
     });
   };
 
-  // Auto-close drawer przy zmianie route'a — nie chcemy żeby drawer
-  // zostawał otwarty po klik'u w link.
+  // Auto-close mobile drawer on route change.
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
-  // Esc zamyka drawer.
   useEffect(() => {
     if (!mobileOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -147,7 +131,7 @@ export function Sidebar({
     return () => document.removeEventListener("keydown", onKey);
   }, [mobileOpen]);
 
-  // Block body scroll gdy mobile drawer otwarty (lepszy UX).
+  // Block body scroll while mobile drawer is open.
   useEffect(() => {
     if (!mobileOpen) return;
     const prev = document.body.style.overflow;
@@ -157,7 +141,6 @@ export function Sidebar({
     };
   }, [mobileOpen]);
 
-  // Expand active workspace when navigating to it.
   useEffect(() => {
     if (activeWorkspaceId) {
       setExpandedIds((prev) => {
@@ -169,7 +152,6 @@ export function Sidebar({
     }
   }, [activeWorkspaceId]);
 
-  // Persist collapse state locally.
   useEffect(() => {
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -200,72 +182,29 @@ export function Sidebar({
 
   return (
     <>
-      {/* F12-K41: mobile-only hamburger button. Pokazuje się tylko gdy
-          sidebar jest schowany (drawer zamknięty). Zawiera Menu icon →
-          klik otwiera drawer. Przycisk X w samym drawer (top-right
-          obok kolaps button) zamyka. */}
+      {/* Mobile hamburger — z-[80] sits above NotificationToaster (z-70) and ReminderPopups (z-60). */}
       {!mobileOpen && (
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
           aria-label="Otwórz menu"
-          // Z-[80] — wyżej niż NotificationToaster (z-70) i
-          // ReminderPopups (z-60), żeby toast'y nie zasłaniały hamburger'a
-          // gdy lecą w prawym górnym rogu.
-          // H-11 w-11 = 44px tap target (Apple HIG min).
           className="fixed right-3 top-3 z-[80] grid h-11 w-11 place-items-center rounded-lg border border-border bg-card/95 text-foreground shadow-lg backdrop-blur transition-colors hover:bg-accent md:hidden"
         >
           <Menu size={20} />
         </button>
       )}
 
-      {/* F12-K57: drawer jest fullscreen na mobile, więc backdrop nie
-          jest już potrzebny (klient i tak nic za drawer'em nie widzi).
-          Zostawiamy strukturę gotową, ale render'ujemy null na max-md. */}
-
       <aside
       data-collapsed={collapsed ? "true" : "false"}
       data-mobile-open={mobileOpen ? "true" : "false"}
-      // Sticky top-0 + self-start trzymają sidebar pinned do
-      // góry viewportu kiedy długa strona scrolluje. h-dvh sprawia że
-      // sidebar zawsze ma dokładnie wysokość viewportu.
-      //
-      // + F12-K41b: dual-mode — mobile drawer (max-md) vs
-      // desktop sticky (md+). KRYTYCZNE: wszystkie reguły mobile drawer
-      // używają `max-md:` prefix'a, żeby NIE leciały na desktop. Inaczej
-      // `data-[mobile-open=false]:-translate-x-full` (specyficzność 0,2,0)
-      // bije `md:translate-x-0` (0,1,0) i sidebar zostaje schowany na
-      // desktop'ie. `max-md:` generuje regułę tylko w `@media (max-width)`
-      // więc na md+ rules po prostu nie istnieją.
-      //
-      // Drawer fullscreen (max-md:inset-0 + max-md:w-full).
-      //
-      // Aside teraz jest LAYOUT wrapperem (pozycja, drawer slide,
-      // szerokość). Faktyczny glass-card UI to <div className="sidebar-glass">
-      // wewnątrz. Na desktopie aside ma padding (md:p-3.5 md:pr-2) żeby
-      // glass-card "płynął" jako floating panel z odstępem od krawędzi
-      // ekranu, na mobile p-0 + rounded-none żeby drawer pełnoekranowy
-      // wypełniał viewport bez gap'ów.
+      // Dual-mode: mobile drawer (max-md) vs desktop sticky (md+). Mobile rules MUST use `max-md:` —
+      // otherwise data-[mobile-open=false]:-translate-x-full (specificity 0,2,0) beats md:translate-x-0
+      // (0,1,0) and the sidebar stays hidden on desktop.
       className="group/sidebar flex h-dvh flex-col text-sidebar-foreground transition-[transform,width] duration-200 max-md:fixed max-md:inset-0 max-md:z-40 max-md:w-full max-md:p-0 max-md:data-[mobile-open=false]:-translate-x-full max-md:data-[mobile-open=true]:translate-x-0 md:sticky md:top-0 md:self-start md:p-3.5 md:pr-2 data-[collapsed=true]:md:w-[80px] data-[collapsed=false]:md:w-[252px]"
     >
-      {/* F12-K59: floating glass-card. Wszystkie sekcje sidebar'a siedzą
-          w środku. Glass: rgba(28,28,34,0.55) + backdrop-blur(40px) +
-          saturate(180%), border white-10, rounded 20px, panel shadow
-          + top sheen via ::before. Na mobile fullscreen drawer:
-          rounded-none, no margin, glass solid (kept blur). */}
-      {/* F12-K60: sidebar-glass class (globals.css) niesie wszystkie
-          dual-mode wartości (light: white-glass + dark border + light
-          shadow; dark: dark-glass + white-tinted border + heavy shadow)
-          plus top sheen via ::before. Tailwind tu już tylko layout +
-          rounded-corner toggle dla mobile fullscreen. */}
       <div className="sidebar-glass relative flex h-full flex-col overflow-hidden backdrop-blur-[40px] backdrop-saturate-[1.8] md:rounded-[20px] max-md:rounded-none max-md:border-0">
-      {/* Top: profile + collapse toggle */}
-      {/* F12-K41d: gdy collapsed, header przełącza się w pion (avatar
-          na górze, chevron pod nim). Inaczej w row 68px szerokości
-          chevron był 'overflow-clipped' przez parent overflow-hidden i
-          klient nie miał jak rozwinąć sidebar'a z powrotem. */}
+      {/* When collapsed, header stacks vertically so the chevron isn't clipped by overflow-hidden. */}
       <div
-        // B: większy padding header'a + avatar/name na mobile.
         className={`flex gap-2 border-b border-black/5 dark:border-white/[0.05] px-3 py-3 max-md:gap-3 max-md:px-4 max-md:py-4 ${
           collapsed
             ? "flex-col items-center"
@@ -276,9 +215,6 @@ export function Sidebar({
           href="/profile"
           className="flex min-w-0 items-center gap-2.5 rounded-sm px-1.5 py-1 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] focus-visible:bg-white/[0.07] focus-visible:outline-none max-md:gap-3.5 max-md:rounded-md max-md:px-2 max-md:py-2"
         >
-          {/* F12-K59: avatar gradient purple→pink (Apple-system tone) +
-              inset top white-35% highlight + soft drop shadow — match
-              z design'em (bg: linear-gradient(135deg, #c084fc, #f472b6)). */}
           <span
             style={{ background: "linear-gradient(135deg, #c084fc, #f472b6)" }}
             className="relative grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full font-display text-[0.72rem] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_1px_2px_rgba(0,0,0,0.3)] max-md:h-11 max-md:w-11 max-md:text-[0.95rem]"
@@ -302,10 +238,7 @@ export function Sidebar({
           )}
         </Link>
         <div className="flex shrink-0 items-center gap-1">
-          {/* F12-K41: mobile X (zamyka drawer) — schowany na md+.
-              F12-K57: bump tap-target z 28px → 44px (Apple HIG / Material min)
-              i powiększony chevron icon. Bez backdrop'a X jest jedyną drogą
-              zamknięcia drawer'a na mobile (+ Esc), więc musi być żeby trafić. */}
+          {/* Mobile close X — 44px tap target (Apple HIG min); only way to close drawer on mobile besides Esc. */}
           <button
             type="button"
             onClick={() => setMobileOpen(false)}
@@ -314,7 +247,6 @@ export function Sidebar({
           >
             <X size={20} />
           </button>
-          {/* Desktop chevron — collapse/expand sidebar, schowany na mobile. */}
           <button
             type="button"
             onClick={() => setCollapsed((v) => !v)}
@@ -326,7 +258,6 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Quick actions */}
       <nav className="flex flex-col gap-0.5 border-b border-black/5 dark:border-white/[0.05] px-2 py-2">
         <NavItem
           href="/inbox"
@@ -381,10 +312,8 @@ export function Sidebar({
         />
       </nav>
 
-      {/* Workspaces — accordion */}
       <div className="flex-1 overflow-y-auto px-2 py-2">
         {!collapsed && (
-          // B: większy eyebrow + plus tap-target na mobile.
           <div className="mb-2 flex items-center justify-between px-2 max-md:mb-3 max-md:px-3 max-md:pt-2">
             <span className="eyebrow max-md:text-[0.78rem] max-md:tracking-[0.12em]">Przestrzenie</span>
             <Link
@@ -427,7 +356,6 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Bottom: settings + signout */}
       <div className="flex flex-col gap-0.5 border-t border-black/5 dark:border-white/[0.05] px-2 py-2">
         {user.isSuperAdmin && (
           <NavItem
@@ -445,14 +373,10 @@ export function Sidebar({
           pathname={pathname}
           collapsed={collapsed}
         />
-        {/* F12-K15: prominent labeled theme toggle obok 'Wyloguj' — wcześniej
-            był w nagłówku sidebar jako mała ikonka, klient nie widział że
-            istnieje. */}
         <ThemeToggle variant="labeled" collapsed={collapsed} />
         <form action={signOutAction} className="w-full">
           <button
             type="submit"
-            // B: dopasowane do nav-row'a (większy padding + text na mobile).
             className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
           >
             <LogOut size={15} className="shrink-0 max-md:size-[18px]" />
@@ -460,16 +384,12 @@ export function Sidebar({
           </button>
         </form>
       </div>
-      </div>{/* /sidebar-glass */}
+      </div>
     </aside>
     </>
   );
 }
 
-// Workspace pod-link (Wiki/Support/Creative Board/Kalendarz/
-// Ustawienia) — taki sam wygląd co dotąd, ale z active state'em żeby
-// klient widział na czym aktualnie jest. Active = żywy text-foreground
-// + sidebar-accent tło + lewy primary marker.
 function WsSubLink({
   href,
   icon,
@@ -481,18 +401,14 @@ function WsSubLink({
   icon: React.ReactNode;
   label: string;
   active: boolean;
-  // Opcjonalny licznik (np. otwarte zgłoszenia supportu).
   badge?: number;
 }) {
   return (
     <Link
       href={href}
       data-active={active ? "true" : "false"}
-      // B: większy padding + text + ikony na mobile.
       className="group relative inline-flex items-center gap-1.5 rounded-sm px-2 py-1 font-mono text-[0.78rem] uppercase tracking-[0.12em] text-muted-foreground/80 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground data-[active=true]:bg-white/80 data-[active=true]:shadow-[0_0_0_0.5px_rgba(12,13,18,0.08),inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-white/[0.07] dark:data-[active=true]:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.06)] data-[active=true]:font-semibold data-[active=true]:text-foreground max-md:gap-2.5 max-md:rounded-md max-md:px-3 max-md:py-2.5 max-md:text-[0.86rem] [&>svg]:max-md:size-4"
     >
-      {/* F12-K59: usunięty lewy purple marker — active state polega na
-          inset white-highlight'cie + font-weight'cie. */}
       {icon} {label}
       {badge !== undefined && badge > 0 && (
         <span className="ml-auto grid h-4 min-w-[16px] place-items-center rounded-full bg-primary px-1 font-mono text-[0.58rem] font-bold tracking-normal text-primary-foreground">
@@ -531,8 +447,7 @@ function NavItem({
       <span className="relative shrink-0 text-muted-foreground group-hover:text-foreground group-data-[active=true]:text-foreground [&>svg]:max-md:size-[18px]">
         {icon}
         {collapsed && badge !== undefined && badge > 0 && (
-          // Fixed width: badge never changes size when count jumps
-          // 1 → 9 → 9+, so the icon row doesn't reflow.
+          // Fixed width — badge size stable across 1 → 9 → 9+ so icon row doesn't reflow.
           <span className="absolute -right-2 -top-1.5 grid h-4 w-4 place-items-center rounded-full bg-primary font-mono text-[0.55rem] font-bold text-primary-foreground">
             {badge > 9 ? "9+" : badge}
           </span>
@@ -554,9 +469,6 @@ function NavItem({
     </>
   );
 
-  // B: na mobile wszystkie nav-rowy są ~30% większe (padding,
-  // gap, font) — klient pisał że layout fullscreen wygląda za luźno
-  // z malutkimi rzędami. Desktop bez zmian.
   const cls =
     "group flex items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] data-[active=true]:bg-white/80 data-[active=true]:shadow-[0_0_0_0.5px_rgba(12,13,18,0.08),inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-white/[0.07] dark:data-[active=true]:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.06)] data-[active=true]:text-foreground max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]";
 
@@ -587,18 +499,12 @@ function canManage(role: Role): boolean {
   return role === "ADMIN";
 }
 
-// Tworzenie tablic dostępne dla ADMIN + MEMBER (zgodnie z lib/permissions
-// matrix). Wcześniej canManage blokowało wszystkich poza ADMIN'em — bug.
+// Matches lib/permissions matrix — ADMIN + MEMBER can create boards (VIEWER cannot).
 function canCreateBoard(role: Role): boolean {
   return role === "ADMIN" || role === "MEMBER";
 }
 
-// Workspace swatch — mała kolorowa kafelka 16×16 (gradient
-// from→to) zastępująca generyczny FolderOpen icon. Kolor wybierany
-// deterministycznie z hash'a ID workspace'u, żeby ten sam workspace
-// zawsze miał ten sam kolor. 6 wariantów (Apple-system-like hues).
-// Inline style zamiast Tailwind klas, bo array dynamicznych klas nie
-// jest niezawodnie wykrywany przez Tailwind v4 JIT scanner.
+// Inline style instead of Tailwind classes — dynamic class arrays aren't picked up by Tailwind v4 JIT.
 const SWATCH_GRADIENTS: ReadonlyArray<readonly [string, string]> = [
   ["#93c5fd", "#a78bfa"], // blue → violet (default)
   ["#fda4af", "#fb923c"], // pink → orange
@@ -627,11 +533,7 @@ function WorkspaceSwatch({ id }: { id: string }) {
   );
 }
 
-// Pojedynczy wiersz workspace'u w sidebarze + jego rozwinięte
-// boardy. Drag handle pojawia się on-hover (desktop) / zawsze (mobile),
-// {...listeners} są tylko na buttonie, więc click w nazwę nadal działa
-// jak link (dnd-kit aktywuje drag dopiero przy ruchu >5px — patrz sensors
-// w komponencie Sidebar).
+// Drag handle is hover-only (desktop) / always (mobile); {...listeners} sits on the button so name clicks remain link clicks.
 function SortableWorkspaceRow({
   workspace: ws,
   pathname,
@@ -647,9 +549,7 @@ function SortableWorkspaceRow({
   onToggle: () => void;
   collapsed: boolean;
 }) {
-  // Gdy collapsed (desktop wąski tryb), nie ma jak wyświetlić
-  // grip handle obok wąskich ikon → drag wyłączony. Klient i tak musi
-  // rozwinąć żeby zobaczyć listę.
+  // Drag disabled when collapsed — no room for the grip handle next to narrow icons.
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: ws.id, disabled: collapsed });
 
@@ -661,9 +561,7 @@ function SortableWorkspaceRow({
   } as const;
 
   const isInWorkspace = ws.id === activeWorkspaceId;
-  // Workspace row highlighted ONLY gdy jesteś na workspace
-  // overview / sub-link (Wiki/Support/itd.). Gdy jesteś na konkretnej
-  // tablicy → highlight idzie do tej tablicy, workspace traci accent.
+  // Workspace row highlighted only on workspace overview / sub-links — board pages own the highlight.
   const onBoardInWs = pathname.startsWith(`/w/${ws.id}/b/`);
   const isActive = isInWorkspace && !onBoardInWs;
 
@@ -673,8 +571,6 @@ function SortableWorkspaceRow({
         data-active={isActive ? "true" : "false"}
         className="group relative flex items-center gap-1 rounded-sm data-[active=true]:bg-white/80 data-[active=true]:shadow-[0_0_0_0.5px_rgba(12,13,18,0.08),inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-white/[0.07] dark:data-[active=true]:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.06)]"
       >
-        {/* F12-K59: usunięty lewy purple marker — design używa subtelnego
-            inset white-highlight'a na active wiersza zamiast purple bara. */}
         {!collapsed && (
           <button
             type="button"
@@ -682,10 +578,7 @@ function SortableWorkspaceRow({
             {...listeners}
             aria-label="Przeciągnij przestrzeń"
             title="Przeciągnij aby zmienić kolejność"
-            // Hidden default na desktopie (display:none, nie
-            // rezerwuje miejsca w layout'cie — wcześniej opacity-0 +
-            // w-7 ucinało nazwę workspace'a). group-hover:grid pokazuje
-            // na najechaniu. Na mobile zawsze visible (brak hover state'u).
+            // display:none default (not opacity-0 + w-7 — that clipped the workspace name); group-hover:grid on desktop.
             className="hidden h-7 w-7 shrink-0 cursor-grab place-items-center rounded-sm text-muted-foreground/60 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground active:cursor-grabbing group-hover:grid max-md:!grid max-md:h-10 max-md:w-10 max-md:rounded-md max-md:text-muted-foreground/50"
           >
             <GripVertical size={13} className="max-md:size-[16px]" />
@@ -695,9 +588,6 @@ function SortableWorkspaceRow({
           href={`/w/${ws.id}`}
           className="flex min-w-0 flex-1 items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
         >
-          {/* F12-K59: workspace swatch (mała gradient kafelka) zastępuje
-              poprzednią ikonkę FolderOpen. Kolor wybierany stabilnie z
-              hash'a ID, każda przestrzeń dostaje swój kolor visualny. */}
           <WorkspaceSwatch id={ws.id} />
           {!collapsed && (
             <span className="min-w-0 flex-1 truncate tracking-tight">
@@ -706,9 +596,7 @@ function SortableWorkspaceRow({
           )}
         </Link>
         {!collapsed && canCreateBoard(ws.role) && (
-          // + button do tworzenia tablicy — hover-only na desktopie
-          // (display:none default, group-hover:flex), zawsze visible na mobile.
-          // Bez tego workspace name byłaby ucinana przez stały + button.
+          // Hover-only on desktop; permanently visible would clip the workspace name.
           <span className="hidden group-hover:inline-flex max-md:!inline-flex">
             <CreateBoardDialog
               workspaceId={ws.id}
@@ -745,10 +633,7 @@ function SortableWorkspaceRow({
   );
 }
 
-// Nested SortableContext dla boardów w obrębie jednego workspace'u.
-// Każdy expanded workspace ma własny lokalny state + DndContext — to upraszcza
-// logikę (drop tylko w obrębie tego samego workspace'u, brak cross-workspace
-// reorderu) i jest zgodne z server action sygnaturą (workspaceId, orderedIds).
+// Per-workspace DndContext — no cross-workspace reorder; matches server action signature.
 function SortableBoardsList({
   workspaceId,
   boards: boardsProp,
@@ -788,8 +673,7 @@ function SortableBoardsList({
     });
   };
 
-  // Drag boardów: ADMIN + MEMBER (matching reorderBoardsAction's
-  // requireWorkspaceAction("task.update")). VIEWER nie może.
+  // ADMIN + MEMBER only (matches reorderBoardsAction's requireWorkspaceAction("task.update")).
   const canDragBoards = canCreateBoard(role);
 
   return (
@@ -880,7 +764,6 @@ function SortableBoardRow({
     zIndex: isDragging ? 10 : "auto",
   } as const;
 
-  // Aktywna tablica = pathname zaczyna się od /w/<wid>/b/<bid>.
   const boardActive = pathname.startsWith(`/w/${workspaceId}/b/${b.id}`);
 
   return (
@@ -890,8 +773,6 @@ function SortableBoardRow({
       data-active={boardActive ? "true" : "false"}
       className="group relative flex items-center gap-1 rounded-sm data-[active=true]:bg-white/80 data-[active=true]:shadow-[0_0_0_0.5px_rgba(12,13,18,0.08),inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-white/[0.07] dark:data-[active=true]:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.06)]"
     >
-      {/* F12-K59: usunięty lewy purple marker (analogicznie do workspace
-          row) — design polega na inset white-highlight'cie. */}
       {canDrag && (
         <button
           type="button"
@@ -899,8 +780,6 @@ function SortableBoardRow({
           {...listeners}
           aria-label="Przeciągnij tablicę"
           title="Przeciągnij aby zmienić kolejność"
-          // Hidden default na desktopie (nie rezerwuje miejsca),
-          // hover-toggle. Mobile always-visible.
           className="hidden h-6 w-6 shrink-0 cursor-grab place-items-center rounded-sm text-muted-foreground/60 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground active:cursor-grabbing group-hover:grid max-md:!grid max-md:h-9 max-md:w-9 max-md:rounded-md max-md:text-muted-foreground/50"
         >
           <GripVertical size={12} className="max-md:size-[14px]" />
@@ -917,7 +796,6 @@ function SortableBoardRow({
         {b.name}
       </Link>
       {canManage(role) && (
-        // Delete board hover-only na desktopie.
         <span className="hidden group-hover:inline-flex max-md:!inline-flex">
           <DeleteBoardDialog
             workspaceId={workspaceId}

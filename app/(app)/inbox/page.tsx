@@ -26,8 +26,7 @@ interface PollCreatedPayload {
   authorName?: string | null;
 }
 
-// Task.assigned payload type — emitowane przez toggleAssigneeAction
-// gdy ktoś przypisuje current usera do task'a.
+// Emitted by toggleAssigneeAction when someone assigns the current user.
 interface TaskAssignedPayload {
   workspaceId?: string;
   taskId?: string;
@@ -38,9 +37,8 @@ interface TaskAssignedPayload {
   actorName?: string | null;
 }
 
-// Task.created + task.status.changed — emitowane przez
-// createTaskAction i patchTaskAction (przez notifyBoardEvent helper).
-// Idą do wszystkich członków workspace'u (minus actor).
+// Emitted via notifyBoardEvent from createTaskAction and patchTaskAction; goes
+// to every workspace member except the actor.
 interface TaskBoardEventPayload {
   workspaceId?: string;
   taskId?: string;
@@ -49,13 +47,12 @@ interface TaskBoardEventPayload {
   boardName?: string | null;
   actorId?: string;
   actorName?: string | null;
-  // Tylko dla task.status.changed.
+  // task.status.changed only.
   fromStatusName?: string | null;
   toStatusName?: string | null;
 }
 
-// Support.resolved — emitowane przez updateSupportTicketAction
-// gdy admin oznacza ticket reporter'a jako RESOLVED lub CLOSED.
+// Emitted by updateSupportTicketAction when admin marks reporter's ticket RESOLVED/CLOSED.
 interface SupportResolvedPayload {
   workspaceId?: string;
   ticketId?: string;
@@ -77,10 +74,9 @@ export default async function InboxPage() {
   const session = await auth();
   const userId = session!.user.id;
 
-  // F12-K43 M3 + F12-K44 P1: pojedyncze zapytanie membership'ów. Wcześniej
-  // były dwa fetch'e (active workspaces dla filter'a notyfikacji + full
-  // roster dla assign hotkey'a). Pełen roster ZAWIERA active workspace'y,
-  // więc jedno query wystarczy — derywujemy oba sety in-memory.
+  // One membership query feeds both the notification workspace filter and the
+  // assign-hotkey roster — full roster contains active workspaces, so derive
+  // both sets in memory.
   const memberships = await db.workspaceMembership.findMany({
     where: {
       workspace: {
@@ -103,14 +99,12 @@ export default async function InboxPage() {
   const allNotifications = await loadNotifications(userId);
   const notifications = allNotifications.filter((n) => {
     const ws = (n.payload as { workspaceId?: string } | null)?.workspaceId;
-    // Notyfikacje bez workspace context (np. ogólne) — keep.
-    // Notyfikacje wskazujące na żywy workspace user'a — keep.
-    // Notyfikacje wskazujące na nie-membera lub deleted workspace — drop.
+    // Keep notifications without workspace context or that point to a live
+    // workspace the user is a member of; drop everything else.
     return !ws || activeWorkspaceIds.has(ws);
   });
 
-  // Pre-fetch assignees for every task referenced in the feed — the
-  // hotkey popup needs these to highlight already-assigned people.
+  // Pre-fetch assignees so the hotkey popup can highlight already-assigned people.
   const taskIds = Array.from(
     new Set(
       notifications
@@ -134,10 +128,8 @@ export default async function InboxPage() {
     }
   }
 
-  // Extension: union of every workspace member so the hotkey
-  // popup can offer the full roster regardless of which workspace the
-  // task belongs to. toggleAssigneeAction re-validates per-workspace
-  // server-side.
+  // Union of every workspace member so the hotkey popup works across workspaces.
+  // toggleAssigneeAction re-validates membership server-side.
   const memberMap = new Map<string, { id: string; name: string | null; email: string; avatarUrl: string | null }>();
   for (const m of memberships) {
     if (!memberMap.has(m.user.id)) memberMap.set(m.user.id, m.user);
@@ -157,7 +149,6 @@ export default async function InboxPage() {
       type: n.type,
       createdAt: n.createdAt.toISOString(),
       unread: !n.readAt,
-      // User-editowalna adnotacja przy notyfikacji.
       userNote: n.userNote,
       payload: {
         workspaceId: payload.workspaceId,
@@ -171,7 +162,6 @@ export default async function InboxPage() {
         ticketId: payload.ticketId,
         ticketTitle: payload.ticketTitle,
         status: payload.status,
-        // Task.status.changed payload extra pól.
         fromStatusName: payload.fromStatusName ?? undefined,
         toStatusName: payload.toStatusName ?? undefined,
       },

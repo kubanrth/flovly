@@ -29,9 +29,7 @@ export async function updateWikiPageAction(formData: FormData) {
 
   const ctx = await requireWorkspaceAction(parsed.data.workspaceId, "wiki.edit");
 
-  // Upsert: legacy workspaces created before F8 don't have a WikiPage row
-  // yet. First visit (read) ensures one exists, but we also handle it
-  // defensively on write.
+  // Upsert handles legacy workspaces that lack a WikiPage row.
   await db.wikiPage.upsert({
     where: { workspaceId: parsed.data.workspaceId },
     update: {

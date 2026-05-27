@@ -2,13 +2,10 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { isCronAuthorized } from "@/lib/cron-auth";
 
-// Vercel Cron hits this once a day. For every task with
-// `recurrenceRule` set, decide whether today matches the rule and a
-// fresh instance hasn't been spawned yet. If yes — clone the template
-// (title + description + status column + assignees + tags) into a new
-// Task with `recurrenceParentId` pointing back. Bumps the template's
-// `recurrenceLastSpawnAt` so we don't double-spawn within the same UTC
-// day.
+// Vercel Cron daily. For each task with recurrenceRule, if today matches
+// the rule and no instance was spawned yet, clone the template (title,
+// description, status, assignees, tags) and bump recurrenceLastSpawnAt
+// (UTC-day guard against double-spawn).
 
 interface RecurrenceRule {
   freq: "daily" | "weekly" | "monthly";
@@ -19,12 +16,11 @@ function shouldSpawn(rule: RecurrenceRule, now: Date): boolean {
   if (rule.freq === "daily") return true;
   if (rule.freq === "weekly") {
     if (typeof rule.day !== "number") return false;
-    // 0 = Sunday … 6 = Saturday (matches getDay).
     return now.getDay() === rule.day;
   }
   if (rule.freq === "monthly") {
     if (typeof rule.day !== "number") return false;
-    // Clamp to last day of month so day=31 fires on Feb 28/29.
+    // Clamp do last day of month — day=31 fires on Feb 28/29.
     const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     const fireDay = Math.min(rule.day, lastDayOfMonth);
     return now.getDate() === fireDay;
@@ -41,8 +37,7 @@ function isSameUtcDay(a: Date, b: Date): boolean {
 }
 
 async function runSweep(now: Date) {
-  // Pull every active template. We expect this to be a small set
-  // (templates are rare); per-day full scan is fine.
+  // Full scan acceptable — recurrence templates are rare.
   const templates = await db.task.findMany({
     where: {
       recurrenceRule: { not: { equals: null } },
@@ -67,7 +62,6 @@ async function runSweep(now: Date) {
     if (!shouldSpawn(rule as RecurrenceRule, now)) continue;
     if (t.recurrenceLastSpawnAt && isSameUtcDay(t.recurrenceLastSpawnAt, now)) continue;
 
-    // Compute new rowOrder = last+1 in same column.
     const last = t.statusColumnId
       ? await db.task.findFirst({
           where: { statusColumnId: t.statusColumnId, deletedAt: null },
@@ -89,7 +83,6 @@ async function runSweep(now: Date) {
       },
     });
 
-    // Copy assignees + tags so the instance lands ready for work.
     if (t.assignees.length > 0) {
       await db.taskAssignee.createMany({
         data: t.assignees.map((a) => ({ taskId: instance.id, userId: a.userId })),
@@ -112,8 +105,6 @@ async function runSweep(now: Date) {
 
   return { templates: templates.length, spawned, skipped };
 }
-
-// F12-K43 L1: timing-safe authorization — zob. lib/cron-auth.ts.
 
 export async function GET(req: Request) {
   if (!isCronAuthorized(req)) return new NextResponse("Unauthorized", { status: 401 });

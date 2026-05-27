@@ -1,11 +1,7 @@
-// Preset groupings dla widoku Tabela. Klient zgłosił że zwykłe
-// grupowanie po `startAt` / `stopAt` (raw ISO timestamp jako bucket key)
-// daje 1 bucket per task — bezużyteczne. Tu są semantyczne buckety
-// czasowe + tag-alphabetical jako gotowe presety obok kolumn.
-//
-// Preset id w `groupBy` używa prefixu `preset:` — bucketing path w
-// board-table.tsx łapie po prefixie, persistuje się w BoardView.configJson
-// jak każdy zwykły groupBy.
+// Preset groupings dla widoku Tabela — semantyczne buckety czasowe
+// + tag-alphabetical. Raw ISO timestamp dawałby 1 bucket per task.
+// Preset id używa prefixu `preset:` — bucketing path w board-table.tsx
+// łapie po prefixie, persistuje się w BoardView.configJson.
 
 export type GroupPresetKind = "date-past" | "date-schedule" | "tags-alpha";
 
@@ -35,8 +31,7 @@ const NO_DATE_BUCKET: BucketDescriptor = {
   order: 99,
 };
 
-// Local-time start of "today" — buckety używają lokalnego TZ (pl-PL)
-// żeby "Dzisiaj" był intuicyjny dla użytkownika a nie zależny od UTC.
+// Lokalny TZ — "Dzisiaj" intuicyjny dla użytkownika, nie zależny od UTC.
 function startOfToday(): Date {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
@@ -49,8 +44,7 @@ function addDays(base: Date, days: number): Date {
   return d;
 }
 
-// Poniedziałek bieżącego tygodnia 00:00 lokalnego czasu (UE-style;
-// niedziela = ostatni dzień, więc po sun→mon trzeba odjąć 6).
+// UE-style week: niedziela = ostatni dzień, sun→mon = -6.
 function startOfThisWeek(): Date {
   const today = startOfToday();
   const dow = today.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
@@ -67,8 +61,8 @@ function startOfThisMonth(): Date {
   return new Date(today.getFullYear(), today.getMonth(), 1);
 }
 
-// Past-only buckets dla createdAt (zawsze w przeszłości lub dziś).
-//   Dzisiaj | Wczoraj | Ten tydzień | Ten miesiąc | Starsze | Bez daty
+// Past-only buckets dla createdAt: Dzisiaj | Wczoraj | Ten tydzień |
+// Ten miesiąc | Starsze | Bez daty.
 export function bucketDatePast(iso: string | null): BucketDescriptor {
   if (!iso) return NO_DATE_BUCKET;
   const d = new Date(iso);
@@ -95,8 +89,8 @@ export function bucketDatePast(iso: string | null): BucketDescriptor {
   return { key: "_older", label: "Starsze", order: 4 };
 }
 
-// Schedule buckets dla startAt/stopAt (mieszanka past i future).
-//   Spóźnione | Dzisiaj | Jutro | Ten tydzień | Później | Bez daty
+// Schedule buckets dla startAt/stopAt: Spóźnione | Dzisiaj | Jutro |
+// Ten tydzień | Później | Bez daty.
 export function bucketDateSchedule(iso: string | null): BucketDescriptor {
   if (!iso) return NO_DATE_BUCKET;
   const d = new Date(iso);
@@ -122,9 +116,8 @@ export function bucketDateSchedule(iso: string | null): BucketDescriptor {
   return { key: "_later", label: "Później", order: 4 };
 }
 
-// Pierwszy tag alfabetycznie albo bucket "_no_tag" dla zadań bez tagów.
-// Order = code-point wartości pierwszego tagu (lowercased) — sortuje
-// buckety A→Z bez dodatkowego porządku zewnętrznego.
+// Pierwszy tag alfabetycznie. Order = code-point lowercased name —
+// sortuje buckety A→Z bez external sort key map.
 export function firstTagBucket(
   tags: { name: string; colorHex: string }[],
 ): BucketDescriptor {
@@ -135,17 +128,11 @@ export function firstTagBucket(
     a.name.localeCompare(b.name, "pl", { sensitivity: "base" }),
   );
   const first = sorted[0];
-  // localeCompare-friendly numeric order: take the first two char codes
-  // of lowercased name. Stable enough for alphabetical bucket sort
-  // without an external sort key map.
   const lower = first.name.toLocaleLowerCase("pl");
   const order = (lower.charCodeAt(0) ?? 0) * 1024 + (lower.charCodeAt(1) ?? 0);
   return { key: `tag:${first.name}`, label: first.name, color: first.colorHex, order };
 }
 
-// Helper for the bucketing path in board-table — given a preset id and a
-// task, returns the descriptor without forcing the caller to know which
-// helper to call. Centralizes the dispatch.
 export function bucketForPreset(
   presetId: string,
   task: {

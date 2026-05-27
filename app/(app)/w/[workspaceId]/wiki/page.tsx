@@ -6,8 +6,7 @@ import { WikiEditor } from "@/components/wiki/wiki-editor";
 import type { RichTextDoc } from "@/components/task/rich-text-editor";
 import { AppShell } from "@/components/layout/app-shell";
 
-// Auto-creates a default WikiPage for workspaces that predate F8 so every
-// user gets a landing doc on first visit instead of a 404.
+// Backfills a WikiPage for legacy workspaces so first-visit never 404s.
 async function ensureWikiPage(workspaceId: string, workspaceName: string) {
   const existing = await db.wikiPage.findUnique({ where: { workspaceId } });
   if (existing) return existing;

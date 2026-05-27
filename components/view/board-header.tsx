@@ -42,14 +42,9 @@ export function BoardHeader({
   defaultViewIds?: Partial<Record<ViewName, string>>;
 }) {
   return (
-    // Extra (link folders) now spans full width — previously
-    // shared row with title/viewswitcher → narrower than the table below.
-    // Mobile — h2 mniejsze + ViewSwitcher horizontal-scroll
-    // (negative margin do brzegu ekranu) + actions w nowej linii.
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          {/* F12-K61: inline edit — klik w h2, Enter zapisuje (board.update perm). */}
           <h2 className="font-display text-[1.2rem] font-bold leading-[1.15] tracking-[-0.02em] md:text-[1.5rem]">
             <EditableBoardName
               workspaceId={workspaceId}

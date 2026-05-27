@@ -1,27 +1,18 @@
-// F10-B: filter / sort / group config for the Tabela view.
+// Filter / sort / group config for the Tabela view.
 //
-// State shape stored on `BoardView.configJson` alongside the F8b column
-// prefs:
+// Persisted shape on `BoardView.configJson`:
+//   { columnOrder: string[], hidden: string[],
+//     filters: TableFilter[], sort: TableSort | null,
+//     groupBy: string | null }
 //
-//   {
-//     columnOrder: string[],
-//     hidden: string[],
-//     filters: TableFilter[],         // F10-B
-//     sort: TableSort | null,         // F10-B
-//     groupBy: string | null,         // F10-B (column id)
-//   }
-//
-// Operators are typed per FieldType so the UI can offer a relevant
-// dropdown ("contains" makes no sense for NUMBER, "greater than" makes
-// no sense for SINGLE_SELECT). Apply runs purely on the client over the
-// already-fetched task list — keeps the server simple and lets us
-// preserve realtime subscriptions.
+// Operators typed per FieldType so UI narrows the dropdown. Apply runs
+// client-side over the fetched task list — server stays simple, realtime
+// subscriptions stay intact.
 
 import type { FieldType } from "@/lib/table-fields";
 import { decodeCellValue } from "@/lib/table-fields";
 
-// All possible operators across all types — UI narrows the choice per
-// column type via OPERATORS_FOR_TYPE below.
+// UI narrows the choice per column type via OPERATORS_FOR_TYPE below.
 export type FilterOp =
   | "equals"
   | "notEquals"
@@ -44,16 +35,14 @@ export type FilterOp =
   | "hasAll"; // MULTI_SELECT: all selected
 
 export interface TableFilter {
-  // For built-ins: "title" | "statusColumnId" | "startAt" | "stopAt"
-  // For custom columns: the raw TableColumn.id (no `custom:` prefix).
+  // Built-ins: "title" | "statusColumnId" | "startAt" | "stopAt".
+  // Custom columns: raw TableColumn.id (no `custom:` prefix).
   columnId: string;
-  // Mirrors the FieldType used for the UI so we don't need to look up
-  // the column on every render. "BUILTIN_TITLE" / "BUILTIN_STATUS" /
-  // "BUILTIN_DATE" used for non-custom columns.
+  // Mirrors FieldType so UI doesn't re-resolve the column per render.
+  // "BUILTIN_*" used for non-custom columns.
   kind: FieldType | "BUILTIN_TITLE" | "BUILTIN_STATUS" | "BUILTIN_DATE";
   op: FilterOp;
-  // Stored as a string so the UI can keep dumb. Multi-select stores
-  // JSON-encoded array of option values.
+  // String-encoded; MULTI_SELECT stores JSON array of option values.
   value: string;
 }
 
@@ -115,7 +104,6 @@ export const OPERATOR_LABEL: Record<FilterOp, string> = {
   hasAll: "zawiera wszystkie",
 };
 
-// Pure helper: should a row match this filter?
 export function matchesFilter(
   filter: TableFilter,
   rawValue: string | undefined,
@@ -201,7 +189,6 @@ export function matchesFilter(
   }
 }
 
-// Compare two raw stored values for sort, given the field kind.
 export function compareValues(
   a: string | undefined,
   b: string | undefined,

@@ -26,8 +26,7 @@ export default async function BoardTablePage({
     orderBy: { joinedAt: "asc" },
   });
 
-  // Fetch the full tag list for the in-cell tag picker.
-  // Mirrors the same `OR: workspace + global` query used by task-fetch.ts.
+  // Full tag list for the in-cell picker; mirrors the workspace + global OR in task-fetch.ts.
   const allTags = await db.tag.findMany({
     where: { OR: [{ workspaceId }, { workspaceId: null }] },
     orderBy: [{ workspaceId: { sort: "desc", nulls: "last" } }, { name: "asc" }],
@@ -50,8 +49,7 @@ export default async function BoardTablePage({
           },
           tags: { include: { tag: true } },
           customValues: true,
-          // Lekkie include (4 pola) dla kolumny 'Załączniki' —
-          // pełne metadane (uploader, createdAt) są w task-detail.
+          // Slim include for the 'Załączniki' column; full metadata loads in task-detail.
           attachments: {
             where: { deletedAt: null },
             select: {
@@ -78,9 +76,7 @@ export default async function BoardTablePage({
   const bgCss = backgroundToCss(background);
   const enabledViews = parseEnabledViews(board.workspace.enabledViews);
 
-  // Table view config: F8b added column order + hidden columns; F10-B
-  // added filters/sort/groupBy. Legacy boards don't have these keys, in
-  // which case we fall back to defaults.
+  // Legacy boards may lack columnOrder/hidden/filters/sort/groupBy — fall back to defaults.
   const tableConfig = (tableView?.configJson ?? {}) as {
     columnOrder?: string[];
     hidden?: string[];
@@ -97,8 +93,7 @@ export default async function BoardTablePage({
   const initialPinned = Array.isArray(tableConfig.pinned)
     ? (tableConfig.pinned as string[])
     : undefined;
-  // We trust the shape was validated on write — reads still guard
-  // arrays/null because legacy rows or hand-edited configs may differ.
+  // Shape is validated on write, but legacy/hand-edited rows can differ — guard on read.
   const initialFilters = Array.isArray(tableConfig.filters)
     ? (tableConfig.filters as TableFilter[])
     : undefined;

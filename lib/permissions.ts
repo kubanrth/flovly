@@ -33,7 +33,6 @@ export type Action =
   | "wiki.read"
   | "wiki.edit"
   | "integrations.manage"
-  // Per-board membership management. Workspace ADMIN-only.
   | "board.manageMembers";
 
 const MATRIX: Record<Role, Set<Action>> = {

@@ -18,14 +18,7 @@ import {
   supabaseAdmin,
 } from "@/lib/storage";
 
-// Internal helpdesk module per-workspace. Każdy member
-// może zgłosić ticket; ADMIN/MEMBER (z task.update) może obsłużyć.
-//
-// Dodane dueAt + isUrgent (NATYCHMIAST flag) + reporter może
-// edytować title/description własnego ticketu dopóki status = OPEN.
-
-// ISO datetime accepted as string OR empty string (cleared) — Zod
-// rzuca empty na undefined żeby update mógł wybrać "ignore" vs "null".
+// Empty string → undefined so update can distinguish "ignore" from "clear to null".
 const dueAtSchema = z
   .string()
   .optional()
@@ -59,9 +52,7 @@ export async function createSupportTicketAction(
 
   const ctx = await requireWorkspaceMembership(parsed.data.workspaceId);
 
-  // isUrgent=true wyklucza dueAt — "natychmiast" znaczy "nie ustawiaj
-  // konkretnej daty". Pojedyncza prawda przy zapisie eliminuje sprzeczne
-  // stany w UI.
+  // isUrgent=true forces dueAt=null — single source of truth, no contradictory UI state.
   const dueAt = parsed.data.isUrgent
     ? null
     : parsed.data.dueAt
@@ -80,9 +71,6 @@ export async function createSupportTicketAction(
     },
   });
 
-  // Notify wszystkich workspace member'ów (poza reporter'em) o
-  // nowym zgłoszeniu. Klient: 'dodaj takie same indykatory jak przy
-  // powiadomieniach do supportu, jak pojawi się zgłoszenie to ma pisać'.
   const reporter = await db.user.findUnique({
     where: { id: ctx.userId },
     select: { name: true, email: true },
@@ -120,7 +108,6 @@ export async function createSupportTicketAction(
         broadcastUserChange(n.userId, { kind: "notification.new", id: n.id }),
       ),
     );
-    // Email do każdego member'a.
     const actorLabel = reporter?.name ?? reporter?.email ?? "Ktoś";
     await Promise.all(
       created.map((n) =>
@@ -153,24 +140,21 @@ export async function createSupportTicketAction(
     },
   });
   revalidatePath(`/w/${parsed.data.workspaceId}/support`);
-  // Layout-level revalidate żeby badge supportu w sidebar'ze
-  // dla wszystkich userów odświeżył się przy następnej nawigacji.
+  // Layout-level revalidate so sidebar support badge refreshes on next nav.
   revalidatePath("/", "layout");
   return { ok: true, ticketId: ticket.id };
 }
 
 const updateTicketSchema = z.object({
   id: z.string().min(1),
-  // Edycja treści. Reporter może edytować dopóki status=OPEN
-  // i nie ma assignee. Admin (task.update) zawsze.
   title: z.string().trim().min(1).max(200).optional(),
   description: z.string().trim().min(1).max(5000).optional(),
   status: z.enum(["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"]).optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]).optional(),
   assigneeId: z.string().optional().or(z.literal("")),
-  // dueAt: empty string = clear; undefined = pomiń.
+  // dueAt: empty string = clear; undefined = skip.
   dueAt: z.string().optional(),
-  // isUrgent: dochodzi jako "true"/"false" string z formy.
+  // isUrgent arrives as "true"/"false" string from form.
   isUrgent: z.string().optional(),
 });
 
@@ -200,10 +184,9 @@ export async function updateSupportTicketAction(formData: FormData) {
   });
   if (!ticket) return;
 
-  // Dwie ścieżki autoryzacji.
-  // - "Stan" (status / priority / assignee): tylko task.update.
-  // - "Treść" (title / description / dueAt / isUrgent): reporter (own,
-  //   open, unassigned) ALBO task.update.
+  // Two authorization paths:
+  //   "state" (status/priority/assignee): requires task.update.
+  //   "content" (title/description/dueAt/isUrgent): reporter on own open unassigned ticket OR task.update.
   const isStateChange =
     parsed.data.status !== undefined ||
     parsed.data.priority !== undefined ||
@@ -224,14 +207,12 @@ export async function updateSupportTicketAction(formData: FormData) {
     const reporterCanEdit =
       isReporter && ticket.status === "OPEN" && !ticket.assigneeId;
     if (!reporterCanEdit && !isAdmin) {
-      // VIEWER, albo reporter próbujący edytować po assign'ie — odrzucamy
-      // bez błędu (akcja no-opuje, UI nie powinno tego przycisku w ogóle
-      // pokazać).
+      // Silent no-op: VIEWER, or reporter after assign — UI should not surface the button.
       return;
     }
     ctx = session;
   } else {
-    return; // nic do zrobienia
+    return;
   }
 
   const data: Record<string, unknown> = {};
@@ -255,23 +236,18 @@ export async function updateSupportTicketAction(formData: FormData) {
   if (parsed.data.isUrgent !== undefined) {
     const flag = parsed.data.isUrgent === "true" || parsed.data.isUrgent === "1";
     data.isUrgent = flag;
-    // isUrgent=true wymusza dueAt=null (single source of truth).
+    // isUrgent=true forces dueAt=null (single source of truth).
     if (flag) data.dueAt = null;
   }
 
   await db.supportTicket.update({ where: { id: ticket.id }, data });
 
-  // Gdy ticket właśnie się zamknął (transition do RESOLVED/CLOSED
-  // ze stanu OPEN/IN_PROGRESS), powiadom reporter'a w inboxie. Skip
-  // jeśli reporter sam jest tym kto zamyka (zwykle admin to robi).
+  // Notify reporter on close transition (OPEN/IN_PROGRESS → RESOLVED/CLOSED), skip self-close.
   const wasOpenBefore = ticket.status === "OPEN" || ticket.status === "IN_PROGRESS";
   const isClosedNow =
     parsed.data.status === "RESOLVED" || parsed.data.status === "CLOSED";
 
-  // Gdy admin przypisuje kogoś do ticketu (i to nie ten kto
-  // klika) — wyślij notyfikację 'support.assigned' do nowego assignee.
-  // Wcześniej tylko reporter dostawał info na zamknięciu, assignee
-  // nie wiedział że dostał ticket.
+  // Notify new assignee when admin assigns someone other than self.
   let newAssigneeId: string | null = null;
   if (parsed.data.assigneeId !== undefined) {
     const next = parsed.data.assigneeId === "" ? null : parsed.data.assigneeId;
@@ -280,7 +256,6 @@ export async function updateSupportTicketAction(formData: FormData) {
     }
   }
 
-  // Resolve actor once if any notification will be sent.
   const willNotify =
     (parsed.data.status &&
       wasOpenBefore &&
@@ -315,12 +290,10 @@ export async function updateSupportTicketAction(formData: FormData) {
       },
       select: { id: true, userId: true },
     });
-    // Realtime toast.
     await broadcastUserChange(notif.userId, {
       kind: "notification.new",
       id: notif.id,
     });
-    // Email reporter'owi.
     const statusLabel = parsed.data.status === "RESOLVED" ? "rozwiązane" : "zamknięte";
     const actorLabel = actor?.name ?? actor?.email ?? "admin";
     await sendNotificationEmail({
@@ -354,7 +327,6 @@ export async function updateSupportTicketAction(formData: FormData) {
       kind: "notification.new",
       id: notif.id,
     });
-    // Email do new assignee.
     const actorLabel = actor?.name ?? actor?.email ?? "Ktoś";
     await sendNotificationEmail({
       to: { userId: newAssigneeId },
@@ -377,16 +349,9 @@ export async function updateSupportTicketAction(formData: FormData) {
     diff: data as Record<string, string | number | boolean | null>,
   });
   revalidatePath(`/w/${ticket.workspaceId}/support`);
-  // Status zmienione → liczba otwartych zgłoszeń zmienia się →
-  // sidebar badge musi się przeliczyć.
+  // Status change moves the sidebar "open tickets" badge.
   if (parsed.data.status) revalidatePath("/", "layout");
 }
-
-// Attachments dla ticketów. Reuse Supabase Storage flow z
-// bucketu 'attachments' (signed upload URL → klient PUT-uje plik →
-// klient potwierdza addSupportAttachmentAction → row w
-// SupportTicketAttachment'cie + revalidate). Storage path:
-// w/<wid>/support/<tid>/<rand>-<safe-name>.
 
 const requestUploadSchema = z.object({
   ticketId: z.string().min(1),
@@ -466,11 +431,8 @@ export async function confirmSupportAttachmentUploadAction(input: {
   if (!ticket) return { ok: false, error: "Zgłoszenie nie istnieje." };
   const ctx = await requireWorkspaceMembership(ticket.workspaceId);
 
-  // F12-K43 M2: weryfikacja że plik faktycznie został zapisany do
-  // storage'u przed insert'em DB row'a. Bez tego klient może wymusić
-  // signed URL, ZAMIAST PUT'ować od razu wołać confirm i zostawić
-  // orphan row wskazujący na pusty storageKey. Pattern z task
-  // attachment'ów (t/attachment-actions.ts).
+  // Verify the blob exists before inserting the row — prevents orphan rows
+  // when a client requests a signed URL but never PUTs the file.
   const exists = await storageObjectExists(parsed.data.storageKey);
   if (!exists) {
     return { ok: false, error: "Plik nie został przesłany." };
@@ -507,15 +469,13 @@ export async function deleteSupportAttachmentAction(formData: FormData) {
   });
   if (!att) return;
   const ctx = await requireWorkspaceMembership(att.ticket.workspaceId);
-  // Uploader może swój usunąć; admin (task.update perm) — każdy.
+  // Uploader can delete own; admins (task.update) can delete any.
   const isUploader = att.uploaderId === ctx.userId;
   if (!isUploader) {
     await requireWorkspaceAction(att.ticket.workspaceId, "task.update");
   }
 
-  // Best-effort storage cleanup (ignore failure — DB row removal is
-  // the source of truth; orphaned blobs cleaned up by Supabase
-  // lifecycle policy if any).
+  // Best-effort storage cleanup; DB row is the source of truth.
   try {
     await supabaseAdmin().storage.from(ATTACHMENTS_BUCKET).remove([att.storageKey]);
   } catch {
@@ -541,13 +501,9 @@ export async function deleteSupportTicketAction(formData: FormData) {
     select: { id: true, workspaceId: true, reporterId: true },
   });
   if (!ticket) return;
-  // Reporter can delete own; admins can delete any (we approximate
-  // "admin" via task.update permission).
+  // TODO: reporter self-delete falls through to 403 since this requires task.update;
+  // separate path needed if we want non-admin reporters to delete own tickets.
   const ctx = await requireWorkspaceAction(ticket.workspaceId, "task.update");
-  // Allow self-delete even for reporters who lack admin perm.
-  // requireWorkspaceAction throws on mismatch; if we got here ctx is
-  // valid. Reporters would be caught and 403 — workaround: also let
-  // reporter delete via separate code path (skipped for time).
 
   await db.supportTicket.delete({ where: { id } });
   await writeAudit({

@@ -28,9 +28,8 @@ const NICE_COLORS = [
 
 export async function renameBoardAction(formData: FormData) {
   const workspaceId = String(formData.get("workspaceId") ?? "");
-  // Coerce null → undefined dla `description` żeby schema'owe
-  // `.optional()` zaakceptowało brak pola w FormData (formData.get() zwraca
-  // null gdy brak; null nie pasuje do z.string().optional()).
+  // Coerce null → undefined for `description` so z.string().optional() accepts
+  // a missing field (FormData.get returns null when absent, which fails the schema).
   const descRaw = formData.get("description");
   const parsed = renameBoardSchema.safeParse({
     id: formData.get("id"),
@@ -39,8 +38,8 @@ export async function renameBoardAction(formData: FormData) {
   });
   if (!parsed.success) return;
   const ctx = await requireWorkspaceAction(workspaceId, "board.update");
-  // Skip description gdy nie podane (Prisma undefined = "don't
-  // update this column"). Inline-edit-name nie powinien wymazywać opisu.
+  // Skip description when not provided — undefined means "leave column alone"
+  // so inline-edit-name does not wipe the description.
   const board = await db.board.update({
     where: { id: parsed.data.id },
     data: {
@@ -153,8 +152,8 @@ export async function deleteStatusColumnAction(formData: FormData) {
   revalidatePath(`/w/${workspaceId}/b/${col.boardId}/kanban`);
 }
 
-// BoardView background — "ikona pędzla" per-view customization (color /
-// gradient / image URL). Persists on BoardView.background as JSON.
+// Per-view background customization (color / gradient / image URL).
+// Persists to BoardView.background as JSON.
 export async function updateBackgroundAction(formData: FormData) {
   const parsedMeta = updateBackgroundSchema.safeParse({
     workspaceId: formData.get("workspaceId"),
@@ -178,9 +177,8 @@ export async function updateBackgroundAction(formData: FormData) {
     "background.customize",
   );
 
-  // F8 dropped the @@unique([boardId, type]) index so a board can host
-  // multiple views of the same type (custom views). The "default" view
-  // for each type is the one with name = null, so we target that here.
+  // Multiple views per (board, type) are allowed since the unique index
+  // was dropped. The "default" view per type has name = null — target that.
   const bg = parsed.data === null ? Prisma.DbNull : (parsed.data as Prisma.InputJsonValue);
   const existing = await db.boardView.findFirst({
     where: {
@@ -232,23 +230,19 @@ export async function reorderStatusColumnsAction(formData: FormData) {
       db.statusColumn.update({ where: { id }, data: { order: idx } }),
     ),
   );
-  // Revalidate też kanban + roadmap (kolejność statusów to
-  // kolejność kolumn w kanban, przedziałów w roadmap'ie).
+  // Status order drives kanban columns and roadmap lanes, so revalidate both.
   revalidatePath(`/w/${workspaceId}/b/${parsed.data.boardId}/table`);
   revalidatePath(`/w/${workspaceId}/b/${parsed.data.boardId}/kanban`);
   revalidatePath(`/w/${workspaceId}/b/${parsed.data.boardId}/roadmap`);
 }
 
-// Create a named BoardView so the user can have multiple views of
-// the same type (e.g. two Kanbans with different filters), and also a
-// "name = null" default row that recreates the canonical pill (Tabela,
-// Kanban, …) when the user deleted it earlier.
+// Creates a named BoardView, or recreates the canonical default pill
+// (name = null) when name is empty.
 const createViewSchema = z.object({
   workspaceId: z.string().min(1),
   boardId: z.string().min(1),
   type: z.enum(["TABLE", "KANBAN", "ROADMAP", "GANTT", "WHITEBOARD"]),
-  // Empty string = recreate the default for this type. Server checks
-  // there isn't already a default of this type before allowing it.
+  // Empty string = recreate the default for this type (only allowed if none exists).
   name: z.string().trim().max(60).optional(),
 });
 
@@ -280,8 +274,7 @@ export async function createBoardViewAction(
 
   const wantsDefault = !parsed.data.name || parsed.data.name.length === 0;
   if (wantsDefault) {
-    // Guard: there should only ever be one "default" row (name=null)
-    // per (board, type). Fail loudly so the UI prompts for a name.
+    // Only one default (name=null) row per (board, type) — fail loudly so the UI prompts.
     const existing = await db.boardView.findFirst({
       where: { boardId: parsed.data.boardId, type: parsed.data.type, name: null },
     });
@@ -310,14 +303,12 @@ export async function createBoardViewAction(
     diff: { type: parsed.data.type, name: parsed.data.name ?? null },
   });
 
-  // Default views map back to canonical /table /kanban /roadmap etc.
-  // routes; named views live under /v/[viewId].
+  // Default views map to canonical /table, /kanban, etc.; named views live under /v/[viewId].
   const defaultPath = wantsDefault
     ? `/w/${parsed.data.workspaceId}/b/${parsed.data.boardId}/${parsed.data.type.toLowerCase()}`
     : null;
 
-  // Revalidate every default route so the pill list updates regardless
-  // of which page the user lands on.
+  // Revalidate every default route so the pill list updates on any landing page.
   const base = `/w/${parsed.data.workspaceId}/b/${parsed.data.boardId}`;
   for (const p of ["table", "kanban", "roadmap", "gantt", "whiteboard"]) {
     revalidatePath(`${base}/${p}`);
@@ -339,9 +330,7 @@ export async function deleteBoardViewAction(formData: FormData) {
 
   const ctx = await requireWorkspaceAction(view.board.workspaceId, "board.update");
 
-  // Also allow removing default (name=null) views per board —
-  // e.g. an OKR board wants only Tabela. Safety: never let the board
-  // end up with zero views (user would have no way back in).
+  // Allow deleting default (name=null) views, but never leave the board with zero views.
   const remaining = await db.boardView.count({
     where: { boardId: view.board.id, id: { not: view.id } },
   });
@@ -357,18 +346,15 @@ export async function deleteBoardViewAction(formData: FormData) {
     action: "boardView.deleted",
     diff: { type: view.type, name: view.name },
   });
-  // Revalidate every concrete view page — user might have been on the
-  // one we just deleted and needs the updated pill list on reload.
+  // Revalidate every concrete view page so the pill list updates on reload.
   const base = `/w/${view.board.workspaceId}/b/${view.board.id}`;
   for (const p of ["table", "kanban", "roadmap", "gantt", "whiteboard"]) {
     revalidatePath(`${base}/${p}`);
   }
 }
 
-// Per-board table column preferences. Stored on the default TABLE
-// BoardView.configJson as `{ columnOrder: string[], hidden: string[] }`.
-// Per-board (not per-user) because support-ability > ergonomics — one
-// shared layout means screenshots match what admins see.
+// Per-board table column prefs stored on the default TABLE BoardView.configJson
+// as `{ columnOrder, hidden }`. Per-board (not per-user) so screenshots match.
 const tablePrefsSchema = z.object({
   workspaceId: z.string().min(1),
   boardId: z.string().min(1),
@@ -376,11 +362,8 @@ const tablePrefsSchema = z.object({
   config: z.string().max(4000),
 });
 
-// F9-07 / F10-A: CRUD for per-board custom columns. F10-A added type
-// + options so each column knows whether it's NUMBER, DATE, SELECT, etc.
-// `options` is opaque JSON validated by the FieldOptions schema in
-// lib/table-fields.ts — we trust the client picker here and only check
-// shape on read in formatCellValue.
+// CRUD for per-board custom columns. `options` is opaque JSON validated by
+// FieldOptions in lib/table-fields.ts — shape is checked on read in formatCellValue.
 const FIELD_TYPES = [
   "TEXT",
   "LONG_TEXT",
@@ -455,11 +438,9 @@ export async function createTableColumnAction(formData: FormData) {
   revalidatePath(`/w/${parsed.data.workspaceId}/b/${parsed.data.boardId}/table`);
 }
 
-// F10-A: rename + retype + reconfigure an existing column. Used by the
-// gear-icon popover in the table header. Type changes are destructive
-// in spirit (a NUMBER column becoming DATE will display NaN strings
-// from old text values), so the picker UI warns the user — we don't
-// scrub TaskCustomValue rows here.
+// Rename + retype + reconfigure an existing column. Type changes are destructive
+// in spirit (old text values may render as NaN in NUMBER/DATE columns); the
+// picker UI warns the user. We do not scrub TaskCustomValue rows here.
 const configureColumnSchema = z.object({
   id: z.string().min(1),
   name: z.string().trim().min(1).max(80).optional(),
@@ -582,8 +563,7 @@ export async function setTaskCustomValueAction(formData: FormData) {
   });
   if (!parsed.success) return;
 
-  // Ownership guard: both task + column must belong to the same board
-  // under a workspace the user can update.
+  // Ownership guard: task and column must belong to the same board.
   const [task, col] = await Promise.all([
     db.task.findUnique({
       where: { id: parsed.data.taskId },
@@ -622,10 +602,8 @@ export async function setTaskCustomValueAction(formData: FormData) {
   revalidatePath(`/w/${task.workspaceId}/b/${task.boardId}/table`);
 }
 
-// F10-B: persist filter + sort + groupBy on the default TABLE view's
-// configJson (alongside columnOrder/hidden saved by saveTableColumnPrefsAction).
-// All three are optional — UI sends only the keys it edits, and we
-// merge with whatever already lives on the view.
+// Persists filter + sort + groupBy on default TABLE view's configJson alongside
+// columnOrder/hidden. UI sends only edited keys; we merge with existing config.
 const tableFiltersSchema = z.object({
   workspaceId: z.string().min(1),
   boardId: z.string().min(1),

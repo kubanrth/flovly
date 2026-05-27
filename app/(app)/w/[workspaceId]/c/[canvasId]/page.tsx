@@ -36,9 +36,8 @@ export default async function CanvasEditorPage({
   const canEdit = can(ctx.role, "canvas.edit");
   const canCreateTask = can(ctx.role, "task.create");
 
-  // Load the workspace's first active board + its tasks for the
-  // "Podepnij zadanie" picker. The picker stays cheap at the workspace
-  // scale we target (hundreds of tasks max); beyond that we'd paginate.
+  // Picker data for "Podepnij zadanie". Cheap at expected scale (~hundreds of tasks);
+  // would need pagination beyond that.
   const [firstBoard, tasks] = await Promise.all([
     db.board.findFirst({
       where: { workspaceId, deletedAt: null },
@@ -53,8 +52,7 @@ export default async function CanvasEditorPage({
     }),
   ]);
 
-  // Per-node map of { taskId, title } — filter out tasks that have since
-  // been soft-deleted so we never render a chip pointing at a dead task.
+  // Filter out soft-deleted tasks so chips never point at dead rows.
   const linksByNode = new Map<
     string,
     { taskId: string; title: string }[]
@@ -91,8 +89,7 @@ export default async function CanvasEditorPage({
           workspaceId={workspaceId}
           canvasId={canvas.id}
           initialNodes={canvas.nodes.map((n) => {
-            // DataJson zawiera reactions/locked/imagePath. Defensive
-            // unpacking — pole może być null (DbNull) albo Json object.
+            // dataJson holds reactions/locked/imagePath/textColorHex; field can be null or Json object.
             const meta =
               n.dataJson && typeof n.dataJson === "object" && !Array.isArray(n.dataJson)
                 ? (n.dataJson as Record<string, unknown>)
@@ -107,8 +104,7 @@ export default async function CanvasEditorPage({
             const locked = meta.locked === true;
             return {
               id: n.id,
-              // F6a handles 3 shapes; legacy ICON nodes (future feature) fall
-              // back to RECTANGLE so their data survives round-trips.
+              // Legacy ICON nodes (future feature) downgrade to RECTANGLE on read.
               shape: n.shape === "ICON" ? "RECTANGLE" : n.shape,
               label: n.label,
               x: n.x,

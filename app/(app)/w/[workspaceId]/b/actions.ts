@@ -9,17 +9,13 @@ import { requireWorkspaceAction } from "@/lib/workspace-guard";
 import { writeAudit } from "@/lib/audit";
 import { parseEnabledViews, viewTypeToName } from "@/lib/board-views";
 
-// --- Soft delete ----------------------------------------------------------
-
 const deleteBoardSchema = z.object({
   workspaceId: z.string().min(1),
   boardId: z.string().min(1),
 });
 
-// Soft delete — flipuje deletedAt, cały content tablicy (zadania,
-// kolumny, linki, whiteboard, views, subtasks, poll, reminder-y)
-// znika z UI ale zostaje w DB na wypadek recovery. Ostatnia tablica
-// workspace'u też może być usunięta — user może mieć pusty workspace.
+// Soft-delete flips deletedAt — board content is hidden from UI but stays in DB
+// for recovery. A workspace may be emptied of all boards.
 export async function deleteBoardAction(formData: FormData) {
   const parsed = deleteBoardSchema.safeParse({
     workspaceId: formData.get("workspaceId"),
@@ -56,8 +52,6 @@ export async function deleteBoardAction(formData: FormData) {
 
   revalidatePath(`/w/${parsed.data.workspaceId}`);
   revalidatePath("/workspaces");
-  // Redirect to overview — the board page we may have been on no longer
-  // exists from the user's perspective.
   redirect(`/w/${parsed.data.workspaceId}`);
 }
 
@@ -72,9 +66,8 @@ export type CreateBoardState =
   | { ok: false; error?: string; fieldErrors?: { name?: string; description?: string } }
   | null;
 
-// Seeds the new board with the same status columns as the default board
-// and BoardView rows matching workspace.enabledViews (minus WHITEBOARD,
-// which lives in ProcessCanvas and is created on-demand).
+// Seeds the new board with default status columns and BoardView rows matching
+// workspace.enabledViews.
 export async function createBoardAction(
   _prev: CreateBoardState,
   formData: FormData,
@@ -101,9 +94,7 @@ export async function createBoardAction(
   });
   if (!ws) return { ok: false, error: "Workspace nie istnieje." };
 
-  // Pick up user-selected view types from the checkbox group.
-  // Must be a subset of workspace.enabledViews — illegal values are
-  // stripped silently (we won't block submit on a mismatched box).
+  // Selected view types must be a subset of workspace.enabledViews; illegal values silently stripped.
   const workspaceEnabled = new Set(
     parseEnabledViews(ws.enabledViews).map((v) => v.toUpperCase()),
   );
@@ -112,7 +103,7 @@ export async function createBoardAction(
   const selectedTypes: ViewType[] =
     rawFiltered.length > 0
       ? (rawFiltered as ViewType[])
-      : // No boxes ticked (e.g. programmatic call) → match workspace default.
+      : // No boxes ticked → match workspace default.
         (Array.from(workspaceEnabled) as ViewType[]);
 
   const board = await db.board.create({
@@ -130,9 +121,8 @@ export async function createBoardAction(
         ],
       },
       views: {
-        // Seed one BoardView row per selected type — even WHITEBOARD,
-        // which usually uses ProcessCanvas but needs a BoardView marker
-        // so ViewSwitcher knows the view is enabled for this board.
+        // One BoardView per selected type — even WHITEBOARD needs a marker
+        // row so ViewSwitcher knows the view is enabled.
         create: selectedTypes.map((type) => ({ type })),
       },
     },
@@ -149,8 +139,7 @@ export async function createBoardAction(
 
   revalidatePath(`/w/${parsed.data.workspaceId}`);
   revalidatePath("/workspaces");
-  // Pick a landing view. Table if enabled (best default), otherwise the
-  // first selected non-whiteboard type, otherwise fall through to table.
+  // Landing view: prefer Table, then first selected type, fall through to Table.
   const preferredOrder: ViewType[] = [
     ViewType.TABLE,
     ViewType.KANBAN,
@@ -164,14 +153,13 @@ export async function createBoardAction(
   redirect(`/w/${parsed.data.workspaceId}/b/${board.id}/${firstView}`);
 }
 
-// Drag-and-drop reorder tablic. Klient wysyła nową kolejność
-// ID. Wymaga task.update permission (ADMIN/MEMBER, nie VIEWER).
+// Drag-and-drop board reorder. Requires task.update (ADMIN/MEMBER, not VIEWER).
 export async function reorderBoardsAction(workspaceId: string, orderedIds: string[]) {
   if (!workspaceId || !Array.isArray(orderedIds) || orderedIds.length === 0) return;
 
   const ctx = await requireWorkspaceAction(workspaceId, "task.update");
 
-  // Sprawdź że wszystkie ID są w tym workspace
+  // Validate all IDs belong to this workspace.
   const valid = await db.board.findMany({
     where: { id: { in: orderedIds }, workspaceId, deletedAt: null },
     select: { id: true },
@@ -196,7 +184,6 @@ export async function reorderBoardsAction(workspaceId: string, orderedIds: strin
     action: "boards.reordered",
   });
 
-  // B: invalidate cały layout — sidebar też pokazuje boardy
-  // wewnątrz workspace'u, nie tylko strona overview.
+  // Layout-level revalidate — sidebar shows boards too, not just the overview page.
   revalidatePath("/", "layout");
 }

@@ -1,14 +1,5 @@
 "use client";
 
-// Tryb ciemny dla całej apki. CSS variables dla `.dark`
-// są już w globals.css — ten toggle:
-// 1) czyta zapisaną preferencję z localStorage (z fallbackiem na
-//    prefers-color-scheme media query)
-// 2) toggluje klasę `dark` na <html>
-// 3) zapisuje preferencję
-//
-// Toggle renderowany w sidebarze koło avatara użytkownika.
-
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -32,18 +23,12 @@ export function ThemeToggle({
   collapsed = false,
 }: {
   variant?: "sidebar" | "compact" | "labeled";
-  // Gdy variant='labeled' i collapsed=false, button pokazuje
-  // tekstowy label obok ikonki — dużo bardziej discoverable niż samą
-  // ikonkę w nagłówku sidebar'a (klient zgłosił że nie wiedział że
-  // toggle istnieje).
   collapsed?: boolean;
 }) {
   const [theme, setTheme] = useState<Theme>("light");
   const [mounted, setMounted] = useState(false);
 
-  // Hydrate from localStorage / system preference on mount. setState
-  // here is intentional — we're synchronising with external state
-  // (localStorage), exactly the use case useEffect is designed for.
+  // Synchronising with external state (localStorage) — setState in effect is intentional.
   useEffect(() => {
     const initial = readInitial();
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -70,7 +55,6 @@ export function ThemeToggle({
         <button
           type="button"
           aria-label="Tryb"
-          // B: dopasowane do innych nav-rowów w sidebarze.
           className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] text-muted-foreground max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
         >
           <Sun size={15} className="shrink-0 max-md:size-[18px]" />
@@ -103,7 +87,6 @@ export function ThemeToggle({
         onClick={toggle}
         aria-label={label}
         title={label}
-        // B: dopasowane do innych nav-rowów w sidebarze.
         className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
       >
         <Icon size={15} className="shrink-0 max-md:size-[18px]" />

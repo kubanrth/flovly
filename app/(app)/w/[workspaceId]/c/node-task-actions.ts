@@ -39,7 +39,7 @@ export async function linkTaskToNodeAction(input: {
 
   const ctx = await requireWorkspaceAction(node.canvas.workspaceId, "canvas.edit");
 
-  // Scope check: task must live in the same workspace as the canvas.
+  // Task must live in the same workspace as the canvas.
   const task = await db.task.findUnique({
     where: { id: parsed.data.taskId },
     select: { id: true, workspaceId: true, deletedAt: true, title: true },
@@ -48,7 +48,7 @@ export async function linkTaskToNodeAction(input: {
     return { ok: false, error: "Zadanie nie istnieje w tej przestrzeni." };
   }
 
-  // Idempotent — composite primary key makes the upsert cheap.
+  // Idempotent upsert keyed on the composite PK.
   await db.processNodeTaskLink.upsert({
     where: { nodeId_taskId: { nodeId: node.id, taskId: task.id } },
     update: {},
@@ -80,7 +80,7 @@ export async function unlinkTaskFromNodeAction(input: {
 
   const ctx = await requireWorkspaceAction(node.canvas.workspaceId, "canvas.edit");
 
-  // deleteMany so a missing row is a no-op rather than a thrown error.
+  // deleteMany so a missing row is a no-op rather than a throw.
   const deleted = await db.processNodeTaskLink.deleteMany({
     where: { nodeId: parsed.data.nodeId, taskId: parsed.data.taskId },
   });
@@ -99,8 +99,8 @@ export async function unlinkTaskFromNodeAction(input: {
   return { ok: true };
 }
 
-// One shot: create a Task in the given board and immediately link it to
-// the node. Title defaults to the node's label client-side.
+// Creates a Task in the given board and links it to the node in one shot.
+// Title defaults to the node's label on the client.
 export async function createAndLinkTaskFromNodeAction(input: {
   nodeId: string;
   boardId: string;

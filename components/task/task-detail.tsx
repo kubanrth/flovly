@@ -30,7 +30,7 @@ import { RecurrencePicker } from "@/components/task/recurrence-picker";
 import { PortalDropdown } from "@/components/ui/portal-dropdown";
 import { Bell, Flag } from "lucide-react";
 
-// Paleta tagów przeniesiona do `lib/colors.ts` (BRAND_PALETTE).
+// Tag palette moved to lib/colors.ts (BRAND_PALETTE).
 import { TAG_PALETTE as TAG_COLORS } from "@/lib/colors";
 
 export interface TaskDetailProps {
@@ -38,7 +38,7 @@ export interface TaskDetailProps {
   role: Role;
   task: {
     id: string;
-    // Ludzki ID per-workspace (1, 2, 3...) wyświetlany w UI.
+    // Human-friendly per-workspace ID (1, 2, 3...).
     displayId: number;
     title: string;
     descriptionJson: RichTextDoc | null;
@@ -82,9 +82,7 @@ export interface TaskDetailProps {
   poll: PollData | null;
   canManagePoll: boolean;
   canVote: boolean;
-  // Custom kolumny tabeli + ich wartości — wyświetlamy w karcie
-  // zadania nad sekcją "Czas pracy". Bidirectional sync ze stroną tabeli
-  // (saveTaskCustomValueAction revalidate'uje obie).
+  // saveTaskCustomValueAction revalidates both this card and the table page.
   customColumns: {
     id: string;
     name: string;
@@ -131,11 +129,7 @@ export function TaskDetail({
   const fieldErrors = !state?.ok ? state?.fieldErrors : undefined;
   const flash = state?.ok ? state.message : null;
 
-  // Server actions revalidate paths but Supabase Realtime
-  // broadcast can fail silently (channel auth, network) — wrap the
-  // assignee toggle so the parent route always gets a router.refresh
-  // when the action returns. Cheap belt-and-suspenders.
-  // (Tag toggle wrapper lives inside TagsSection so it has its own.)
+  // Belt-and-suspenders router.refresh after assignee toggle — Realtime broadcast can fail silently.
   const toggleAssigneeWithRefresh = async (fd: FormData) => {
     await toggleAssigneeAction(fd);
     router.refresh();
@@ -334,10 +328,7 @@ export function TaskDetail({
           przez co po server-save select wracał do oryginalnego value
           jeśli intercepted modal route nie zrewalidował się na czas. */}
       <MilestoneSection
-        // Key bound to milestoneId — gdy server zwraca nową
-        // wartość, komponent remountuje się i state startuje od fresh
-        // currentMilestoneId. Eliminuje wszelkie potential stale-state
-        // sync issues bez wywoływania setState w render body.
+        // key=milestoneId remounts on server change — fresh state without setState-in-render.
         key={`ms-${task.milestoneId ?? "none"}`}
         taskId={task.id}
         currentMilestoneId={task.milestoneId}
@@ -426,11 +417,7 @@ export function TaskDetail({
   );
 }
 
-// Milestone picker — controlled select. Lokalny state startuje
-// od `currentMilestoneId` (key na poziomie parent'a wymusza remount
-// przy zmianie propa, więc state zawsze świeży). Po onChange optymizujemy
-// UI od razu, server save w tle, router.refresh() wymusza świeże props
-// dla intercepted modal route'u.
+// Optimistic UI: setValue runs immediately; router.refresh() pulls fresh props through intercepted modal route.
 function MilestoneSection({
   taskId,
   currentMilestoneId,
@@ -445,13 +432,11 @@ function MilestoneSection({
   const router = useRouter();
   const [value, setValue] = useState<string>(currentMilestoneId ?? "");
 
-  // PortalDropdown zamiast natywnego <select>. Sentinel "__none__"
-  // bo PortalDropdown traktuje pustego stringa jako 'no selection' (i nie
-  // dałoby się go wybrać jako "Brak"). Convert in/out na granicy.
+  // Sentinel needed — PortalDropdown treats "" as no-selection so empty can't be picked as "Brak".
   const NONE = "__none__";
   const handleChange = (next: string) => {
     const persisted = next === NONE ? "" : next;
-    setValue(persisted); // optimistic — UI nie czeka na server
+    setValue(persisted);
     const fd = new FormData();
     fd.set("taskId", taskId);
     fd.set("milestoneId", persisted);
@@ -495,10 +480,7 @@ function MilestoneSection({
   );
 }
 
-// Hidden-input + PortalDropdown żeby reminderOffset dalej trafiał
-// do FormData submitu (parent form). Native <select> w form'ie miało
-// natywny dropdown, który klient zgłosił jako brzydki UX (mac-native
-// styling, dark-mode broken).
+// Hidden-input + PortalDropdown so reminderOffset still flows into parent form's FormData.
 function ReminderField({
   defaultValue,
   reminderAt,
@@ -560,8 +542,7 @@ function TagsSection({
   const [creating, setCreating] = useState(false);
   const [color, setColor] = useState(TAG_COLORS[0]);
 
-  // See comment in TaskDetail — same belt-and-suspenders pattern
-  // for tag toggles so the table re-fetches even if Realtime is silent.
+  // Same belt-and-suspenders pattern as TaskDetail — table re-fetches even if Realtime is silent.
   const toggleTagWithRefresh = async (fd: FormData) => {
     await toggleTagAction(fd);
     router.refresh();

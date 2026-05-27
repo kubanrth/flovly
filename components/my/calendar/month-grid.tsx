@@ -205,12 +205,9 @@ export function CalendarMonthGrid({
                   cell.date.getDate()
                 )}
               </div>
-              {/* F12-K47: na mobile pokazujemy max 2 eventy (wcześniej 3) +
-                  +N indicator — cells robi się czytelniejsze przy 50px szer. */}
               {dayEvents.slice(0, 2).map((ev) => {
                 const isEvent = ev.kind === "event";
-                // Fallback do `ev.id` (legacy callsites) gdyby nie ustawiono
-                // entityId — usuwamy prefix "task:" / "event:" defensywnie.
+                // Defensive: strip "task:" / "event:" prefix from legacy ids.
                 const rawId = ev.entityId ?? ev.id.replace(/^(task|event):/, "");
                 const className =
                   "truncate rounded-sm px-1 py-0.5 text-left text-[0.55rem] font-medium transition-colors hover:brightness-95 md:px-1.5 md:text-[0.68rem]";
@@ -261,9 +258,6 @@ export function CalendarMonthGrid({
         })}
       </div>
 
-      {/* F12-K55: full-day expand modal — klik w '+N więcej' otwiera
-          listę WSZYSTKICH wydarzeń + zadań z tego dnia, scrollowalna,
-          pełne tytuły bez truncate. */}
       {expandedDay && (
         <DayExpandDialog
           day={expandedDay.date}

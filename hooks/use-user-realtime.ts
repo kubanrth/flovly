@@ -4,13 +4,9 @@ import { useEffect } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import type { UserRealtimePayload } from "@/lib/realtime";
 
-// Per-user kanał `user:<userId>` — subskrybuje broadcastUserChange'y
-// (notification.new / reminder.due). Używane przez `<UserToaster>` żeby
-// pokazać toast w prawym górnym rogu od razu, bez polla.
-//
-// W przeciwieństwie do `useWorkspaceRealtime`, nie odpalamy `router.refresh()`
-// — toaster sam fetchuje payload po id. Refresh inboxa jest osobno (przez
-// revalidatePath('/inbox') po stronie servera).
+// Per-user kanał `user:<userId>` dla broadcastUserChange.
+// W przeciwieństwie do useWorkspaceRealtime NIE odpala router.refresh —
+// consumer (UserToaster) sam dofetchuje payload po id.
 export function useUserRealtime(
   userId: string | null | undefined,
   onChange: (payload: UserRealtimePayload) => void,
@@ -31,8 +27,7 @@ export function useUserRealtime(
     return () => {
       sb.removeChannel(channel);
     };
-    // onChange jest stabilny przez useCallback w consumerze — nie chcemy
-    // resubscribe'ować przy każdym renderze.
+    // onChange stable via useCallback in consumer — don't resub each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 }

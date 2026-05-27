@@ -10,7 +10,6 @@ import {
   type TaskListSection,
 } from "@/components/my-tasks/hotkey-task-list";
 
-// Search params are URL-synced filters maintained by FiltersBar.
 interface MyTasksSearchParams {
   search?: string;
   boardIds?: string;
@@ -25,11 +24,8 @@ async function loadAssignments(
     sort: SortMode;
   },
 ) {
-  // Filtrujemy też po workspace.deletedAt + board.deletedAt.
-  // Soft-delete workspace'a/boardu nie cascade'uje na taski, więc bez
-  // tego 'Zadania dla Ciebie' pokazywało stare assignment'y → klik
-  // dawał 404 bo route /w/<wid>/t/<tid> nie znajdował aktywnego task'a
-  // (workspace zniknął). Identyczny fix jak dla /my/calendar w F12-K29.
+  // Filter on workspace.deletedAt + board.deletedAt — soft-delete does not
+  // cascade to tasks, so stale assignments would 404 when clicked.
   const where: Prisma.TaskAssigneeWhereInput = {
     userId,
     task: {
@@ -70,9 +66,7 @@ async function loadAssignments(
       task: {
         include: {
           workspace: { select: { id: true, name: true, slug: true } },
-          // Board.statusColumns — listę statusów boardu potrzebujemy
-          // w UI my-tasks żeby klient mógł zmienić status z listy (bug
-          // zgłoszony przez Daniela, wcześniej tylko z otwartego taska).
+          // statusColumns needed so the inline StatusPicker in the row can change task status.
           board: {
             select: {
               id: true,
@@ -85,8 +79,7 @@ async function loadAssignments(
           },
           statusColumn: true,
           tags: { include: { tag: true } },
-          // Needed for the assign hotkey "already-assigned"
-          // highlight in the popup menu.
+          // For "already-assigned" highlight in the assign-hotkey popup.
           assignees: { select: { userId: true } },
         },
       },
@@ -116,11 +109,8 @@ export default async function MyTasksPage({
 
   const [assignments, boardOptions, userWorkspaces] = await Promise.all([
     loadAssignments(userId, filters),
-    // Dedupe boards for the filter pills, only those the user actually has
-    // assignments on.
+    // Dedupe boards for the filter pills; same alive-only filter as loadAssignments.
     db.taskAssignee.findMany({
-      // Ten sam filtr co loadAssignments — board pickle pills
-      // muszą zawierać tylko żywe boardy z żywych workspace'ów.
       where: {
         userId,
         task: {
@@ -139,9 +129,8 @@ export default async function MyTasksPage({
         },
       },
     }),
-    // Collect every member across every workspace the user belongs
-    // to → union powers the assign-hotkey popup. toggleAssigneeAction
-    // validates membership server-side, so we can safely offer everyone.
+    // Union of members across the user's workspaces powers the assign-hotkey popup.
+    // toggleAssigneeAction validates membership server-side.
     db.workspaceMembership.findMany({
       where: {
         workspace: {
@@ -155,8 +144,7 @@ export default async function MyTasksPage({
     }),
   ]);
 
-  // Dedupe members by user id — same person in multiple workspaces
-  // would otherwise appear twice in the hotkey menu.
+  // Dedupe by user id — a person in multiple workspaces would otherwise appear twice.
   const memberMap = new Map<string, { id: string; name: string | null; email: string; avatarUrl: string | null }>();
   for (const m of userWorkspaces) {
     if (!memberMap.has(m.user.id)) memberMap.set(m.user.id, m.user);
@@ -181,7 +169,7 @@ export default async function MyTasksPage({
 
   const active = assignments.filter((a) => a.task.workspace);
 
-  // Bucket: only when sort is updatedDesc (default). Custom sort = flat list.
+  // Bucket only on default sort with no filters; custom sort = flat list.
   const showBuckets = filters.sort === "updatedDesc" && filters.search === "" && filters.boardIds.length === 0;
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
@@ -203,15 +191,11 @@ export default async function MyTasksPage({
 
   const totalCount = active.length;
 
-  // Map each assignment onto the TaskListRow shape expected by the
-  // client-side HotkeyTaskList.
   const toRow = (a: Assignment): TaskListRow => ({
     id: a.task.id,
     title: a.task.title,
     workspaceId: a.task.workspace.id,
-    // BoardId + boardStatusColumns potrzebne do inline'owego
-    // StatusPicker'a w wierszu listy. statusColumnId trzymamy jako
-    // current selection.
+    // boardId + boardStatusColumns feed the inline StatusPicker; statusColumnId is selection.
     boardId: a.task.board.id,
     statusColumnId: a.task.statusColumn?.id ?? null,
     boardStatusColumns: a.task.board.statusColumns.map((s) => ({

@@ -1,24 +1,20 @@
 // Rate limiting via Upstash Redis + sliding window.
 //
-// Limiters are lazy-initialised and reused across requests. When the
-// Upstash env is absent (local dev without keys) or Redis is unreachable
-// we FAIL OPEN — rate limiting is a safety net, not an authorization
-// layer. A transient Redis outage must not lock everyone out.
+// FAIL OPEN when Upstash env is absent or Redis is unreachable — rate
+// limiting is a safety net, not an authz layer. A transient Redis outage
+// must not lock everyone out.
 //
-// No `import "server-only"` — we want smoke tests to drive this module
-// directly via tsx. Real callers are either Server Actions or
-// server-only libs (auth.ts), so client-side misuse isn't a realistic
-// risk. The Upstash client reads env vars that don't exist in the
-// browser anyway.
+// No `import "server-only"` so smoke tests can drive this via tsx. Real
+// callers are Server Actions / server-only libs; Upstash client reads env
+// vars absent in browser anyway.
 
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
 export type LimiterName =
   | "auth.login"
-  // F12-K43 M4: dedykowany limit na recovery codes — login z TOTP fallback
-  // przeszedł 10 prób bcrypt'a per request. User z 10 leaked codes mógłby
-  // burn'ować je bez jakiegokolwiek alarmu.
+  // Dedicated limit dla recovery codes — bez tego user z 10 leaked codes
+  // mógłby burn'ować wszystkie 10 prób bcrypt per request bez detekcji.
   | "auth.recoveryCode"
   | "comment.create"
   | "task.create"
@@ -28,18 +24,15 @@ export type LimiterName =
 interface LimiterSpec {
   tokens: number;
   window: `${number} ${"s" | "m" | "h" | "d"}`;
-  // Short human-friendly description — exposed to the UI on rejection.
+  // Human-friendly description exposed to UI on rejection.
   friendly: string;
 }
 
 const SPECS: Record<LimiterName, LimiterSpec> = {
-  // Login: tight. Per (IP + typed email), so a single bad actor can't
-  // brute force one address and an unrelated user's attempts aren't
-  // blocked by someone else's mistakes.
+  // Login: per (IP + email) so bad actor can't brute one address while
+  // not blocking unrelated users sharing an IP.
   "auth.login": { tokens: 5, window: "15 m", friendly: "5 prób na 15 minut" },
-  // 3 próby na 30 minut — typowy user wpisuje recovery code raz; więcej
-  // prób = wskazuje na brute force. Tokens=3 < liczba codes (10), więc
-  // user który zgubi pamięć nie może wszystkich na raz testować.
+  // Tokens=3 < liczba codes (10) — user nie może na raz wszystkich testować.
   "auth.recoveryCode": { tokens: 3, window: "30 m", friendly: "3 próby na 30 minut" },
   "comment.create": { tokens: 30, window: "1 m", friendly: "30 komentarzy/min" },
   "task.create": { tokens: 30, window: "1 m", friendly: "30 zadań/min" },

@@ -17,11 +17,9 @@ export default async function MyCalendarPage({
   if (!session?.user) redirect("/secure-access-portal");
   const userId = session.user.id;
   const params = await searchParams;
-  // `?workspace=all` or omitted = show everything. Any other value is
-  // treated as a specific workspace id.
+  // `?workspace=all` (or omitted) shows everything; any other value scopes to that workspace id.
   const selectedWorkspace = params.workspace ?? "all";
 
-  // Workspaces the user is actually a member of — powers the dropdown.
   const memberships = await db.workspaceMembership.findMany({
     where: { userId, workspace: { deletedAt: null } },
     include: { workspace: { select: { id: true, name: true } } },
@@ -32,12 +30,9 @@ export default async function MyCalendarPage({
     name: m.workspace.name,
   }));
 
-  // Fetch every assignment that has at least one date — we still need the
-  // task row for title, workspace, and status color.
-  // Filtruj też po workspace.deletedAt — `deleteWorkspaceAction`
-  // soft-delete'uje sam workspace (deletedAt) ale NIE cascade-deletuje
-  // tasków, więc bez tego warunku 'wszystkie przestrzenie' pokazywało
-  // zadania ze skasowanych workspace'ów. Również board.deletedAt.
+  // Every dated assignment. Filter on workspace.deletedAt + board.deletedAt
+  // since soft-delete doesn't cascade to tasks — otherwise "all workspaces"
+  // would leak tasks from deleted ones.
   const assignments = await db.taskAssignee.findMany({
     where: {
       userId,

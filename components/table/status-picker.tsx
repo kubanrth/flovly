@@ -1,16 +1,6 @@
 "use client";
 
-// F10-X: rich Trello-style status picker. Replaces the bland <select>
-// in the status cell + obviates the heavy "Zarządzaj statusami" panel
-// underneath the table. One-click access to:
-// - Search statuses
-// - Pick one (auto-saves the task)
-// - Edit a status name + color (inline pencil)
-// - Delete a status (X)
-// - Add a new status (+ inline at bottom)
-//
-// Renders via portal so the popover can never be clipped by the
-// overflow-x-auto table wrapper.
+// Portal-rendered so popover isn't clipped by overflow-x-auto table wrapper.
 
 import { startTransition, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";

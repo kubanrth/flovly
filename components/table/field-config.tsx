@@ -1,14 +1,5 @@
 "use client";
 
-// F10-A: shared building blocks for the column configuration UI.
-//
-// - FieldTypePicker — grid of all field types (icons + labels), used
-//   both when creating a column and when reconfiguring an existing one.
-// - SelectOptionsEditor — list of `{ value, color }` rows with palette
-//   swatches, used by SINGLE_SELECT / MULTI_SELECT.
-// - NumberFormatPicker / DateFormatPicker / RatingMaxPicker — small
-//   dedicated controls for the format-options of those types.
-
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import {

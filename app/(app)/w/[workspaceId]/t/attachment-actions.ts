@@ -31,9 +31,8 @@ export type RequestUploadResult =
     }
   | { ok: false; error: string };
 
-// Step 1/2: client calls this with file metadata, gets a short-lived signed
-// URL + the storage key it should use on the second call. No DB row yet —
-// abandoning the upload leaves no trace.
+// Step 1/2: returns a short-lived signed URL + storage key. No DB row yet —
+// an abandoned upload leaves no trace.
 export async function requestAttachmentUploadAction(input: {
   taskId: string;
   filename: string;
@@ -71,9 +70,8 @@ export type ConfirmUploadResult =
   | { ok: true; attachmentId: string }
   | { ok: false; error: string };
 
-// Step 2/2: after the browser PUT'd the file to storage, client calls this
-// so we persist the Attachment row + audit entry. We verify the object is
-// really there before committing so a failed upload can't create a ghost row.
+// Step 2/2: verifies the object exists in storage before persisting the
+// Attachment row — prevents ghost rows from failed uploads.
 export async function confirmAttachmentUploadAction(input: {
   taskId: string;
   storageKey: string;
@@ -92,8 +90,7 @@ export async function confirmAttachmentUploadAction(input: {
   const ctx = await requireWorkspaceAction(task.workspaceId, "task.upload");
 
   if (!parsed.data.storageKey.startsWith(`w/${task.workspaceId}/t/${task.id}/`)) {
-    // A client sending us a key that isn't scoped to this task means a
-    // spoof attempt — reject without hitting storage.
+    // Storage key not scoped to this task — reject without touching storage.
     return { ok: false, error: "Nieprawidłowy klucz pliku." };
   }
 
@@ -132,9 +129,8 @@ export type DownloadUrlResult =
   | { ok: true; url: string; filename: string }
   | { ok: false; error: string };
 
-// Click-to-download: mint a fresh 15-minute signed URL each time so links
-// emailed/copied can't outlive the session that spawned them. Scoped by
-// attachment id so RBAC lives here (not in the URL signer).
+// Mint a fresh 15-minute signed URL per click so copied/emailed links can't
+// outlive the session. RBAC lives here, not in the URL signer.
 export async function getAttachmentDownloadUrlAction(input: {
   id: string;
 }): Promise<DownloadUrlResult> {
@@ -173,13 +169,12 @@ export async function deleteAttachmentAction(formData: FormData) {
     data: { deletedAt: new Date() },
   });
 
-  // Storage object is removed best-effort. If it fails, the row is still
-  // soft-deleted — a cron/cleanup can re-try later. Never throw here: a
-  // successful DB update matters more than a tidy bucket.
+  // Best-effort storage delete; DB soft-delete is the source of truth.
+  // Orphan blobs can be cleaned up later by cron and are not user-visible.
   try {
     await deleteAttachmentObject(existing.storageKey);
   } catch {
-    /* swallow — leaves an orphan in storage, not user-visible */
+    /* swallow */
   }
 
   await writeAudit({

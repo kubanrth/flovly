@@ -6,12 +6,11 @@ import { db } from "@/lib/db";
 import { requireWorkspaceAction } from "@/lib/workspace-guard";
 import { writeAudit } from "@/lib/audit";
 
-// Zapis 'Opis ogólny' tablicy (Tiptap doc JSON). Wymaga
-// board.update permission (ADMIN + MEMBER).
+// Saves board "Overview" (Tiptap doc JSON). Requires board.update (ADMIN + MEMBER).
 const updateSchema = z.object({
   workspaceId: z.string().min(1),
   boardId: z.string().min(1),
-  // Loose ProseMirror — Tiptap render'uje znane node'y, drop'uje unknown.
+  // Loose ProseMirror — Tiptap renders known nodes and drops unknown ones.
   contentJson: z.string().min(1).max(200_000),
 });
 
@@ -25,7 +24,7 @@ export async function updateBoardOverviewAction(formData: FormData) {
 
   const ctx = await requireWorkspaceAction(parsed.data.workspaceId, "board.update");
 
-  // Sprawdź że board jest w tym workspace.
+  // Ownership: board must belong to the claimed workspace.
   const board = await db.board.findFirst({
     where: {
       id: parsed.data.boardId,

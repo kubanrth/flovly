@@ -1,6 +1,5 @@
-// Vercel cron — raz dziennie tworzy snapshot każdego workspace'u
-// (`vercel.json`: schedule "0 1 * * *" = 01:00 UTC = 02:00 CET / 03:00 CEST).
-// Idempotent: jeśli backup dla danego dnia już istnieje, skip.
+// Vercel cron — daily workspace snapshot. Idempotent per dayKey.
+// Schedule "0 1 * * *" = 01:00 UTC (02:00 CET / 03:00 CEST).
 
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
@@ -30,7 +29,6 @@ export async function GET(req: Request) {
 
   for (const ws of workspaces) {
     try {
-      // Idempotent — already-snapshotted today? skip.
       const existing = await db.workspaceBackup.findUnique({
         where: { workspaceId_dayKey: { workspaceId: ws.id, dayKey } },
         select: { id: true },
@@ -41,8 +39,7 @@ export async function GET(req: Request) {
       }
 
       const payload = await buildWorkspaceBackup(ws.id);
-      // BigInt + Date round-trip — JSON.stringify domyślnie nie obsługuje
-      // BigInt-ów (Workspace.storageUsedBytes), więc replacer.
+      // JSON.stringify nie obsługuje BigInt'ów (Workspace.storageUsedBytes).
       const json = JSON.stringify(payload, (_k, v) =>
         typeof v === "bigint" ? v.toString() : v,
       );

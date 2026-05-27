@@ -4,8 +4,8 @@ import { sendEmail } from "@/lib/email";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { escapeHtml as escape } from "@/lib/html-escape";
 
-// Vercel Cron hits this endpoint every 15 minutes (see vercel.json).
-// We gate by Bearer token to prevent public abuse.
+// Vercel Cron hits this every 15 minutes (see vercel.json).
+// Bearer token gate via isCronAuthorized.
 async function runSweep(now: Date) {
   const due = await db.task.findMany({
     where: {
@@ -62,8 +62,7 @@ async function runSweep(now: Date) {
     });
   }
 
-  // Same sweep for private TodoItem reminders. Recipient is always
-  // the item owner (it's a private module — no assignees).
+  // Same sweep dla private TodoItem reminders — recipient = owner.
   const todoDue = await db.todoItem.findMany({
     where: {
       reminderAt: { lte: now, not: null },
@@ -111,9 +110,6 @@ async function runSweep(now: Date) {
     failures,
   };
 }
-
-// F12-K43 L1: timing-safe authorization — zob. lib/cron-auth.ts.
-// F12-K43 L4: escape przeniesione do lib/html-escape.ts.
 
 export async function GET(req: Request) {
   if (!isCronAuthorized(req)) return new NextResponse("Unauthorized", { status: 401 });

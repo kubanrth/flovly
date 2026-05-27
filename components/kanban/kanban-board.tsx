@@ -73,9 +73,7 @@ export function KanbanBoard({
   boardId: string;
   statusColumns: KanbanStatusColumn[];
   initialTasks: KanbanTask[];
-  // Extension: needed for `M` hotkey popup.
   members: AssignMember[];
-  // Gate inline „+ Kolumna" — tylko ADMIN/OWNER (board.update perm).
   canManageBoard: boolean;
 }) {
   const assign = useAssignHotkey({ members, workspaceId });
@@ -239,15 +237,10 @@ export function KanbanBoard({
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
     >
-      {/* F12-K47: mobile — negative margin do brzegu ekranu + free
-          horizontal scroll. F12-K47b: snap-mandatory zniesione bo
-          kolidowało z dnd-kit drag (przeskakiwało zamiast płynnie). */}
       <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:gap-4 md:px-0">
         {renderColumns.map(({ id, column }, idx) => {
           const colTasks = columns.get(id) ?? [];
-          // Lista samych prawdziwych kolumn (bez NO_STATUS)
-          // do reorderowania — NO_STATUS to virtualna kolumna, nie ma
-          // jej w DB.
+          // NO_STATUS is virtual (not in DB) — exclude from reorder.
           const realColumns = renderColumns.filter((rc) => rc.id !== NO_STATUS);
           const realIdx = realColumns.findIndex((rc) => rc.id === id);
           return (
@@ -302,7 +295,6 @@ function Column({
   tasks: KanbanTask[];
   workspaceId: string;
   boardId: string;
-  // Reorderowanie kolumn statusu. UP/DOWN swap'uje z sąsiadem.
   canReorder?: boolean;
   isFirstReal?: boolean;
   isLastReal?: boolean;
@@ -314,10 +306,7 @@ function Column({
 }) {
   const color = column?.colorHex ?? "#94A3B8";
   const name = column?.name ?? "Bez statusu";
-  // Inline add — Trello-style "+ Nowe zadanie" pinned at bottom
-  // of every column. Stays in edit mode so user can fire many in a row.
-  // Bez statusu column doesn't get the inline-add (no statusColumnId
-  // for the server action to use).
+  // Bez statusu column can't be added to — no statusColumnId for the server action.
   const canAddInline = id !== NO_STATUS;
 
   return (
@@ -327,9 +316,6 @@ function Column({
       >
         <div className="flex items-center justify-between gap-2 px-1">
           <div className="flex items-center gap-1">
-            {/* F12-K55: arrows do przesuwania kolumn statusu w lewo/prawo.
-                Pokazujemy tylko admin'owi i tylko dla prawdziwych kolumn
-                (NO_STATUS jest virtualny). */}
             {canReorder && realColumnIds && realColumnIds.length > 1 && (
               <div className="flex items-center">
                 <button
@@ -416,8 +402,6 @@ function Column({
   );
 }
 
-// Inline +Nowe zadanie under each column. Click expands input;
-// Enter creates and re-focuses for the next task; Esc collapses.
 function InlineAddTask({
   workspaceId,
   boardId,
@@ -443,7 +427,7 @@ function InlineAddTask({
     startTransition(async () => {
       await createTaskAction(null, fd);
       setTitle("");
-      // stay in edit mode — Trello pattern, fire many in a row.
+      // Stay in edit mode — fire many in a row.
     });
   };
   if (!editing) {
@@ -518,8 +502,6 @@ function SortableCard({
 }: {
   task: KanbanTask;
   workspaceId: string;
-  // Spread on the article so the `M` hotkey knows which card
-  // is hovered. Passed from KanbanBoard via useAssignHotkey.
   hotkeyProps?: {
     onMouseEnter: () => void;
     onMouseLeave: () => void;
@@ -582,9 +564,7 @@ function CardShell({
       <Link
         href={`/w/${workspaceId}/t/${task.id}`}
         onPointerDown={(e) => e.stopPropagation()}
-        // Long titles must wrap inside the card; previously they
-        // overflowed the 300px column. break-words handles long single
-        // tokens (URLs, IDs) that would otherwise stretch the card.
+        // break-words handles long URLs/IDs that would otherwise stretch the card past 300px.
         className="font-display text-[0.95rem] font-semibold leading-tight tracking-[-0.01em] whitespace-normal break-words transition-colors hover:text-primary"
       >
         {task.title}
@@ -620,10 +600,7 @@ function CardShell({
   );
 }
 
-// Inline „+ Kolumna" w Kanban — wzór 1:1 z AddColumnButton w
-// board-table.tsx. Ghost column (300px szer., dashed border) jako trigger,
-// po kliku popover via createPortal z nazwą + 8-color palette + Anuluj/Dodaj.
-// Tworzy StatusColumn (nie TableColumn) bo Kanban grupuje po statusie.
+// Mirrors AddColumnButton in board-table.tsx; creates a StatusColumn (not TableColumn).
 function AddKanbanColumnButton({
   workspaceId,
   boardId,
@@ -651,13 +628,7 @@ function AddKanbanColumnButton({
     setCoords(null);
   };
 
-  // Fix v2: pozycjonowanie z kotwicami CSS top/bottom zamiast
-  // obliczania top dla above-mode. Wcześniej `top = rect.top - GAP - maxHeight`
-  // przy huge spaceAbove dawało top = PAGE_PAD i popover unosił się daleko
-  // od trigger'a (visual disconnect). Teraz:
-  // - below: top = rect.bottom + GAP (anchor górnej krawędzi)
-  // - above: bottom = innerHeight - rect.top + GAP (anchor DOLNEJ krawędzi)
-  // Plus maxHeight cap = 420 — nasze content (~280px) nie potrzebuje więcej.
+  // Use CSS top/bottom anchors so above-mode stays adjacent to the trigger (not floating high up).
   const computeCoords = () => {
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return null;
@@ -727,11 +698,7 @@ function AddKanbanColumnButton({
 
   return (
     <>
-      {/* F12-K1 fix: self-start + fixed height żeby trigger NIE stretch'ował
-          się do wysokości pełnej kolumny (~600px). Przy stretched triggerze
-          popover anchorował się do całej wysokości i wylądował daleko od
-          klikniętego buttona. Teraz button = ~52px wysokości u góry kolumny,
-          popover pojawia się tuż pod nim. */}
+      {/* self-start + fixed h-[52px] keeps trigger from stretching to column height. */}
       <button
         ref={triggerRef}
         type="button"

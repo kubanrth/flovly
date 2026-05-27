@@ -47,9 +47,9 @@ export interface CanvasPresenceState {
 export interface CanvasProviderHandle {
   clientId: string;
   disconnect: () => void;
-  // For tests / debug — forces a resend of local state.
+  // Forces a resend of local state — for tests / debug.
   resync: () => void;
-  // F10-W2: cursor / presence pipe layered on the same channel.
+  // Cursor / presence pipe layered on the same channel.
   broadcastPresence: (state: Omit<CanvasPresenceState, "clientId" | "ts">) => void;
   onPresence: (cb: (states: Map<string, CanvasPresenceState>) => void) => () => void;
 }
@@ -87,8 +87,7 @@ export function createCanvasRealtimeProvider(
     });
   };
 
-  // F10-W2: presence (cursor) state, keyed by clientId. Stale entries
-  // (ts older than 5s) are pruned on each presence event.
+  // Cursor state keyed by clientId. Entries with ts > 5s pruned on each event.
   const presence = new Map<string, CanvasPresenceState>();
   const presenceListeners = new Set<(s: Map<string, CanvasPresenceState>) => void>();
   const PRESENCE_TTL_MS = 5_000;
@@ -192,6 +191,5 @@ function randomClientId(): string {
   return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-// Re-export the origin symbols so the editor can tag its own writes
-// without re-importing from canvas-doc.
+// Re-exported so editor tags its own writes without importing from canvas-doc.
 export { LOCAL_ORIGIN, REMOTE_ORIGIN, SEED_ORIGIN };

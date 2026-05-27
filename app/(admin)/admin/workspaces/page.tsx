@@ -51,9 +51,8 @@ export default async function AdminWorkspacesPage({
   });
   const taskCountMap = new Map(taskCounts.map((t) => [t.workspaceId, t._count._all]));
 
-  // Storage usage per workspace → F7b. F4d leaves Workspace.storageUsedBytes
-  // at 0 for now; aggregating attachment sizes here requires a JOIN that
-  // doesn't belong on first load.
+  // TODO(F7b): per-workspace storage usage. Aggregating attachment sizes here
+  // requires a JOIN that doesn't belong on first load.
 
   return (
     <main className="flex-1 px-4 py-6 md:px-14 md:py-14">

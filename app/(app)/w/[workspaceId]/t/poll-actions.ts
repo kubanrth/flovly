@@ -52,8 +52,7 @@ export async function createPollAction(formData: FormData) {
     },
   });
 
-  // Notify every workspace member (except the author) that a new
-  // poll dropped — they'll see it in /inbox next to mentions.
+  // Notify every workspace member except the author.
   const members = await db.workspaceMembership.findMany({
     where: {
       workspaceId: task.workspaceId,
@@ -62,7 +61,7 @@ export async function createPollAction(formData: FormData) {
     select: { userId: true },
   });
   if (members.length > 0) {
-    // Per-user create żeby dostać id'ki dla realtime broadcast'u.
+    // Per-user create to get ids for the realtime broadcast.
     const created = await Promise.all(
       members.map((m) =>
         db.notification.create({
@@ -87,7 +86,6 @@ export async function createPollAction(formData: FormData) {
         broadcastUserChange(n.userId, { kind: "notification.new", id: n.id }),
       ),
     );
-    // Email do każdego workspace member'a (poza autorem).
     await Promise.all(
       created.map((n) =>
         sendNotificationEmail({
@@ -135,8 +133,7 @@ export async function castPollVoteAction(formData: FormData) {
 
   const ctx = await requireWorkspaceAction(poll.task.workspaceId, "poll.vote");
 
-  // Idempotent on (pollId, userId): upsert flips the vote if user already
-  // voted on something else.
+  // Idempotent on (pollId, userId); upsert flips the vote if user already voted.
   await db.taskPollVote.upsert({
     where: { pollId_userId: { pollId: parsed.data.pollId, userId: ctx.userId } },
     update: { optionId: parsed.data.optionId, createdAt: new Date() },
@@ -163,7 +160,7 @@ export async function closePollAction(formData: FormData) {
   if (!poll) return;
 
   const ctx = await requireWorkspaceAction(poll.task.workspaceId, "poll.manage");
-  // Only the author or workspace admin can close.
+  // Only author or workspace admin can close.
   if (poll.authorId !== ctx.userId && ctx.role !== "ADMIN") return;
 
   await db.taskPoll.update({

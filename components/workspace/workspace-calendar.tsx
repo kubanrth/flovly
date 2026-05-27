@@ -128,11 +128,7 @@ export function WorkspaceCalendar({
   );
 }
 
-// + F12-K55: dialog ze szczegółami wydarzenia.
-// View mode (default) → przycisk Edytuj przełącza na inline form
-// (title, description, start/end, allDay, color). Submit → updateWorkspaceEventAction
-// → revalidate. Tylko creator widzi guziki edit/delete (sprawdzane
-// dodatkowo server-side).
+// Only creator sees edit/delete buttons; server enforces the same check.
 function EventDetailDialog({
   event,
   onClose,
@@ -246,9 +242,7 @@ function EventDetailDialog({
   );
 }
 
-// Form edycji istniejącego wydarzenia. Inline w EventDetailDialog
-// — toggle widoku z view mode na edit, te same pola co w NewEventForm
-// (poniżej, F12-K31), tylko dispatching do updateWorkspaceEventAction.
+// Same fields as NewEventForm; dispatches to updateWorkspaceEventAction.
 function EditEventForm({
   event,
   onCancel,

@@ -1,9 +1,5 @@
 "use server";
 
-// Server actions dla `/admin/backups`. Wszystkie gated przez
-// `requireSuperAdmin()`. Pliki backupu lecą do Supabase Storage przez
-// service-role klienta z `lib/storage.ts`.
-
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -18,9 +14,8 @@ import {
 
 const triggerSchema = z.object({ workspaceId: z.string().min(1) });
 
-// Manualny snapshot 1 workspace'u. W przeciwieństwie do crona,
-// tu **upsertujemy** plik + WorkspaceBackup row — admin może wymusić
-// świeży snapshot mid-day (np. przed deploy'em zmiany ryzykownej).
+// Manual snapshot upserts the file and the WorkspaceBackup row so admins
+// can force a fresh snapshot mid-day. Cron uses upsert: false for idempotency.
 export async function triggerWorkspaceBackupAction(formData: FormData) {
   const session = await requireSuperAdmin();
   const parsed = triggerSchema.safeParse({
@@ -42,9 +37,6 @@ export async function triggerWorkspaceBackupAction(formData: FormData) {
   const buf = new TextEncoder().encode(json);
   const storageKey = `w/${ws.id}/backups/${dayKey}.json`;
 
-  // upsert: jeśli plik już istnieje (admin trigger drugi raz w tym samym
-  // dniu), nadpisujemy. Cron używa upsert: false dla idempotencji,
-  // tu chcemy odwrotnie.
   const { error: uploadError } = await supabaseAdmin()
     .storage.from(ATTACHMENTS_BUCKET)
     .upload(storageKey, buf, {
@@ -84,9 +76,8 @@ export async function triggerWorkspaceBackupAction(formData: FormData) {
   revalidatePath("/admin/backups");
 }
 
-// "Backup wszystkich teraz" — synchronous loop. Dla większych
-// instalacji (10+ workspace'ów × MB-skalowane payloady) request może
-// zająć kilkadziesiąt sekund. Rozważyć w przyszłości background queue.
+// Synchronous loop — for 10+ workspaces × MB-scale payloads this can run
+// for tens of seconds. TODO: move to a background queue.
 export async function triggerAllBackupsAction(): Promise<{
   ok: true;
   total: number;
@@ -159,9 +150,8 @@ export async function triggerAllBackupsAction(): Promise<{
 
 const downloadSchema = z.object({ backupId: z.string().min(1) });
 
-// Mint signed download URL z `Content-Disposition: attachment;
-// filename=…` żeby browser zapisał plik pod sensowną nazwą zamiast
-// generycznego key'a.
+// Signed URL is minted with Content-Disposition: attachment so the browser
+// saves the file under a sensible name instead of the storage key.
 export async function getBackupDownloadUrlAction(input: {
   backupId: string;
 }): Promise<{ ok: true; url: string; filename: string } | { ok: false; error: string }> {

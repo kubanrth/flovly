@@ -1,12 +1,5 @@
 "use client";
 
-// Per-task time tracking — UI dla 3 stanów (idle / running /
-// completed). Klient: 'do każdego zadania muszę dodać start/stop'.
-//
-// - Idle:      pokaz akumulowany czas + przycisk 'Rozpocznij'
-// - Running:   live ticker (1s interval) + 'Zatrzymaj' + 'Zakończ'
-// - Completed: pokaz finalny czas, brak przycisków, badge "Zakończono"
-
 import { startTransition, useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Pause, Play, Timer, X } from "lucide-react";
 import {
@@ -17,11 +10,11 @@ import {
 
 export interface TaskTimerProps {
   taskId: string;
-  // Tyle sekund nazbierało się z poprzednich sesji.
+  // Seconds accumulated from previous sessions.
   accumulatedSeconds: number;
-  // ISO string — jeśli set, timer chodzi od tego momentu.
+  // ISO — when set, timer is running from this moment.
   startedAt: string | null;
-  // ISO string — jeśli set, task zakończony.
+  // ISO — when set, task is completed.
   completedAt: string | null;
   canEdit: boolean;
 }
@@ -33,11 +26,9 @@ export function TaskTimer({
   completedAt,
   canEdit,
 }: TaskTimerProps) {
-  // Live elapsed (running). Re-render co 1s przez state hook'a.
+  // Live elapsed — re-renders every 1s.
   const [now, setNow] = useState(() => Date.now());
-  // B: custom confirm dialog zamiast natywnego window.confirm()
-  // (klient: brzydki UI w dark mode, niebieski default OK button bez
-  // brand'owania).
+  // Custom dialog instead of window.confirm — native UI has no dark-mode parity.
   const [confirmingComplete, setConfirmingComplete] = useState(false);
 
   const isRunning = !!startedAt && !completedAt;

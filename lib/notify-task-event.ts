@@ -3,21 +3,10 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { db } from "@/lib/db";
 import { broadcastUserChange } from "@/lib/realtime";
 
-// Powiadomienia do wszystkich członków workspace'u (minus
-// actor) o evencie na tablicy — utworzenie zadania, zmiana statusu.
-//
-// Recipient model: workspace membership. Świadomie nie filtrujemy
-// per-board (PUBLIC vs PRIVATE + BoardMembership), bo:
-//   1) klient (Daniel) zażyczył sobie "team-wide visibility" na
-//      tablicy z powiadomieniami,
-//   2) i tak link prowadzi do task page; jeśli user nie ma dostępu
-//      do private boardu, dostanie 404 przy klikaniu — minor edge
-//      case, akceptowalne dla v1.
-//
-// Wydajność: 1× workspaceMembership.findMany + 1× notification.createMany
-// + 1× notification.findMany (na ID) + Promise.all broadcastUserChange.
-// Stara O(N round-trips) z `.map(create)` była flagowana w audycie
-// (F12-K60 review).
+// Notify every workspace member (minus actor) o evencie na tablicy.
+// Recipient model = workspace membership (NIE per-board) — team-wide
+// visibility per client request; private board 404 przy kliknięciu
+// akceptowalne dla v1.
 export async function notifyBoardEvent(params: {
   workspaceId: string;
   taskId: string;
@@ -27,8 +16,6 @@ export async function notifyBoardEvent(params: {
   actorId: string;
   actorName: string | null;
   type: "task.created" | "task.status.changed";
-  // Dla task.status.changed — opcjonalne nazwy statusów do
-  // wyrenderowania "X → Y" w treści notyfikacji.
   fromStatusName?: string | null;
   toStatusName?: string | null;
 }): Promise<void> {
@@ -54,7 +41,6 @@ export async function notifyBoardEvent(params: {
       : {}),
   };
 
-  // CreateMany dla performance (audit feedback z F12-K60).
   await db.notification.createMany({
     data: members.map((m) => ({
       userId: m.userId,
@@ -63,9 +49,8 @@ export async function notifyBoardEvent(params: {
     })),
   });
 
-  // Re-fetch IDs (createMany ich nie zwraca) tylko dla świeżo
-  // dodanych userów. Filtrujemy po createdAt w wąskim okienku 5s żeby
-  // nie złapać niezwiązanych notyfikacji jeśli były concurrent inserts.
+  // createMany nie zwraca ID — refetch w wąskim 5s okienku żeby nie
+  // złapać niezwiązanych notyfikacji z concurrent inserts.
   const fresh = await db.notification.findMany({
     where: {
       userId: { in: members.map((m) => m.userId) },
@@ -75,7 +60,6 @@ export async function notifyBoardEvent(params: {
     select: { id: true, userId: true },
   });
 
-  // Live toast w prawym górnym rogu każdego recipient'a.
   await Promise.all(
     fresh.map((n) =>
       broadcastUserChange(n.userId, { kind: "notification.new", id: n.id }),

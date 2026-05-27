@@ -62,13 +62,12 @@ export async function createMilestoneAction(
 
   const ctx = await requireWorkspaceAction(parsed.data.workspaceId, "milestone.create");
 
-  // Enforce that the board belongs to the claimed workspace.
   const board = await db.board.findFirst({
     where: { id: parsed.data.boardId, workspaceId: parsed.data.workspaceId, deletedAt: null },
   });
   if (!board) return { ok: false, error: "Tablica nie istnieje." };
 
-  // assignee must be a workspace member if provided
+  // Assignee must be a workspace member.
   if (parsed.data.assigneeId) {
     const member = await db.workspaceMembership.findUnique({
       where: {
@@ -81,7 +80,6 @@ export async function createMilestoneAction(
     if (!member) return { ok: false, fieldErrors: { assigneeId: "Nie jest członkiem." } };
   }
 
-  // orderIndex — last+1 per board
   const last = await db.milestone.findFirst({
     where: { boardId: parsed.data.boardId, deletedAt: null },
     orderBy: { orderIndex: "desc" },
@@ -182,9 +180,8 @@ export async function deleteMilestoneAction(formData: FormData) {
 
   const ctx = await requireWorkspaceAction(existing.workspaceId, "milestone.delete");
 
-  // Soft-delete + detach tasks. Prisma's onDelete: SetNull on the relation
-  // handles hard deletes, but we keep the row for audit — so we detach
-  // explicitly here.
+  // Soft-delete keeps row for audit; detach tasks explicitly since Prisma's
+  // onDelete: SetNull only fires on hard delete.
   await db.$transaction([
     db.task.updateMany({
       where: { milestoneId: existing.id },
@@ -224,7 +221,7 @@ export async function assignTaskToMilestoneAction(formData: FormData) {
   if (parsed.data.milestoneId) {
     const m = await db.milestone.findUnique({ where: { id: parsed.data.milestoneId } });
     if (!m || m.deletedAt) return;
-    // Scope check: milestone must live in the task's workspace + board.
+    // Milestone must live in the task's workspace + board.
     if (m.workspaceId !== task.workspaceId || m.boardId !== task.boardId) return;
     targetMilestoneId = m.id;
   }
@@ -244,9 +241,8 @@ export async function assignTaskToMilestoneAction(formData: FormData) {
   });
 
   revalidatePath(`/w/${task.workspaceId}/t/${task.id}`);
-  // Layout-level revalidate żeby objąć intercepted modal route
-  // (@modal/(.)t/[taskId]) — bez tego task page w modalu zostaje stale
-  // i select milestone'a wraca do starej wartości po sekundzie.
+  // Layout revalidate covers the intercepted modal route (@modal/(.)t/[taskId])
+  // — without it the milestone select snaps back to its prior value.
   revalidatePath(`/w/[workspaceId]/b/[boardId]`, "layout");
   revalidate(updated.workspaceId, updated.boardId);
 }

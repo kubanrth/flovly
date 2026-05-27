@@ -106,9 +106,7 @@ function NewReminderForm({
       action={(fd) =>
         startTransition(async () => {
           await createReminderAction(fd);
-          // Trigger natychmiastowy popup refresh (zamiast
-          // czekać na 20s tick w ReminderPopups). Custom event łapie
-          // global listener zamontowany w app layoutu.
+          // Trigger immediate popup refresh — skips 20s tick wait in ReminderPopups.
           if (typeof window !== "undefined") {
             window.dispatchEvent(new Event("reminder:created"));
           }
@@ -456,17 +454,7 @@ function EditReminderForm({
   );
 }
 
-// Rich recipient picker with member avatars + searchable
-// list. Replaces the plain <select> the klient called "nieczytelny".
-// RecipientPicker przeprojektowany — klient zgłosił że dropdown
-// był nieczytelny. Zmiany:
-//   - Trigger jest większy (h-10), z eyebrow 'Komu' wewnątrz lewej strony,
-//     wyraźnym ChevronDown po prawej
-//   - Selected pokazuje większy avatar + name + email (jeśli inny niż self)
-//   - Popover w-[320px] (było 260) z grupowaniem: 'Ty' u góry,
-//     separator, 'Członkowie workspace'ów' poniżej
-//   - Search input ma ikonę i większy padding
-//   - Każdy item h-10 z większym avatarem, lepiej separated
+// Rich recipient picker — avatars + search; replaces plain <select>.
 function RecipientPicker({
   value,
   onChange,

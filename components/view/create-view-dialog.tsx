@@ -79,14 +79,8 @@ export function CreateViewDialog({
     }
   }, [state, router, workspaceId, boardId]);
 
-  // Pokazuj WSZYSTKIE 5 typów widoków, nawet jeśli workspace
-  // miał na początku węższy zestaw enabledViews. Wcześniej `enabled`
-  // ograniczał picker — klient zgłosił że "w niektórych tablicach nie
-  // można dodać innych widoków niż początkowo zdefiniowane". Serwer
-  // (createBoardViewAction) i tak akceptuje każdy z 5 typów, więc to
-  // był tylko UI lock. Picking typu niewystępującego w workspace.enabledViews
-  // odpalą "recreating default" path (existingDefaultTypes go nie zawiera),
-  // czyli klient dostanie domyślny pill tego typu na tablicy.
+  // Show all 5 view types — server accepts any regardless of workspace.enabledViews.
+  // Picking a type not in enabledViews triggers the "recreating default" path.
   void enabled;
   const options = TYPE_OPTIONS;
   // For the picked type: are we recreating a default (no name needed)

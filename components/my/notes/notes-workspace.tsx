@@ -52,7 +52,6 @@ export interface ActiveNote {
   id: string;
   title: string;
   content: string;
-  // Tiptap rich-text doc.
   contentJson: RichTextDoc | null;
   folderId: string | null;
   pinned: boolean;
@@ -60,19 +59,7 @@ export interface ActiveNote {
   updatedAt: string;
 }
 
-// + F11-23 (#14): Apple-Notes-like 3-column layout with iOS parity:
-// smart folders (Pinned/Recent/Trash), search, soft delete + restore,
-// rich text via Tiptap.
-//
-// Mobile redesign 1:1 z iOS Notes — desktop dalej trzyma 3
-// kolumny obok siebie, ale na mobile pokazujemy TYLKO jeden "ekran"
-// na raz (folders → list → editor), z back-chevron'em w headerze i
-// pełną szerokością ekranu. Stan ekranu czytamy z URL params:
-//   - brak folderId i noteId   →  folders view
-//   - folderId (lub q)         →  list view
-//   - noteId                   →  editor view
-// Back chevron robi standardową Next.js navigation (router push) — Browser
-// Back History też naturalnie działa.
+// Mobile screen state from URL params: no params = folders, folderId/q = list, noteId = editor.
 export function NotesWorkspace({
   folders,
   notes,
@@ -92,18 +79,13 @@ export function NotesWorkspace({
   hasNoteParam: boolean;
   activeNote: ActiveNote | null;
 }) {
-  // Mobile screen selection. Search query także liczy się jako "user
-  // wszedł w listę" — np. po wyszukaniu z folders view chcemy zostać
-  // w list view nawet bez folderId.
+  // Search counts as "user entered list view" — stay in list even without folderId.
   const mobileView: "folders" | "list" | "editor" = hasNoteParam
     ? "editor"
     : hasFolderParam || searchQuery
       ? "list"
       : "folders";
 
-  // Back nav from editor: wracamy do listy folderu z którego user wszedł.
-  // Jeśli nie było folderu w URL (rzadkie — auto-select pierwszej notki
-  // przy /my/notes), wracamy do folders.
   const editorBackHref = hasFolderParam
     ? `/my/notes?folderId=${selectedFolder}`
     : "/my/notes";
@@ -132,8 +114,6 @@ export function NotesWorkspace({
   );
 }
 
-// --- Left column: folders ---
-
 function FoldersColumn({
   folders,
   totalByFolder,
@@ -151,21 +131,16 @@ function FoldersColumn({
         hideOnMobile ? "max-md:hidden" : ""
       }`}
     >
-      {/* Mobile-only big iOS-style title */}
       <div className="md:hidden flex items-center justify-between px-1 pb-3 pt-2">
         <span className="font-display text-[1.7rem] font-bold tracking-[-0.02em]">
           Foldery
         </span>
       </div>
 
-      {/* Desktop eyebrow */}
       <div className="max-md:hidden px-2 pt-1 pb-2">
         <span className="eyebrow">Notatnik</span>
       </div>
 
-      {/* F11-23: smart folders (iOS parity). Pinned + Recent + Trash. */}
-      {/* F12-K45: na mobile "Wszystkie" → ?folderId=all żeby tap przeskoczył
-          do listy (mobileView=list); desktop działa tak samo. */}
       <FolderLink
         href="/my/notes?folderId=all"
         active={selectedFolder === "all"}
@@ -359,8 +334,6 @@ function NewFolderForm() {
   );
 }
 
-// --- Middle column: note list ---
-
 function NotesListColumn({
   notes,
   activeNoteId,
@@ -374,8 +347,7 @@ function NotesListColumn({
   searchQuery: string;
   hideOnMobile: boolean;
 }) {
-  // Don't auto-target trash/pinned/recent for create — only
-  // concrete folders pre-fill folderId on new notes.
+  // Smart folders (trash/pinned/recent) don't pre-fill folderId — only concrete folders do.
   const folderId =
     selectedFolder === "all" ||
     selectedFolder === "pinned" ||
@@ -388,9 +360,7 @@ function NotesListColumn({
   const router = useRouter();
   const [search, setSearch] = useState(searchQuery);
 
-  // Debounced search → URL param so refreshes preserve query.
-  // Zawsze ustawiaj folderId (incl. "all") gdy w trybie list,
-  // żeby mobile back-chevron zachował odpowiedni state.
+  // Debounced search → URL param; always set folderId so mobile back-chevron preserves state.
   useEffect(() => {
     if (search === searchQuery) return;
     const h = setTimeout(() => {
@@ -404,9 +374,7 @@ function NotesListColumn({
 
   const folderLabel = folderLabelFor(selectedFolder);
 
-  // Pinned na górze + reszta time-grouped (iOS parity:
-  // "Dzisiaj" / "Wczoraj" / "Poprzednie 7 dni" / "Poprzednie 30 dni" /
-  // per-month). Trash nie grupuje (i tak wszystko "stale").
+  // Pinned on top + remainder time-grouped (iOS Notes parity); Trash doesn't group.
   const pinned = isTrash ? [] : notes.filter((n) => n.pinned);
   const rest = isTrash ? notes : notes.filter((n) => !n.pinned);
   const timeGroups = groupNotesByTime(rest);
@@ -417,7 +385,6 @@ function NotesListColumn({
         hideOnMobile ? "max-md:hidden" : ""
       }`}
     >
-      {/* Mobile-only: back chevron + folder label */}
       <div className="md:hidden flex items-center gap-1 border-b border-border px-2 py-2">
         <Link
           href="/my/notes"
@@ -432,7 +399,6 @@ function NotesListColumn({
       </div>
 
       <div className="flex flex-col gap-2 border-b border-border px-4 py-3">
-        {/* Mobile-only big iOS-style title for selected folder */}
         <div className="md:hidden">
           <span className="font-display text-[1.7rem] font-bold tracking-[-0.02em]">
             {folderLabel}
@@ -480,8 +446,6 @@ function NotesListColumn({
           )}
         </div>
 
-        {/* F11-23: search bar (Apple Notes parity). Filtruje po title +
-            content (snippet). Debounced 300ms → URL param. */}
         <div className="flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1.5 transition-colors focus-within:border-primary/60 md:py-1">
           <Search size={12} className="text-muted-foreground" />
           <input
@@ -550,7 +514,6 @@ function NotesListColumn({
         )}
       </div>
 
-      {/* F12-K45: mobile-only bottom FAB — iOS parity (compose-button bottom right). */}
       {!isTrash && (
         <form
           action={(fd) => startTransition(() => createNoteAction(fd))}
@@ -580,8 +543,7 @@ function NoteCard({
   active: boolean;
   selectedFolder: string;
 }) {
-  // Link zawsze niesie folderId (ten z którego user wszedł),
-  // żeby back-chevron z editora wiedział dokąd wrócić.
+  // Carry source folderId so the editor's back-chevron knows where to return.
   const folderForBack =
     selectedFolder && selectedFolder !== "all"
       ? selectedFolder
@@ -609,8 +571,6 @@ function NoteCard({
     </Link>
   );
 }
-
-// --- Right column: editor ---
 
 function EditorColumn({
   note,
@@ -690,7 +650,6 @@ function NoteEditor({
         hideOnMobile ? "max-md:hidden" : ""
       }`}
     >
-      {/* Mobile-only: back chevron header */}
       <div className="md:hidden flex items-center gap-1 border-b border-border px-2 py-2">
         <Link
           href={backHref}
@@ -703,7 +662,6 @@ function NoteEditor({
           </span>
         </Link>
 
-        {/* Mobile actions: pin + trash, na prawo (kompakt) */}
         <div className="ml-auto flex items-center gap-1">
           {isTrashed ? (
             <>
@@ -778,7 +736,6 @@ function NoteEditor({
         </div>
       </div>
 
-      {/* Desktop header — meta row + actions */}
       <header className="max-md:hidden flex items-center gap-3 border-b border-border px-6 py-3">
         <span className="font-mono text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground">
           {formatLongDateTime(note.updatedAt)}
@@ -869,7 +826,6 @@ function NoteEditor({
       </header>
 
       <div className="flex flex-1 flex-col overflow-y-auto px-4 py-4 md:px-8 md:py-6">
-        {/* Mobile-only meta row (date + saved) */}
         <div className="md:hidden mb-3 flex items-center gap-3">
           <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
             {formatLongDateTime(note.updatedAt)}
@@ -894,11 +850,6 @@ function NoteEditor({
           readOnly={isTrashed}
           className="w-full border-0 bg-transparent pb-2 font-display text-[1.6rem] font-bold leading-tight tracking-[-0.02em] outline-none placeholder:text-muted-foreground/40 md:text-[2rem]"
         />
-        {/* F12-K24: pełny toolbar w notatniku — bold/italic/strike/
-            nagłówki/listy/cytat/kod/link + tabele + kolor tekstu +
-            highlight (przez extras='brief'). Wcześniej variant='display'
-            ukrywał toolbar całkowicie, klient widział tylko gołe pole
-            tekstu. */}
         <div className="flex-1">
           <RichTextEditor
             initial={doc}
@@ -930,9 +881,6 @@ function formatLongDateTime(iso: string): string {
   return d.toLocaleString("pl-PL", { dateStyle: "long", timeStyle: "short" });
 }
 
-// IOS-Notes-style time grouping for notes list.
-// "Dzisiaj" / "Wczoraj" / "Poprzednie 7 dni" / "Poprzednie 30 dni" /
-// per-month for older.
 function groupNotesByTime(
   notes: NoteListRow[],
 ): Array<{ key: string; label: string; notes: NoteListRow[] }> {

@@ -14,7 +14,6 @@ export default async function SecureAccessPortalPage({
 
   return (
     <div className="relative flex min-h-dvh flex-col bg-background">
-      {/* Subtle brand glow corner accent */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"

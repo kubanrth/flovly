@@ -45,9 +45,6 @@ export interface TodoListNode {
   folderId: string | null;
 }
 
-// Assigned workspace task pokazywany w prawym panelu obok
-// add-task. Klient chce widzieć jakie projektowe taski ma na karku
-// kiedy planuje sobie listę.
 export interface AssignedTaskRef {
   id: string;
   title: string;
@@ -60,11 +57,6 @@ export interface AssignedTaskRef {
   stopAt: string | null;
 }
 
-// MS-To-Do-like labels / icons for smart views.
-// Dorzucone 'Przydzielone do mnie' (assigned-to-me) — pokazuje
-// taski projektowe gdzie current user jest assignee, jako osobny widok
-// w sidebarze (jak MS To Do). Zastępuje wcześniejszy embedded
-// AssignedTasksPanel w prawym panelu.
 const SMART_VIEWS: { key: SmartView; label: string; icon: typeof Sun; accent: string }[] = [
   { key: "my-day", label: "Mój dzień", icon: Sun, accent: "text-amber-500" },
   { key: "important", label: "Ważne", icon: Star, accent: "text-rose-500" },
@@ -72,11 +64,7 @@ const SMART_VIEWS: { key: SmartView; label: string; icon: typeof Sun; accent: st
   { key: "assigned", label: "Przydzielone do mnie", icon: UserIcon, accent: "text-emerald-500" },
 ];
 
-// Fullwidth 2-column layout (sidebar + main) with a slide-in
-// right-side detail panel when a task is selected. Folders only contain
-// lists — nested folders are no longer part of the UX (we ignore
-// parentId in the tree and server-side createTodoFolderAction forces
-// parentId = null on new rows).
+// Nested folders dropped from UX — ignore parentId in tree; createTodoFolderAction forces null.
 export function TodoWorkspace({
   folders,
   lists,
@@ -95,10 +83,8 @@ export function TodoWorkspace({
   smart: SmartView | null;
   items: TodoItemFull[];
   focusedItemId: string | null;
-  // Czy URL zawiera ?smart= albo ?listId= (decyduje o mobile view).
+  // Whether the URL has ?smart= or ?listId= — decides mobile view.
   hasViewParam: boolean;
-  // Workspace tasks gdzie current user jest przypisany.
-  // Empty gdy lista nie aktywna albo user nie ma żadnych assigned.
   assignedTasks: AssignedTaskRef[];
 }) {
   // Only render top-level folders — ignore any legacy nested rows.
@@ -119,11 +105,7 @@ export function TodoWorkspace({
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(focusedItemId);
 
-  // Optimistic UI dla add-task. Wcześniej user typował, naciskał
-  // Enter, czekał na revalidatePath round-trip — feel laggy. Teraz item
-  // pojawia się natychmiast w liście, server save w tle.
-  // Mergeujemy items (server) + pending (client-only) — gdy server
-  // zwróci, revalidatePath replace'uje optimistic na real.
+  // Optimistic UI for add-task — server save runs in background; revalidatePath replaces optimistic with real row.
   const [optimisticItems, addOptimisticItem] = useOptimistic<
     TodoItemFull[],
     { tempId: string; content: string; listId: string; listName: string }
@@ -156,8 +138,7 @@ export function TodoWorkspace({
   const incomplete = optimisticItems.filter((i) => !i.completed);
   const completed = optimisticItems.filter((i) => i.completed);
 
-  // Mobile screen state. Detail otwiera się state'em (selectedItem
-  // !== null), więc nadpisuje URL-based ekrany.
+  // Detail opens via state (selectedItem !== null), overriding URL-based screens.
   const mobileView: "sidebar" | "items" | "detail" = selectedItem
     ? "detail"
     : hasViewParam
@@ -166,7 +147,6 @@ export function TodoWorkspace({
 
   return (
     <div className="flex h-[calc(100dvh-0px)] overflow-hidden">
-      {/* Left sidebar — smart views + flat folders with lists */}
       <aside
         className={`flex w-full flex-col gap-3 overflow-y-auto border-r border-border bg-card/50 p-3 md:w-[280px] md:shrink-0 ${
           mobileView !== "sidebar" ? "max-md:hidden" : ""
@@ -181,7 +161,6 @@ export function TodoWorkspace({
           <span className="eyebrow">Prywatne TO DO</span>
         </div>
 
-        {/* Smart views */}
         <div className="flex flex-col gap-0.5">
           {SMART_VIEWS.map((v) => {
             const Icon = v.icon;
@@ -202,12 +181,10 @@ export function TodoWorkspace({
 
         <div className="my-1 border-t border-border" />
 
-        {/* Root-level lists (no folder) */}
         {(listsByFolder.get(null) ?? []).map((l) => (
           <ListLink key={l.id} list={l} activeListId={activeListId} />
         ))}
 
-        {/* Flat folders — each folder expands to show its lists */}
         {rootFolders.map((f) => (
           <FolderBlock
             key={f.id}
@@ -217,23 +194,17 @@ export function TodoWorkspace({
           />
         ))}
 
-        {/* New folder / new list inputs pinned at bottom of sidebar */}
         <div className="mt-auto flex flex-col gap-1.5 pt-2">
           <NewListForm folderId={null} placeholder="+ nowa lista" />
           <NewFolderForm placeholder="+ nowy folder" />
         </div>
       </aside>
 
-      {/* Main content — selected list / smart view (full width).
-          F12-K22: MS-To-Do parity — main rozciągnięty na całą szerokość
-          (minus sidebar i ewentualny detail panel). Add-task input
-          przyklejony u dołu sticky. */}
       <section
         className={`flex min-w-0 flex-1 flex-col overflow-hidden ${
           mobileView !== "items" ? "max-md:hidden" : ""
         }`}
       >
-        {/* Mobile-only: back chevron header */}
         <div className="md:hidden flex items-center gap-1 border-b border-border px-2 py-2">
           <Link
             href="/my/todo"
@@ -283,9 +254,6 @@ export function TodoWorkspace({
             )}
           </div>
 
-          {/* F12-K28: bulk-delete ukończone — pokazane gdy są jakieś
-              completed itemy na bieżącym widoku. Scope = activeListId
-              (dla list view) lub all-completed (dla smart view). */}
           {smart !== "assigned" && completed.length > 0 && (
             <form
               action={(fd) =>
@@ -344,9 +312,7 @@ export function TodoWorkspace({
           )}
         </div>
 
-        {/* F12-K22: sticky bottom add-task — MS To Do style. Pokazuje się
-            tylko gdy lista jest aktywna (smart views nie mają kanonicznego
-            targetu). */}
+        {/* Only render when a list is active — smart views have no canonical target. */}
         {activeListId && (
           <div className="shrink-0 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm md:px-8">
             <QuickAddItem
@@ -359,10 +325,6 @@ export function TodoWorkspace({
         )}
       </section>
 
-      {/* F12-K22: prawy detail panel TYLKO gdy task wybrany. Inaczej
-          main jest na całą dostępną szerokość.
-          F12-K46: na mobile detail panel = full-screen + back-chevron
-          header (zamiast 380px sidecar). */}
       {selectedItem && (
         <div
           className={`flex w-full flex-col overflow-y-auto md:w-[380px] md:shrink-0 md:border-l md:border-border md:bg-card/50 ${
@@ -392,8 +354,6 @@ export function TodoWorkspace({
     </div>
   );
 }
-
-// --- Sidebar building blocks ---
 
 function FolderBlock({
   folder,
@@ -496,8 +456,6 @@ function ListLink({
   );
 }
 
-// F11-X (klient): wszystkie inline-add formy mają teraz widoczny + button
-// żeby user mógł kliknąć myszką zamiast szukać Enter.
 function NewFolderForm({ placeholder }: { placeholder: string }) {
   const [name, setName] = useState("");
   return (
@@ -572,8 +530,6 @@ function NewListForm({
     </form>
   );
 }
-
-// --- Main area ---
 
 function ItemsList({
   items,
@@ -689,10 +645,6 @@ function ItemRow({
         >
           <RenderContent content={item.content} />
         </span>
-        {/* F12-K28+: pokazuj preview notatek (zamiast tylko labela
-            "notatka") — klient chciał widzieć co dokładnie tam jest bez
-            klikania w detail panel. Truncate do 2 linii + collapse
-            multi-newline w whitespace. */}
         {item.notes && item.notes.trim() !== "" && (
           <span className="line-clamp-2 w-full whitespace-pre-wrap break-words text-[0.78rem] leading-snug text-muted-foreground">
             {item.notes.trim()}
@@ -760,10 +712,7 @@ function ItemRow({
         </button>
       </form>
 
-      {/* F12-K28: pojedyncza opcja usunięcia zadania. Visible on row hover
-          (group-hover) — żeby nie pęknąć się z gwiazdką/słoneczkiem.
-          F12-K46: ukryty na mobile (no-hover stack confuses tap-targety);
-          delete dostępny w detail panel po tapnięciu zadania. */}
+      {/* Hidden on mobile — no hover state; delete is in the detail panel after tapping the task. */}
       <form
         action={(fd) => startTransition(() => deleteTodoItemAction(fd))}
         onSubmit={(e) => {
@@ -795,13 +744,8 @@ function QuickAddItem({
 }: {
   listId: string;
   listName: string;
-  // → F12-K22: 'bottom' variant = sticky bottom of main content
-  // (MS-To-Do style — input full-width pod listą zadań). 'panel' = card
-  // wewnątrz right panelu (legacy — usunięte w F12-K22). 'main' = top
-  // header inline (legacy — usunięte w F12-K22).
+  // 'bottom' = sticky bottom MS-To-Do style; 'panel' and 'main' are legacy.
   variant?: "main" | "panel" | "bottom";
-  // Callback do parent useOptimistic — input renders new item
-  // natychmiast lokalnie, server save w tle.
   onOptimistic?: (pending: {
     tempId: string;
     content: string;
@@ -944,9 +888,6 @@ function EmptyState({
   );
 }
 
-// Chip-style counter w header'ze TODO. Klient: 'brak cyferki ile
-// jest zgłoszeń, pokazywać ilość elementów'. Trzy chipy: total /
-// do-zrobienia / ukończone — szybki overview stanu listy.
 function CounterChip({
   label,
   value,
@@ -980,10 +921,6 @@ function formatShortDate(iso: string): string {
   return d.toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
 }
 
-// Render content z auto-detekcją URL'i. Plain text + URL jako
-// klikalny chip pokazujący tylko hostname (zamiast 80-znakowego URL'a).
-// Klik na chip = open in new tab (stop propagation żeby nie selectowało
-// taska).
 const URL_REGEX = /(https?:\/\/[^\s]+)/g;
 
 function shortHost(url: string): string {
@@ -1042,9 +979,6 @@ function RenderContent({ content }: { content: string }) {
   );
 }
 
-// Lista tasków przypisanych do current user w prawym panelu.
-// Każdy task linkuje do swojego workspace'u + boardu. Empty state =
-// hint że nic nie ma.
 function AssignedTasksPanel({ tasks }: { tasks: AssignedTaskRef[] }) {
   if (tasks.length === 0) {
     return (

@@ -15,10 +15,7 @@ import { usePathname } from "next/navigation";
 import { deleteBoardViewAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
 import type { ViewName } from "@/lib/board-views";
 
-// Pure helpers (parseEnabledViews, viewTypeToName, ALL_VIEWS, ViewName)
-// live in @/lib/board-views — re-exporting them from a "use client"
-// module breaks server callers because Next marks the whole module as
-// client-only.
+// Pure helpers live in @/lib/board-views — re-exporting from "use client" breaks server callers.
 export type { ViewName };
 
 interface ViewDescriptor {
@@ -50,9 +47,6 @@ const DEFAULT_LABELS: Record<ViewName, string> = {
   whiteboard: "Whiteboard",
 };
 
-// Single source of truth for the five default board-level views + any
-// number of user-created custom views. Pills render left-to-right:
-// defaults first (in fixed order), then customs (insertion order).
 export function ViewSwitcher({
   workspaceId,
   boardId,
@@ -73,11 +67,8 @@ export function ViewSwitcher({
   size?: "sm" | "md";
   enabled?: ViewName[];
   customViews?: CustomViewDescriptor[];
-  // Controls whether the delete-X on custom pills renders.
   canManage?: boolean;
-  // Per-default-view BoardView id, used to delete the default
-  // view from this board (X button on default pill). Undefined entries
-  // mean "legacy board without BoardView row" — hide the X there.
+  // Undefined entries = legacy board without BoardView row → hide X.
   defaultViewIds?: Partial<Record<ViewName, string>>;
 }) {
   const allViews: ViewDescriptor[] = [
@@ -117,16 +108,11 @@ export function ViewSwitcher({
     ? allViews.filter((v) => enabled.includes(v.name))
     : allViews;
 
-  // IPhone-style liquid-glass tabs (.lg-seg / .lg-seg-btn w
-  // globals.css) — klient zażyczył sobie efekt szkła jak na iOS lock
-  // screen. Active pill = thick frosted disc z białą obwódką, top
-  // sheen i fioletowym inner glow + drop shadow. Działa w light i dark.
+  // Liquid-glass tabs (.lg-seg / .lg-seg-btn in globals.css).
   const heightClass =
     size === "sm" ? "h-7 px-2.5 text-[0.76rem]" : "h-8 px-3 text-[0.82rem]";
 
-  // Stała 6. zakładka 'Opis' — per-board wiki/notes page,
-  // poza enum ViewType (nie wymaga BoardView row'a). Active gdy URL
-  // kończy się na /overview.
+  // 6th tab 'Opis' is a per-board overview page outside ViewType enum (no BoardView row needed).
   const pathname = usePathname();
   const overviewPath = `/w/${workspaceId}/b/${boardId}/overview`;
   const overviewActive = pathname === overviewPath || pathname?.startsWith(`${overviewPath}/`);
@@ -140,8 +126,7 @@ export function ViewSwitcher({
       {views.map((v) => {
         const isActive = !activeViewId && v.name === active;
         const defaultId = defaultViewIds?.[v.name];
-        // Don't let the user delete the view they're looking at — would
-        // land them on a 404. Force a switch first, then delete.
+        // Block deleting the active view — would 404. User must switch first.
         const totalPills = views.length + (customViews?.length ?? 0);
         const canDelete = canManage && !!defaultId && !isActive && totalPills > 1;
         return (

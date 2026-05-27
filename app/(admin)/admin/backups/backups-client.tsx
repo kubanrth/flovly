@@ -1,9 +1,5 @@
 "use client";
 
-// Client component dla `/admin/backups`. Server-side fetch
-// w page.tsx, tu interaktywność: rozwijanie historii per-workspace,
-// trigger button, download generuje signed URL i otwiera w nowej karcie.
-
 import { startTransition, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -265,8 +261,6 @@ function BackupRowItem({
           setError(res.error);
           return;
         }
-        // Otwórz w nowej karcie — Supabase z download:filename ustawi
-        // Content-Disposition: attachment, browser zacznie download.
         window.open(res.url, "_blank", "noopener,noreferrer");
       })();
     });

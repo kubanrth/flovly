@@ -1,14 +1,6 @@
-// Per-board access gate. Runs once for every /b/[boardId]/*
-// route (table, kanban, roadmap, gantt, whiteboard, custom views).
-// requireBoardAccess() does:
-//   - workspace membership check (404 if missing — same UX as before)
-//   - workspace ADMIN bypass
-//   - PUBLIC board → allow any workspace member
-//   - PRIVATE board → require BoardMembership row, else 404
-//
-// Child pages still call their own data queries (this layout only
-// gatekeeps; doesn't fetch anything UI-relevant).
-
+// Per-board access gate for every /b/[boardId]/* route. requireBoardAccess
+// handles workspace membership (404 on miss), ADMIN bypass, PUBLIC vs PRIVATE
+// + BoardMembership check. Children fetch their own UI data.
 import { requireBoardAccess } from "@/lib/workspace-guard";
 
 export default async function BoardLayout({

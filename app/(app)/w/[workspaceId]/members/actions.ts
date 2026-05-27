@@ -40,14 +40,11 @@ export async function inviteMemberAction(
 
   const ctx = await requireWorkspaceAction(workspaceId, "workspace.inviteMember");
 
-  // Per-workspace invite limit — stops a compromised admin account
-  // from spamming dozens of invites.
+  // Per-workspace invite limit — guards against a compromised admin spamming invites.
   const limit = await checkLimit("workspace.invite", workspaceId);
   if (!limit.ok) return { ok: false, error: limit.error };
 
-  // Optional board scope. Empty string from the UI toggle means
-  // "workspace-wide invite" — Zod sees min(1).optional() so we strip the
-  // empty string before parsing.
+  // Empty boardId = workspace-wide invite. Strip empty string before Zod (min(1).optional()).
   const rawBoardId = String(formData.get("boardId") ?? "").trim();
   const parsed = inviteSchema.safeParse({
     email: formData.get("email"),
@@ -82,11 +79,8 @@ export async function inviteMemberAction(
     }
   }
 
-  // If user is already a member of the workspace, the invite handling
-  // diverges by scope. For workspace invites we bail early — the user
-  // already has full access. For board invites we add them directly to
-  // BoardMembership without an email round-trip (faster + no token to
-  // share for an existing teammate).
+  // Existing member shortcut: workspace invite bails (already has access);
+  // board invite skips the email and adds BoardMembership directly.
   const existingUser = await db.user.findUnique({
     where: { email: parsed.data.email },
     select: { id: true, name: true },
@@ -99,7 +93,6 @@ export async function inviteMemberAction(
       if (!parsed.data.boardId) {
         return { ok: false, fieldErrors: { email: "Ten użytkownik już jest członkiem." } };
       }
-      // Board scope + existing workspace member → add to board directly.
       await db.boardMembership.upsert({
         where: {
           boardId_userId: { boardId: parsed.data.boardId, userId: existingUser.id },
@@ -182,8 +175,7 @@ export async function inviteMemberAction(
   return { ok: true, inviteUrl, emailed: res.sent };
 }
 
-// Add an existing workspace user directly to a board (no email).
-// Used by the per-board members table when admin picks from a member list.
+// Adds an existing workspace user directly to a board (no email round-trip).
 export async function addBoardMemberAction(formData: FormData) {
   const workspaceId = String(formData.get("workspaceId") ?? "");
   const parsed = addBoardMemberSchema.safeParse({
@@ -203,7 +195,7 @@ export async function addBoardMemberAction(formData: FormData) {
     where: { workspaceId_userId: { workspaceId, userId: parsed.data.userId } },
     select: { userId: true },
   });
-  if (!target) return; // Must be a workspace member first.
+  if (!target) return;
 
   await db.boardMembership.upsert({
     where: {
@@ -225,12 +217,11 @@ export async function addBoardMemberAction(formData: FormData) {
     diff: { userId: parsed.data.userId, role: parsed.data.role },
   });
   revalidatePath(`/w/${workspaceId}/members`);
-  // Filtered board lists must refresh too — this user just got access.
+  // Refresh filtered board lists — this user just got access.
   revalidatePath(`/w/[workspaceId]/b/[boardId]`, "layout");
   revalidatePath(`/w/${workspaceId}`);
 }
 
-// Change a user's role on a specific board.
 export async function changeBoardRoleAction(formData: FormData) {
   const workspaceId = String(formData.get("workspaceId") ?? "");
   const parsed = changeBoardRoleSchema.safeParse({
@@ -261,7 +252,6 @@ export async function changeBoardRoleAction(formData: FormData) {
   revalidatePath(`/w/${workspaceId}/members`);
 }
 
-// Remove a user from a board (workspace membership unchanged).
 export async function removeBoardMemberAction(formData: FormData) {
   const workspaceId = String(formData.get("workspaceId") ?? "");
   const parsed = removeBoardMemberSchema.safeParse({
@@ -290,7 +280,6 @@ export async function removeBoardMemberAction(formData: FormData) {
   revalidatePath(`/w/${workspaceId}`);
 }
 
-// Flip board visibility between PUBLIC and PRIVATE.
 export async function setBoardVisibilityAction(formData: FormData) {
   const workspaceId = String(formData.get("workspaceId") ?? "");
   const parsed = setBoardVisibilitySchema.safeParse({
@@ -411,5 +400,3 @@ export async function removeMemberAction(formData: FormData) {
   });
   revalidatePath(`/w/${workspaceId}/members`);
 }
-
-// F12-K43 L4: escapeHtml przeniesiona do lib/html-escape.ts (html-escaper).

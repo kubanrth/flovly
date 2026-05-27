@@ -5,9 +5,6 @@ import StarterKit from "@tiptap/starter-kit";
 import { Link } from "@tiptap/extension-link";
 import { Placeholder } from "@tiptap/extension-placeholder";
 import { Mention } from "@tiptap/extension-mention";
-// Rich-table briefy. Tabele, inline images, kolor tekstu,
-// highlight (background) — wymagane przez "Creative Board" UX (klient
-// referencuje ClickUp design brief templates).
 import { Table } from "@tiptap/extension-table";
 import { TableRow } from "@tiptap/extension-table-row";
 import { TableHeader } from "@tiptap/extension-table-header";
@@ -142,8 +139,6 @@ function isDocEmpty(doc: RichTextDoc | null): boolean {
   return false;
 }
 
-// Color swatches for text + highlight. Picked to look reasonable on both
-// light and dark themes — saturated enough to read against muted bg.
 const TEXT_COLORS = [
   "#1F2937", // ink (default-ish)
   "#EF4444", // red
@@ -184,9 +179,6 @@ export function RichTextEditor({
   const showFrame = variant === "field";
   const isBriefMode = extras === "brief";
 
-  // Kombinacja extensions zależna od trybu. Brief tryb dodaje
-  // tabele + obrazy + kolor tekstu + highlight. Domyślny zachowuje
-  // dotychczasowe zachowanie (description tasków, komentarze).
   const briefExtensions = isBriefMode
     ? [
         Table.configure({ resizable: true, HTMLAttributes: { class: "rt-table" } }),
@@ -303,8 +295,6 @@ export function RichTextEditor({
           font-size: 0.94em;
           white-space: nowrap;
         }
-        /* F12-K12: tabele w briefie. Tiptap wstawia <table> z kolumnami
-           wewnątrz <colgroup>, każda komórka <td>/<th> ma own border. */
         .tiptap-content .rt-table { border-collapse: collapse; margin: 0.6em 0; table-layout: fixed; width: 100%; overflow: hidden; }
         .tiptap-content .rt-table td, .tiptap-content .rt-table th {
           border: 1px solid var(--border);
@@ -332,9 +322,6 @@ export function RichTextEditor({
           background-color: color-mix(in oklch, var(--primary) 60%, transparent);
           pointer-events: none;
         }
-        /* F12-K12: inline obrazy. Round corners + max-width żeby duże
-           uploady nie rozciągały całego layoutu; kursor-zoom-in dla read
-           mode (klient może powiększyć na nowej karcie). */
         .tiptap-content .rt-image {
           display: block;
           max-width: 100%;
@@ -346,9 +333,6 @@ export function RichTextEditor({
         .tiptap-content[data-readonly="true"] .rt-image {
           cursor: zoom-in;
         }
-        /* F12-K12: highlight (mark background) i color (text color)
-           pochodzą z TextStyle/Color/Highlight extensions, stylują się
-           inline przez attrs — żadnego dodatkowego CSS nie trzeba. */
       `}</style>
     </div>
   );
@@ -458,7 +442,6 @@ function Toolbar({
         <>
           <span className="mx-1 h-4 w-px bg-border" aria-hidden />
 
-          {/* Color picker (text) */}
           <div className="relative">
             <Btn
               label="Kolor tekstu"
@@ -486,7 +469,6 @@ function Toolbar({
             )}
           </div>
 
-          {/* Highlight (background) */}
           <div className="relative">
             <Btn
               label="Zaznaczenie"

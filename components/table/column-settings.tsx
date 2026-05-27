@@ -46,8 +46,7 @@ export interface ColumnDef {
   required?: boolean;
   // Custom columns are user-editable (rename + delete).
   custom?: boolean;
-  // F10-A: present only for custom columns, used by the gear-icon
-  // popover so the user can change type/options.
+  // Only set for custom columns — used by gear-icon popover to change type/options.
   fieldType?: FieldType;
   fieldOptions?: FieldOptions | null;
 }

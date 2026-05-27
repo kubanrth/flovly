@@ -40,9 +40,8 @@ const ALL_VIEW_TYPES: ViewType[] = [
   ViewType.WHITEBOARD,
 ];
 
-// Parse the `enabledViews[]` multi-checkbox from FormData into a safe list
-// of ViewType enum values. Falls back to all five when the user hits
-// submit without any boxes ticked — "no views at all" isn't a useful state.
+// Parses enabledViews[] multi-checkbox into ViewType enum values.
+// Falls back to all five when nothing is ticked — empty selection isn't useful.
 function parseSelectedViews(fd: FormData): ViewType[] {
   const raw = fd.getAll("enabledViews").map(String);
   const set = new Set<ViewType>();
@@ -76,9 +75,8 @@ export async function createWorkspaceAction(
 
   const slug = await uniqueSlug(slugify(parsed.data.name));
   const enabledViews = parseSelectedViews(formData);
-  // ViewType.WHITEBOARD doesn't need a BoardView row (canvas is per-board
-  // ProcessCanvas, auto-created on first visit). The other four get seed
-  // BoardView rows so background customization has a row to update.
+  // WHITEBOARD uses ProcessCanvas (auto-created on first visit); other four need
+  // seed BoardView rows so background customization has a row to update.
   const seedBoardViews = enabledViews.filter((t) => t !== ViewType.WHITEBOARD);
 
   const workspace = await db.workspace.create({
@@ -109,8 +107,7 @@ export async function createWorkspaceAction(
           },
         },
       },
-      // Auto-created Wiki page so every workspace ships with the "O projekcie"
-      // landing doc and nobody has to know the feature exists to use it.
+      // Auto-create "O projekcie" wiki page so the feature is discoverable.
       wikiPage: {
         create: {
           title: "O projekcie",
@@ -154,15 +151,14 @@ export async function createWorkspaceAction(
   redirect(`/w/${workspace.id}`);
 }
 
-// Inline rename z heading'a workspace overview. Pojedyncze pole
-// (name), zero error UI — fire-and-forget z optimistic UI po stronie klienta.
-// Trzyma się z dala od `updateWorkspaceAction` (useActionState/full settings
-// form) żeby nie komplikować response shape'u dla prostego "edit and save".
+// Inline rename from workspace overview heading. Single field, no error UI —
+// fire-and-forget with client-side optimistic UI. Kept separate from
+// updateWorkspaceAction to avoid bloating the settings-form response shape.
 export async function renameWorkspaceAction(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const rawName = String(formData.get("name") ?? "").trim();
   if (!id || !rawName) return;
-  // Same constraints jak updateWorkspaceSchema: 1-80 chars.
+  // Mirror updateWorkspaceSchema constraint: 1-80 chars.
   const name = rawName.slice(0, 80);
   if (name.length < 1) return;
 
@@ -274,10 +270,8 @@ export async function deleteWorkspaceAction(
   redirect("/workspaces");
 }
 
-// Reorder workspace'ów drag-and-drop.
-// Klient wysyła całą nową listę ID w kolejności (po drop'ie) — server
-// zapisuje order = idx * 1000 dla każdego. Prosta logika, brak ryzyka
-// rozjeżdżania się gdy wiele drag'ów na raz.
+// Drag-and-drop workspace reorder. Client posts the full ordered ID list;
+// server writes order = idx * 1000. No re-ordering races on concurrent drags.
 export async function reorderWorkspacesAction(orderedIds: string[]) {
   const session = await auth();
   if (!session?.user) return;
@@ -285,8 +279,7 @@ export async function reorderWorkspacesAction(orderedIds: string[]) {
 
   if (!Array.isArray(orderedIds) || orderedIds.length === 0) return;
 
-  // Sprawdź że user ma dostęp do każdego workspace'u na liście
-  // (nie pozwalamy reorderować cudzych przestrzeni).
+  // Authorize: only IDs user can access — no reordering other people's workspaces.
   const accessible = await db.workspace.findMany({
     where: {
       id: { in: orderedIds },
@@ -301,7 +294,6 @@ export async function reorderWorkspacesAction(orderedIds: string[]) {
   const accessibleIds = new Set(accessible.map((w) => w.id));
   const valid = orderedIds.filter((id) => accessibleIds.has(id));
 
-  // Update order'ów w transakcji
   await db.$transaction(
     valid.map((id, idx) =>
       db.workspace.update({
@@ -311,7 +303,6 @@ export async function reorderWorkspacesAction(orderedIds: string[]) {
     ),
   );
 
-  // B: invalidate cały layout (app) żeby sidebar też się odświeżył
-  // — sidebar fetchuje workspace'y w (app)/layout.tsx, nie w /workspaces page.
+  // Layout-level revalidate — sidebar reads workspaces from (app)/layout.tsx.
   revalidatePath("/", "layout");
 }

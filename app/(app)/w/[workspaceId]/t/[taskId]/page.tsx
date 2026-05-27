@@ -2,9 +2,8 @@ import Link from "next/link";
 import { fetchTaskDetail } from "@/lib/task-fetch";
 import { TaskDetail } from "@/components/task/task-detail";
 
-// Bezpieczna sanityzacja `from` — tylko ścieżki internal
-// (start od "/" + brak "//" żeby zablokować protocol-relative
-// `//evil.com`). Wszystko inne fallback'uje do workspace overview.
+// Only allow internal paths (leading "/", no "//") — blocks protocol-relative
+// redirects like //evil.com. Everything else falls back to workspace overview.
 function safeBackHref(from: string | undefined, fallback: string): string {
   if (!from) return fallback;
   if (!from.startsWith("/")) return fallback;
@@ -12,8 +11,6 @@ function safeBackHref(from: string | undefined, fallback: string): string {
   return from;
 }
 
-// Human-readable label dla najczęstszych źródeł nawigacji.
-// Domyślny "wróć do przeglądu" zostaje dla nieznanych ścieżek.
 function backLabel(from: string | undefined): string {
   if (from === "/my-tasks") return "← wróć do zadań dla Ciebie";
   if (from === "/my/todo") return "← wróć do TO DO";

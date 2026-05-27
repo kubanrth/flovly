@@ -5,8 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 
-// Workspace-level calendar events. Wszyscy członkowie
-// workspace'u mogą tworzyć / edytować / usuwać własne wydarzenia.
+// Workspace-level calendar events. Any member can create; only creator can edit/delete own.
 
 const createSchema = z.object({
   workspaceId: z.string().min(1),
@@ -80,7 +79,7 @@ export async function updateWorkspaceEventAction(formData: FormData) {
   });
   if (!ev) return;
   const ctx = await requireWorkspaceMembership(ev.workspaceId);
-  // Only creator can edit own — could relax to admin in future.
+  // TODO: relax to admins.
   if (ev.creatorId !== ctx.userId) return;
 
   const data: Record<string, unknown> = {};

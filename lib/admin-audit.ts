@@ -16,14 +16,12 @@ export type AdminAuditAction =
   | "user.banned"
   | "user.unbanned"
   | "user.deleted"
-  // Admin UI dla zarządzania userami.
   | "user.created"
   | "user.passwordReset"
   | "user.promotedToSuperAdmin"
   | "user.demotedFromSuperAdmin"
   | "workspace.forceDeleted"
   | "workspace.restored"
-  // Workspace backup operations.
   | "workspace.backup.manual"
   | "workspace.backup.bulk"
   | "workspace.backup.downloaded";

@@ -17,14 +17,13 @@ import {
 } from "@/lib/storage";
 import { getBriefTemplate } from "@/lib/brief-templates";
 
-// Creative brief CRUD. Tworzenie wymaga membership;
-// edycja/usuwanie creator + admin (task.update perm).
+// Creative brief CRUD. Create needs workspace membership;
+// edit/delete = creator or workspace admin (task.update).
 
 const createSchema = z.object({
   workspaceId: z.string().min(1),
   title: z.string().trim().min(1).max(200),
-  // Opcjonalny ID template'a — gdy podany, content/header
-  // zostają zainicjowane z tego template'a zamiast default'owego.
+  // When provided, content/header initialise from this template instead of the default.
   templateId: z.string().min(1).optional(),
 });
 
@@ -37,10 +36,7 @@ export async function createBriefAction(formData: FormData) {
   if (!parsed.success) return;
   const ctx = await requireWorkspaceMembership(parsed.data.workspaceId);
 
-  // Wybór template'a → contentJson + headerColor + emoji
-  // pobierane z definicji template'a. Brak templateId = fallback do
-  // pierwszego template'a (Design Brief), żeby legacy callers (jeśli
-  // jakieś) dalej działali bez zmian.
+  // Falls back to design-brief template when no templateId is passed (legacy callers).
   const template = parsed.data.templateId
     ? getBriefTemplate(parsed.data.templateId)
     : getBriefTemplate("design-brief");
@@ -148,13 +144,10 @@ export async function deleteBriefAction(formData: FormData) {
   redirect(`/w/${brief.workspaceId}/briefs`);
 }
 
-// Image upload do briefu. Reuse Supabase Storage `attachments`
-// bucket (ten sam co task attachments) ale pod ścieżką `briefs/`.
-// Klient dostaje signed upload URL, przesyła plik, potem inserts <img>
-// z `src=/api/brief-image/<encoded-key>` — route-handler weryfikuje
-// access do briefu na każdy request i zwraca świeży signed download URL
-// (eliminuje problem expiry'i osadzonych URLi w contentJson).
-
+// Brief image upload. Client gets a signed upload URL, PUTs the file, then
+// embeds <img src="/api/brief-image/<encoded-key>">. The route handler
+// re-checks access on every request and 302s to a fresh signed download URL —
+// avoids the embedded-URL expiry problem in contentJson.
 const uploadImageSchema = z.object({
   briefId: z.string().min(1),
   filename: z.string().trim().min(1).max(200),
@@ -214,8 +207,6 @@ export async function requestBriefImageUploadAction(
       ok: true,
       uploadUrl: signed.signedUrl,
       storageKey,
-      // Route handler weryfikuje access przy każdym GET i 302-redirectuje
-      // na świeży signed download URL.
       publicSrc: `/api/brief-image/${encodeURI(storageKey)}`,
     };
   } catch (err) {
@@ -224,14 +215,12 @@ export async function requestBriefImageUploadAction(
   }
 }
 
-// Rzadko wołana — używana TYLKO z route-handlera /api/brief-image gdy
-// chcemy zwrócić signed download URL bez exportowania `supabaseAdmin`
-// poza serwer.
+// Called ONLY from /api/brief-image route handler — keeps supabaseAdmin off the wire.
 export async function getBriefImageDownloadUrl(
   storageKey: string,
   userId: string,
 ): Promise<string | null> {
-  // Storage key formie: w/<wid>/briefs/<bid>/<rand-name>
+  // Expected storage key form: w/<wid>/briefs/<bid>/<rand-name>
   const parts = storageKey.split("/");
   if (parts.length < 5 || parts[0] !== "w" || parts[2] !== "briefs") return null;
   const workspaceId = parts[1];
@@ -243,8 +232,7 @@ export async function getBriefImageDownloadUrl(
   });
   if (!brief) return null;
 
-  // Reader = każdy workspace member. Brief jest workspace-wide,
-  // tak jak teraz lista /briefs. Brak per-brief ACL.
+  // Briefs are workspace-wide; any member can read. No per-brief ACL.
   const membership = await db.workspaceMembership.findUnique({
     where: { workspaceId_userId: { workspaceId, userId } },
     select: { id: true },

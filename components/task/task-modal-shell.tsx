@@ -5,32 +5,14 @@ import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
 
-// Styled wrapper around Base UI Dialog for the intercepting-route
-// task modal. Closing goes back in history so the intercepted route
-// unmounts naturally. Intercepting routes only apply to soft-nav, so
-// the modal is only reachable from a page that's already in history —
-// router.back() is always safe here.
-//
-// Jeśli sessionStorage ma 'taskModalReturnTo' (ustawione przez
-// CreateTaskButton przy create flow), wracamy do tej konkretnej strony
-// zamiast router.back. Bez tego close po Nowe Zadanie wracał do
-// workspace overview ("O projekcie") zamiast do np. table/kanban view
-// skąd user kliknął przycisk.
-//
-// Prop `open` był wcześniej forced=true bez state. Klik X wołał
-// onOpenChange(false), close() startował navigację, ale prop nadal był
-// true — Base UI nie zamykał dialog'u wizualnie. Wyglądało jakby trzeba
-// było kliknąć 2×. Teraz controlled state `open` — pierwsza akcja
-// natychmiast zamyka UI, potem nawigacja.
+// Intercepting-route task modal — closing navigates back in history so the intercepted route unmounts naturally.
+// sessionStorage 'taskModalReturnTo' lets CreateTaskButton route to the originating page (table/kanban) instead of workspace overview.
+// Controlled `open` state: X click closes UI immediately, then navigates (avoids 2-click feel).
 export function TaskModalShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [open, setOpen] = useState(true);
-  // B: idempotency guard. close() leciał 2× przy jednym klik'u X:
-  // - 1: onClick handler na buttonie X
-  // - 2: setOpen(false) → BaseDialog re-render → onOpenChange(false) → close()
-  // Pierwsza wywołka czytała sessionStorage + nawigowała. Druga miała już
-  // empty storage → router.back() → przeskakiwała o dodatkowy poziom
-  // (klient lądował na /workspaces zamiast na board view).
+  // Idempotency guard — close() fired twice per X click (onClick + onOpenChange) and second call
+  // saw empty sessionStorage so router.back() jumped an extra level.
   const closingRef = useRef(false);
 
   const close = () => {

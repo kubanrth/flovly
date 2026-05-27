@@ -3,13 +3,11 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { NotesWorkspace } from "@/components/my/notes/notes-workspace";
 
-// + F11-23: 3-column Apple-Notes-style layout (fullwidth, no AppShell).
+// Apple-Notes-style 3-column layout (fullwidth, no AppShell).
 // URL params:
-//   folderId  — concrete folder OR smart-folder key:
-//                  "all" | "pinned" | "recent" | "trash"
-//   noteId    — selected note
-//   q         — search query (filter title/content)
-
+//   folderId — concrete folder id, or smart-folder key: "all" | "pinned" | "recent" | "trash"
+//   noteId   — selected note id
+//   q        — search query (filters title/content)
 export default async function MyNotesPage({
   searchParams,
 }: {
@@ -24,7 +22,7 @@ export default async function MyNotesPage({
   const userId = session.user.id;
   const params = await searchParams;
 
-  // Include deleted notes; we filter per-view.
+  // Fetch including deleted; filter per-view below.
   const [folders, allNotes] = await Promise.all([
     db.noteFolder.findMany({
       where: { userId },
@@ -39,17 +37,15 @@ export default async function MyNotesPage({
   const live = allNotes.filter((n) => n.deletedAt === null);
   const trashed = allNotes.filter((n) => n.deletedAt !== null);
 
-  // Server component — Date.now() is fine here. React Compiler's
-  // purity heuristic doesn't distinguish RSC from client components,
-  // so we suppress its warning.
+  // RSC: Date.now() is fine here. React Compiler purity heuristic flags it
+  // because it can't distinguish RSC from client components.
   // eslint-disable-next-line react-hooks/purity
   const recentCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
 
   const selectedFolder = params.folderId ?? "all";
   const query = (params.q ?? "").trim().toLowerCase();
-  // Mobile UX (iOS-Notes parity) potrzebuje wiedzieć czy URL
-  // ma EXPLICIT params, żeby zdecydować który "ekran" pokazać na mobile
-  // (folders list → notes list → editor). Desktop nie używa tych flag.
+  // Mobile drill-down (iOS-Notes parity): folders → notes → editor depending
+  // on which URL params are present. Desktop ignores these.
   const hasFolderParam = params.folderId !== undefined;
   const hasNoteParam = params.noteId !== undefined;
 
@@ -59,7 +55,6 @@ export default async function MyNotesPage({
       filteredNotes = live.filter((n) => n.pinned);
       break;
     case "recent":
-      // Last 30 days, sorted desc — iOS "Recently Edited".
       filteredNotes = live.filter((n) => n.updatedAt.getTime() >= recentCutoff);
       break;
     case "trash":

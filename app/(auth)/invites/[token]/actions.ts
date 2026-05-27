@@ -52,7 +52,6 @@ export async function acceptInviteAction(
     return { ok: false, error: "Zaproszenie zostało już wykorzystane." };
   }
 
-  // Check whether an account for this email already exists.
   const existingUser = await db.user.findUnique({
     where: { email: invitation.email },
   });
@@ -144,17 +143,13 @@ export async function acceptInviteAction(
     },
   });
 
-  // Po akceptacji ZAWSZE redirect do workspace'u. Wcześniej, gdy
-  // user był już zalogowany jako ten sam email, action zwracał { ok: true }
-  // bez redirect'u — formularz po prostu sat w pendingu i klient widział
-  // 'jakby nic się nie stało' (i przy refreshu strony zaproszenia
-  // pokazywał się 'already-used' error). Teraz:
-  //  - już zalogowany jako invitation.email → redirect do /w/<id>
-  //  - inaczej → signIn z redirectTo (next-auth handle redirect)
+  // Always redirect to the workspace after acceptance:
+  //  - already signed in as invitation.email → redirect to /w/<id>
+  //  - otherwise → signIn with redirectTo (next-auth handles the redirect)
   const session = await auth();
   const target = `/w/${invitation.workspaceId}`;
   if (session?.user?.email === invitation.email) {
-    // redirect() throws NEXT_REDIRECT — Next.js przejmuje response.
+    // redirect() throws NEXT_REDIRECT — Next.js takes over the response.
     redirect(target);
   }
 

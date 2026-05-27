@@ -52,10 +52,7 @@ export function RoadmapView({
   canDelete: boolean;
   initialMode?: Mode;
 }) {
-  // Klient zażądał usunięcia trybu "Oś czasu" (gantt
-  // robi to lepiej). Tryb pinujemy na "markers" — toggle ukryty
-  // poniżej, mode state zostaje na wypadek gdyby ktoś chciał
-  // wrócić do timeline w przyszłości.
+  // Timeline mode removed (gantt view replaces it); state kept in case it returns.
   const [mode] = useState<Mode>("markers");
   const _initialMode = initialMode;
   void _initialMode;
@@ -378,7 +375,6 @@ function MarkersTrack({
   canUpdate: boolean;
   onEdit: (m: MilestoneItem) => void;
 }) {
-  // Sort chronologicznie — klient chciał "coś następuje po czymś".
   const sorted = useMemo(
     () =>
       [...milestones].sort(

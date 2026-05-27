@@ -69,8 +69,7 @@ export interface BoardTableTask {
   statusColumnId: string | null;
   startAt: string | null;
   stopAt: string | null;
-  // Needed by preset grouping "Data dodania". Server `createdAt`
-  // jest zawsze ustawiony (default(now)) — typujemy non-null.
+  // Needed by "Data dodania" preset grouping; server default(now) guarantees non-null.
   createdAt: string;
   assignees: {
     id: string;
@@ -81,10 +80,6 @@ export interface BoardTableTask {
   tags: { id: string; name: string; colorHex: string }[];
   // User-defined column values, keyed by custom column id.
   customValues: Record<string, string>;
-  // Lista załączników do wyświetlenia w kolumnie 'Załączniki'.
-  // Typ collapsed do tego, czego potrzebuje AttachmentCell — pełnego
-  // metadata (uploader, createdAt) tutaj nie dopuszczamy bo widok tabeli
-  // nie powinien tego wyświetlać.
   attachments: AttachmentCellItem[];
 }
 
@@ -98,8 +93,7 @@ export interface CustomTableColumn {
   id: string;
   name: string;
   type: FieldType;
-  // F10-A: type-specific config (select options, number format, etc.)
-  // Plain JSON object — parseFieldOptions tolerates anything.
+  // Type-specific config (select options, number format, etc.) — parseFieldOptions tolerates anything.
   options: unknown;
 }
 
@@ -112,9 +106,7 @@ function toLocalInput(iso: string | null): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-// Canonical column ids used by both the table and the settings popover.
-// Kept here so there's one source of truth — re-order these to change the
-// factory-default layout for brand-new boards.
+// Re-order these to change the factory-default layout for brand-new boards.
 const DEFAULT_COLUMN_ORDER: string[] = [
   "statusColumnId",
   "title",
@@ -125,10 +117,7 @@ const DEFAULT_COLUMN_ORDER: string[] = [
   "attachments",
 ];
 
-// Klient zażądał możliwości ukrywania defaultowych kolumn
-// (Status, Tytuł). Wcześniej `required: true` zablokowało eye-toggle.
-// Teraz wszystkie kolumny mogą być ukryte; tworzą się automatycznie
-// jak board jest świeży.
+// All columns are hideable; brand-new boards auto-create the built-ins.
 const COLUMN_DEFS: ColumnDef[] = [
   { id: "statusColumnId", label: "Status" },
   { id: "title", label: "Tytuł" },
@@ -165,21 +154,14 @@ export function BoardTable({
   canManagePrefs: boolean;
   initialColumnOrder?: string[];
   initialHiddenColumns?: string[];
-  // F10-B: persisted filter / sort / group state from BoardView.configJson.
   initialFilters?: TableFilter[];
   initialSort?: TableSort | null;
   initialGroupBy?: string | null;
-  // F10-X: persisted per-column pixel widths.
   initialWidths?: Record<string, number>;
-  // Persisted left-pinned columns. `undefined` means legacy board
-  // with no preference saved — fall back to the historical "first column
-  // always frozen" default. `[]` is an explicit user choice to unpin.
+  // `undefined` = legacy board (falls back to "first column auto-frozen"); `[]` = explicit unpin.
   initialPinned?: string[];
   customColumns: CustomTableColumn[];
-  // Needed for the `M` assign hotkey.
   members: AssignMember[];
-  // Workspace-wide tag list for the in-cell tag picker. Empty
-  // array is fine — the picker shows an instructional empty state.
   allTags: PickerTag[];
 }) {
   const assign = useAssignHotkey({ members, workspaceId });
@@ -190,9 +172,7 @@ export function BoardTable({
   );
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(() => {
     const knownIds = new Set([...DEFAULT_COLUMN_ORDER, ...customIds]);
-    // Server-persisted order wins for known ids; unknown / legacy ids
-    // stripped. Missing built-ins and brand-new custom columns appended
-    // at the tail.
+    // Server order wins; unknown ids stripped, new built-ins/custom appended.
     if (initialColumnOrder && initialColumnOrder.length > 0) {
       const retained = initialColumnOrder.filter((id) => knownIds.has(id));
       const retainedSet = new Set(retained);
@@ -216,9 +196,7 @@ export function BoardTable({
   });
   useWorkspaceRealtime(workspaceId);
 
-  // F10-X T2.2: multi-select row state. TanStack handles toggles via
-  // checkbox onChange; shift-click range selection is implemented
-  // manually because TanStack doesn't ship that out of the box.
+  // Shift-click range selection done manually — TanStack doesn't ship it out of the box.
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const lastClickedRowRef = useRef<string | null>(null);
   const extendSelection = (toId: string) => {
@@ -236,13 +214,11 @@ export function BoardTable({
     });
   };
 
-  // F10-X: persisted per-column widths. TanStack tracks live drag state;
-  // we persist to the server when the user releases the drag handle.
+  // Persists per-column widths to server when the user releases the drag handle.
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>(
     () => initialWidths ?? {},
   );
-  // Skip the first-render no-op write — initial state already matches
-  // what's on the server, no point round-tripping.
+  // Skip first-render no-op write — initial state already matches server.
   const sizingDirty = useRef(false);
   const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -266,10 +242,7 @@ export function BoardTable({
     };
   }, [columnSizing, workspaceId, boardId, canManagePrefs]);
 
-  // Column pinning. Legacy boards without a saved `pinned` array
-  // keep the historical "first column auto-frozen" behaviour by pinning
-  // whichever column ends up first in column order. Explicit empty array
-  // means user unpinned everything — respect that.
+  // Legacy boards (undefined `pinned`) get historical "first column auto-frozen"; empty array = user unpinned all.
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(() => {
     if (initialPinned !== undefined) return { left: initialPinned, right: [] };
     const hidden = new Set(initialHiddenColumns ?? []);
@@ -294,25 +267,17 @@ export function BoardTable({
     });
   }, [columnPinning, workspaceId, boardId, canManagePrefs]);
 
-  // F10-B: filter / sort / group state. Persisted on BoardView.configJson
-  // by the toolbar's onChange — we apply them client-side over `tasks`
-  // so realtime patches keep working.
+  // Applied client-side over `tasks` so realtime patches keep working.
   const [filters, setFilters] = useState<TableFilter[]>(initialFilters ?? []);
   const [tableSort, setTableSort] = useState<TableSort | null>(initialSort ?? null);
   const [groupBy, setGroupBy] = useState<string | null>(initialGroupBy ?? null);
 
-  // F10-X T2.3: in-table search. Cmd+F (Ctrl+F) opens an input that
-  // narrows rows by substring across title + every custom cell.
-  // Server-side filters (F10-B) still apply on top — the search is
-  // a UI-only refinement, never persisted.
+  // Cmd+F opens client-only refinement search over title + every custom cell. Never persisted.
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // F10-X T2.1: keyboard navigation. We track the active cell as
-  // [rowIdx, colIdx] indices over the visible row + column lists. Arrow
-  // keys move the active cell, Enter focuses the first focusable element
-  // inside (input/select/button) so the user can immediately type.
+  // Tracks active cell as [rowIdx, colIdx]; Enter focuses the first focusable child for immediate typing.
   const [activeCell, setActiveCell] = useState<{ row: number; col: number } | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
   useEffect(() => {
@@ -333,9 +298,7 @@ export function BoardTable({
     return () => document.removeEventListener("keydown", onKey);
   }, [searchOpen]);
 
-  // Reusable persist for filter/sort/groupBy — used by the toolbar AND
-  // by header-cell context menu actions. Keeps the server in sync when
-  // user sorts/filters from the per-column menu instead of the toolbar.
+  // Used by toolbar AND header-cell context menu actions to keep server in sync.
   const persistFilters = (next: {
     filters: TableFilter[];
     sort: TableSort | null;
@@ -352,8 +315,7 @@ export function BoardTable({
     startTransition(() => saveTableFiltersAction(fd));
   };
 
-  // Same for the prefs (order/hidden/widths). Used when the menu hides
-  // a column without going through ColumnSettings.
+  // Used when the column menu hides a column without going through ColumnSettings.
   const persistPrefs = (patch: {
     columnOrder?: string[];
     hidden?: string[];
@@ -367,12 +329,8 @@ export function BoardTable({
     startTransition(() => saveTableColumnPrefsAction(fd));
   };
 
-  // Pipeline: filter → sort. Grouping happens at render time so each
-  // group keeps the same sort.
-  // F12-K44 P3: search debounce przez useDeferredValue (React 19). Bez
-  // tego każdy keystroke trigger'ował filter + sort 500 rows synchronously
-  // → odczuwalny lag przy szybkim pisaniu. useDeferredValue defer'uje
-  // re-compute do interactive idle, input pozostaje responsywny.
+  // Filter → sort pipeline; grouping happens at render time so each group keeps the same sort.
+  // useDeferredValue keeps search input responsive on 500-row tables.
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const filteredSorted = useMemo(() => {
@@ -442,8 +400,6 @@ export function BoardTable({
         cell: (info) => (
           <Link
             href={`/w/${workspaceId}/t/${info.row.original.id}`}
-            // Whitespace-normal + break-words zamiast truncate —
-            // długi tytuł zawija się w wiele linii w cellu (klient).
             className="block whitespace-normal break-words font-display text-[0.96rem] font-semibold leading-tight tracking-[-0.01em] transition-colors hover:text-primary"
           >
             {info.getValue()}
@@ -504,9 +460,6 @@ export function BoardTable({
           />
         ),
       }),
-      // Built-in 'Załączniki' kolumna — count + popover z listą
-      // i uploadem. Sortowanie po liczbie plików (DESC default jest
-      // intuicyjne — taski z najwięcej załącznikami na górze).
       col.accessor("attachments", {
         id: "attachments",
         header: "Załączniki",
@@ -522,10 +475,7 @@ export function BoardTable({
           />
         ),
       }),
-      // F9-07 / F10-A: one TanStack column per user-defined custom
-      // column. `id` uses a `custom:` prefix so column-order + visibility
-      // state stays distinct from the built-in ids. Cell rendering is
-      // dispatched by FieldType (TEXT, NUMBER, SINGLE_SELECT, …).
+      // `custom:` id prefix keeps order + visibility state distinct from built-ins.
       ...customColumns.map((c) =>
         col.display({
           id: `custom:${c.id}`,
@@ -573,9 +523,6 @@ export function BoardTable({
     .filter(([, visible]) => !visible)
     .map(([id]) => id);
 
-  // Merge built-in + user-defined columns into one list for the settings
-  // popover. Custom column ids get a `custom:` prefix so TanStack state
-  // stays distinct.
   const settingsColumns: ColumnDef[] = [
     ...COLUMN_DEFS,
     ...customColumns.map((c) => ({
@@ -587,10 +534,7 @@ export function BoardTable({
     })),
   ];
 
-  // F10-B: every filterable / sortable / groupable column reduced to the
-  // shape the toolbar needs (kind + label + options for the value picker).
-  // Built-ins use BUILTIN_* kinds so the operators table gives them a
-  // sensible default set.
+  // Built-ins use BUILTIN_* kinds so the operators table gives them sensible defaults.
   const toolbarColumns: ToolbarColumnRef[] = [
     { id: "title", label: "Tytuł", kind: "BUILTIN_TITLE" },
     {
@@ -609,15 +553,11 @@ export function BoardTable({
     })),
   ];
 
-  // Group rows by the active groupBy column. Returns ordered buckets so
-  // the rendering side can iterate without re-sorting.
+  // Returns ordered buckets so the rendering side can iterate without re-sorting.
   const groupedRows: { key: string; label: string; color?: string; rows: typeof filteredSorted }[] = (() => {
     if (!groupBy) return [{ key: "_all", label: "", rows: filteredSorted }];
 
-    // Preset path. Każdy preset ma własną logikę bucketingu
-    // (semantyczne buckety czasowe / pierwszy tag alfabetycznie). Buckety
-    // sortowane po `order` z descriptora zamiast Map insertion order
-    // żeby kolejność była stabilna niezależnie od sort'u rzędów.
+    // Preset buckets sorted by descriptor `order` for stable ordering regardless of row sort.
     if (groupBy.startsWith("preset:")) {
       type PresetEntry = {
         rows: typeof filteredSorted;
@@ -763,9 +703,6 @@ export function BoardTable({
         )}
       </div>
 
-    {/* F12-K47b: mobile pokazuje prawdziwą tabelę z horizontal scroll
-        (klient chciał zobaczyć tabelę, nie karty). Wcześniejszy
-        MobileTaskCards usunięty — tabela ma już overflow-x-auto. */}
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(10,10,40,0.04)]">
       <div className="overflow-x-auto">
         <table
@@ -774,9 +711,7 @@ export function BoardTable({
           style={{ tableLayout: "fixed", width: "max-content", minWidth: "100%" }}
           onKeyDown={(e) => {
             if (!activeCell) return;
-            // Only intercept arrow keys / Enter when a CELL (td) is the
-            // active focus target — otherwise inputs inside cells own
-            // their keystrokes.
+            // Only intercept when a CELL (td) is focus target — otherwise inputs in cells own their keystrokes.
             const target = e.target as HTMLElement;
             const onCellTd = target.tagName === "TD" || target.dataset.cell === "1";
             if (!onCellTd) return;
@@ -816,10 +751,7 @@ export function BoardTable({
                 moveTo(activeCell.row, prevCol);
               }
             } else if (e.key === "Enter" || e.key === "F2") {
-              // Focus first interactive element inside the cell (input,
-              // textarea, button, select) so the user can start typing
-              // immediately. Escape inside the cell will return focus
-              // to the td (browser default).
+              // Focus first interactive child so user can start typing immediately.
               e.preventDefault();
               const editable = target.querySelector<HTMLElement>(
                 'input, textarea, select, button:not([aria-label="Konfiguruj kolumnę"])',
@@ -830,9 +762,7 @@ export function BoardTable({
         >
           <thead>
             {table.getHeaderGroups().map((hg) => {
-              // Render pinned headers first so the DOM order
-              // matches visual order. Sticky offset = checkbox width +
-              // cumulative width of preceding pinned columns.
+              // Render pinned headers first so DOM order matches visual order.
               const leftHeaders = hg.headers.filter(
                 (h) => h.column.getIsPinned() === "left",
               );
@@ -843,10 +773,7 @@ export function BoardTable({
               return (
                 <tr key={hg.id} className="border-b border-border bg-card">
                   {canEdit && (
-                    // Bg-card (było bg-muted/95) — pełna nieprzezroczystość
-                    // żeby tło BoardShell (gradient/obraz) nie przebijało za checkboxem.
-                    // E: na mobile sticky pinning wyłączone (max-md:!static) —
-                    // klient nie mógł scrollować przez przypięte kolumny.
+                    // Sticky pinning disabled on mobile (max-md:!static) — couldn't scroll past pinned columns.
                     <th className="sticky left-0 top-0 z-30 h-10 w-10 bg-card px-2 shadow-[1px_0_0_0_var(--border)] max-md:!static max-md:!shadow-none">
                       {(() => {
                         const allChecked =
@@ -937,8 +864,7 @@ export function BoardTable({
                             }
                           }}
                           onFilter={() => {
-                            // Add an empty filter for this column so the
-                            // toolbar chip pops up ready for value input.
+                            // Add empty filter — toolbar chip pops up ready for value input.
                             const targetId = isCustom
                               ? colId.replace(/^custom:/, "")
                               : colId;
@@ -1014,13 +940,8 @@ export function BoardTable({
                 </td>
               </tr>
             ) : (
-              // F10-B: when grouped, the row model is partitioned by
-              // bucket — each bucket gets a colored header row, then the
-              // matching subset of TanStack rows underneath.
-              // F12-K44 P2: zamiast filter() per bucket (O(N×M)), budujemy
-              // raz Map<rowId, RowModel> i czytamy bucket'y O(N). Z 500
-              // rows × 5 buckets to było 2500 iteracji per render —
-              // teraz ~500 + 5×O(1) = 505.
+              // When grouped, each bucket gets a colored header row + matching subset of rows.
+              // Build Map<rowId, RowModel> once → O(N) instead of O(N×M) filter() per bucket.
               (() => {
                 const rowModel = table.getRowModel().rows;
                 const rowById = new Map(rowModel.map((r) => [r.original.id, r]));
@@ -1061,8 +982,6 @@ export function BoardTable({
                                 ariaLabel={`Zaznacz wiersz ${row.original.title}`}
                                 checked={isSelected}
                                 onClick={(e) => {
-                                  // Shift-click extends the range from the
-                                  // last clicked row.
                                   if (e.shiftKey && lastClickedRowRef.current) {
                                     e.preventDefault();
                                     extendSelection(row.original.id);
@@ -1082,8 +1001,7 @@ export function BoardTable({
                             </td>
                           )}
                           {(() => {
-                            // Same pinned-first reorder as headers
-                            // so DOM cells line up with the visible columns.
+                            // Same pinned-first reorder as headers — DOM cells line up with visible columns.
                             const allCells = row.getVisibleCells();
                             const leftCells = allCells.filter(
                               (c) => c.column.getIsPinned() === "left",
@@ -1167,10 +1085,6 @@ export function BoardTable({
   );
 }
 
-// F10-X T2.2: floating action bar shown when ≥ 1 row is selected.
-// Sits at the bottom of the viewport. Modes: change status / delete /
-// clear. Server actions revalidate so deleted/moved rows disappear
-// without a full reload.
 function BulkActionsBar({
   workspaceId,
   selectedIds,
@@ -1261,8 +1175,7 @@ function BulkActionsBar({
   );
 }
 
-// F10-X: starting widths per FieldType for newly-added custom columns.
-// User overrides via drag persist on top of this default.
+// Drag-resize overrides persist on top of these defaults.
 function defaultSizeForType(type: FieldType): number {
   switch (type) {
     case "CHECKBOX":
@@ -1319,9 +1232,7 @@ function DateCell({
       <MutedDash />
     );
   }
-  // In-cell DateTimePicker — variant "cell" strips the
-  // input-style border + native calendar icon, autosave fires via
-  // patchTaskAction whenever the user picks/clears a date.
+  // variant="cell" strips input-style border; autosave via patchTaskAction on every pick/clear.
   const persist = (iso: string) => {
     const fd = new FormData();
     fd.set("id", taskId);
@@ -1332,8 +1243,7 @@ function DateCell({
   };
   return (
     <DateTimePicker
-      // `name` is unused in cell mode (no wrapping form) but keep it set
-      // so the hidden input is still present for accessibility tooling.
+      // `name` unused in cell mode (no wrapping form) — kept for a11y tooling.
       name={field}
       defaultValue={value}
       variant="cell"
@@ -1347,9 +1257,7 @@ function MutedDash() {
   return <span className="font-mono text-[0.7rem] text-muted-foreground/60">—</span>;
 }
 
-// F10-B: collapsible group header + row container. When `showHeader`
-// is false (no groupBy active) we render only the children — keeps the
-// non-grouped path 1:1 with the previous behaviour.
+// When `showHeader` is false we render only children — non-grouped path stays unchanged.
 function GroupBucket({
   label,
   color,
@@ -1395,14 +1303,7 @@ function GroupBucket({
   );
 }
 
-// F10-X: small "+" trigger at the end of the header row. Opens a tiny
-// inline input — Enter creates a TEXT column with that name. Power
-// users can still configure the type via the column gear afterwards;
-// this is the "add fast" path that matches Airtable's "+ Add field".
-// Single canonical "add column" path (mirrors Airtable's "+ Add field"):
-// click + → popover with name input + type picker + per-type options.
-// The popover renders via portal at viewport-fixed coords so internal
-// scroll never scrolls the underlying overflow-x-auto table.
+// Portal-rendered popover at viewport-fixed coords so internal scroll never moves the overflow-x-auto table.
 function AddColumnButton({
   workspaceId,
   boardId,
@@ -1431,9 +1332,7 @@ function AddColumnButton({
     setCoords(null);
   };
 
-  // Position popover relative to viewport. If there's not enough room
-  // below the trigger, flip above. Always clamp maxHeight so the footer
-  // (Anuluj / Dodaj) never falls off-screen.
+  // Flip above if not enough room below; clamp maxHeight so footer never falls off-screen.
   const computeCoords = () => {
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return null;
@@ -1470,8 +1369,7 @@ function AddColumnButton({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") closeReset();
     };
-    // Recompute on resize/scroll so popover stays anchored as the user
-    // resizes the window or scrolls the page underneath it.
+    // Recompute on resize/scroll to keep popover anchored.
     const onReflow = () => {
       const c = computeCoords();
       if (c) setCoords(c);
@@ -1531,9 +1429,7 @@ function AddColumnButton({
             <div className="shrink-0 border-b border-border px-3 py-2">
               <p className="eyebrow">Nowa kolumna</p>
             </div>
-            {/* min-h-0 is the magic that lets flex-1 + overflow-y-auto
-                actually clip the middle section. Without it the parent
-                stretches to fit content and the footer falls off-screen. */}
+            {/* min-h-0 is required so flex-1 + overflow-y-auto clips the middle section instead of stretching. */}
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
               <input
                 autoFocus
@@ -1581,10 +1477,6 @@ function AddColumnButton({
   );
 }
 
-// F10-X: ghost "+ Nowy wiersz" row pinned at the end of tbody. Click
-// to expand into an inline title input; Enter creates the task. Saved
-// to the first status column with default rowOrder, same path as the
-// "Nowe zadanie" toolbar button — just less clicks to reach it.
 function AddRowInline({
   workspaceId,
   boardId,
@@ -1609,8 +1501,7 @@ function AddRowInline({
     startTransition(async () => {
       await createTaskAction(null, fd);
       setTitle("");
-      // Stay in edit mode so the user can keep firing rows without
-      // clicking again — Airtable does the same thing.
+      // Stay in edit mode — user can keep firing rows without clicking again.
     });
   };
   return (

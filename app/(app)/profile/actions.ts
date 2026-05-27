@@ -44,7 +44,6 @@ export async function updateProfileAction(
     return { ok: false, fieldErrors: fe };
   }
 
-  // Optional avatar upload (if a file was attached).
   const avatar = formData.get("avatar");
   let avatarUrl: string | undefined;
 

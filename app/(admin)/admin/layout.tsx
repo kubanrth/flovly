@@ -8,8 +8,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-dvh flex-col bg-background md:flex-row">
-      {/* F12-K47d: na mobile sidebar staje się top-barem (header z
-          horizontal-scroll nav). Desktop bez zmian — fixed 240px sidebar. */}
+      {/* Mobile: sidebar collapses to a horizontal-scroll top bar. Desktop: fixed 240px sidebar. */}
       <aside className="flex shrink-0 flex-col gap-2 border-b border-sidebar-border bg-sidebar md:w-[240px] md:border-b-0 md:border-r md:px-3 md:py-4">
         <div className="flex items-center justify-between gap-2 px-3 py-3 md:px-2 md:py-1">
           <div className="flex items-center gap-2">

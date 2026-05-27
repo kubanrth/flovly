@@ -15,7 +15,6 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-// ClickUp-adjacent modern display sans. Distinctive but clean.
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-display",
   subsets: ["latin"],

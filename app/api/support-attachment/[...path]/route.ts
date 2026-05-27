@@ -1,7 +1,5 @@
-// Serve załączniki support ticketów przez signed redirect
-// (taki sam pattern jak /api/brief-image). storageKey w URL'u =
-// w/<wid>/support/<tid>/... — handler weryfikuje workspace membership
-// usera i 302-redirectuje na świeży 1h signed URL z Supabase Storage.
+// Support ticket attachments via signed redirect — see /api/brief-image.
+// Path layout: w/<wid>/support/<tid>/...
 
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
@@ -22,7 +20,6 @@ export async function GET(
     return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }
 
-  // Path layout: w/<wid>/support/<tid>/...
   const parts = storageKey.split("/");
   if (parts.length < 5 || parts[0] !== "w" || parts[2] !== "support") {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });

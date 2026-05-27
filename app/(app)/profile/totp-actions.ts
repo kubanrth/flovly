@@ -14,10 +14,9 @@ export type BeginEnrollmentResult =
   | { ok: true; base32: string; otpauthUrl: string }
   | { ok: false; error: string };
 
-// Step 1/2: mint a fresh secret and stash it on the user row without
-// enabling 2FA yet. totpEnabledAt stays null until completeEnrollment
-// confirms the user can read codes from their authenticator. Calling
-// this twice just rotates the secret — no damage, old QR invalidated.
+// Step 1/2: mints a fresh secret on the user row but leaves totpEnabledAt null
+// until completeEnrollment confirms the authenticator works. Calling twice just
+// rotates the secret — old QR is invalidated.
 export async function beginTotpEnrollmentAction(): Promise<BeginEnrollmentResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Nie zalogowany." };
@@ -43,10 +42,9 @@ export type CompleteEnrollmentResult =
   | { ok: true; recoveryCodes: string[] }
   | { ok: false; error: string };
 
-// Step 2/2: user enters the first 6-digit token from their app. On
-// success we flip totpEnabledAt, generate 10 single-use recovery codes,
-// and return the plain codes ONCE so the UI can display them. We
-// persist only bcrypt hashes.
+// Step 2/2: user submits the first 6-digit token. On success we flip
+// totpEnabledAt, generate 10 single-use recovery codes, and return them ONCE.
+// We persist only bcrypt hashes.
 export async function completeTotpEnrollmentAction(input: {
   token: string;
 }): Promise<CompleteEnrollmentResult> {
@@ -70,8 +68,7 @@ export async function completeTotpEnrollmentAction(input: {
       where: { id: user.id },
       data: { totpEnabledAt: new Date() },
     }),
-    // Wipe any stale recovery codes from a prior attempt that never
-    // completed — shouldn't exist, but defensive.
+    // Defensive: wipe any stale recovery codes from an incomplete prior attempt.
     db.totpRecoveryCode.deleteMany({ where: { userId: user.id } }),
     db.totpRecoveryCode.createMany({
       data: hashed.map((codeHash) => ({ userId: user.id, codeHash })),
@@ -84,9 +81,8 @@ export async function completeTotpEnrollmentAction(input: {
 
 export type DisableResult = { ok: true } | { ok: false; error: string };
 
-// Requires current password + current TOTP token. Dropping 2FA without
-// this double-check would mean a compromised session auto-downgrades
-// the account.
+// Requires current password + current TOTP token — prevents a compromised
+// session from silently downgrading account security.
 export async function disableTotpAction(input: {
   password: string;
   token: string;
