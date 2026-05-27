@@ -246,6 +246,10 @@ model Board {
   workspaceId String
   name        String
   description String?
+  // F12-K57: 'Opis ogólny' — per-board rich-text wiki-like overview.
+  // Tiptap doc shape. Pokazywany jako widok 'Opis' w ViewSwitcherze
+  // obok Tabela/Kanban/Roadmap/Gantt/Whiteboard.
+  overviewJson Json?
   creatorId   String
   visibility  Visibility @default(PUBLIC)
   // F12-K51: kolejność tablic w danym workspace na overview page.
@@ -449,6 +453,10 @@ model Task {
   id                    String    @id @default(cuid())
   workspaceId           String
   boardId               String
+  // F12-K57: ludzki ID zadania per-workspace (1, 2, 3...). Wyświetlany
+  // w UI zamiast obciętego cuid'a (np. 'CERDPC2S'). Backfill istniejących
+  // wierszy w migracji — kolejność po createdAt.
+  displayId             Int       @default(0)
   statusColumnId        String?
   milestoneId           String?
   creatorId             String

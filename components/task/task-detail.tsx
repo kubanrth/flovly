@@ -38,6 +38,8 @@ export interface TaskDetailProps {
   role: Role;
   task: {
     id: string;
+    // F12-K57: ludzki ID per-workspace (1, 2, 3...) wyświetlany w UI.
+    displayId: number;
     title: string;
     descriptionJson: RichTextDoc | null;
     statusColumnId: string | null;
@@ -144,7 +146,7 @@ export function TaskDetail({
       {/* Meta: ID + actions */}
       <div className="flex items-center justify-between">
         <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
-          zadanie · {task.id.slice(-8)}
+          zadanie · #{task.displayId || "—"}
         </span>
         <div className="flex items-center gap-4">
           {canEdit && (
@@ -182,15 +184,19 @@ export function TaskDetail({
 
         <label className="flex flex-col gap-2">
           <span className="eyebrow">Tytuł</span>
-          <input
+          {/* F12-K57: textarea zamiast input żeby długie tytuły zawijały
+              się w wiele linii (klient: 'jeśli tytuł dłuższy niż szerokość
+              to potrzebujemy zawijanie'). rows=1 + field-sizing-content
+              powoduje auto-grow. Max 2000 znaków zamiast 200. */}
+          <textarea
             name="title"
-            type="text"
             required
-            maxLength={200}
+            maxLength={2000}
+            rows={1}
             readOnly={!canEdit}
             defaultValue={task.title}
             aria-invalid={!!fieldErrors?.title}
-            className="border-b border-border bg-transparent pb-2 font-display text-[1.4rem] leading-[1.15] tracking-[-0.02em] outline-none focus:border-primary aria-[invalid=true]:border-destructive md:text-[1.8rem]"
+            className="resize-none border-b border-border bg-transparent pb-2 font-display text-[1.4rem] leading-[1.15] tracking-[-0.02em] outline-none focus:border-primary aria-[invalid=true]:border-destructive md:text-[1.8rem] [field-sizing:content]"
           />
           {fieldErrors?.title && (
             <span className="font-mono text-[0.68rem] text-destructive">

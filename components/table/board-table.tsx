@@ -442,7 +442,9 @@ export function BoardTable({
         cell: (info) => (
           <Link
             href={`/w/${workspaceId}/t/${info.row.original.id}`}
-            className="block truncate font-display text-[0.96rem] font-semibold tracking-[-0.01em] transition-colors hover:text-primary"
+            // F12-K57: whitespace-normal + break-words zamiast truncate —
+            // długi tytuł zawija się w wiele linii w cellu (klient).
+            className="block whitespace-normal break-words font-display text-[0.96rem] font-semibold leading-tight tracking-[-0.01em] transition-colors hover:text-primary"
           >
             {info.getValue()}
           </Link>
@@ -1629,7 +1631,7 @@ function AddRowInline({
                 setEditing(false);
               }
             }}
-            maxLength={200}
+            maxLength={2000}
             placeholder="Tytuł zadania…"
             className="w-full bg-transparent text-[0.92rem] outline-none placeholder:text-muted-foreground/50"
           />

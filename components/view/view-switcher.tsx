@@ -8,8 +8,10 @@ import {
   GitBranch,
   BarChart3,
   Pencil,
+  FileText,
   X,
 } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { deleteBoardViewAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
 import type { ViewName } from "@/lib/board-views";
 
@@ -122,6 +124,13 @@ export function ViewSwitcher({
   const heightClass =
     size === "sm" ? "h-7 px-2.5 text-[0.76rem]" : "h-8 px-3 text-[0.82rem]";
 
+  // F12-K57: stała 6. zakładka 'Opis' — per-board wiki/notes page,
+  // poza enum ViewType (nie wymaga BoardView row'a). Active gdy URL
+  // kończy się na /overview.
+  const pathname = usePathname();
+  const overviewPath = `/w/${workspaceId}/b/${boardId}/overview`;
+  const overviewActive = pathname === overviewPath || pathname?.startsWith(`${overviewPath}/`);
+
   return (
     <div
       role="tablist"
@@ -166,6 +175,21 @@ export function ViewSwitcher({
           </div>
         );
       })}
+
+      {/* F12-K57: stała pill 'Opis' (per-board rich-text overview).
+          Zawsze widoczna, nie wymaga BoardView row'a w DB. */}
+      <div className="group relative">
+        <Link
+          href={overviewPath}
+          role="tab"
+          aria-selected={overviewActive}
+          data-active={overviewActive ? "true" : "false"}
+          className={`lg-seg-btn font-sans focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${heightClass}`}
+        >
+          <FileText size={14} />
+          <span>Opis</span>
+        </Link>
+      </div>
 
       {(customViews?.length ?? 0) > 0 && (
         <span

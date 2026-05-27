@@ -148,6 +148,8 @@ export async function fetchTaskDetail(
     role: ctx.role,
     task: {
       id: task.id,
+      // F12-K57: ludzki ID (1, 2, 3...) zamiast obciętego cuid'a.
+      displayId: task.displayId,
       title: task.title,
       descriptionJson: normalizeDescription(task.descriptionJson),
       statusColumnId: task.statusColumnId,

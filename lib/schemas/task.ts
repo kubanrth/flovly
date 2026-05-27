@@ -3,7 +3,7 @@ import { z } from "zod";
 export const createTaskSchema = z.object({
   workspaceId: z.string().min(1),
   boardId: z.string().min(1),
-  title: z.string().trim().min(1, "Tytuł jest wymagany.").max(200),
+  title: z.string().trim().min(1, "Tytuł jest wymagany.").max(2000),
   // F11-10: optional explicit status column (Kanban inline-add). When
   // omitted, server falls back to the board's first column.
   statusColumnId: z.string().min(1).optional(),
@@ -23,7 +23,7 @@ const richDocSchema = z.object({
 // a missing/empty field isn't accidentally treated as "clear description".
 export const updateTaskSchema = z.object({
   id: z.string().min(1),
-  title: z.string().trim().min(1, "Tytuł jest wymagany.").max(200),
+  title: z.string().trim().min(1, "Tytuł jest wymagany.").max(2000),
   statusColumnId: z.string().min(1).optional().or(z.literal("")),
   startAt: z.string().optional().or(z.literal("")),
   stopAt: z.string().optional().or(z.literal("")),

@@ -110,10 +110,21 @@ export async function createTaskAction(
       })
     : null;
 
+  // F12-K57: next displayId per-workspace. Max+1, fallback 1.
+  // Włącza też soft-deleted task'y w max() żeby usunięte numery nie były
+  // reużyte (uniknięcie konfliktów historycznych w audit log'u).
+  const lastDisplay = await db.task.findFirst({
+    where: { workspaceId: parsed.data.workspaceId },
+    orderBy: { displayId: "desc" },
+    select: { displayId: true },
+  });
+  const nextDisplayId = (lastDisplay?.displayId ?? 0) + 1;
+
   const task = await db.task.create({
     data: {
       workspaceId: parsed.data.workspaceId,
       boardId: parsed.data.boardId,
+      displayId: nextDisplayId,
       statusColumnId: pickedColumn?.id,
       creatorId: ctx.userId,
       title: parsed.data.title,
