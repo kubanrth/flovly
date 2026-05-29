@@ -4,6 +4,7 @@ import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { CanvasEditorLazy } from "@/components/canvas/canvas-editor-lazy";
 import { BoardShell } from "@/components/view/board-shell";
+import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
 import { BoardLinksServer } from "@/components/board/board-links-server";
 import { parseEnabledViews } from "@/lib/board-views";
@@ -104,6 +105,7 @@ export default async function BoardWhiteboardPage({
         extra={<BoardLinksServer workspaceId={workspaceId} boardId={board.id} />}
       />
 
+      <ViewTransition>
       <div className="h-[calc(100dvh-18rem)] min-h-[520px] overflow-hidden rounded-xl border border-border bg-card">
         <CanvasEditorLazy
           workspaceId={workspaceId}
@@ -173,6 +175,7 @@ export default async function BoardWhiteboardPage({
           defaultBoardId={board.id}
         />
       </div>
+      </ViewTransition>
     </BoardShell>
   );
 }

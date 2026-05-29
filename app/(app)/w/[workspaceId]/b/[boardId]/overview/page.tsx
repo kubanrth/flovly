@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { BoardShell } from "@/components/view/board-shell";
+import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
 import { parseEnabledViews } from "@/lib/board-views";
 import { backgroundToCss, type BackgroundConfig } from "@/lib/schemas/background";
@@ -42,12 +43,14 @@ export default async function BoardOverviewPage({
         enabledViews={enabledViews}
       />
 
+      <ViewTransition>
       <BoardOverviewEditor
         workspaceId={workspaceId}
         boardId={board.id}
         initial={(board.overviewJson ?? null) as RichTextDoc | null}
         canEdit={canEdit}
       />
+      </ViewTransition>
     </BoardShell>
   );
 }

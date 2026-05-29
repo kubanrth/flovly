@@ -5,6 +5,7 @@ import { can } from "@/lib/permissions";
 import { RoadmapView } from "@/components/roadmap/roadmap-view";
 import { BackgroundCustomizer } from "@/components/view/background-customizer";
 import { BoardShell } from "@/components/view/board-shell";
+import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
 import { BoardLinksServer } from "@/components/board/board-links-server";
 import { parseEnabledViews } from "@/lib/board-views";
@@ -80,6 +81,7 @@ export default async function RoadmapPage({
         }
       />
 
+      <ViewTransition>
       <RoadmapView
         workspaceId={workspaceId}
         boardId={boardId}
@@ -97,6 +99,7 @@ export default async function RoadmapPage({
         canUpdate={canUpdate}
         canDelete={canDelete}
       />
+      </ViewTransition>
     </BoardShell>
   );
 }

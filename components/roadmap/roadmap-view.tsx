@@ -31,6 +31,15 @@ export interface MilestoneItem {
 const ROW_HEIGHT = 36;
 const TRACK_PADDING_Y = 18;
 
+// Markers-track node geometry. Title block is a HARD fixed height that fits the
+// worst case (2-line title clamped + count label) so no node grows taller than
+// another — that's what keeps every dot on one horizontal line. The arrow's
+// vertical offset is derived from the same constants so connectors stay level.
+const NODE_TITLE_H = 56;
+const NODE_GAP = 8; // gap-2 between title block and dot
+const NODE_DOT = 48; // h-12 dot
+const NODE_ARROW_TOP = NODE_TITLE_H + NODE_GAP + NODE_DOT / 2 - 12; // svg line sits at y=12
+
 type Mode = "timeline" | "markers";
 
 export function RoadmapView({
@@ -432,10 +441,13 @@ function MilestoneNode({
   const workspaceId = params?.workspaceId ?? "";
   return (
     <div className="flex w-[180px] shrink-0 flex-col items-center gap-2 px-2">
-      {/* F11-2 (#8): title block fixed-height — wcześniej min-h pozwalało
-          rosnąć przy 2 liniach, przez co dot przesuwał się w dół a strzałka
-          (paddingTop fixed) zostawała w starym miejscu → rozjazd. */}
-      <div className="flex h-[44px] flex-col items-center justify-center gap-0.5 overflow-hidden text-center">
+      {/* Hard fixed-height block (NODE_TITLE_H) — title clamps to 2 lines and the
+          count label fits underneath without overflow, so the block never grows
+          and every dot below stays on the same line. */}
+      <div
+        className="flex shrink-0 flex-col items-center justify-center gap-0.5 overflow-hidden text-center"
+        style={{ height: NODE_TITLE_H }}
+      >
         <span className="font-display text-[0.92rem] font-semibold leading-tight tracking-[-0.01em] line-clamp-2">
           {milestone.title}
         </span>
@@ -489,17 +501,14 @@ function MilestoneNode({
   );
 }
 
-// Flow arrow between two milestone nodes — simple SVG chevron at node-
-// center-height so cała linia łączy je ładnie.
+// Flow arrow between two milestone nodes — SVG chevron pinned to dot center
+// (NODE_ARROW_TOP) so connectors stay level with the dots.
 function FlowArrow() {
-  // Arrow Y-center pinned to dot center.
-  // dot center = 44 (title block) + 8 (gap-2) + 24 (half of h-12 dot) = 76px.
-  // svg is 24px tall with line at y=12, so paddingTop = 76 - 12 = 64.
   return (
     <div
       className="flex shrink-0 items-center"
       aria-hidden
-      style={{ paddingTop: 64 }}
+      style={{ paddingTop: NODE_ARROW_TOP }}
     >
       <svg width="60" height="24" viewBox="0 0 60 24" fill="none">
         <defs>

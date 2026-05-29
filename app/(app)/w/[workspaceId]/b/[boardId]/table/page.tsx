@@ -7,6 +7,7 @@ import type { TableFilter, TableSort } from "@/lib/table-filters";
 import { CreateTaskButton } from "@/components/task/create-task-button";
 import { BackgroundCustomizer } from "@/components/view/background-customizer";
 import { BoardShell } from "@/components/view/board-shell";
+import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
 import { BoardLinksServer } from "@/components/board/board-links-server";
 import { parseEnabledViews } from "@/lib/board-views";
@@ -134,6 +135,7 @@ export default async function BoardTablePage({
         }
       />
 
+      <ViewTransition>
       <BoardTable
         workspaceId={workspaceId}
         boardId={board.id}
@@ -188,6 +190,7 @@ export default async function BoardTablePage({
         members={memberships.map((m) => m.user)}
         allTags={allTags}
       />
+      </ViewTransition>
 
     </BoardShell>
   );

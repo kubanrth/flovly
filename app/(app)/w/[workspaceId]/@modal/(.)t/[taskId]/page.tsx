@@ -11,7 +11,7 @@ export default async function InterceptedTaskModal({
   const data = await fetchTaskDetail(workspaceId, taskId);
 
   return (
-    <TaskModalShell>
+    <TaskModalShell taskId={taskId}>
       <TaskDetail {...data} />
     </TaskModalShell>
   );

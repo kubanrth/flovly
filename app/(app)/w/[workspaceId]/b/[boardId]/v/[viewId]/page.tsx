@@ -11,6 +11,7 @@ import { CanvasEditorLazy } from "@/components/canvas/canvas-editor-lazy";
 import { CreateTaskButton } from "@/components/task/create-task-button";
 import { BackgroundCustomizer } from "@/components/view/background-customizer";
 import { BoardShell } from "@/components/view/board-shell";
+import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
 import { BoardLinksServer } from "@/components/board/board-links-server";
 import { parseEnabledViews, viewTypeToName } from "@/lib/board-views";
@@ -79,6 +80,7 @@ export default async function CustomBoardViewPage({
         actions={actions}
       />
 
+      <ViewTransition>
       {view.type === "TABLE" && (
         <TableRenderer
           workspaceId={workspaceId}
@@ -117,6 +119,7 @@ export default async function CustomBoardViewPage({
           boardName={`${board.name} · ${view.name}`}
         />
       )}
+      </ViewTransition>
     </BoardShell>
   );
 }

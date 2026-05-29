@@ -8,7 +8,13 @@ import { Dialog as BaseDialog } from "@base-ui/react/dialog";
 // Intercepting-route task modal — closing navigates back in history so the intercepted route unmounts naturally.
 // sessionStorage 'taskModalReturnTo' lets CreateTaskButton route to the originating page (table/kanban) instead of workspace overview.
 // Controlled `open` state: X click closes UI immediately, then navigates (avoids 2-click feel).
-export function TaskModalShell({ children }: { children: React.ReactNode }) {
+export function TaskModalShell({
+  taskId,
+  children,
+}: {
+  taskId: string;
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(true);
   // Idempotency guard — close() fired twice per X click (onClick + onOpenChange) and second call
@@ -19,12 +25,22 @@ export function TaskModalShell({ children }: { children: React.ReactNode }) {
     if (closingRef.current) return;
     closingRef.current = true;
     setOpen(false);
+    // Honor returnTo only if it was set for THIS task (create flow). A stale entry
+    // from a create-modal that was dismissed by navigation must not hijack the
+    // close of a different task's edit-modal → that caused the "jumps to another
+    // board" bug. Mismatch (or no entry) falls back to history back().
     let returnTo: string | null = null;
     try {
-      returnTo = sessionStorage.getItem("taskModalReturnTo");
+      const raw = sessionStorage.getItem("taskModalReturnTo");
       sessionStorage.removeItem("taskModalReturnTo");
+      if (raw) {
+        const parsed = JSON.parse(raw) as { taskId?: string; path?: string };
+        if (parsed?.taskId === taskId && typeof parsed.path === "string") {
+          returnTo = parsed.path;
+        }
+      }
     } catch {
-      /* sessionStorage off — fallback to back */
+      /* sessionStorage off or bad JSON — fallback to back */
     }
     if (returnTo) {
       router.push(returnTo);

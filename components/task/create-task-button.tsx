@@ -31,15 +31,19 @@ export function CreateTaskButton({
   );
 
   // On success — use client navigation so @modal intercepting route activates.
-  // Zapisujemy returnTo w sessionStorage żeby modal close
-  // wracał do strony skąd user kliknął (table/kanban/etc), nie do
-  // workspace overview ("O projekcie") — bo intercept'em modal jest
-  // pod URL'em /w/[wid]/t/[tid] gdzie underlying page = overview.
+  // returnTo zapisany w sessionStorage żeby modal close wracał do strony skąd
+  // user kliknął (table/kanban/etc), nie do workspace overview — bo underlying
+  // page intercepted route'a /w/[wid]/t/[tid] to overview.
+  // Scoped po taskId: gdyby ten wpis "wisiał" (modal zamknięty nawigacją zamiast
+  // X), edycja innego taska go nie skonsumuje i nie skoczy na złą tablicę.
   useEffect(() => {
     if (state?.ok) {
       setOpen(false);
       try {
-        sessionStorage.setItem("taskModalReturnTo", pathname);
+        sessionStorage.setItem(
+          "taskModalReturnTo",
+          JSON.stringify({ taskId: state.taskId, path: pathname }),
+        );
       } catch {
         // sessionStorage może być wyłączone (private mode safari)
       }
