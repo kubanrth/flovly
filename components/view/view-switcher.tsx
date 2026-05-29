@@ -1,6 +1,13 @@
 "use client";
 
-import { startTransition } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import {
   Table2,
@@ -17,6 +24,21 @@ import type { ViewName } from "@/lib/board-views";
 
 // Pure helpers live in @/lib/board-views — re-exporting from "use client" breaks server callers.
 export type { ViewName };
+
+// useLayoutEffect warns on the server; fall back to useEffect during SSR.
+const useIsoLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+// Remembers the last active tab across SPA navigations (this component remounts
+// per board route) so the indicator can slide FROM the previous tab on arrival.
+let lastActive: { boardId: string; key: string } | null = null;
+
+interface IndicatorRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
 
 interface ViewDescriptor {
   name: ViewName;
@@ -117,12 +139,108 @@ export function ViewSwitcher({
   const overviewPath = `/w/${workspaceId}/b/${boardId}/overview`;
   const overviewActive = pathname === overviewPath || pathname?.startsWith(`${overviewPath}/`);
 
+  // Single moving highlight. Each tab registers its <a>; we measure the active
+  // one relative to the segment and CSS-transition the indicator between them.
+  const activeKey = overviewActive
+    ? "overview"
+    : activeViewId
+      ? `c:${activeViewId}`
+      : active
+        ? `v:${active}`
+        : null;
+
+  const segRef = useRef<HTMLDivElement>(null);
+  const linkRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const [indicator, setIndicator] = useState<IndicatorRect | null>(null);
+
+  const setLinkRef = useCallback(
+    (key: string) => (el: HTMLElement | null) => {
+      if (el) linkRefs.current.set(key, el);
+      else linkRefs.current.delete(key);
+    },
+    [],
+  );
+
+  const measureRel = useCallback((el: HTMLElement): IndicatorRect | null => {
+    const seg = segRef.current;
+    if (!seg) return null;
+    const s = seg.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    return { left: r.left - s.left, top: r.top - s.top, width: r.width, height: r.height };
+  }, []);
+
+  useIsoLayoutEffect(() => {
+    if (!activeKey) {
+      setIndicator(null);
+      return;
+    }
+    const activeEl = linkRefs.current.get(activeKey);
+    if (!activeEl) {
+      setIndicator(null);
+      return;
+    }
+    const target = measureRel(activeEl);
+    if (!target) return;
+    const prevEl =
+      lastActive && lastActive.boardId === boardId && lastActive.key !== activeKey
+        ? linkRefs.current.get(lastActive.key)
+        : null;
+    const start = prevEl ? measureRel(prevEl) : null;
+    if (start) {
+      setIndicator(start);
+      // Two frames so the start position paints before we transition to target.
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => setIndicator(target)),
+      );
+    } else {
+      setIndicator(target);
+    }
+    lastActive = { boardId, key: activeKey };
+  }, [activeKey, boardId, measureRel]);
+
+  // Realign on resize / tab-set changes — snap, no slide.
+  useEffect(() => {
+    const seg = segRef.current;
+    if (!seg) return;
+    const realign = () => {
+      const activeEl = activeKey ? linkRefs.current.get(activeKey) : null;
+      if (!activeEl) return;
+      const target = measureRel(activeEl);
+      if (!target) return;
+      setIndicator((prev) =>
+        prev &&
+        prev.left === target.left &&
+        prev.top === target.top &&
+        prev.width === target.width &&
+        prev.height === target.height
+          ? prev
+          : target,
+      );
+    };
+    const ro = new ResizeObserver(realign);
+    ro.observe(seg);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeKey, customViews, views.length]);
+
   return (
     <div
+      ref={segRef}
       role="tablist"
       aria-label="Widoki tablicy"
-      className="lg-seg flex-wrap"
+      className={`lg-seg flex-wrap${indicator ? " lg-seg--js" : ""}`}
     >
+      {indicator && (
+        <span
+          aria-hidden
+          className="lg-seg-indicator"
+          style={{
+            transform: `translate(${indicator.left}px, ${indicator.top}px)`,
+            width: indicator.width,
+            height: indicator.height,
+          }}
+        />
+      )}
       {views.map((v) => {
         const isActive = !activeViewId && v.name === active;
         const defaultId = defaultViewIds?.[v.name];
@@ -133,6 +251,7 @@ export function ViewSwitcher({
           <div key={v.name} className="group relative">
             <Link
               href={v.path}
+              ref={setLinkRef(`v:${v.name}`)}
               role="tab"
               aria-selected={isActive}
               data-active={isActive ? "true" : "false"}
@@ -166,6 +285,7 @@ export function ViewSwitcher({
       <div className="group relative">
         <Link
           href={overviewPath}
+          ref={setLinkRef("overview")}
           role="tab"
           aria-selected={overviewActive}
           data-active={overviewActive ? "true" : "false"}
@@ -190,6 +310,7 @@ export function ViewSwitcher({
           <div key={c.id} className="group relative">
             <Link
               href={c.path}
+              ref={setLinkRef(`c:${c.id}`)}
               role="tab"
               aria-selected={isActive}
               data-active={isActive ? "true" : "false"}

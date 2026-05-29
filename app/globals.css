@@ -417,3 +417,89 @@
 .dark .lg-seg-btn[data-active="true"]::after {
   background: radial-gradient(ellipse at center, rgba(124,92,255,0.35), transparent 70%);
 }
+
+/* Sliding active indicator. Renders once JS measures tab positions; until then
+   the per-button [data-active] styling above is the SSR/no-JS fallback. When
+   .lg-seg--js is present that fallback is suppressed and this single element
+   slides between tabs instead of the highlight jumping. */
+.lg-seg-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 10px;
+  background:
+    radial-gradient(120% 90% at 30% 0%, rgba(255,255,255,1), rgba(255,255,255,0.7) 55%, rgba(255,255,255,0.55) 100%);
+  border: 1px solid rgba(255,255,255,1);
+  -webkit-backdrop-filter: blur(40px) saturate(220%);
+  backdrop-filter: blur(40px) saturate(220%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    inset 0 0 0 0.5px rgba(255,255,255,0.7),
+    inset 0 -8px 12px -8px rgba(124,92,255,0.35),
+    0 1px 0 rgba(12,13,18,0.06),
+    0 6px 18px rgba(12,13,18,0.10),
+    0 0 0 0.5px rgba(12,13,18,0.06);
+  transition:
+    transform 340ms cubic-bezier(.2,.7,.2,1),
+    width 340ms cubic-bezier(.2,.7,.2,1),
+    height 340ms cubic-bezier(.2,.7,.2,1);
+}
+.lg-seg-indicator::before {
+  content: "";
+  position: absolute;
+  inset: 1px 1px auto 1px;
+  height: 45%;
+  border-radius: 9px 9px 14px 14px / 9px 9px 22px 22px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.05) 90%);
+  pointer-events: none;
+}
+.lg-seg-indicator::after {
+  content: "";
+  position: absolute;
+  inset: auto 6px -6px 6px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(124,92,255,0.28), transparent 70%);
+  filter: blur(4px);
+  pointer-events: none;
+}
+.dark .lg-seg-indicator {
+  background:
+    radial-gradient(120% 90% at 30% 0%, rgba(255,255,255,0.28), rgba(255,255,255,0.10) 55%, rgba(255,255,255,0.06) 100%);
+  border-color: rgba(255,255,255,0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.55),
+    inset 0 0 0 0.5px rgba(255,255,255,0.30),
+    inset 0 -8px 12px -8px rgba(124,92,255,0.45),
+    0 1px 0 rgba(0,0,0,0.25),
+    0 6px 18px rgba(0,0,0,0.45),
+    0 0 0 0.5px rgba(255,255,255,0.30);
+}
+.dark .lg-seg-indicator::before {
+  background: linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0.02) 90%);
+}
+.dark .lg-seg-indicator::after {
+  background: radial-gradient(ellipse at center, rgba(124,92,255,0.35), transparent 70%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lg-seg-indicator {
+    transition: none;
+  }
+}
+/* JS took over → suppress the static per-button highlight; keep text color. */
+.lg-seg--js .lg-seg-btn[data-active="true"] {
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.lg-seg--js .lg-seg-btn[data-active="true"]::before,
+.lg-seg--js .lg-seg-btn[data-active="true"]::after {
+  display: none;
+}
+.lg-seg-btn {
+  z-index: 1; /* sit above the sliding indicator */
+}
