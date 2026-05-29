@@ -1,6 +1,6 @@
 // Resetuje hasło dowolnego usera z linii poleceń (omija UI admin).
-// Uruchom: EMAIL=jl@kickback.pl PASSWORD=nowehaslo npx tsx scripts/reset-user-password.ts
-import "dotenv/config";
+// Produkcja (Coolify Terminal flovly): EMAIL=... PASSWORD=... npx tsx scripts/reset-user-password.ts
+// Lokalnie: `set -a && source .env && set +a` przed komendą (albo Node 22 --env-file).
 import bcrypt from "bcrypt";
 import { PrismaClient } from "../lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";

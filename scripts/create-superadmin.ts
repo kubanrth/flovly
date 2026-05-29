@@ -1,7 +1,7 @@
 // Tworzy konto super admina bez chodzenia przez UI/invite flow.
-// Uruchom: npx tsx scripts/create-superadmin.ts
+// Produkcja (Coolify Terminal flovly): npx tsx scripts/create-superadmin.ts
 // Opcjonalnie: EMAIL=... PASSWORD=... NAME=... npx tsx scripts/create-superadmin.ts
-import "dotenv/config";
+// Lokalnie: `set -a && source .env && set +a` przed komendą.
 import bcrypt from "bcrypt";
 import { PrismaClient } from "../lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";

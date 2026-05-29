@@ -45,6 +45,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/lib/generated ./lib/generated
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
+# Operacyjne skrypty (create-superadmin, reset-user-password) — standalone
+# output ich nie traceuje. tsx doinstalowuje się przez `npx` on-demand;
+# runtime deps (bcrypt, @prisma/adapter-pg, prisma client) już są w obrazie.
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+
 USER nextjs
 
 EXPOSE 3000
