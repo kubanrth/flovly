@@ -1,6 +1,12 @@
 "use client";
 
-import { useActionState, startTransition, useState } from "react";
+import {
+  useActionState,
+  startTransition,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Plus, Check, X } from "lucide-react";
 import type { Role } from "@/lib/generated/prisma/enums";
@@ -129,6 +135,28 @@ export function TaskDetail({
   const fieldErrors = !state?.ok ? state?.fieldErrors : undefined;
   const flash = state?.ok ? state.message : null;
 
+  // Long task titles wrap to multiple lines — auto-grow the textarea so the
+  // whole title is visible without scrolling/clipping. `field-sizing:content`
+  // does this natively on new browsers; this JS path is the fallback that
+  // works everywhere and also handles paste / programmatic value changes.
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    const fit = () => {
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    };
+    fit();
+    el.addEventListener("input", fit);
+    const ro = new ResizeObserver(fit); // re-fit when modal width changes wrap
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("input", fit);
+      ro.disconnect();
+    };
+  }, [task.title]);
+
   // Belt-and-suspenders router.refresh after assignee toggle — Realtime broadcast can fail silently.
   const toggleAssigneeWithRefresh = async (fd: FormData) => {
     await toggleAssigneeAction(fd);
@@ -183,6 +211,7 @@ export function TaskDetail({
               to potrzebujemy zawijanie'). rows=1 + field-sizing-content
               powoduje auto-grow. Max 2000 znaków zamiast 200. */}
           <textarea
+            ref={titleRef}
             name="title"
             required
             maxLength={2000}
@@ -190,7 +219,7 @@ export function TaskDetail({
             readOnly={!canEdit}
             defaultValue={task.title}
             aria-invalid={!!fieldErrors?.title}
-            className="resize-none border-b border-border bg-transparent pb-2 font-display text-[1.4rem] leading-[1.15] tracking-[-0.02em] outline-none focus:border-primary aria-[invalid=true]:border-destructive md:text-[1.8rem] [field-sizing:content]"
+            className="resize-none overflow-hidden border-b border-border bg-transparent pb-2 font-display text-[1.4rem] leading-[1.15] tracking-[-0.02em] outline-none focus:border-primary aria-[invalid=true]:border-destructive md:text-[1.8rem] [field-sizing:content]"
           />
           {fieldErrors?.title && (
             <span className="font-mono text-[0.68rem] text-destructive">

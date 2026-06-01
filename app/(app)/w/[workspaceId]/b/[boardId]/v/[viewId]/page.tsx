@@ -13,6 +13,7 @@ import { BackgroundCustomizer } from "@/components/view/background-customizer";
 import { BoardShell } from "@/components/view/board-shell";
 import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
+import { docHasText } from "@/lib/prosemirror-text";
 import { BoardLinksServer } from "@/components/board/board-links-server";
 import { parseEnabledViews, viewTypeToName } from "@/lib/board-views";
 import { backgroundToCss, type BackgroundConfig } from "@/lib/schemas/background";
@@ -175,6 +176,7 @@ async function TableRenderer({
             },
             orderBy: { createdAt: "desc" },
           },
+          _count: { select: { comments: { where: { deletedAt: null } } } },
         },
       },
     },
@@ -247,6 +249,8 @@ async function TableRenderer({
           mimeType: a.mimeType,
           sizeBytes: a.sizeBytes,
         })),
+        hasDescription: docHasText(t.descriptionJson),
+        commentCount: t._count.comments,
       }))}
       canEdit={canEdit}
       canManagePrefs={canManageBoard}
@@ -291,6 +295,7 @@ async function KanbanRenderer({
               include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
             },
             tags: { include: { tag: true } },
+            _count: { select: { comments: { where: { deletedAt: null } } } },
           },
         },
       },
@@ -330,6 +335,8 @@ async function KanbanRenderer({
           name: tt.tag.name,
           colorHex: tt.tag.colorHex,
         })),
+        hasDescription: docHasText(t.descriptionJson),
+        commentCount: t._count.comments,
       }))}
       members={memberships.map((m) => m.user)}
     />

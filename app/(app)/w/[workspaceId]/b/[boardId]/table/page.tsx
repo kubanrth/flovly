@@ -9,6 +9,7 @@ import { BackgroundCustomizer } from "@/components/view/background-customizer";
 import { BoardShell } from "@/components/view/board-shell";
 import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
+import { docHasText } from "@/lib/prosemirror-text";
 import { BoardLinksServer } from "@/components/board/board-links-server";
 import { parseEnabledViews } from "@/lib/board-views";
 import { backgroundToCss, type BackgroundConfig } from "@/lib/schemas/background";
@@ -61,6 +62,7 @@ export default async function BoardTablePage({
             },
             orderBy: { createdAt: "desc" },
           },
+          _count: { select: { comments: { where: { deletedAt: null } } } },
         },
       },
     },
@@ -171,6 +173,8 @@ export default async function BoardTablePage({
             mimeType: a.mimeType,
             sizeBytes: a.sizeBytes,
           })),
+          hasDescription: docHasText(t.descriptionJson),
+          commentCount: t._count.comments,
         }))}
         canEdit={canEdit}
         canManagePrefs={canManageBoard}

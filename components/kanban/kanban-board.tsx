@@ -10,6 +10,7 @@ import {
   reorderStatusColumnsAction,
 } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
 import { PRESET_COLORS } from "@/components/table/status-column-manager";
+import { TaskActivityHints } from "@/components/task/task-activity-hints";
 import {
   DndContext,
   DragOverlay,
@@ -49,6 +50,8 @@ export interface KanbanTask {
     avatarUrl: string | null;
   }[];
   tags: { id: string; name: string; colorHex: string }[];
+  hasDescription: boolean;
+  commentCount: number;
 }
 
 export interface KanbanStatusColumn {
@@ -569,6 +572,10 @@ function CardShell({
       >
         {task.title}
       </Link>
+      <TaskActivityHints
+        hasDescription={task.hasDescription}
+        commentCount={task.commentCount}
+      />
       <div className="mt-auto flex items-center justify-between pt-1">
         {task.assignees.length > 0 ? (
           <div className="flex -space-x-1.5">

@@ -17,6 +17,7 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import { Plus, Search, X } from "lucide-react";
+import { TaskActivityHints } from "@/components/task/task-activity-hints";
 import {
   createTableColumnAction,
   saveTableColumnPrefsAction,
@@ -81,6 +82,10 @@ export interface BoardTableTask {
   // User-defined column values, keyed by custom column id.
   customValues: Record<string, string>;
   attachments: AttachmentCellItem[];
+  // Lightweight indicators so the row hints at "there's more inside" without
+  // making the user open the modal to find out.
+  hasDescription: boolean;
+  commentCount: number;
 }
 
 export interface BoardTableColumn {
@@ -397,14 +402,23 @@ export function BoardTable({
         header: "Tytuł",
         size: 280,
         minSize: 120,
-        cell: (info) => (
-          <Link
-            href={`/w/${workspaceId}/t/${info.row.original.id}`}
-            className="block whitespace-normal break-words font-display text-[0.96rem] font-semibold leading-tight tracking-[-0.01em] transition-colors hover:text-primary"
-          >
-            {info.getValue()}
-          </Link>
-        ),
+        cell: (info) => {
+          const row = info.row.original;
+          return (
+            <div className="flex flex-col gap-1">
+              <Link
+                href={`/w/${workspaceId}/t/${row.id}`}
+                className="block whitespace-normal break-words font-display text-[0.96rem] font-semibold leading-tight tracking-[-0.01em] transition-colors hover:text-primary"
+              >
+                {info.getValue()}
+              </Link>
+              <TaskActivityHints
+                hasDescription={row.hasDescription}
+                commentCount={row.commentCount}
+              />
+            </div>
+          );
+        },
       }),
       col.accessor("assignees", {
         header: "Osoby",
