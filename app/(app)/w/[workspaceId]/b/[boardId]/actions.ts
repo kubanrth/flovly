@@ -14,6 +14,7 @@ import {
 import { backgroundSchema, updateBackgroundSchema } from "@/lib/schemas/background";
 import { requireWorkspaceAction } from "@/lib/workspace-guard";
 import { writeAudit } from "@/lib/audit";
+import { parseEnabledViews, viewTypeToName } from "@/lib/board-views";
 
 const NICE_COLORS = [
   "#64748B",
@@ -327,6 +328,28 @@ export async function createBoardViewAction(
     },
   });
 
+  // Restoring a default pill is the user saying "I want this view back".
+  // The segment filter is gated by Workspace.enabledViews, so we ALSO have to
+  // make sure the type is on that list — otherwise the BoardView row exists
+  // but the pill stays hidden and clicking Przywróć looks like a no-op.
+  if (wantsDefault) {
+    const ws = await db.workspace.findUnique({
+      where: { id: parsed.data.workspaceId },
+      select: { enabledViews: true },
+    });
+    const restoredName = viewTypeToName(parsed.data.type);
+    if (ws && restoredName) {
+      const current = parseEnabledViews(ws.enabledViews);
+      if (!current.includes(restoredName)) {
+        const nextRaw = [...current, restoredName].map((n) => n.toUpperCase());
+        await db.workspace.update({
+          where: { id: parsed.data.workspaceId },
+          data: { enabledViews: nextRaw },
+        });
+      }
+    }
+  }
+
   await writeAudit({
     workspaceId: parsed.data.workspaceId,
     objectType: "Board",
@@ -342,10 +365,12 @@ export async function createBoardViewAction(
     : null;
 
   // Revalidate every default route so the pill list updates on any landing page.
+  // Layout revalidate covers the sidebar (which also reads workspace.enabledViews).
   const base = `/w/${parsed.data.workspaceId}/b/${parsed.data.boardId}`;
   for (const p of ["table", "kanban", "roadmap", "gantt", "whiteboard"]) {
     revalidatePath(`${base}/${p}`);
   }
+  revalidatePath("/", "layout");
   return { ok: true, viewId: view.id, defaultPath };
 }
 
