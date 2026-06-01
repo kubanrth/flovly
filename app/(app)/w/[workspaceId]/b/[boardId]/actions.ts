@@ -61,6 +61,39 @@ export async function renameBoardAction(formData: FormData) {
   revalidatePath(`/w/${workspaceId}/b/${board.id}/table`);
 }
 
+// Toggle the cross-board aggregation flag. When on, the board's milestones may
+// link to milestones from other boards in the same workspace (see MilestoneLink
+// and milestone-actions.ts: linkMilestoneAction).
+export async function toggleBoardAggregatorAction(formData: FormData) {
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const boardId = String(formData.get("boardId") ?? "");
+  const on = String(formData.get("on") ?? "") === "true";
+  if (!workspaceId || !boardId) return;
+
+  const board = await db.board.findUnique({
+    where: { id: boardId },
+    select: { id: true, workspaceId: true },
+  });
+  if (!board || board.workspaceId !== workspaceId) return;
+
+  const ctx = await requireWorkspaceAction(workspaceId, "board.update");
+
+  await db.board.update({
+    where: { id: boardId },
+    data: { isAggregator: on },
+  });
+  await writeAudit({
+    workspaceId,
+    objectType: "Board",
+    objectId: boardId,
+    actorId: ctx.userId,
+    action: "board.aggregator.toggled",
+    diff: { isAggregator: on },
+  });
+  revalidatePath(`/w/${workspaceId}/b/${boardId}/roadmap`);
+  revalidatePath(`/w/${workspaceId}/b/${boardId}/settings`);
+}
+
 export async function createStatusColumnAction(formData: FormData) {
   const workspaceId = String(formData.get("workspaceId") ?? "");
   const parsed = createStatusColumnSchema.safeParse({

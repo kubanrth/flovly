@@ -395,10 +395,16 @@ async function RoadmapRenderer({
         assignee: m.assignee,
         taskCount: m.tasks.length,
         tasks: m.tasks.map((t) => ({ id: t.id, title: t.title })),
+        // Cross-board aggregation lives on the default roadmap route, not on
+        // custom views — those stay scoped to the host board's milestones.
+        linkedChildren: [],
       }))}
       canCreate={canCreate}
       canUpdate={canUpdate}
       canDelete={canDelete}
+      isAggregator={false}
+      canManageBoard={false}
+      workspaceMilestones={[]}
     />
   );
 }

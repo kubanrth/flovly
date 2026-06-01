@@ -246,3 +246,105 @@ export async function assignTaskToMilestoneAction(formData: FormData) {
   revalidatePath(`/w/[workspaceId]/b/[boardId]`, "layout");
   revalidate(updated.workspaceId, updated.boardId);
 }
+
+// Cross-board roadmap aggregation. Connects an aggregator-board milestone
+// (parent) to a sub-board milestone (child). Same workspace only.
+// Requirements enforced here:
+//   - both milestones in the same workspace
+//   - parent's board has isAggregator = true
+//   - parent ≠ child (a milestone can't aggregate itself)
+//   - distinct boards (otherwise it's not really cross-board)
+// Idempotent: re-creating an existing link is a no-op (unique constraint).
+export async function linkMilestoneAction(formData: FormData) {
+  const parentId = String(formData.get("parentId") ?? "");
+  const childId = String(formData.get("childId") ?? "");
+  if (!parentId || !childId || parentId === childId) {
+    return { ok: false as const, error: "Niepoprawne ID milestonów." };
+  }
+
+  const [parent, child] = await Promise.all([
+    db.milestone.findUnique({
+      where: { id: parentId },
+      include: { board: { select: { isAggregator: true, workspaceId: true } } },
+    }),
+    db.milestone.findUnique({
+      where: { id: childId },
+      include: { board: { select: { workspaceId: true } } },
+    }),
+  ]);
+  if (!parent || parent.deletedAt) return { ok: false as const, error: "Brak parent milestone." };
+  if (!child || child.deletedAt) return { ok: false as const, error: "Brak child milestone." };
+  if (parent.workspaceId !== child.workspaceId) {
+    return { ok: false as const, error: "Milestony z innych workspace'ów." };
+  }
+  if (parent.boardId === child.boardId) {
+    return { ok: false as const, error: "Wybierz milestone z innej tablicy." };
+  }
+  if (!parent.board.isAggregator) {
+    return { ok: false as const, error: "Włącz 'Tablica zbiorcza' przed linkowaniem." };
+  }
+
+  const ctx = await requireWorkspaceAction(parent.workspaceId, "milestone.update");
+
+  try {
+    await db.milestoneLink.create({
+      data: { parentId: parent.id, childId: child.id },
+    });
+  } catch (e) {
+    // Unique violation on (parentId, childId) — link already exists. Treat as
+    // success since the desired end state is identical.
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return { ok: true as const };
+    }
+    throw e;
+  }
+
+  await writeAudit({
+    workspaceId: parent.workspaceId,
+    objectType: "Milestone",
+    objectId: parent.id,
+    actorId: ctx.userId,
+    action: "milestone.linked",
+    diff: { childId: child.id, childBoardId: child.boardId },
+  });
+
+  revalidate(parent.workspaceId, parent.boardId);
+  revalidate(child.workspaceId, child.boardId);
+  return { ok: true as const };
+}
+
+export async function unlinkMilestoneAction(formData: FormData) {
+  const parentId = String(formData.get("parentId") ?? "");
+  const childId = String(formData.get("childId") ?? "");
+  if (!parentId || !childId) return { ok: false as const, error: "Brak ID." };
+
+  const parent = await db.milestone.findUnique({
+    where: { id: parentId },
+    select: { id: true, workspaceId: true, boardId: true },
+  });
+  if (!parent) return { ok: false as const, error: "Brak parent milestone." };
+
+  const ctx = await requireWorkspaceAction(parent.workspaceId, "milestone.update");
+
+  await db.milestoneLink.deleteMany({
+    where: { parentId, childId },
+  });
+
+  await writeAudit({
+    workspaceId: parent.workspaceId,
+    objectType: "Milestone",
+    objectId: parent.id,
+    actorId: ctx.userId,
+    action: "milestone.unlinked",
+    diff: { childId },
+  });
+
+  // Find child's board for revalidate; if it was hard-deleted skip silently.
+  const child = await db.milestone.findUnique({
+    where: { id: childId },
+    select: { workspaceId: true, boardId: true },
+  });
+  revalidate(parent.workspaceId, parent.boardId);
+  if (child) revalidate(child.workspaceId, child.boardId);
+  return { ok: true as const };
+}

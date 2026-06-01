@@ -3,11 +3,13 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Plus, Pencil, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, Network, Link as LinkIcon, X } from "lucide-react";
 import {
   assignTaskToMilestoneAction,
   deleteMilestoneAction,
+  unlinkMilestoneAction,
 } from "@/app/(app)/w/[workspaceId]/b/[boardId]/milestone-actions";
+import { toggleBoardAggregatorAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
 import { MilestoneDialog, type MilestoneMember } from "@/components/roadmap/milestone-dialog";
 import {
   assignRows,
@@ -26,6 +28,27 @@ export interface MilestoneItem {
   assignee: MilestoneMember | null;
   taskCount: number;
   tasks: { id: string; title: string }[];
+  // Aggregator-only: milestones from other boards that this one aggregates.
+  // Empty on non-aggregator boards (or when nothing's linked yet).
+  linkedChildren: LinkedChildMilestone[];
+}
+
+export interface LinkedChildMilestone {
+  linkId: string;
+  id: string;
+  title: string;
+  startAt: string;
+  stopAt: string;
+  boardId: string;
+  boardName: string;
+}
+
+// Other boards' milestones available for linking — fed to MilestoneDialog so a
+// user editing an aggregator milestone can pick children to link to.
+export interface WorkspaceBoardMilestones {
+  boardId: string;
+  boardName: string;
+  milestones: { id: string; title: string; startAt: string; stopAt: string }[];
 }
 
 const ROW_HEIGHT = 36;
@@ -51,6 +74,9 @@ export function RoadmapView({
   canUpdate,
   canDelete,
   initialMode = "timeline",
+  isAggregator,
+  canManageBoard,
+  workspaceMilestones,
 }: {
   workspaceId: string;
   boardId: string;
@@ -60,6 +86,10 @@ export function RoadmapView({
   canUpdate: boolean;
   canDelete: boolean;
   initialMode?: Mode;
+  isAggregator: boolean;
+  canManageBoard: boolean;
+  // Only populated when isAggregator (server skips the query otherwise).
+  workspaceMilestones: WorkspaceBoardMilestones[];
 }) {
   // Timeline mode removed (gantt view replaces it); state kept in case it returns.
   const [mode] = useState<Mode>("markers");
@@ -98,18 +128,42 @@ export function RoadmapView({
           <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
             {milestones.length} {plPlural(milestones.length, "milestone", "milestone’y", "milestone’ów")}
           </span>
-          {/* F11-7: tryb "Oś czasu" usunięty — Gantt to robi. Zostaje tylko
-              "Wizualizacja" jako default; mode toggle ukryty. */}
+          {isAggregator && (
+            <span
+              title="Ta tablica może agregować milestony z innych tablic w workspace"
+              className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-primary"
+            >
+              <Network size={10} /> Tablica zbiorcza
+            </span>
+          )}
         </div>
-        {canCreate && (
-          <button
-            type="button"
-            onClick={() => setDialog({ mode: "create" })}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-gradient px-4 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
-            <Plus size={14} /> Nowy milestone
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {canManageBoard && (
+            <form action={toggleBoardAggregatorAction} className="m-0">
+              <input type="hidden" name="workspaceId" value={workspaceId} />
+              <input type="hidden" name="boardId" value={boardId} />
+              <input type="hidden" name="on" value={isAggregator ? "false" : "true"} />
+              <button
+                type="submit"
+                title={isAggregator
+                  ? "Wyłącz agregację milestonów z innych tablic"
+                  : "Włącz aby linkować milestony z innych tablic do tej roadmapy"}
+                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Network size={11} /> {isAggregator ? "Wyłącz zbiorczą" : "Tablica zbiorcza"}
+              </button>
+            </form>
+          )}
+          {canCreate && (
+            <button
+              type="button"
+              onClick={() => setDialog({ mode: "create" })}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-gradient px-4 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              <Plus size={14} /> Nowy milestone
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Chart */}
@@ -220,6 +274,14 @@ export function RoadmapView({
                     </form>
                   )}
                 </div>
+                {m.linkedChildren.length > 0 && (
+                  <LinkedChildrenRow
+                    workspaceId={workspaceId}
+                    parentId={m.id}
+                    items={m.linkedChildren}
+                    canUpdate={canUpdate}
+                  />
+                )}
                 {isOpen && (
                   <div className="border-t border-border bg-muted/20 px-4 py-3">
                     {m.tasks.length === 0 ? (
@@ -268,8 +330,16 @@ export function RoadmapView({
           boardId={boardId}
           members={members}
           mode={dialog.mode}
-          initial={dialog.mode === "edit" ? dialog.milestone : null}
+          // Resolve from `milestones` (not the stale dialog.milestone) so the
+          // linker section reflects the latest links after a revalidate.
+          initial={
+            dialog.mode === "edit"
+              ? (milestones.find((m) => m.id === dialog.milestone.id) ?? dialog.milestone)
+              : null
+          }
           onClose={() => setDialog(null)}
+          isAggregator={isAggregator}
+          workspaceMilestones={workspaceMilestones}
         />
       )}
     </div>
@@ -535,6 +605,66 @@ function FlowArrow() {
           markerEnd="url(#roadmap-arrowhead)"
         />
       </svg>
+    </div>
+  );
+}
+
+// Strip between the milestone header and the (optional) task expansion. Lists
+// the sub-board milestones that the aggregator milestone references. Each item
+// links to its source board's roadmap; unlink is gated by milestone.update.
+function LinkedChildrenRow({
+  workspaceId,
+  parentId,
+  items,
+  canUpdate,
+}: {
+  workspaceId: string;
+  parentId: string;
+  items: LinkedChildMilestone[];
+  canUpdate: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5 border-t border-border bg-muted/10 px-4 py-2.5">
+      <div className="flex items-center gap-1.5 font-mono text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground/80">
+        <LinkIcon size={9} /> Linkowane z innych tablic ({items.length})
+      </div>
+      <ul className="flex flex-wrap gap-1.5">
+        {items.map((child) => (
+          <li key={child.linkId}>
+            <span className="group inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1 text-[0.76rem]">
+              <Link
+                href={`/w/${workspaceId}/b/${child.boardId}/roadmap`}
+                className="inline-flex items-center gap-1.5 transition-colors hover:text-primary"
+                title={`${child.boardName} · ${formatDateRange(child.startAt, child.stopAt)}`}
+              >
+                <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground">
+                  {child.boardName}
+                </span>
+                <span className="font-medium">{child.title}</span>
+              </Link>
+              {canUpdate && (
+                <form
+                  action={(fd) => {
+                    void unlinkMilestoneAction(fd);
+                  }}
+                  className="m-0"
+                >
+                  <input type="hidden" name="parentId" value={parentId} />
+                  <input type="hidden" name="childId" value={child.id} />
+                  <button
+                    type="submit"
+                    aria-label="Odlinkuj"
+                    title="Odlinkuj"
+                    className="grid h-4 w-4 place-items-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                  >
+                    <X size={10} />
+                  </button>
+                </form>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

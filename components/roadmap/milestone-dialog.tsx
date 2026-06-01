@@ -1,16 +1,22 @@
 "use client";
 
 import { useActionState, startTransition, useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { Link as LinkIcon, X } from "lucide-react";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
 import {
   createMilestoneAction,
+  linkMilestoneAction,
+  unlinkMilestoneAction,
   updateMilestoneAction,
   type CreateMilestoneState,
   type UpdateMilestoneState,
 } from "@/app/(app)/w/[workspaceId]/b/[boardId]/milestone-actions";
 import { RichTextEditor } from "@/components/task/rich-text-editor";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import type {
+  LinkedChildMilestone,
+  WorkspaceBoardMilestones,
+} from "@/components/roadmap/roadmap-view";
 
 export interface MilestoneMember {
   id: string;
@@ -25,6 +31,7 @@ interface InitialMilestone {
   startAt: string;
   stopAt: string;
   assignee: MilestoneMember | null;
+  linkedChildren?: LinkedChildMilestone[];
 }
 
 type Mode = "create" | "edit";
@@ -36,6 +43,8 @@ export function MilestoneDialog({
   mode,
   initial,
   onClose,
+  isAggregator,
+  workspaceMilestones,
 }: {
   workspaceId: string;
   boardId: string;
@@ -43,6 +52,8 @@ export function MilestoneDialog({
   mode: Mode;
   initial: InitialMilestone | null;
   onClose: () => void;
+  isAggregator: boolean;
+  workspaceMilestones: WorkspaceBoardMilestones[];
 }) {
   const isEdit = mode === "edit" && initial != null;
 
@@ -179,6 +190,14 @@ export function MilestoneDialog({
               />
             </div>
 
+            {isEdit && isAggregator && initial && (
+              <LinkedMilestonesSection
+                parentId={initial.id}
+                existingLinks={initial.linkedChildren ?? []}
+                workspaceMilestones={workspaceMilestones}
+              />
+            )}
+
             {!state?.ok && state?.error && (
               <p className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-destructive">
                 {state.error}
@@ -205,5 +224,117 @@ export function MilestoneDialog({
         </BaseDialog.Popup>
       </BaseDialog.Portal>
     </BaseDialog.Root>
+  );
+}
+
+// Aggregator linker inside the edit dialog. Lists existing links + a picker of
+// available milestones from other boards. Submit is a server action that
+// revalidates the roadmap, so the dialog refreshes when its parent re-renders
+// (RoadmapView passes a fresh `initial` keyed by id after revalidate).
+function LinkedMilestonesSection({
+  parentId,
+  existingLinks,
+  workspaceMilestones,
+}: {
+  parentId: string;
+  existingLinks: LinkedChildMilestone[];
+  workspaceMilestones: WorkspaceBoardMilestones[];
+}) {
+  const linkedIds = new Set(existingLinks.map((l) => l.id));
+  // Hide boards that have nothing left to offer (everything already linked).
+  const availableBoards = workspaceMilestones
+    .map((b) => ({
+      ...b,
+      milestones: b.milestones.filter((m) => !linkedIds.has(m.id)),
+    }))
+    .filter((b) => b.milestones.length > 0);
+
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/20 p-4">
+      <div className="flex items-center gap-1.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+        <LinkIcon size={11} /> Linkowane z innych tablic
+      </div>
+
+      {existingLinks.length > 0 ? (
+        <ul className="flex flex-col gap-1.5">
+          {existingLinks.map((child) => (
+            <li
+              key={child.linkId}
+              className="flex items-center justify-between gap-2 rounded-md border border-border bg-card px-2.5 py-1.5"
+            >
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate text-[0.86rem] font-medium">
+                  {child.title}
+                </span>
+                <span className="truncate font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground">
+                  {child.boardName}
+                </span>
+              </div>
+              <form
+                action={(fd) => {
+                  void unlinkMilestoneAction(fd);
+                }}
+                className="m-0 shrink-0"
+              >
+                <input type="hidden" name="parentId" value={parentId} />
+                <input type="hidden" name="childId" value={child.id} />
+                <button
+                  type="submit"
+                  aria-label={`Odlinkuj ${child.title}`}
+                  title="Odlinkuj"
+                  className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <X size={13} />
+                </button>
+              </form>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-[0.82rem] text-muted-foreground">
+          Brak linkowanych milestonów. Dodaj poniżej żeby zagregować cele z innych tablic.
+        </p>
+      )}
+
+      {availableBoards.length > 0 ? (
+        <form
+          action={(fd) => {
+            void linkMilestoneAction(fd);
+          }}
+          className="flex items-center gap-2"
+        >
+          <input type="hidden" name="parentId" value={parentId} />
+          <select
+            name="childId"
+            required
+            defaultValue=""
+            className="h-9 flex-1 rounded-md border border-border bg-background px-2 text-[0.86rem] outline-none focus:border-primary"
+          >
+            <option value="" disabled>
+              Wybierz milestone z innej tablicy…
+            </option>
+            {availableBoards.map((b) => (
+              <optgroup key={b.boardId} label={b.boardName}>
+                {b.milestones.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.title}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          <button
+            type="submit"
+            className="inline-flex h-9 items-center rounded-md border border-border bg-card px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Dodaj link
+          </button>
+        </form>
+      ) : (
+        <p className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground/70">
+          Wszystkie dostępne milestony już zlinkowane.
+        </p>
+      )}
+    </div>
   );
 }

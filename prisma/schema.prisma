@@ -254,6 +254,9 @@ model Board {
   visibility  Visibility @default(PUBLIC)
   // F12-K51: kolejność tablic w danym workspace na overview page.
   order       Float      @default(0)
+  // Gdy true, milestony tej tablicy mogą linkować do milestonów z innych
+  // tablic w workspace (cross-board roadmap aggregation). Toggle w Settings.
+  isAggregator Boolean   @default(false)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   deletedAt   DateTime?
@@ -738,8 +741,34 @@ model Milestone {
   assignee  User?     @relation("MilestoneAssignee", fields: [assigneeId], references: [id])
   tasks     Task[]
 
+  // Cross-board roadmap aggregation (Board.isAggregator = true).
+  // - parentLinks: this milestone IS a parent (aggregator-side); rows point to
+  //   the children it aggregates from other boards.
+  // - childLinks: this milestone IS a child (sub-board-side); rows show which
+  //   aggregator milestones reference it.
+  parentLinks MilestoneLink[] @relation("MilestoneLinkParent")
+  childLinks  MilestoneLink[] @relation("MilestoneLinkChild")
+
   @@index([boardId, orderIndex])
   @@index([workspaceId])
+}
+
+// Many-to-many: an aggregator-board milestone (parent) references one or more
+// sub-board milestones (children). A child can appear under multiple parents.
+// onDelete: Cascade on both sides — soft-deleting either milestone removes the
+// link automatically (DB-level, since deletedAt is soft on Milestone we filter
+// at query time too).
+model MilestoneLink {
+  id        String   @id @default(cuid())
+  parentId  String
+  childId   String
+  createdAt DateTime @default(now())
+
+  parent Milestone @relation("MilestoneLinkParent", fields: [parentId], references: [id], onDelete: Cascade)
+  child  Milestone @relation("MilestoneLinkChild", fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, childId])
+  @@index([childId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
