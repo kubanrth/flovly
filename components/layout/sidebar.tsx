@@ -23,6 +23,7 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   Bell,
   BookOpen,
+  Briefcase,
   FileText,
   GripVertical,
   LifeBuoy,
@@ -728,6 +729,12 @@ function SortableBoardsList({
         icon={<CalendarDays size={11} />}
         label="Kalendarz"
         active={pathname.startsWith(`/w/${workspaceId}/calendar`)}
+      />
+      <WsSubLink
+        href={`/w/${workspaceId}/contacts`}
+        icon={<Briefcase size={11} />}
+        label="Kontakty"
+        active={pathname.startsWith(`/w/${workspaceId}/contacts`)}
       />
       {canManage(role) && (
         <WsSubLink

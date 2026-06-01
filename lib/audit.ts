@@ -10,7 +10,8 @@ export type AuditObjectType =
   | "Attachment"
   | "Tag"
   | "ProcessCanvas"
-  | "SupportTicket";
+  | "SupportTicket"
+  | "Contact";
 
 export interface WriteAuditInput {
   workspaceId: string;

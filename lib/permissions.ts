@@ -33,7 +33,11 @@ export type Action =
   | "wiki.read"
   | "wiki.edit"
   | "integrations.manage"
-  | "board.manageMembers";
+  | "board.manageMembers"
+  | "contact.read"
+  | "contact.create"
+  | "contact.update"
+  | "contact.delete";
 
 const MATRIX: Record<Role, Set<Action>> = {
   ADMIN: new Set<Action>([
@@ -70,6 +74,10 @@ const MATRIX: Record<Role, Set<Action>> = {
     "wiki.edit",
     "integrations.manage",
     "board.manageMembers",
+    "contact.read",
+    "contact.create",
+    "contact.update",
+    "contact.delete",
   ]),
   MEMBER: new Set<Action>([
     "board.create",
@@ -96,8 +104,18 @@ const MATRIX: Record<Role, Set<Action>> = {
     "reminder.manage",
     "wiki.read",
     "wiki.edit",
+    "contact.read",
+    "contact.create",
+    "contact.update",
+    "contact.delete",
   ]),
-  VIEWER: new Set<Action>(["board.view", "task.comment", "poll.vote", "wiki.read"]),
+  VIEWER: new Set<Action>([
+    "board.view",
+    "task.comment",
+    "poll.vote",
+    "wiki.read",
+    "contact.read",
+  ]),
 };
 
 export function can(role: Role, action: Action): boolean {

@@ -74,6 +74,9 @@ model User {
   createdBriefs      CreativeBrief[]       @relation("BriefCreator")
   // F11-22: workspace-level calendar events created by user.
   createdEvents      WorkspaceEvent[]      @relation("EventCreator")
+  // F12-K59: B2B contacts (CRM-lite).
+  createdContacts    Contact[]             @relation("ContactCreator")
+  ownedContacts      Contact[]             @relation("ContactOwner")
 
   @@index([isBanned])
   @@index([lastSeenAt])
@@ -175,6 +178,8 @@ model Workspace {
   // F12-K34: dzienne backupy — JSON snapshot wszystkich workspace-scoped
   // tabel, dostępny dla superadmina w /admin/backups.
   backups              WorkspaceBackup[]
+  // F12-K59: kontakty B2B (CRM-lite).
+  contacts             Contact[]
 
   @@index([ownerId])
   @@index([deletedAt])
@@ -1271,4 +1276,52 @@ model WorkspaceBackup {
 
   @@unique([workspaceId, dayKey])
   @@index([workspaceId, createdAt(sort: Desc)])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F12-K59: Contacts (CRM-lite). Workspace-scoped B2B contractor records — one
+// row can describe a person (firstName/lastName/email/phone), a company
+// (companyName/NIP/REGON), or both. Notes are Tiptap JSON.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Contact {
+  id          String   @id @default(cuid())
+  workspaceId String
+  creatorId   String
+  ownerId     String?
+
+  // Person
+  firstName   String?
+  lastName    String?
+  position    String?
+  email       String?
+  phone       String?
+
+  // Company
+  companyName String?
+  nip         String?
+  regon       String?
+  vatNumber   String?
+  website     String?
+
+  // Address
+  street      String?
+  city        String?
+  postalCode  String?
+  country     String?  @default("PL")
+
+  // Meta
+  notesJson   Json?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creator     User      @relation("ContactCreator", fields: [creatorId], references: [id])
+  owner       User?     @relation("ContactOwner", fields: [ownerId], references: [id])
+
+  @@index([workspaceId, deletedAt])
+  @@index([workspaceId, companyName])
+  @@index([workspaceId, lastName])
 }
