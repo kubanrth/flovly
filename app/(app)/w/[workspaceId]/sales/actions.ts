@@ -65,6 +65,18 @@ function parseDealFormData(fd: FormData) {
   };
 }
 
+// Notes come from RichTextEditor as a hidden-input JSON string. Empty / unparseable
+// values clear the column (Prisma.JsonNull).
+function parseNotesField(fd: FormData): Prisma.InputJsonValue | typeof Prisma.JsonNull {
+  const raw = fd.get("notesJson");
+  if (typeof raw !== "string" || raw.length === 0) return Prisma.JsonNull;
+  try {
+    return JSON.parse(raw) as Prisma.InputJsonValue;
+  } catch {
+    return Prisma.JsonNull;
+  }
+}
+
 function nullIfEmpty(v: string | undefined): string | null {
   if (!v) return null;
   const t = v.trim();
@@ -135,6 +147,7 @@ export async function createDealAction(
       valueAmount: parsed.data.valueAmount,
       valueCurrency: parsed.data.valueCurrency,
       expectedCloseAt: parsed.data.expectedCloseAt,
+      notesJson: parseNotesField(formData),
       rowOrder: await nextRowOrder(stage.id),
     },
   });
@@ -209,6 +222,7 @@ export async function updateDealAction(
     valueAmount: parsed.data.valueAmount,
     valueCurrency: parsed.data.valueCurrency,
     expectedCloseAt: parsed.data.expectedCloseAt,
+    notesJson: parseNotesField(formData),
     owner: ownerId ? { connect: { id: ownerId } } : { disconnect: true },
     contact: contactId ? { connect: { id: contactId } } : { disconnect: true },
     stage: { connect: { id: stage.id } },

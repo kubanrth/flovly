@@ -6,6 +6,7 @@ import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { deleteDealAction } from "@/app/(app)/w/[workspaceId]/sales/actions";
 import { DealForm } from "@/components/sales/deal-form";
+import type { RichTextDoc } from "@/components/task/rich-text-editor";
 
 export default async function DealDetailPage({
   params,
@@ -96,6 +97,7 @@ export default async function DealDetailPage({
               stageId: deal.stageId,
               ownerId: deal.ownerId,
               contactId: deal.contactId,
+              notesJson: (deal.notesJson ?? null) as RichTextDoc | null,
             }}
             stages={stages}
             members={memberships.map((m) => m.user)}

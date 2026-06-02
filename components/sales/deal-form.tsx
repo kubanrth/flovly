@@ -6,6 +6,7 @@ import {
   updateDealAction,
   type DealFormState,
 } from "@/app/(app)/w/[workspaceId]/sales/actions";
+import { RichTextEditor, type RichTextDoc } from "@/components/task/rich-text-editor";
 
 export interface DealInitial {
   id?: string;
@@ -16,6 +17,7 @@ export interface DealInitial {
   stageId: string;
   ownerId: string | null;
   contactId: string | null;
+  notesJson: RichTextDoc | null;
 }
 
 export interface StageOption {
@@ -181,6 +183,16 @@ export function DealForm({
             ))}
           </select>
         </label>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="eyebrow">Notatki</span>
+        <RichTextEditor
+          name="notesJson"
+          initial={initial?.notesJson ?? null}
+          readOnly={false}
+          placeholder="Kontekst, ustalenia, kolejne kroki…"
+        />
       </div>
 
       {formError && (
