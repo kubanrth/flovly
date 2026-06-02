@@ -12,6 +12,7 @@ import {
   type PipelineDeal,
   type PipelineStage,
 } from "@/components/sales/sales-pipeline";
+import { StageManagerDialog } from "@/components/sales/stage-manager-dialog";
 
 export default async function SalesPipelinePage({
   params,
@@ -29,6 +30,11 @@ export default async function SalesPipelinePage({
     db.dealStage.findMany({
       where: { workspaceId, deletedAt: null },
       orderBy: { order: "asc" },
+      include: {
+        // Live count drives the "can't delete this stage yet" disabled state
+        // in the manage-stages dialog.
+        _count: { select: { deals: { where: { deletedAt: null } } } },
+      },
     }),
     db.deal.findMany({
       where: { workspaceId, deletedAt: null },
@@ -45,6 +51,7 @@ export default async function SalesPipelinePage({
   ]);
 
   const canCreate = can(ctx.role, "deal.create");
+  const canManageStages = can(ctx.role, "dealStage.manage");
   const totalCount = deals.length;
 
   // Total value broken out by currency — mirrors per-column totals.
@@ -117,14 +124,31 @@ export default async function SalesPipelinePage({
               ))}
             </div>
           </div>
-          {canCreate && (
-            <Link
-              href={`/w/${workspaceId}/sales/new`}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-gradient px-3 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90"
-            >
-              <Plus size={13} /> Nowy deal
-            </Link>
-          )}
+          <div className="flex items-center gap-2">
+            {canManageStages && (
+              <StageManagerDialog
+                workspaceId={workspaceId}
+                initialStages={stages.map((s) => ({
+                  id: s.id,
+                  name: s.name,
+                  colorHex: s.colorHex,
+                  closedKind:
+                    s.closedKind === "won" || s.closedKind === "lost"
+                      ? s.closedKind
+                      : null,
+                  dealCount: s._count.deals,
+                }))}
+              />
+            )}
+            {canCreate && (
+              <Link
+                href={`/w/${workspaceId}/sales/new`}
+                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-gradient px-3 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90"
+              >
+                <Plus size={13} /> Nowy deal
+              </Link>
+            )}
+          </div>
         </div>
 
         {stagesProp.length === 0 ? (

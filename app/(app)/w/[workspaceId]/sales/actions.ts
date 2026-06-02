@@ -420,6 +420,49 @@ export async function updateDealStageAction(formData: FormData): Promise<StageFo
   return { ok: true, stageId };
 }
 
+// Drag-drop reorder of pipeline columns. Client sends the new order as a
+// comma-joined string of stage ids; server rewrites `order` 0..N-1 in a
+// transaction so partial failures don't leave the column row inconsistent.
+export async function reorderDealStagesAction(formData: FormData) {
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const orderedIdsRaw = String(formData.get("orderedIds") ?? "");
+  if (!workspaceId || !orderedIdsRaw) return;
+
+  const orderedIds = orderedIdsRaw.split(",").filter(Boolean);
+  if (orderedIds.length === 0) return;
+
+  const ctx = await requireWorkspaceAction(workspaceId, "dealStage.manage");
+
+  // Refuse mismatches — caller is replaying the FULL stage list so that the
+  // numbering stays contiguous. A subset would create gaps the move math
+  // breaks on.
+  const existing = await db.dealStage.findMany({
+    where: { workspaceId, deletedAt: null },
+    select: { id: true },
+  });
+  const existingIds = new Set(existing.map((s) => s.id));
+  const allMatch =
+    orderedIds.length === existing.length &&
+    orderedIds.every((id) => existingIds.has(id));
+  if (!allMatch) return;
+
+  await db.$transaction(
+    orderedIds.map((id, idx) =>
+      db.dealStage.update({ where: { id }, data: { order: idx } }),
+    ),
+  );
+
+  await writeAudit({
+    workspaceId,
+    objectType: "DealStage",
+    objectId: orderedIds[0]!,
+    actorId: ctx.userId,
+    action: "dealStage.reordered",
+    diff: { order: orderedIds },
+  });
+  revalidatePath(`/w/${workspaceId}/sales`);
+}
+
 export async function deleteDealStageAction(formData: FormData) {
   const workspaceId = String(formData.get("workspaceId") ?? "");
   const stageId = String(formData.get("stageId") ?? "");
