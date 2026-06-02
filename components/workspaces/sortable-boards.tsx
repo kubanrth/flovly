@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   closestCenter,
@@ -21,6 +21,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   BarChart3,
+  ChevronDown,
   ChevronRight,
   GitBranch,
   GripVertical,
@@ -106,6 +107,11 @@ export function SortableBoardsList({
   );
 }
 
+// localStorage key — scoped per (workspace, board) so collapse state survives
+// nav between workspaces without bleeding across them.
+const COLLAPSE_KEY = (workspaceId: string, boardId: string) =>
+  `flovly:board-collapsed:${workspaceId}:${boardId}`;
+
 function SortableBoardSection({
   workspaceId,
   board,
@@ -115,6 +121,32 @@ function SortableBoardSection({
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: board.id });
+
+  // Hydration-safe: start expanded, then sync from localStorage on mount.
+  // Reading at init time would mismatch the SSR HTML and trigger a hydration
+  // warning, so we accept one paint of "expanded" before the effect runs.
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(COLLAPSE_KEY(workspaceId, board.id));
+      if (stored === "1") setCollapsed(true);
+    } catch {
+      /* storage disabled — stay expanded */
+    }
+  }, [workspaceId, board.id]);
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        if (next) localStorage.setItem(COLLAPSE_KEY(workspaceId, board.id), "1");
+        else localStorage.removeItem(COLLAPSE_KEY(workspaceId, board.id));
+      } catch {
+        /* storage disabled */
+      }
+      return next;
+    });
+  };
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -142,6 +174,18 @@ function SortableBoardSection({
           >
             <GripVertical size={16} />
           </button>
+          {/* Collapse toggle — keeps the workspace overview scannable when a
+              workspace has many boards with long task lists. */}
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? "Rozwiń tablicę" : "Zwiń tablicę"}
+            title={collapsed ? "Rozwiń tablicę" : "Zwiń tablicę"}
+            className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+          </button>
           <h2 className="font-display text-[1.2rem] font-bold leading-[1.15] tracking-[-0.02em] md:text-[1.5rem]">
             <Link
               href={`/w/${workspaceId}/b/${board.id}/table`}
@@ -160,6 +204,7 @@ function SortableBoardSection({
       </div>
 
       {/* Mobile-only view list */}
+      {!collapsed && (
       <ul className="md:hidden flex flex-col overflow-hidden rounded-xl border border-border bg-card">
         {board.enabledViews.map((view) => {
           const meta = VIEW_META[view];
@@ -185,9 +230,10 @@ function SortableBoardSection({
           );
         })}
       </ul>
+      )}
 
       {/* Tasks preview */}
-      {board.tasks.length === 0 ? (
+      {!collapsed && (board.tasks.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-6 text-center text-muted-foreground md:p-8">
           <p className="font-display text-[1rem] font-semibold md:text-[1.05rem]">Brak zadań.</p>
           <p className="mt-1 font-mono text-[0.7rem] uppercase tracking-[0.14em]">
@@ -263,7 +309,7 @@ function SortableBoardSection({
             </li>
           ))}
         </ul>
-      )}
+      ))}
     </section>
   );
 }
