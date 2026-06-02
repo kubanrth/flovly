@@ -35,6 +35,7 @@ import {
   Compass,
   Inbox,
   Layers,
+  LineChart,
   LogOut,
   Menu,
   Plus,
@@ -735,6 +736,12 @@ function SortableBoardsList({
         icon={<Briefcase size={11} />}
         label="Kontakty"
         active={pathname.startsWith(`/w/${workspaceId}/contacts`)}
+      />
+      <WsSubLink
+        href={`/w/${workspaceId}/sales`}
+        icon={<LineChart size={11} />}
+        label="Plan sprzedaży"
+        active={pathname.startsWith(`/w/${workspaceId}/sales`)}
       />
       {canManage(role) && (
         <WsSubLink

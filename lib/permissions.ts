@@ -37,7 +37,12 @@ export type Action =
   | "contact.read"
   | "contact.create"
   | "contact.update"
-  | "contact.delete";
+  | "contact.delete"
+  | "deal.read"
+  | "deal.create"
+  | "deal.update"
+  | "deal.delete"
+  | "dealStage.manage";
 
 const MATRIX: Record<Role, Set<Action>> = {
   ADMIN: new Set<Action>([
@@ -78,6 +83,11 @@ const MATRIX: Record<Role, Set<Action>> = {
     "contact.create",
     "contact.update",
     "contact.delete",
+    "deal.read",
+    "deal.create",
+    "deal.update",
+    "deal.delete",
+    "dealStage.manage",
   ]),
   MEMBER: new Set<Action>([
     "board.create",
@@ -108,6 +118,11 @@ const MATRIX: Record<Role, Set<Action>> = {
     "contact.create",
     "contact.update",
     "contact.delete",
+    "deal.read",
+    "deal.create",
+    "deal.update",
+    "deal.delete",
+    "dealStage.manage",
   ]),
   VIEWER: new Set<Action>([
     "board.view",
@@ -115,6 +130,7 @@ const MATRIX: Record<Role, Set<Action>> = {
     "poll.vote",
     "wiki.read",
     "contact.read",
+    "deal.read",
   ]),
 };
 
