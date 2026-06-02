@@ -7,6 +7,13 @@ import { can } from "@/lib/permissions";
 import { deleteDealAction } from "@/app/(app)/w/[workspaceId]/sales/actions";
 import { DealForm } from "@/components/sales/deal-form";
 import type { RichTextDoc } from "@/components/task/rich-text-editor";
+import {
+  DealTimeline,
+  type ContactLookup,
+  type StageLookup,
+  type TimelineActivity,
+  type UserLookup,
+} from "@/components/sales/deal-timeline";
 
 export default async function DealDetailPage({
   params,
@@ -21,11 +28,16 @@ export default async function DealDetailPage({
   });
   if (!deal) notFound();
 
-  const [stages, memberships, contacts] = await Promise.all([
+  const [stages, stagesFull, memberships, contacts, activities] = await Promise.all([
     db.dealStage.findMany({
       where: { workspaceId, deletedAt: null },
       orderBy: { order: "asc" },
       select: { id: true, name: true },
+    }),
+    // Stage palette for the timeline pills — we want colorHex too.
+    db.dealStage.findMany({
+      where: { workspaceId },
+      select: { id: true, name: true, colorHex: true },
     }),
     db.workspaceMembership.findMany({
       where: { workspaceId },
@@ -43,7 +55,51 @@ export default async function DealDetailPage({
         email: true,
       },
     }),
+    db.dealActivity.findMany({
+      where: { dealId, workspaceId },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      include: {
+        actor: { select: { id: true, name: true, email: true, avatarUrl: true } },
+      },
+    }),
   ]);
+
+  // Timeline lookups so the client component can hydrate stage / user / contact
+  // references without an extra fetch per row. Include soft-deleted entries
+  // (no deletedAt filter on contacts/users below) so historical "from→to"
+  // references still render even after the source was removed.
+  const stageLookup: StageLookup = {};
+  for (const s of stagesFull) stageLookup[s.id] = { name: s.name, colorHex: s.colorHex };
+  const userLookup: UserLookup = {};
+  for (const m of memberships) {
+    userLookup[m.user.id] = { name: m.user.name, email: m.user.email };
+  }
+  const contactLookup: ContactLookup = {};
+  for (const c of contacts) {
+    contactLookup[c.id] = {
+      label:
+        c.companyName ??
+        [c.firstName, c.lastName].filter(Boolean).join(" ") ??
+        c.email ??
+        "—",
+    };
+  }
+
+  const timelineActivities: TimelineActivity[] = activities.map((a) => ({
+    id: a.id,
+    type: a.type,
+    createdAt: a.createdAt.toISOString(),
+    actor: a.actor
+      ? {
+          id: a.actor.id,
+          name: a.actor.name,
+          email: a.actor.email,
+          avatarUrl: a.actor.avatarUrl,
+        }
+      : null,
+    body: (a.bodyJson ?? null) as Record<string, unknown> | null,
+  }));
 
   const canEdit = can(ctx.role, "deal.update");
   const canDelete = can(ctx.role, "deal.delete");
@@ -115,6 +171,15 @@ export default async function DealDetailPage({
             Twoja rola nie pozwala na edycję deala.
           </p>
         )}
+
+        <DealTimeline
+          workspaceId={workspaceId}
+          dealId={deal.id}
+          activities={timelineActivities}
+          stages={stageLookup}
+          users={userLookup}
+          contacts={contactLookup}
+        />
       </div>
     </main>
   );

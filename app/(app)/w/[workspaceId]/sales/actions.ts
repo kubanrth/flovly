@@ -77,6 +77,31 @@ function parseNotesField(fd: FormData): Prisma.InputJsonValue | typeof Prisma.Js
   }
 }
 
+// Fire-and-forget audit row for the deal timeline. Failures are swallowed —
+// we never want a mutation to roll back just because the activity log row
+// couldn't write. (Audit table already handles compliance logs separately.)
+async function logDealEvent(args: {
+  workspaceId: string;
+  dealId: string;
+  actorId: string | null;
+  type: string;
+  body?: Prisma.InputJsonValue;
+}): Promise<void> {
+  try {
+    await db.dealActivity.create({
+      data: {
+        workspaceId: args.workspaceId,
+        dealId: args.dealId,
+        actorId: args.actorId,
+        type: args.type,
+        bodyJson: args.body ?? Prisma.JsonNull,
+      },
+    });
+  } catch {
+    /* timeline is best-effort */
+  }
+}
+
 function nullIfEmpty(v: string | undefined): string | null {
   if (!v) return null;
   const t = v.trim();
@@ -160,6 +185,13 @@ export async function createDealAction(
     action: "deal.created",
     diff: { title: deal.title, stageId: stage.id },
   });
+  await logDealEvent({
+    workspaceId,
+    dealId: deal.id,
+    actorId: ctx.userId,
+    type: "created",
+    body: { title: deal.title, stageId: stage.id },
+  });
 
   revalidatePath(`/w/${workspaceId}/sales`);
   redirect(`/w/${workspaceId}/sales/${deal.id}`);
@@ -183,7 +215,17 @@ export async function updateDealAction(
 
   const existing = await db.deal.findUnique({
     where: { id: dealId },
-    select: { id: true, workspaceId: true, deletedAt: true, stageId: true },
+    select: {
+      id: true,
+      workspaceId: true,
+      deletedAt: true,
+      stageId: true,
+      title: true,
+      valueAmount: true,
+      valueCurrency: true,
+      ownerId: true,
+      contactId: true,
+    },
   });
   if (!existing || existing.workspaceId !== workspaceId || existing.deletedAt) {
     return { ok: false, error: "Deal nie istnieje albo został usunięty." };
@@ -244,6 +286,61 @@ export async function updateDealAction(
     action: "deal.updated",
     diff: { stageId: stage.id, title: parsed.data.title },
   });
+
+  // Emit one timeline activity per changed field — the detail page renders
+  // these as a per-deal history. Notes are skipped (would be too noisy and
+  // are visible inline anyway).
+  if (existing.title !== parsed.data.title) {
+    await logDealEvent({
+      workspaceId,
+      dealId,
+      actorId: ctx.userId,
+      type: "title_change",
+      body: { from: existing.title, to: parsed.data.title },
+    });
+  }
+  if (existing.stageId !== stage.id) {
+    await logDealEvent({
+      workspaceId,
+      dealId,
+      actorId: ctx.userId,
+      type: "stage_change",
+      body: { from: existing.stageId, to: stage.id },
+    });
+  }
+  if (
+    existing.valueAmount !== parsed.data.valueAmount ||
+    existing.valueCurrency !== parsed.data.valueCurrency
+  ) {
+    await logDealEvent({
+      workspaceId,
+      dealId,
+      actorId: ctx.userId,
+      type: "value_change",
+      body: {
+        from: { amount: existing.valueAmount, currency: existing.valueCurrency },
+        to: { amount: parsed.data.valueAmount, currency: parsed.data.valueCurrency },
+      },
+    });
+  }
+  if (existing.ownerId !== ownerId) {
+    await logDealEvent({
+      workspaceId,
+      dealId,
+      actorId: ctx.userId,
+      type: "owner_change",
+      body: { from: existing.ownerId, to: ownerId },
+    });
+  }
+  if (existing.contactId !== contactId) {
+    await logDealEvent({
+      workspaceId,
+      dealId,
+      actorId: ctx.userId,
+      type: "contact_change",
+      body: { from: existing.contactId, to: contactId },
+    });
+  }
 
   revalidatePath(`/w/${workspaceId}/sales`);
   revalidatePath(`/w/${workspaceId}/sales/${dealId}`);
@@ -310,7 +407,7 @@ export async function moveDealAction(formData: FormData) {
     data: { stageId, rowOrder },
   });
 
-  // Only audit when the column actually changed; pure intra-column reorder is noise.
+  // Only audit/log when the column actually changed; pure intra-column reorder is noise.
   if (deal.stageId !== stageId) {
     await writeAudit({
       workspaceId,
@@ -320,9 +417,90 @@ export async function moveDealAction(formData: FormData) {
       action: "deal.stageMoved",
       diff: { from: deal.stageId, to: stageId },
     });
+    await logDealEvent({
+      workspaceId,
+      dealId,
+      actorId: ctx.userId,
+      type: "stage_change",
+      body: { from: deal.stageId, to: stageId },
+    });
   }
 
   revalidatePath(`/w/${workspaceId}/sales`);
+}
+
+// ─── Timeline notes ─────────────────────────────────────────────────────────
+
+export type DealNoteState =
+  | { ok: true; activityId: string }
+  | { ok: false; error: string }
+  | null;
+
+// Body must be a non-empty Tiptap doc. Same docHasText check the comments
+// schema uses, so empty paragraphs don't pollute the timeline.
+function isDocNonEmpty(doc: unknown): boolean {
+  if (!doc || typeof doc !== "object") return false;
+  const queue: unknown[] = [doc];
+  while (queue.length) {
+    const node = queue.shift() as {
+      type?: string;
+      text?: string;
+      content?: unknown[];
+    };
+    if (
+      node?.type === "text" &&
+      typeof node.text === "string" &&
+      node.text.trim().length > 0
+    ) {
+      return true;
+    }
+    if (Array.isArray(node?.content)) queue.push(...node.content);
+  }
+  return false;
+}
+
+export async function createDealNoteAction(
+  workspaceId: string,
+  dealId: string,
+  _prev: DealNoteState,
+  formData: FormData,
+): Promise<DealNoteState> {
+  const raw = formData.get("bodyJson");
+  if (typeof raw !== "string" || raw.length === 0) {
+    return { ok: false, error: "Treść notatki wymagana." };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { ok: false, error: "Niepoprawny format notatki." };
+  }
+  if (!isDocNonEmpty(parsed)) {
+    return { ok: false, error: "Treść notatki nie może być pusta." };
+  }
+
+  const deal = await db.deal.findUnique({
+    where: { id: dealId },
+    select: { workspaceId: true, deletedAt: true },
+  });
+  if (!deal || deal.workspaceId !== workspaceId || deal.deletedAt) {
+    return { ok: false, error: "Deal nie istnieje." };
+  }
+
+  const ctx = await requireWorkspaceAction(workspaceId, "deal.update");
+
+  const activity = await db.dealActivity.create({
+    data: {
+      workspaceId,
+      dealId,
+      actorId: ctx.userId,
+      type: "note",
+      bodyJson: parsed as Prisma.InputJsonValue,
+    },
+  });
+
+  revalidatePath(`/w/${workspaceId}/sales/${dealId}`);
+  return { ok: true, activityId: activity.id };
 }
 
 // ─── Stage management ───────────────────────────────────────────────────────

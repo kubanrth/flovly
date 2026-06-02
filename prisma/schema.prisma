@@ -80,6 +80,8 @@ model User {
   // F12-K60: sales pipeline (deal'e).
   createdDeals       Deal[]                @relation("DealCreator")
   ownedDeals         Deal[]                @relation("DealOwner")
+  // F12-K61: timeline aktywności dla deali (notatki + auto-eventy).
+  dealActivities     DealActivity[]        @relation("DealActivityActor")
 
   @@index([isBanned])
   @@index([lastSeenAt])
@@ -186,6 +188,8 @@ model Workspace {
   // F12-K60: sales pipeline.
   dealStages           DealStage[]
   deals                Deal[]
+  // F12-K61: aktywność per deal (timeline notatek + auto-eventów).
+  dealActivities       DealActivity[]
 
   @@index([ownerId])
   @@index([deletedAt])
@@ -1386,8 +1390,31 @@ model Deal {
   owner     User?      @relation("DealOwner", fields: [ownerId], references: [id])
   stage     DealStage  @relation(fields: [stageId], references: [id])
   contact   Contact?   @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  activities DealActivity[]
 
   @@index([workspaceId, deletedAt])
   @@index([stageId, rowOrder])
   @@index([contactId])
+}
+
+// F12-K61: per-deal timeline. `type` discriminates between human-authored
+// notes (type="note", bodyJson holds Tiptap doc) and auto-events created by
+// deal mutations (e.g. stage_change, value_change). Auto-events store their
+// before/after metadata in bodyJson so the timeline can render meaningful
+// strings without joining back to historical state.
+model DealActivity {
+  id          String   @id @default(cuid())
+  workspaceId String
+  dealId      String
+  actorId     String?
+  type        String
+  bodyJson    Json?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  deal      Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  actor     User?     @relation("DealActivityActor", fields: [actorId], references: [id])
+
+  @@index([dealId, createdAt(sort: Desc)])
+  @@index([workspaceId])
 }

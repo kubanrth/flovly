@@ -13,7 +13,8 @@ export type AuditObjectType =
   | "SupportTicket"
   | "Contact"
   | "Deal"
-  | "DealStage";
+  | "DealStage"
+  | "DealActivity";
 
 export interface WriteAuditInput {
   workspaceId: string;
