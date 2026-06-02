@@ -96,6 +96,26 @@ export async function deleteReminderAction(formData: FormData) {
   revalidatePath("/my/reminders");
 }
 
+// Creator-only bulk cleanup. Removes ALL my reminders that are either
+// past-due or already dismissed, in one go — so the list stops growing
+// indefinitely. Returns the count for the caller's flash message; the UI
+// reads it before triggering the action to size the button label.
+export async function deleteOldRemindersAction() {
+  const userId = await currentUserId();
+  if (!userId) return;
+  const now = new Date();
+  await db.personalReminder.deleteMany({
+    where: {
+      creatorId: userId,
+      OR: [
+        { dueAt: { lt: now } },
+        { dismissedAt: { not: null } },
+      ],
+    },
+  });
+  revalidatePath("/my/reminders");
+}
+
 // Creator-only edit; recipient has dismiss/snooze.
 const updateReminderSchema = z.object({
   id: z.string().min(1),

@@ -4,6 +4,7 @@ import { startTransition, useState } from "react";
 import { Bell, BellOff, Clock, Pencil, Plus, Trash2, User as UserIcon } from "lucide-react";
 import {
   createReminderAction,
+  deleteOldRemindersAction,
   deleteReminderAction,
   dismissReminderAction,
   updateReminderAction,
@@ -33,11 +34,15 @@ export function RemindersWorkspace({
   members,
   sent,
   received,
+  oldCount,
 }: {
   currentUserId: string;
   members: ReminderMember[];
   sent: ReminderRow[];
   received: ReminderRow[];
+  // Count of MY reminders that the cleanup button would purge (past-due OR
+  // dismissed). Drives whether the button renders and its label.
+  oldCount: number;
 }) {
   return (
     <div className="flex flex-col gap-8">
@@ -60,6 +65,11 @@ export function RemindersWorkspace({
         items={sent}
         currentUserId={currentUserId}
         members={members}
+        headerAction={
+          oldCount > 0 ? (
+            <CleanupOldButton count={oldCount} />
+          ) : null
+        }
       />
       <Section
         title="Dla mnie"
@@ -68,6 +78,32 @@ export function RemindersWorkspace({
         members={members}
       />
     </div>
+  );
+}
+
+function CleanupOldButton({ count }: { count: number }) {
+  return (
+    <form
+      action={() => startTransition(() => deleteOldRemindersAction())}
+      onSubmit={(e) => {
+        if (
+          !confirm(
+            `Usunąć ${count} stare przypomnienia (przeszłe albo odhaczone)? Operacja jest nieodwracalna.`,
+          )
+        ) {
+          e.preventDefault();
+        }
+      }}
+      className="m-0"
+    >
+      <button
+        type="submit"
+        title="Usuwa Twoje przypomnienia które już minęły lub zostały odhaczone."
+        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
+      >
+        <Trash2 size={11} /> Usuń stare ({count})
+      </button>
+    </form>
   );
 }
 
@@ -192,31 +228,41 @@ function Section({
   items,
   currentUserId,
   members,
+  headerAction,
 }: {
   title: string;
   items: ReminderRow[];
   currentUserId: string;
   members: ReminderMember[];
+  headerAction?: React.ReactNode;
 }) {
-  if (items.length === 0) return null;
+  // Still render the section when there are no items but a cleanup button is
+  // pending — otherwise a section with 0 visible items would hide the only
+  // way to purge dismissed/past entries below the visible threshold.
+  if (items.length === 0 && !headerAction) return null;
   return (
     <section className="flex flex-col gap-3">
-      <div className="flex items-baseline gap-3">
-        <h2 className="eyebrow text-primary">{title}</h2>
-        <span className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">
-          {items.length}
-        </span>
+      <div className="flex items-baseline justify-between gap-3">
+        <div className="flex items-baseline gap-3">
+          <h2 className="eyebrow text-primary">{title}</h2>
+          <span className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">
+            {items.length}
+          </span>
+        </div>
+        {headerAction}
       </div>
-      <ul className="flex flex-col rounded-xl border border-border bg-card overflow-hidden">
-        {items.map((r) => (
-          <ReminderRowCard
-            key={r.id}
-            reminder={r}
-            currentUserId={currentUserId}
-            members={members}
-          />
-        ))}
-      </ul>
+      {items.length > 0 && (
+        <ul className="flex flex-col rounded-xl border border-border bg-card overflow-hidden">
+          {items.map((r) => (
+            <ReminderRowCard
+              key={r.id}
+              reminder={r}
+              currentUserId={currentUserId}
+              members={members}
+            />
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

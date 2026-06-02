@@ -11,7 +11,8 @@ export default async function MyRemindersPage() {
   if (!session?.user) redirect("/secure-access-portal");
   const userId = session.user.id;
 
-  const [sent, received, members] = await Promise.all([
+  const now = new Date();
+  const [sent, received, members, oldCount] = await Promise.all([
     db.personalReminder.findMany({
       where: { creatorId: userId },
       orderBy: { dueAt: "asc" },
@@ -43,12 +44,21 @@ export default async function MyRemindersPage() {
       select: { id: true, name: true, email: true, avatarUrl: true },
       orderBy: { name: "asc" },
     }),
+    // Count of my reminders the cleanup button would purge (past-due OR
+    // dismissed). Drives whether the button renders and its label.
+    db.personalReminder.count({
+      where: {
+        creatorId: userId,
+        OR: [{ dueAt: { lt: now } }, { dismissedAt: { not: null } }],
+      },
+    }),
   ]);
 
   return (
     <AppShell>
       <RemindersWorkspace
         currentUserId={userId}
+        oldCount={oldCount}
         members={members.map((m) => ({
           id: m.id,
           name: m.name,
