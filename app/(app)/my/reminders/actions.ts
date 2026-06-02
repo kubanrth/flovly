@@ -116,6 +116,42 @@ export async function deleteOldRemindersAction() {
   revalidatePath("/my/reminders");
 }
 
+// Recipient-only soft-hide. The row stays in the DB so the creator still sees
+// it; we just stamp recipientHiddenAt and the recipient's list filters it out.
+export async function hideReceivedReminderAction(formData: FormData) {
+  const userId = await currentUserId();
+  if (!userId) return;
+  const parsed = dismissSchema.safeParse({ id: formData.get("id") });
+  if (!parsed.success) return;
+  await db.personalReminder.updateMany({
+    where: { id: parsed.data.id, recipientId: userId },
+    data: { recipientHiddenAt: new Date() },
+  });
+  revalidatePath("/my/reminders");
+}
+
+// Bulk version: hide every received reminder that's either past-due or
+// already dismissed. Mirrors deleteOldRemindersAction but for the receiver
+// side (no hard delete — creator may still want to see them).
+export async function hideOldReceivedRemindersAction() {
+  const userId = await currentUserId();
+  if (!userId) return;
+  const now = new Date();
+  await db.personalReminder.updateMany({
+    where: {
+      recipientId: userId,
+      creatorId: { not: userId },
+      recipientHiddenAt: null,
+      OR: [
+        { dueAt: { lt: now } },
+        { dismissedAt: { not: null } },
+      ],
+    },
+    data: { recipientHiddenAt: new Date() },
+  });
+  revalidatePath("/my/reminders");
+}
+
 // Creator-only edit; recipient has dismiss/snooze.
 const updateReminderSchema = z.object({
   id: z.string().min(1),

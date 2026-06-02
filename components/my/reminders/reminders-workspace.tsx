@@ -1,12 +1,14 @@
 "use client";
 
 import { startTransition, useState } from "react";
-import { Bell, BellOff, Clock, Pencil, Plus, Trash2, User as UserIcon } from "lucide-react";
+import { Bell, BellOff, Clock, EyeOff, Pencil, Plus, Trash2, User as UserIcon } from "lucide-react";
 import {
   createReminderAction,
   deleteOldRemindersAction,
   deleteReminderAction,
   dismissReminderAction,
+  hideOldReceivedRemindersAction,
+  hideReceivedReminderAction,
   updateReminderAction,
 } from "@/app/(app)/my/reminders/actions";
 
@@ -35,6 +37,7 @@ export function RemindersWorkspace({
   sent,
   received,
   oldCount,
+  oldReceivedCount,
 }: {
   currentUserId: string;
   members: ReminderMember[];
@@ -43,6 +46,9 @@ export function RemindersWorkspace({
   // Count of MY reminders that the cleanup button would purge (past-due OR
   // dismissed). Drives whether the button renders and its label.
   oldCount: number;
+  // Same idea for the "Dla mnie" section — counts received reminders the
+  // recipient could soft-hide (past-due OR dismissed).
+  oldReceivedCount: number;
 }) {
   return (
     <div className="flex flex-col gap-8">
@@ -76,6 +82,11 @@ export function RemindersWorkspace({
         items={received}
         currentUserId={currentUserId}
         members={members}
+        headerAction={
+          oldReceivedCount > 0 ? (
+            <HideOldReceivedButton count={oldReceivedCount} />
+          ) : null
+        }
       />
     </div>
   );
@@ -102,6 +113,23 @@ function CleanupOldButton({ count }: { count: number }) {
         className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
       >
         <Trash2 size={11} /> Usuń stare ({count})
+      </button>
+    </form>
+  );
+}
+
+function HideOldReceivedButton({ count }: { count: number }) {
+  return (
+    <form
+      action={() => startTransition(() => hideOldReceivedRemindersAction())}
+      className="m-0"
+    >
+      <button
+        type="submit"
+        title="Ukrywa z Twojej listy stare lub odhaczone przypomnienia od innych. Wysyłający dalej je widzi."
+        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <EyeOff size={11} /> Ukryj stare ({count})
       </button>
     </form>
   );
@@ -357,6 +385,25 @@ function ReminderRowCard({
               className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
             >
               <BellOff size={12} /> Schowaj
+            </button>
+          </form>
+        )}
+
+        {/* Recipient-only soft-hide from list — for reminders received from
+            others. Doesn't touch the row, only stamps recipientHiddenAt. */}
+        {isOwnRecipient && !reminder.isMine && (
+          <form
+            action={(fd) => startTransition(() => hideReceivedReminderAction(fd))}
+            className="m-0"
+          >
+            <input type="hidden" name="id" value={reminder.id} />
+            <button
+              type="submit"
+              aria-label="Ukryj z mojej listy"
+              title="Ukrywa to przypomnienie z Twojej listy. Wysyłający nadal je widzi."
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
+            >
+              <EyeOff size={12} /> Ukryj
             </button>
           </form>
         )}

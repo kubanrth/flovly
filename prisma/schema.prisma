@@ -1210,6 +1210,10 @@ model PersonalReminder {
   // can't see the dismissed-by-recipient state; dismissal only hides the
   // popup for the recipient, doesn't delete the row.
   dismissedAt DateTime?
+  // Recipient-only soft-hide. Lets the receiver clear a reminder from their
+  // /my/reminders list without touching the creator's row (only the creator
+  // can hard-delete). dismissedAt suppresses the popup; this controls the list.
+  recipientHiddenAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 

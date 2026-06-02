@@ -12,14 +12,19 @@ export default async function MyRemindersPage() {
   const userId = session.user.id;
 
   const now = new Date();
-  const [sent, received, members, oldCount] = await Promise.all([
+  const [sent, received, members, oldCount, oldReceivedCount] = await Promise.all([
     db.personalReminder.findMany({
       where: { creatorId: userId },
       orderBy: { dueAt: "asc" },
       include: { recipient: { select: { id: true, name: true, email: true } } },
     }),
     db.personalReminder.findMany({
-      where: { recipientId: userId, creatorId: { not: userId } },
+      where: {
+        recipientId: userId,
+        creatorId: { not: userId },
+        // Filter recipient-hidden so the bulk action actually clears the view.
+        recipientHiddenAt: null,
+      },
       orderBy: { dueAt: "asc" },
       include: { creator: { select: { id: true, name: true, email: true } } },
     }),
@@ -52,6 +57,17 @@ export default async function MyRemindersPage() {
         OR: [{ dueAt: { lt: now } }, { dismissedAt: { not: null } }],
       },
     }),
+    // Mirror count for the recipient-side "Ukryj stare" button — only counts
+    // received reminders that are still visible (not yet hidden) and qualify
+    // as old (past-due OR dismissed).
+    db.personalReminder.count({
+      where: {
+        recipientId: userId,
+        creatorId: { not: userId },
+        recipientHiddenAt: null,
+        OR: [{ dueAt: { lt: now } }, { dismissedAt: { not: null } }],
+      },
+    }),
   ]);
 
   return (
@@ -59,6 +75,7 @@ export default async function MyRemindersPage() {
       <RemindersWorkspace
         currentUserId={userId}
         oldCount={oldCount}
+        oldReceivedCount={oldReceivedCount}
         members={members.map((m) => ({
           id: m.id,
           name: m.name,
