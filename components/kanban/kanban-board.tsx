@@ -14,11 +14,16 @@ import { TaskActivityHints } from "@/components/task/task-activity-hints";
 import {
   DndContext,
   DragOverlay,
+  MeasuringStrategy,
+  MouseSensor,
   PointerSensor,
-  closestCorners,
+  TouchSensor,
+  pointerWithin,
+  rectIntersection,
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragStartEvent,
   type DragOverEvent,
@@ -87,15 +92,40 @@ export function KanbanBoard({
   const [, startPatch] = useTransition();
   useWorkspaceRealtime(workspaceId);
 
-  // Resync local state when the server props change (revalidate).
+  // Resync local state when the server props change (revalidate). Guard against
+  // resyncing mid-drag — a realtime broadcast from another user landing
+  // between dragStart and dragEnd would otherwise yank the card back to its
+  // original column under the cursor.
+  const draggingRef = useRef(false);
   useEffect(() => {
+    if (draggingRef.current) return;
     setTasks(initialTasks);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialTasks.map((t) => `${t.id}:${t.statusColumnId ?? ""}:${t.rowOrder}`).join(",")]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    // Mouse + touch handled separately so we can tune activation per input:
+    // mouse fires after a tiny drag (4px) for snappy feel; touch needs a brief
+    // press to disambiguate from scrolling. PointerSensor was the previous
+    // single-sensor setup but it conflated both inputs.
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 180, tolerance: 6 },
+    }),
+    // Keyboard/pen fallback.
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
+
+  // Hybrid collision: pointerWithin is precise inside columns (so dragging a
+  // card over another card flags the over-card, not the parent column), and
+  // rectIntersection is the fallback when the pointer is over the gap between
+  // columns. Default closestCorners caused cards to "leap" between columns
+  // before the pointer fully entered the new one.
+  const collisionDetection: CollisionDetection = (args) => {
+    const pointer = pointerWithin(args);
+    if (pointer.length > 0) return pointer;
+    return rectIntersection(args);
+  };
 
   // Build column → ordered tasks map from the flat list.
   const columns = useMemo(() => {
@@ -152,12 +182,14 @@ export function KanbanBoard({
   };
 
   const onDragStart = (event: DragStartEvent) => {
+    draggingRef.current = true;
     setActiveId(String(event.active.id));
   };
 
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
+    draggingRef.current = false;
     if (!over) return;
 
     const activeId = String(active.id);
@@ -237,7 +269,11 @@ export function KanbanBoard({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={collisionDetection}
+      // Force re-measurement of droppable rects on every layout change. Without
+      // this, columns whose card list grew/shrank during a drag kept their
+      // pre-drag bounds and the cursor "snapped past" them.
+      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
