@@ -190,6 +190,8 @@ model Workspace {
   deals                Deal[]
   // F12-K61: aktywność per deal (timeline notatek + auto-eventów).
   dealActivities       DealActivity[]
+  // F12-K63: cross-task references within the workspace.
+  taskLinks            TaskLink[]
 
   @@index([ownerId])
   @@index([deletedAt])
@@ -525,6 +527,10 @@ model Task {
   subtasks     Subtask[]
   poll         TaskPoll?
   customValues TaskCustomValue[]
+  // F12-K63: cross-task references. linksOut = rows where I'm the source;
+  // linksIn = rows where I'm the target. UI merges both to show "linked".
+  linksOut     TaskLink[]            @relation("TaskLinkSource")
+  linksIn      TaskLink[]            @relation("TaskLinkTarget")
 
   @@index([boardId, statusColumnId, rowOrder])
   @@index([boardId, updatedAt(sort: Desc)])
@@ -1420,5 +1426,26 @@ model DealActivity {
   actor     User?     @relation("DealActivityActor", fields: [actorId], references: [id])
 
   @@index([dealId, createdAt(sort: Desc)])
+  @@index([workspaceId])
+}
+
+// F12-K63: TaskLink — directed reference between two tasks in the same
+// workspace. Stored once (source → target) but the detail page surfaces it
+// in both directions so users see "linked" symmetrically regardless of who
+// initiated the link.
+model TaskLink {
+  id          String   @id @default(cuid())
+  workspaceId String
+  sourceTaskId String
+  targetTaskId String
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  source    Task      @relation("TaskLinkSource", fields: [sourceTaskId], references: [id], onDelete: Cascade)
+  target    Task      @relation("TaskLinkTarget", fields: [targetTaskId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceTaskId, targetTaskId])
+  @@index([targetTaskId])
   @@index([workspaceId])
 }

@@ -62,6 +62,48 @@ export async function fetchTaskDetail(
       tags: { select: { tagId: true } },
       subtasks: { orderBy: { order: "asc" } },
       customValues: true,
+      // F12-K63: both directions of TaskLink — UI merges them into a single
+      // "Powiązane" section so the relationship reads symmetrically.
+      linksOut: {
+        include: {
+          target: {
+            select: {
+              id: true,
+              title: true,
+              displayId: true,
+              deletedAt: true,
+              assignees: {
+                take: 1,
+                include: {
+                  user: {
+                    select: { id: true, name: true, email: true, avatarUrl: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      linksIn: {
+        include: {
+          source: {
+            select: {
+              id: true,
+              title: true,
+              displayId: true,
+              deletedAt: true,
+              assignees: {
+                take: 1,
+                include: {
+                  user: {
+                    select: { id: true, name: true, email: true, avatarUrl: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
       poll: {
         include: {
           options: { orderBy: { order: "asc" } },
@@ -76,7 +118,7 @@ export async function fetchTaskDetail(
   // a PRIVATE board could otherwise still load the task page.
   if (!(await userCanAccessBoard(task.boardId, ctx.userId, ctx.role))) notFound();
 
-  const [members, tags, comments, auditEntries, attachmentRows] = await Promise.all([
+  const [members, tags, comments, auditEntries, attachmentRows, candidateRows] = await Promise.all([
     db.workspaceMembership.findMany({
       where: { workspaceId },
       include: {
@@ -112,6 +154,14 @@ export async function fetchTaskDetail(
         uploader: { select: { id: true, name: true, email: true, avatarUrl: true } },
       },
     }),
+    // Picker candidate pool — capped at 500 most-recently-updated so the
+    // workspace overview doesn't slow down. Excludes self + soft-deleted.
+    db.task.findMany({
+      where: { workspaceId, deletedAt: null, id: { not: taskId } },
+      orderBy: { updatedAt: "desc" },
+      take: 500,
+      select: { id: true, title: true, displayId: true },
+    }),
   ]);
 
   // Pre-sign image thumbnails so browser renders them without round-trip.
@@ -134,6 +184,39 @@ export async function fetchTaskDetail(
       };
     }),
   );
+
+  // Merge outgoing + incoming links so the section reads symmetrically. Skip
+  // any link whose other end is soft-deleted so dead rows don't show up.
+  const linkedTasks = [
+    ...task.linksOut
+      .filter((l) => !l.target.deletedAt)
+      .map((l) => {
+        const a = l.target.assignees[0]?.user ?? null;
+        return {
+          linkId: l.id,
+          task: {
+            id: l.target.id,
+            title: l.target.title,
+            displayId: l.target.displayId,
+            primaryAssignee: a,
+          },
+        };
+      }),
+    ...task.linksIn
+      .filter((l) => !l.source.deletedAt)
+      .map((l) => {
+        const a = l.source.assignees[0]?.user ?? null;
+        return {
+          linkId: l.id,
+          task: {
+            id: l.source.id,
+            title: l.source.title,
+            displayId: l.source.displayId,
+            primaryAssignee: a,
+          },
+        };
+      }),
+  ];
 
   return {
     workspaceId,
@@ -235,5 +318,11 @@ export async function fetchTaskDetail(
     customValues: Object.fromEntries(
       task.customValues.map((v) => [v.columnId, v.valueText ?? ""]),
     ),
+    linkedTasks,
+    linkCandidates: candidateRows.map((c) => ({
+      id: c.id,
+      title: c.title,
+      displayId: c.displayId,
+    })),
   };
 }

@@ -28,6 +28,7 @@ import { ActivityLog, type ActivityEntry } from "@/components/task/activity-log"
 import { AttachmentsSection, type AttachmentItem } from "@/components/task/attachments-section";
 import { StatusPill } from "@/components/task/status-pill";
 import { SubtasksSection, type SubtaskItem } from "@/components/task/subtasks-section";
+import { LinkedTasksSection } from "@/components/task/linked-tasks-section";
 import { PollSection, type PollData } from "@/components/task/poll-section";
 import { SendEmailDialog } from "@/components/task/send-email-dialog";
 import { assignTaskToMilestoneAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/milestone-actions";
@@ -96,6 +97,33 @@ export interface TaskDetailProps {
     options: unknown;
   }[];
   customValues: Record<string, string>;
+  // F12-K63: linked tasks (other tasks referenced from this one or referencing
+  // it). Both directions merged so the section reads symmetrically.
+  linkedTasks: LinkedTaskItem[];
+  // Candidate pool fed to the "Powiąż zadanie" picker. Capped on the server
+  // (most-recent N) so very large workspaces stay responsive.
+  linkCandidates: LinkCandidate[];
+}
+
+export interface LinkedTaskItem {
+  linkId: string;
+  task: {
+    id: string;
+    title: string;
+    displayId: number;
+    primaryAssignee: {
+      id: string;
+      name: string | null;
+      email: string;
+      avatarUrl: string | null;
+    } | null;
+  };
+}
+
+export interface LinkCandidate {
+  id: string;
+  title: string;
+  displayId: number;
 }
 
 
@@ -123,6 +151,8 @@ export function TaskDetail({
   canManagePoll,
   canVote,
   currentUserId,
+  linkedTasks,
+  linkCandidates,
   customColumns,
   customValues,
 }: TaskDetailProps) {
@@ -420,6 +450,15 @@ export function TaskDetail({
         taskId={task.id}
         subtasks={subtasks}
         canManage={canManageSubtasks}
+      />
+
+      {/* Linked tasks — sibling tasks referenced from this one (or vice versa) */}
+      <LinkedTasksSection
+        workspaceId={workspaceId}
+        taskId={task.id}
+        linkedTasks={linkedTasks}
+        candidates={linkCandidates}
+        canEdit={canEdit}
       />
 
       {/* Poll / głosowanie */}
