@@ -38,6 +38,7 @@ import {
   LineChart,
   LogOut,
   Menu,
+  Plane,
   Plus,
   Settings,
   ShieldCheck,
@@ -301,6 +302,13 @@ export function Sidebar({
           href="/my/reminders"
           icon={<Bell size={15} />}
           label="Przypomnienia"
+          pathname={pathname}
+          collapsed={collapsed}
+        />
+        <NavItem
+          href="/vacations"
+          icon={<Plane size={15} />}
+          label="Urlopy"
           pathname={pathname}
           collapsed={collapsed}
         />
