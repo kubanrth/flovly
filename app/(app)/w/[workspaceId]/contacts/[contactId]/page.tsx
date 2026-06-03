@@ -6,6 +6,17 @@ import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { ContactForm } from "@/components/contacts/contact-form";
 import { deleteContactAction } from "@/app/(app)/w/[workspaceId]/contacts/actions";
+import {
+  ContactTimeline,
+  type ContactTimelineActivity,
+  type ContactUserLookup,
+} from "@/components/contacts/contact-timeline";
+import {
+  ContactPipeline,
+  type ContactPipelineDeal,
+  type ContactPipelineStage,
+} from "@/components/contacts/contact-pipeline";
+import { ensureDefaultStages } from "@/app/(app)/w/[workspaceId]/sales/actions";
 
 export default async function ContactDetailPage({
   params,
@@ -20,11 +31,68 @@ export default async function ContactDetailPage({
   });
   if (!contact) notFound();
 
-  const memberships = await db.workspaceMembership.findMany({
-    where: { workspaceId },
-    include: { user: { select: { id: true, name: true, email: true } } },
-    orderBy: { joinedAt: "asc" },
-  });
+  // Seed default deal stages so the per-contact pipeline always has columns
+  // to render — same lazy seeding /sales does on first visit.
+  await ensureDefaultStages(workspaceId);
+
+  const [memberships, stages, deals, activities] = await Promise.all([
+    db.workspaceMembership.findMany({
+      where: { workspaceId },
+      include: { user: { select: { id: true, name: true, email: true } } },
+      orderBy: { joinedAt: "asc" },
+    }),
+    db.dealStage.findMany({
+      where: { workspaceId, deletedAt: null },
+      orderBy: { order: "asc" },
+    }),
+    db.deal.findMany({
+      where: { workspaceId, deletedAt: null, contactId },
+      orderBy: { rowOrder: "asc" },
+    }),
+    db.contactActivity.findMany({
+      where: { contactId, workspaceId },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      include: {
+        actor: { select: { id: true, name: true, email: true, avatarUrl: true } },
+      },
+    }),
+  ]);
+
+  const stagesProp: ContactPipelineStage[] = stages.map((s) => ({
+    id: s.id,
+    name: s.name,
+    colorHex: s.colorHex,
+    closedKind:
+      s.closedKind === "won" || s.closedKind === "lost" ? s.closedKind : null,
+  }));
+  const dealsProp: ContactPipelineDeal[] = deals.map((d) => ({
+    id: d.id,
+    title: d.title,
+    valueAmount: d.valueAmount,
+    valueCurrency: d.valueCurrency,
+    stageId: d.stageId,
+  }));
+
+  const userLookup: ContactUserLookup = {};
+  for (const m of memberships) {
+    userLookup[m.user.id] = { name: m.user.name, email: m.user.email };
+  }
+
+  const timelineActivities: ContactTimelineActivity[] = activities.map((a) => ({
+    id: a.id,
+    type: a.type,
+    createdAt: a.createdAt.toISOString(),
+    actor: a.actor
+      ? {
+          id: a.actor.id,
+          name: a.actor.name,
+          email: a.actor.email,
+          avatarUrl: a.actor.avatarUrl,
+        }
+      : null,
+    body: (a.bodyJson ?? null) as Record<string, unknown> | null,
+  }));
 
   const canEdit = can(ctx.role, "contact.update");
   const canDelete = can(ctx.role, "contact.delete");
@@ -75,6 +143,29 @@ export default async function ContactDetailPage({
             )}
           </div>
         </div>
+
+        <div className="flex flex-col gap-3">
+          <div className="flex items-baseline gap-3">
+            <span className="eyebrow">Plan sprzedaży tego kontaktu</span>
+            <span className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
+              {deals.length} {deals.length === 1 ? "deal" : "deal’i"}
+            </span>
+          </div>
+          <ContactPipeline
+            workspaceId={workspaceId}
+            contactId={contact.id}
+            stages={stagesProp}
+            deals={dealsProp}
+          />
+        </div>
+
+        <ContactTimeline
+          workspaceId={workspaceId}
+          contactId={contact.id}
+          activities={timelineActivities}
+          users={userLookup}
+          canEdit={canEdit}
+        />
 
         {canEdit ? (
           <ContactForm

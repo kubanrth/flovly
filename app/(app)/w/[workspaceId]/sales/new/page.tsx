@@ -12,10 +12,10 @@ export default async function NewDealPage({
   searchParams,
 }: {
   params: Promise<{ workspaceId: string }>;
-  searchParams: Promise<{ stageId?: string }>;
+  searchParams: Promise<{ stageId?: string; contactId?: string }>;
 }) {
   const { workspaceId } = await params;
-  const { stageId } = await searchParams;
+  const { stageId, contactId } = await searchParams;
   const ctx = await requireWorkspaceMembership(workspaceId);
   if (!can(ctx.role, "deal.create")) {
     redirect(`/w/${workspaceId}/sales`);
@@ -69,6 +69,7 @@ export default async function NewDealPage({
           workspaceId={workspaceId}
           initial={null}
           defaultStageId={stageId ?? null}
+          defaultContactId={contactId ?? null}
           stages={stages}
           members={memberships.map((m) => m.user)}
           contacts={contacts.map((c) => ({

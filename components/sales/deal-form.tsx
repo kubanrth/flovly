@@ -44,6 +44,7 @@ export function DealForm({
   members,
   contacts,
   defaultStageId,
+  defaultContactId,
 }: {
   mode: "create" | "edit";
   workspaceId: string;
@@ -53,6 +54,8 @@ export function DealForm({
   contacts: ContactOption[];
   // Optional pre-selection when create button comes from a specific stage column.
   defaultStageId?: string | null;
+  // Pre-selected contact (e.g. when creating from a contact's detail page).
+  defaultContactId?: string | null;
 }) {
   const isEdit = mode === "edit" && initial?.id;
   const boundAction = isEdit
@@ -172,7 +175,7 @@ export function DealForm({
           <span className="eyebrow">Kontakt / klient</span>
           <select
             name="contactId"
-            defaultValue={initial?.contactId ?? ""}
+            defaultValue={initial?.contactId ?? defaultContactId ?? ""}
             className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary"
           >
             <option value="">— bez kontaktu —</option>

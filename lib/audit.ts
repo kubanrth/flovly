@@ -15,7 +15,8 @@ export type AuditObjectType =
   | "Deal"
   | "DealStage"
   | "DealActivity"
-  | "TaskLink";
+  | "TaskLink"
+  | "ContactActivity";
 
 export interface WriteAuditInput {
   workspaceId: string;

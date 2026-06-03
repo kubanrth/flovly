@@ -82,6 +82,8 @@ model User {
   ownedDeals         Deal[]                @relation("DealOwner")
   // F12-K61: timeline aktywności dla deali (notatki + auto-eventy).
   dealActivities     DealActivity[]        @relation("DealActivityActor")
+  // F12-K64: timeline aktywności w karcie kontaktu (mirror DealActivity).
+  contactActivities  ContactActivity[]     @relation("ContactActivityActor")
 
   @@index([isBanned])
   @@index([lastSeenAt])
@@ -192,6 +194,8 @@ model Workspace {
   dealActivities       DealActivity[]
   // F12-K63: cross-task references within the workspace.
   taskLinks            TaskLink[]
+  // F12-K64: aktywność per kontakt.
+  contactActivities    ContactActivity[]
 
   @@index([ownerId])
   @@index([deletedAt])
@@ -1342,10 +1346,33 @@ model Contact {
   owner       User?     @relation("ContactOwner", fields: [ownerId], references: [id])
   // F12-K60: deal'e powiązane z tym kontaktem.
   deals       Deal[]
+  // F12-K64: aktywność/notatki w karcie kontaktu.
+  activities  ContactActivity[]
 
   @@index([workspaceId, deletedAt])
   @@index([workspaceId, companyName])
   @@index([workspaceId, lastName])
+}
+
+// F12-K64: timeline aktywności w karcie kontaktu — odpowiednik DealActivity.
+// `type` rozróżnia ręczne notatki (Tiptap w bodyJson) od auto-eventów
+// (note/field_change/owner_change/created). Auto-event'y trzymają before/after
+// w bodyJson żeby UI mogło wyświetlić znaczący opis bez doczytania historii.
+model ContactActivity {
+  id          String   @id @default(cuid())
+  workspaceId String
+  contactId   String
+  actorId     String?
+  type        String
+  bodyJson    Json?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact   Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  actor     User?     @relation("ContactActivityActor", fields: [actorId], references: [id])
+
+  @@index([contactId, createdAt(sort: Desc)])
+  @@index([workspaceId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

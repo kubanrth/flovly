@@ -76,6 +76,96 @@ function nullIfEmpty<T extends string | undefined>(v: T): string | null {
   return trimmed.length === 0 ? null : trimmed;
 }
 
+// Best-effort timeline log (mirror of DealActivity's helper). Failures swallowed
+// so a stuck audit row never blocks the underlying contact mutation.
+async function logContactEvent(args: {
+  workspaceId: string;
+  contactId: string;
+  actorId: string | null;
+  type: string;
+  body?: Prisma.InputJsonValue;
+}): Promise<void> {
+  try {
+    await db.contactActivity.create({
+      data: {
+        workspaceId: args.workspaceId,
+        contactId: args.contactId,
+        actorId: args.actorId,
+        type: args.type,
+        bodyJson: args.body ?? Prisma.JsonNull,
+      },
+    });
+  } catch {
+    /* timeline is best-effort */
+  }
+}
+
+function isDocNonEmpty(doc: unknown): boolean {
+  if (!doc || typeof doc !== "object") return false;
+  const queue: unknown[] = [doc];
+  while (queue.length) {
+    const node = queue.shift() as { type?: string; text?: string; content?: unknown[] };
+    if (
+      node?.type === "text" &&
+      typeof node.text === "string" &&
+      node.text.trim().length > 0
+    ) {
+      return true;
+    }
+    if (Array.isArray(node?.content)) queue.push(...node.content);
+  }
+  return false;
+}
+
+export type ContactNoteState =
+  | { ok: true; activityId: string }
+  | { ok: false; error: string }
+  | null;
+
+export async function createContactNoteAction(
+  workspaceId: string,
+  contactId: string,
+  _prev: ContactNoteState,
+  formData: FormData,
+): Promise<ContactNoteState> {
+  const raw = formData.get("bodyJson");
+  if (typeof raw !== "string" || raw.length === 0) {
+    return { ok: false, error: "Treść notatki wymagana." };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { ok: false, error: "Niepoprawny format notatki." };
+  }
+  if (!isDocNonEmpty(parsed)) {
+    return { ok: false, error: "Treść notatki nie może być pusta." };
+  }
+
+  const contact = await db.contact.findUnique({
+    where: { id: contactId },
+    select: { workspaceId: true, deletedAt: true },
+  });
+  if (!contact || contact.workspaceId !== workspaceId || contact.deletedAt) {
+    return { ok: false, error: "Kontakt nie istnieje." };
+  }
+
+  const ctx = await requireWorkspaceAction(workspaceId, "contact.update");
+
+  const activity = await db.contactActivity.create({
+    data: {
+      workspaceId,
+      contactId,
+      actorId: ctx.userId,
+      type: "note",
+      bodyJson: parsed as Prisma.InputJsonValue,
+    },
+  });
+
+  revalidatePath(`/w/${workspaceId}/contacts/${contactId}`);
+  return { ok: true, activityId: activity.id };
+}
+
 export async function createContactAction(
   workspaceId: string,
   _prev: ContactFormState,
@@ -140,6 +230,13 @@ export async function createContactAction(
     action: "contact.created",
     diff: { companyName: contact.companyName, email: contact.email },
   });
+  await logContactEvent({
+    workspaceId,
+    contactId: contact.id,
+    actorId: ctx.userId,
+    type: "created",
+    body: { companyName: contact.companyName, email: contact.email },
+  });
 
   revalidatePath(`/w/${workspaceId}/contacts`);
   redirect(`/w/${workspaceId}/contacts/${contact.id}`);
@@ -169,7 +266,17 @@ export async function updateContactAction(
 
   const existing = await db.contact.findUnique({
     where: { id: contactId },
-    select: { id: true, workspaceId: true, deletedAt: true },
+    select: {
+      id: true,
+      workspaceId: true,
+      deletedAt: true,
+      companyName: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      phone: true,
+      ownerId: true,
+    },
   });
   if (!existing || existing.workspaceId !== workspaceId || existing.deletedAt) {
     return { ok: false, error: "Kontakt nie istnieje albo został usunięty." };
@@ -215,6 +322,61 @@ export async function updateContactAction(
     actorId: ctx.userId,
     action: "contact.updated",
   });
+
+  // Per-field timeline events. Skipped for very common no-op fields (notes
+  // already feel like an activity on their own and would spam the timeline).
+  const nextCompany = nullIfEmpty(parsed.data.companyName);
+  const nextFirst = nullIfEmpty(parsed.data.firstName);
+  const nextLast = nullIfEmpty(parsed.data.lastName);
+  const nextEmail = nullIfEmpty(parsed.data.email);
+  const nextPhone = nullIfEmpty(parsed.data.phone);
+  if (existing.companyName !== nextCompany) {
+    await logContactEvent({
+      workspaceId,
+      contactId,
+      actorId: ctx.userId,
+      type: "field_change",
+      body: { field: "companyName", from: existing.companyName, to: nextCompany },
+    });
+  }
+  if (existing.firstName !== nextFirst || existing.lastName !== nextLast) {
+    const from = [existing.firstName, existing.lastName].filter(Boolean).join(" ") || null;
+    const to = [nextFirst, nextLast].filter(Boolean).join(" ") || null;
+    await logContactEvent({
+      workspaceId,
+      contactId,
+      actorId: ctx.userId,
+      type: "field_change",
+      body: { field: "name", from, to },
+    });
+  }
+  if (existing.email !== nextEmail) {
+    await logContactEvent({
+      workspaceId,
+      contactId,
+      actorId: ctx.userId,
+      type: "field_change",
+      body: { field: "email", from: existing.email, to: nextEmail },
+    });
+  }
+  if (existing.phone !== nextPhone) {
+    await logContactEvent({
+      workspaceId,
+      contactId,
+      actorId: ctx.userId,
+      type: "field_change",
+      body: { field: "phone", from: existing.phone, to: nextPhone },
+    });
+  }
+  if (existing.ownerId !== ownerId) {
+    await logContactEvent({
+      workspaceId,
+      contactId,
+      actorId: ctx.userId,
+      type: "owner_change",
+      body: { from: existing.ownerId, to: ownerId },
+    });
+  }
 
   revalidatePath(`/w/${workspaceId}/contacts`);
   revalidatePath(`/w/${workspaceId}/contacts/${contactId}`);
