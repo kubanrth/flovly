@@ -122,16 +122,18 @@ function SortableBoardSection({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: board.id });
 
-  // Hydration-safe: start expanded, then sync from localStorage on mount.
-  // Reading at init time would mismatch the SSR HTML and trigger a hydration
-  // warning, so we accept one paint of "expanded" before the effect runs.
-  const [collapsed, setCollapsed] = useState(false);
+  // Default is COLLAPSED so workspaces with many boards open scannable. User
+  // explicitly expanding writes "0" to localStorage — semantics inverted from
+  // the original "1 = collapsed" so the no-data path lands on the new default.
+  // Hydration-safe: SSR renders collapsed; effect lifts to expanded if the
+  // user previously chose that for this board.
+  const [collapsed, setCollapsed] = useState(true);
   useEffect(() => {
     try {
       const stored = localStorage.getItem(COLLAPSE_KEY(workspaceId, board.id));
-      if (stored === "1") setCollapsed(true);
+      if (stored === "0") setCollapsed(false);
     } catch {
-      /* storage disabled — stay expanded */
+      /* storage disabled — stay with default */
     }
   }, [workspaceId, board.id]);
 
@@ -139,8 +141,13 @@ function SortableBoardSection({
     setCollapsed((prev) => {
       const next = !prev;
       try {
-        if (next) localStorage.setItem(COLLAPSE_KEY(workspaceId, board.id), "1");
-        else localStorage.removeItem(COLLAPSE_KEY(workspaceId, board.id));
+        if (next) {
+          // Collapsed = default; remove the explicit-expanded marker.
+          localStorage.removeItem(COLLAPSE_KEY(workspaceId, board.id));
+        } else {
+          // Explicit expand — persist so it survives revisits.
+          localStorage.setItem(COLLAPSE_KEY(workspaceId, board.id), "0");
+        }
       } catch {
         /* storage disabled */
       }

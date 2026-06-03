@@ -5,7 +5,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Calendar as CalendarIcon, X } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronDown, ChevronUp, X } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 import { pl } from "date-fns/locale";
 import "react-day-picker/style.css";
@@ -243,6 +243,14 @@ export function DateTimePicker({
         createPortal(
           <div
             ref={popRef}
+            // Stop pointer events from reaching ancestor dismiss-on-outside
+            // listeners — base-ui's Dialog watches document for clicks outside
+            // its popup, and since this picker is portaled to document.body
+            // (intentionally, so it can escape overflow clipping), a click on
+            // the hour stepper looked like "outside" and closed the host
+            // dialog. Capture phase so we beat base-ui's handler.
+            onPointerDownCapture={(e) => e.stopPropagation()}
+            onMouseDownCapture={(e) => e.stopPropagation()}
             style={{ position: "fixed", top: coords.top, left: coords.left, width: 320 }}
             className="z-[80] flex flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.35)]"
           >
@@ -257,35 +265,28 @@ export function DateTimePicker({
                 captionLayout="label"
               />
             </div>
-            <div className="flex items-center gap-2 border-t border-border bg-muted/40 px-3 py-2">
+            <div className="flex items-center gap-3 border-t border-border bg-muted/40 px-3 py-3">
               <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
                 Godzina
               </span>
-              <div className="ml-auto flex items-center gap-1">
-                <input
-                  type="number"
+              <div className="ml-auto flex items-stretch gap-2">
+                <TimeStepper
+                  value={date?.getHours() ?? 9}
                   min={0}
                   max={23}
-                  value={hh}
-                  onChange={(e) => {
-                    const v = Math.max(0, Math.min(23, Number(e.target.value) || 0));
-                    setTime(v, date?.getMinutes() ?? 0);
-                  }}
-                  aria-label="Godzina"
-                  className="h-7 w-12 rounded-md border border-border bg-background px-2 text-center font-mono text-[0.84rem] tabular-nums focus:border-primary focus:outline-none"
+                  ariaLabel="Godzina"
+                  onChange={(v) => setTime(v, date?.getMinutes() ?? 0)}
                 />
-                <span className="font-mono text-muted-foreground">:</span>
-                <input
-                  type="number"
+                <span className="grid place-items-center font-mono text-[1rem] font-bold text-muted-foreground">
+                  :
+                </span>
+                <TimeStepper
+                  value={date?.getMinutes() ?? 0}
                   min={0}
                   max={59}
-                  value={mm}
-                  onChange={(e) => {
-                    const v = Math.max(0, Math.min(59, Number(e.target.value) || 0));
-                    setTime(date?.getHours() ?? 9, v);
-                  }}
-                  aria-label="Minuty"
-                  className="h-7 w-12 rounded-md border border-border bg-background px-2 text-center font-mono text-[0.84rem] tabular-nums focus:border-primary focus:outline-none"
+                  step={5}
+                  ariaLabel="Minuty"
+                  onChange={(v) => setTime(date?.getHours() ?? 9, v)}
                 />
               </div>
             </div>
@@ -317,6 +318,64 @@ export function DateTimePicker({
           </div>,
           document.body,
         )}
+    </div>
+  );
+}
+
+// Vertical stepper for hour/minute. Native <input type="number"> arrows are
+// tiny + browser-styled — this gives us bigger touch targets, predictable
+// look, and explicit step control (5-minute jumps for minutes).
+function TimeStepper({
+  value,
+  min,
+  max,
+  step = 1,
+  ariaLabel,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  ariaLabel: string;
+  onChange: (v: number) => void;
+}) {
+  const wrap = (v: number) => {
+    if (v < min) return max;
+    if (v > max) return min;
+    return v;
+  };
+  return (
+    <div className="flex items-stretch overflow-hidden rounded-md border border-border bg-background">
+      <input
+        type="text"
+        inputMode="numeric"
+        value={String(value).padStart(2, "0")}
+        onChange={(e) => {
+          const n = parseInt(e.target.value.replace(/\D/g, ""), 10);
+          if (Number.isFinite(n)) onChange(Math.max(min, Math.min(max, n)));
+        }}
+        aria-label={ariaLabel}
+        className="w-10 bg-transparent px-2 text-center font-mono text-[0.92rem] font-semibold tabular-nums focus:outline-none"
+      />
+      <div className="flex flex-col border-l border-border">
+        <button
+          type="button"
+          onClick={() => onChange(wrap(value + step))}
+          aria-label={`${ariaLabel} +${step}`}
+          className="grid h-[18px] w-6 place-items-center text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <ChevronUp size={11} />
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange(wrap(value - step))}
+          aria-label={`${ariaLabel} −${step}`}
+          className="grid h-[18px] w-6 place-items-center border-t border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <ChevronDown size={11} />
+        </button>
+      </div>
     </div>
   );
 }
