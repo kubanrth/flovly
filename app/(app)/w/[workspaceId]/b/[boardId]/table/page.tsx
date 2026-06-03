@@ -63,6 +63,11 @@ export default async function BoardTablePage({
             orderBy: { createdAt: "desc" },
           },
           _count: { select: { comments: { where: { deletedAt: null } } } },
+          // Cheap per-task fetch — most tasks have a handful of subtasks. We
+          // need both total + done count for the table hint, so a boolean
+          // projection is simplest (Prisma _count doesn't easily expose two
+          // filtered counts on the same relation).
+          subtasks: { select: { completed: true } },
         },
       },
     },
@@ -175,6 +180,8 @@ export default async function BoardTablePage({
           })),
           hasDescription: docHasText(t.descriptionJson),
           commentCount: t._count.comments,
+          subtaskCount: t.subtasks.length,
+          subtaskDoneCount: t.subtasks.filter((s) => s.completed).length,
         }))}
         canEdit={canEdit}
         canManagePrefs={canManageBoard}

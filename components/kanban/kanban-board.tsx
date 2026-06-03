@@ -52,6 +52,8 @@ export interface KanbanTask {
   tags: { id: string; name: string; colorHex: string }[];
   hasDescription: boolean;
   commentCount: number;
+  subtaskCount: number;
+  subtaskDoneCount: number;
 }
 
 export interface KanbanStatusColumn {
@@ -575,6 +577,8 @@ function CardShell({
       <TaskActivityHints
         hasDescription={task.hasDescription}
         commentCount={task.commentCount}
+        subtaskCount={task.subtaskCount}
+        subtaskDoneCount={task.subtaskDoneCount}
       />
       <div className="mt-auto flex items-center justify-between pt-1">
         {task.assignees.length > 0 ? (

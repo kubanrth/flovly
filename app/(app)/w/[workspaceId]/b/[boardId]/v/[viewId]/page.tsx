@@ -177,6 +177,7 @@ async function TableRenderer({
             orderBy: { createdAt: "desc" },
           },
           _count: { select: { comments: { where: { deletedAt: null } } } },
+          subtasks: { select: { completed: true } },
         },
       },
     },
@@ -251,6 +252,8 @@ async function TableRenderer({
         })),
         hasDescription: docHasText(t.descriptionJson),
         commentCount: t._count.comments,
+        subtaskCount: t.subtasks.length,
+        subtaskDoneCount: t.subtasks.filter((s) => s.completed).length,
       }))}
       canEdit={canEdit}
       canManagePrefs={canManageBoard}
@@ -296,6 +299,7 @@ async function KanbanRenderer({
             },
             tags: { include: { tag: true } },
             _count: { select: { comments: { where: { deletedAt: null } } } },
+            subtasks: { select: { completed: true } },
           },
         },
       },
@@ -337,6 +341,8 @@ async function KanbanRenderer({
         })),
         hasDescription: docHasText(t.descriptionJson),
         commentCount: t._count.comments,
+        subtaskCount: t.subtasks.length,
+        subtaskDoneCount: t.subtasks.filter((s) => s.completed).length,
       }))}
       members={memberships.map((m) => m.user)}
     />

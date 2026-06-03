@@ -44,15 +44,6 @@ export function SubtasksSection({
             </span>
           )}
         </div>
-        {canManage && !adding && (
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="inline-flex h-7 items-center gap-1.5 rounded-full border border-dashed border-border px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
-          >
-            <Plus size={11} /> nowe
-          </button>
-        )}
       </div>
 
       {subtasks.length > 0 && (
@@ -181,9 +172,21 @@ export function SubtasksSection({
         </form>
       )}
 
-      {subtasks.length === 0 && !adding && (
+      {/* Big "Dodaj podzadanie" CTA — replaces the old tiny header pill so the
+          action is impossible to miss. Hidden while the composer is open. */}
+      {canManage && !adding && (
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card/40 font-sans text-[0.92rem] font-medium text-muted-foreground transition-colors hover:border-primary/60 hover:bg-primary/5 hover:text-foreground"
+        >
+          <Plus size={16} /> Dodaj podzadanie
+        </button>
+      )}
+
+      {subtasks.length === 0 && !adding && !canManage && (
         <p className="text-[0.86rem] text-muted-foreground/80">
-          Brak podzadań. Rozbij duże zadanie na mniejsze kroki.
+          Brak podzadań.
         </p>
       )}
     </section>

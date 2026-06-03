@@ -86,6 +86,8 @@ export interface BoardTableTask {
   // making the user open the modal to find out.
   hasDescription: boolean;
   commentCount: number;
+  subtaskCount: number;
+  subtaskDoneCount: number;
 }
 
 export interface BoardTableColumn {
@@ -415,6 +417,8 @@ export function BoardTable({
               <TaskActivityHints
                 hasDescription={row.hasDescription}
                 commentCount={row.commentCount}
+                subtaskCount={row.subtaskCount}
+                subtaskDoneCount={row.subtaskDoneCount}
               />
             </div>
           );

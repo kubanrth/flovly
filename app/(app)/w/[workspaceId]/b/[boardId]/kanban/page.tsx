@@ -37,6 +37,7 @@ export default async function BoardKanbanPage({
           },
           tags: { include: { tag: true } },
           _count: { select: { comments: { where: { deletedAt: null } } } },
+          subtasks: { select: { completed: true } },
         },
       },
     },
@@ -125,6 +126,8 @@ export default async function BoardKanbanPage({
           })),
           hasDescription: docHasText(t.descriptionJson),
           commentCount: t._count.comments,
+          subtaskCount: t.subtasks.length,
+          subtaskDoneCount: t.subtasks.filter((s) => s.completed).length,
         }))}
         members={memberships.map((m) => m.user)}
       />

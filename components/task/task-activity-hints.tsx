@@ -1,4 +1,4 @@
-import { FileText, MessageSquare } from "lucide-react";
+import { CheckSquare, FileText, MessageSquare } from "lucide-react";
 
 function commentLabel(n: number): string {
   if (n === 1) return "komentarz";
@@ -9,16 +9,21 @@ function commentLabel(n: number): string {
   return "komentarzy";
 }
 
-// Two tiny badges hinting that the task has body content. Renders nothing when
-// the task is "empty" so quiet rows stay quiet.
+// Tiny badges hinting that the task has body content. Renders nothing when the
+// task is "empty" so quiet rows stay quiet.
 export function TaskActivityHints({
   hasDescription,
   commentCount,
+  subtaskCount = 0,
+  subtaskDoneCount = 0,
 }: {
   hasDescription: boolean;
   commentCount: number;
+  // 0 means "no subtasks" → hint is hidden. Otherwise we render "done/total".
+  subtaskCount?: number;
+  subtaskDoneCount?: number;
 }) {
-  if (!hasDescription && commentCount <= 0) return null;
+  if (!hasDescription && commentCount <= 0 && subtaskCount <= 0) return null;
   return (
     <div className="flex flex-wrap items-center gap-2 font-mono text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground/80">
       {hasDescription && (
@@ -27,6 +32,14 @@ export function TaskActivityHints({
           className="inline-flex items-center gap-1"
         >
           <FileText size={10} aria-hidden /> Opis
+        </span>
+      )}
+      {subtaskCount > 0 && (
+        <span
+          title={`${subtaskDoneCount} z ${subtaskCount} podzadań ukończone`}
+          className="inline-flex items-center gap-1"
+        >
+          <CheckSquare size={10} aria-hidden /> {subtaskDoneCount}/{subtaskCount}
         </span>
       )}
       {commentCount > 0 && (
