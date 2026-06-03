@@ -81,7 +81,10 @@ function FolderBlock({
 
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">
-      <div className="flex items-center gap-2 px-3 py-2">
+      {/* `group` enables the rename / delete icons (group-hover:opacity-100)
+          on hover — without it those buttons were stuck at opacity-0 and the
+          folder looked unrenamable. */}
+      <div className="group flex items-center gap-2 px-3 py-2">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
