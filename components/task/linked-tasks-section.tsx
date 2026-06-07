@@ -188,7 +188,9 @@ function LinkPicker({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card/40 font-sans text-[0.92rem] font-medium text-muted-foreground transition-colors hover:border-primary/60 hover:bg-primary/5 hover:text-foreground"
+        // Fuchsia mirror "Powiązane" badge'a w TaskActivityHints — żeby cały
+        // mechanizm linkowania (badge + przycisk + sekcja) miał spójny kolor.
+        className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/10 font-sans text-[0.95rem] font-semibold text-fuchsia-700 shadow-[0_1px_2px_rgba(217,70,239,0.08)] transition-colors hover:border-fuchsia-500/50 hover:bg-fuchsia-500/15 dark:border-fuchsia-400/40 dark:bg-fuchsia-400/10 dark:text-fuchsia-200 dark:hover:bg-fuchsia-400/15"
       >
         <Link2 size={14} /> Powiąż zadanie
       </button>

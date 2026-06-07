@@ -172,13 +172,14 @@ export function SubtasksSection({
         </form>
       )}
 
-      {/* Big "Dodaj podzadanie" CTA — replaces the old tiny header pill so the
-          action is impossible to miss. Hidden while the composer is open. */}
+      {/* Wyraźny kolorowy CTA — klient: subtelny dashed CTA był ledwo widoczny,
+          przez co dodawanie podzadań nie było odkrywane. Hidden while the
+          composer is open. */}
       {canManage && !adding && (
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card/40 font-sans text-[0.92rem] font-medium text-muted-foreground transition-colors hover:border-primary/60 hover:bg-primary/5 hover:text-foreground"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 font-sans text-[0.95rem] font-semibold text-emerald-700 shadow-[0_1px_2px_rgba(16,185,129,0.08)] transition-colors hover:border-emerald-500/50 hover:bg-emerald-500/15 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-200 dark:hover:bg-emerald-400/15"
         >
           <Plus size={16} /> Dodaj podzadanie
         </button>

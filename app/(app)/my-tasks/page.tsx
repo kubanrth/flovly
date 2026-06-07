@@ -14,6 +14,10 @@ interface MyTasksSearchParams {
   search?: string;
   boardIds?: string;
   sort?: SortMode;
+  // `?user=<id>` przełącza widok na zadania konkretnej osoby z zespołu —
+  // używane przez przycisk "Sprawdź" w /profile team table. Musi być w
+  // tym samym workspace co aktualny user, inaczej padamy do siebie.
+  user?: string;
 }
 
 async function loadAssignments(
@@ -95,8 +99,34 @@ export default async function MyTasksPage({
   searchParams: Promise<MyTasksSearchParams>;
 }) {
   const session = await auth();
-  const userId = session!.user.id;
+  const currentUserId = session!.user.id;
   const params = await searchParams;
+
+  // Resolve which user's task list to show. Default = self. `?user=<id>` is
+  // honored only when that person shares at least one active workspace with
+  // the viewer (auth boundary; otherwise the link silently falls back to
+  // self so a manual URL tweak can't enumerate teammates).
+  let viewedUser: { id: string; name: string | null; email: string } | null = null;
+  if (params.user && params.user !== currentUserId) {
+    viewedUser = await db.user.findFirst({
+      where: {
+        id: params.user,
+        isBanned: false,
+        deletedAt: null,
+        memberships: {
+          some: {
+            workspace: {
+              deletedAt: null,
+              memberships: { some: { userId: currentUserId } },
+            },
+          },
+        },
+      },
+      select: { id: true, name: true, email: true },
+    });
+  }
+  const viewingSelf = !viewedUser;
+  const userId = viewedUser?.id ?? currentUserId;
 
   const filters = {
     search: (params.search ?? "").trim(),
@@ -230,16 +260,41 @@ export default async function MyTasksPage({
     <AppShell>
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2">
-          <span className="eyebrow">Zadania dla Ciebie</span>
-          <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
-            Twoja lista. <span className="text-brand-gradient">{totalCount}</span>{" "}
-            {taskPl(totalCount)}.
-          </h1>
-          <p className="max-w-[60ch] text-[0.95rem] leading-[1.55] text-muted-foreground">
-            Wszystko, gdzie Ty jesteś assignee. Najedź na zadanie i wciśnij{" "}
-            <kbd className="rounded-sm border border-border bg-muted px-1 text-[0.7rem]">M</kbd>{" "}
-            aby przypisać osobę.
-          </p>
+          {viewingSelf ? (
+            <>
+              <span className="eyebrow">Zadania dla Ciebie</span>
+              <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
+                Twoja lista. <span className="text-brand-gradient">{totalCount}</span>{" "}
+                {taskPl(totalCount)}.
+              </h1>
+              <p className="max-w-[60ch] text-[0.95rem] leading-[1.55] text-muted-foreground">
+                Wszystko, gdzie Ty jesteś assignee. Najedź na zadanie i wciśnij{" "}
+                <kbd className="rounded-sm border border-border bg-muted px-1 text-[0.7rem]">M</kbd>{" "}
+                aby przypisać osobę.
+              </p>
+            </>
+          ) : (
+            <>
+              <a
+                href="/profile"
+                className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+              >
+                ← wróć do dashboardu
+              </a>
+              <span className="eyebrow">Zadania pracownika</span>
+              <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
+                <span className="text-brand-gradient">
+                  {viewedUser?.name ?? viewedUser?.email}
+                </span>
+                . <span className="text-foreground">{totalCount}</span>{" "}
+                {taskPl(totalCount)}.
+              </h1>
+              <p className="max-w-[60ch] text-[0.95rem] leading-[1.55] text-muted-foreground">
+                Lista zadań przypisanych do tej osoby ze wspólnych workspace&apos;ów.
+                Widzisz to bo masz z nią dzielony workspace.
+              </p>
+            </>
+          )}
         </div>
 
         <FiltersBar

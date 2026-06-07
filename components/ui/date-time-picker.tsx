@@ -20,6 +20,9 @@ export interface DateTimePickerProps {
   variant?: "input" | "cell";
   // Fires on every edit (day pick, time, today, clear) — useful for autosave cells without wrapping form.
   onChange?: (iso: string) => void;
+  // Hide hour/minute pickers + format display without time. Use w urlopach,
+  // datach końcowych zadań, deadlinach itp. gdzie godzina nie ma znaczenia.
+  dateOnly?: boolean;
 }
 
 function isoToDate(iso: string | null): Date | null {
@@ -28,14 +31,13 @@ function isoToDate(iso: string | null): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function formatDisplay(date: Date | null): string {
+function formatDisplay(date: Date | null, dateOnly: boolean): string {
   if (!date) return "";
   return date.toLocaleString("pl-PL", {
     day: "numeric",
     month: "short",
     year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+    ...(dateOnly ? {} : { hour: "2-digit", minute: "2-digit" }),
   });
 }
 
@@ -50,6 +52,7 @@ export function DateTimePicker({
   placeholder = "Wybierz datę",
   label,
   variant = "input",
+  dateOnly = false,
   onChange,
 }: DateTimePickerProps) {
   const [date, setDate] = useState<Date | null>(() => isoToDate(defaultValue));
@@ -143,10 +146,13 @@ export function DateTimePicker({
       setDate(null);
       return;
     }
-    // Preserve current time-of-day if user already set one; otherwise 09:00.
+    // Preserve current time-of-day if user already set one; otherwise 09:00
+    // (date-only mode → 00:00 because time is irrelevant in tym kontekście).
     const next = new Date(day);
     if (date) {
       next.setHours(date.getHours(), date.getMinutes(), 0, 0);
+    } else if (dateOnly) {
+      next.setHours(0, 0, 0, 0);
     } else {
       next.setHours(9, 0, 0, 0);
     }
@@ -170,7 +176,7 @@ export function DateTimePicker({
     setDate(null);
   };
 
-  const display = formatDisplay(date);
+  const display = formatDisplay(date, dateOnly);
   const hh = date ? pad2(date.getHours()) : "09";
   const mm = date ? pad2(date.getMinutes()) : "00";
   const isoForForm = date ? date.toISOString() : "";
@@ -265,31 +271,33 @@ export function DateTimePicker({
                 captionLayout="label"
               />
             </div>
-            <div className="flex items-center gap-3 border-t border-border bg-muted/40 px-3 py-3">
-              <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                Godzina
-              </span>
-              <div className="ml-auto flex items-stretch gap-2">
-                <TimeStepper
-                  value={date?.getHours() ?? 9}
-                  min={0}
-                  max={23}
-                  ariaLabel="Godzina"
-                  onChange={(v) => setTime(v, date?.getMinutes() ?? 0)}
-                />
-                <span className="grid place-items-center font-mono text-[1rem] font-bold text-muted-foreground">
-                  :
+            {!dateOnly && (
+              <div className="flex items-center gap-3 border-t border-border bg-muted/40 px-3 py-3">
+                <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+                  Godzina
                 </span>
-                <TimeStepper
-                  value={date?.getMinutes() ?? 0}
-                  min={0}
-                  max={59}
-                  step={5}
-                  ariaLabel="Minuty"
-                  onChange={(v) => setTime(date?.getHours() ?? 9, v)}
-                />
+                <div className="ml-auto flex items-stretch gap-2">
+                  <TimeStepper
+                    value={date?.getHours() ?? 9}
+                    min={0}
+                    max={23}
+                    ariaLabel="Godzina"
+                    onChange={(v) => setTime(v, date?.getMinutes() ?? 0)}
+                  />
+                  <span className="grid place-items-center font-mono text-[1rem] font-bold text-muted-foreground">
+                    :
+                  </span>
+                  <TimeStepper
+                    value={date?.getMinutes() ?? 0}
+                    min={0}
+                    max={59}
+                    step={5}
+                    ariaLabel="Minuty"
+                    onChange={(v) => setTime(date?.getHours() ?? 9, v)}
+                  />
+                </div>
               </div>
-            </div>
+            )}
             <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
               <button
                 type="button"

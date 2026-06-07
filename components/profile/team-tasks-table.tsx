@@ -80,7 +80,7 @@ export function TeamTasksTable({ rows }: { rows: TeamMemberRow[] }) {
                   <td className="px-4 py-3 text-right">
                     {r.sharedWorkspaceId ? (
                       <Link
-                        href={`/my-tasks?assignee=${r.id}`}
+                        href={`/my-tasks?user=${r.id}`}
                         className="inline-flex h-8 items-center gap-1 rounded-md border border-border bg-background px-3 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
                       >
                         Sprawdź <ArrowRight size={10} />

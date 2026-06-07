@@ -220,7 +220,14 @@ function FolderTable({
                 className="group border-b border-border last:border-b-0 hover:bg-accent/30"
               >
                 {folder.columns.map((c) => (
-                  <td key={c.id} className="px-3 py-1.5 align-middle">
+                  // max-w + min-w-0 zmuszają table-cell do shrinkowania, bez
+                  // tego truncate w środku nie pali (cell rosła do długości
+                  // URL'a i rozpychała całą tabelę). 260px to widoczna ścieżka
+                  // typu github.com/user/repo bez rozdmuchiwania layoutu.
+                  <td
+                    key={c.id}
+                    className="max-w-[260px] min-w-0 overflow-hidden px-3 py-1.5 align-middle"
+                  >
                     <CellInput
                       rowId={row.id}
                       columnId={c.id}
@@ -504,13 +511,15 @@ function AdminCell({
           href={initial}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 truncate text-primary underline underline-offset-2"
+          className="block min-w-0 flex-1 truncate text-primary underline underline-offset-2"
           title={initial}
         >
-          {initial}
+          {previewUrl(initial)}
         </a>
       ) : (
-        <span className="flex-1 truncate">{initial}</span>
+        <span className="block min-w-0 flex-1 truncate" title={initial}>
+          {initial}
+        </span>
       )}
       <button
         type="button"
@@ -577,5 +586,21 @@ function isUrl(s: string): boolean {
     return u.protocol === "http:" || u.protocol === "https:";
   } catch {
     return false;
+  }
+}
+
+// Skraca długi URL do czytelnego podglądu: usuwa "www.", obcina ścieżkę gdy
+// głębsza niż 2 segmenty, ucina hash/query. Pełny URL i tak ląduje w href +
+// title — preview to tylko visual hint.
+function previewUrl(raw: string): string {
+  try {
+    const u = new URL(raw);
+    const host = u.hostname.replace(/^www\./, "");
+    const segments = u.pathname.split("/").filter(Boolean);
+    if (segments.length === 0) return host;
+    if (segments.length <= 2) return `${host}/${segments.join("/")}`;
+    return `${host}/${segments.slice(0, 2).join("/")}/…`;
+  } catch {
+    return raw;
   }
 }

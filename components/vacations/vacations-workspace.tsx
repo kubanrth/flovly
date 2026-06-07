@@ -13,6 +13,7 @@ import {
   CalendarMonthGrid,
   type CalendarEvent,
 } from "@/components/my/calendar/month-grid";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 export interface ColleagueUpcoming {
   id: string;
@@ -166,24 +167,26 @@ function NewRequestForm() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <label className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2">
             <span className="eyebrow">Od *</span>
-            <input
+            <DateTimePicker
               name="startDate"
-              type="date"
-              required
-              className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary"
+              defaultValue={null}
+              dateOnly
+              placeholder="Wybierz datę startu"
+              label="Data startu urlopu"
             />
-          </label>
-          <label className="flex flex-col gap-2">
+          </div>
+          <div className="flex flex-col gap-2">
             <span className="eyebrow">Do *</span>
-            <input
+            <DateTimePicker
               name="endDate"
-              type="date"
-              required
-              className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary"
+              defaultValue={null}
+              dateOnly
+              placeholder="Wybierz datę końca"
+              label="Data końca urlopu"
             />
-          </label>
+          </div>
           <label className="flex flex-col gap-2 md:col-span-1">
             <span className="eyebrow">Powód (opcjonalnie)</span>
             <input
