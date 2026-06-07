@@ -29,6 +29,7 @@ import { AttachmentsSection, type AttachmentItem } from "@/components/task/attac
 import { StatusPill } from "@/components/task/status-pill";
 import { SubtasksSection, type SubtaskItem } from "@/components/task/subtasks-section";
 import { LinkedTasksSection } from "@/components/task/linked-tasks-section";
+import { MoveTaskMenu, type MoveTargetBoard } from "@/components/task/move-task-menu";
 import { PollSection, type PollData } from "@/components/task/poll-section";
 import { SendEmailDialog } from "@/components/task/send-email-dialog";
 import { assignTaskToMilestoneAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/milestone-actions";
@@ -103,6 +104,11 @@ export interface TaskDetailProps {
   // Candidate pool fed to the "Powiąż zadanie" picker. Capped on the server
   // (most-recent N) so very large workspaces stay responsive.
   linkCandidates: LinkCandidate[];
+  // F12-K67: lista tablic w workspace do których można przenieść task'a.
+  // Excluding current board jest po stronie UI (MoveTaskMenu) bo i tak
+  // potrzebujemy aktualnego board.id do generowania linka "wróć".
+  boardId: string;
+  workspaceBoards: MoveTargetBoard[];
 }
 
 export interface LinkedTaskItem {
@@ -153,6 +159,8 @@ export function TaskDetail({
   currentUserId,
   linkedTasks,
   linkCandidates,
+  boardId,
+  workspaceBoards,
   customColumns,
   customValues,
 }: TaskDetailProps) {
@@ -210,6 +218,13 @@ export function TaskDetail({
                 filename: a.filename,
                 sizeBytes: a.sizeBytes,
               }))}
+            />
+          )}
+          {canEdit && workspaceBoards.length > 1 && (
+            <MoveTaskMenu
+              taskId={task.id}
+              currentBoardId={boardId}
+              availableBoards={workspaceBoards}
             />
           )}
           {canDelete && (

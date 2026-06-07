@@ -43,13 +43,16 @@ export function TaskActivityHints({
       {subtaskCount > 0 && (
         <span
           title={`${subtaskDoneCount} z ${subtaskCount} podzadań ukończone`}
+          // Klient: badge bez tekstu "Lista" wyglądał jak liczba bez kontekstu.
+          // Dodajemy słowo żeby intencja "zawiera listę zadań" była natychmiast
+          // czytelna obok "Opis" / komentarzy / Powiązane.
           className={
             subtaskComplete
               ? "inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-1.5 py-0.5 font-semibold text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-400/15 dark:text-emerald-200"
               : "inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 font-semibold text-amber-700 dark:border-amber-400/40 dark:bg-amber-400/15 dark:text-amber-200"
           }
         >
-          <CheckSquare size={10} aria-hidden /> {subtaskDoneCount}/{subtaskCount}
+          <CheckSquare size={10} aria-hidden /> Lista {subtaskDoneCount}/{subtaskCount}
         </span>
       )}
       {commentCount > 0 && (

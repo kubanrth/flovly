@@ -118,7 +118,7 @@ export async function fetchTaskDetail(
   // a PRIVATE board could otherwise still load the task page.
   if (!(await userCanAccessBoard(task.boardId, ctx.userId, ctx.role))) notFound();
 
-  const [members, tags, comments, auditEntries, attachmentRows, candidateRows] = await Promise.all([
+  const [members, tags, comments, auditEntries, attachmentRows, candidateRows, workspaceBoardRows] = await Promise.all([
     db.workspaceMembership.findMany({
       where: { workspaceId },
       include: {
@@ -161,6 +161,17 @@ export async function fetchTaskDetail(
       orderBy: { updatedAt: "desc" },
       take: 500,
       select: { id: true, title: true, displayId: true },
+    }),
+    // Lista tablic w workspace dla MoveTaskMenu w nagłówku karty. Order
+    // ten sam co na overview workspace'u żeby user wiedział co gdzie jest.
+    db.board.findMany({
+      where: { workspaceId, deletedAt: null },
+      orderBy: { order: "asc" },
+      select: {
+        id: true,
+        name: true,
+        workspace: { select: { name: true } },
+      },
     }),
   ]);
 
@@ -323,6 +334,12 @@ export async function fetchTaskDetail(
       id: c.id,
       title: c.title,
       displayId: c.displayId,
+    })),
+    boardId: task.boardId,
+    workspaceBoards: workspaceBoardRows.map((b) => ({
+      id: b.id,
+      name: b.name,
+      workspaceName: b.workspace.name,
     })),
   };
 }

@@ -273,6 +273,101 @@ export async function deleteTaskAction(formData: FormData) {
   redirect(`/w/${existing.workspaceId}`);
 }
 
+// Przenosi task do innej tablicy w tym samym workspace. Status column z
+// nowej tablicy jest dobierany przez:
+//   1. explicit targetStatusColumnId z formu (gdy user wybrał ręcznie)
+//   2. fallback po nazwie (np. "Do zrobienia" → "Do zrobienia")
+//   3. ostatecznie null (Bez statusu)
+// Status semantyka per-board, więc bezpieczniej zostawić user'a z pustym
+// statusem niż wymusić niezamierzone mapowanie. Task ląduje na górze listy
+// (mirror createTaskAction: min(rowOrder)-1).
+export async function moveTaskToBoardAction(formData: FormData) {
+  const taskId = String(formData.get("taskId") ?? "");
+  const targetBoardId = String(formData.get("targetBoardId") ?? "");
+  const explicitStatusId = String(formData.get("statusColumnId") ?? "") || null;
+  if (!taskId || !targetBoardId) return;
+
+  const task = await db.task.findUnique({
+    where: { id: taskId },
+    select: {
+      id: true,
+      workspaceId: true,
+      boardId: true,
+      deletedAt: true,
+      statusColumn: { select: { name: true } },
+    },
+  });
+  if (!task || task.deletedAt) return;
+  if (task.boardId === targetBoardId) return;
+
+  const ctx = await requireWorkspaceAction(task.workspaceId, "task.update");
+
+  const target = await db.board.findFirst({
+    where: { id: targetBoardId, workspaceId: task.workspaceId, deletedAt: null },
+    select: {
+      id: true,
+      name: true,
+      statusColumns: { select: { id: true, name: true }, orderBy: { order: "asc" } },
+    },
+  });
+  if (!target) return;
+
+  // Pick the status column on the target board.
+  let nextStatusColumnId: string | null = null;
+  if (explicitStatusId) {
+    const match = target.statusColumns.find((s) => s.id === explicitStatusId);
+    if (match) nextStatusColumnId = match.id;
+  } else if (task.statusColumn) {
+    const byName = target.statusColumns.find(
+      (s) => s.name.trim().toLowerCase() === task.statusColumn!.name.trim().toLowerCase(),
+    );
+    if (byName) nextStatusColumnId = byName.id;
+  }
+
+  // Top-of-list w nowym statusie (mirror createTaskAction).
+  const firstInColumn = nextStatusColumnId
+    ? await db.task.findFirst({
+        where: { statusColumnId: nextStatusColumnId, deletedAt: null },
+        orderBy: { rowOrder: "asc" },
+        select: { rowOrder: true },
+      })
+    : null;
+
+  await db.task.update({
+    where: { id: task.id },
+    data: {
+      boardId: target.id,
+      statusColumnId: nextStatusColumnId,
+      rowOrder: (firstInColumn?.rowOrder ?? 0) - 1,
+      // Milestone zostaje na starej tablicy → wyczyść. Inaczej task'a będzie
+      // ciągnąć w roadmap'ie starej, gdzie już go nie ma w listach.
+      milestoneId: null,
+    },
+  });
+
+  await writeAudit({
+    workspaceId: task.workspaceId,
+    objectType: "Task",
+    objectId: task.id,
+    actorId: ctx.userId,
+    action: "task.moved",
+    diff: {
+      fromBoardId: task.boardId,
+      toBoardId: target.id,
+      toBoardName: target.name,
+      statusColumnId: nextStatusColumnId,
+    },
+  });
+
+  revalidatePath(`/w/${task.workspaceId}/t/${task.id}`);
+  revalidatePath(`/w/[workspaceId]/b/[boardId]`, "layout");
+  await broadcastWorkspaceChange(task.workspaceId, {
+    type: "task.changed",
+    taskId: task.id,
+    boardId: target.id,
+  });
+}
+
 // Bulk operations from the table multi-select toolbar; caller refreshes.
 export async function bulkDeleteTasksAction(formData: FormData) {
   const workspaceId = String(formData.get("workspaceId") ?? "");
