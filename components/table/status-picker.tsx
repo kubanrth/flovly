@@ -4,10 +4,28 @@
 
 import { startTransition, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Pencil, Plus, Search, X } from "lucide-react";
+import { Check, GripVertical, Pencil, Plus, Search, X } from "lucide-react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   createStatusColumnAction,
   deleteStatusColumnAction,
+  reorderStatusColumnsAction,
   updateStatusColumnAction,
 } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
 import { patchTaskAction } from "@/app/(app)/w/[workspaceId]/t/actions";
@@ -202,40 +220,19 @@ export function StatusPicker({
               </div>
             </div>
 
-            <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1">
-              {filtered.length === 0 && !adding && (
-                <li className="px-2 py-3 text-center font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground/70">
-                  brak statusów
-                </li>
-              )}
-              {filtered.map((o) => (
-                <li key={o.id}>
-                  {editingId === o.id ? (
-                    <EditRow
-                      workspaceId={workspaceId}
-                      option={o}
-                      onDone={() => setEditingId(null)}
-                    />
-                  ) : (
-                    <Row
-                      option={o}
-                      isCurrent={current?.id === o.id}
-                      canManage={canManageBoard}
-                      canDelete={canManageBoard && options.length > 1}
-                      onPick={() => pick(o.id)}
-                      onEdit={() => setEditingId(o.id)}
-                      onDelete={() => {
-                        if (!confirm(`Usunąć status „${o.name}"?`)) return;
-                        const fd = new FormData();
-                        fd.set("workspaceId", workspaceId);
-                        fd.set("columnId", o.id);
-                        startTransition(() => deleteStatusColumnAction(fd));
-                      }}
-                    />
-                  )}
-                </li>
-              ))}
-            </ul>
+            <ReorderableList
+              options={options}
+              filtered={filtered}
+              workspaceId={workspaceId}
+              boardId={boardId}
+              currentId={current?.id ?? null}
+              canManageBoard={canManageBoard}
+              editingId={editingId}
+              setEditingId={setEditingId}
+              isFiltered={query.trim().length > 0}
+              adding={adding}
+              onPick={pick}
+            />
 
             {canManageBoard && (
               <div className="shrink-0 border-t border-border bg-popover">
@@ -285,6 +282,7 @@ function Row({
   isCurrent,
   canManage,
   canDelete,
+  canReorder,
   onPick,
   onEdit,
   onDelete,
@@ -293,12 +291,36 @@ function Row({
   isCurrent: boolean;
   canManage: boolean;
   canDelete: boolean;
+  canReorder: boolean;
   onPick: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: option.id, disabled: !canReorder });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
   return (
-    <div className="group flex items-center gap-1.5 rounded-md px-1 py-0.5 hover:bg-accent">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group flex items-center gap-1.5 rounded-md px-1 py-0.5 hover:bg-accent"
+    >
+      {canReorder && (
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          aria-label={`Przeciągnij ${option.name}`}
+          title="Przeciągnij aby zmienić kolejność"
+          className="grid h-5 w-4 shrink-0 cursor-grab place-items-center rounded-sm text-muted-foreground/60 transition-colors hover:text-foreground active:cursor-grabbing"
+        >
+          <GripVertical size={11} />
+        </button>
+      )}
       <button
         type="button"
         onClick={onPick}
@@ -492,5 +514,124 @@ function ColorRow({
         />
       ))}
     </div>
+  );
+}
+
+// Wraps the visible Row list in a SortableContext + DndContext when the user
+// can manage statuses and isn't filtering. Drag-end sends the new order to
+// reorderStatusColumnsAction so it persists. We mirror the order locally for
+// instant feedback — revalidate on the server then refreshes props.
+function ReorderableList({
+  options,
+  filtered,
+  workspaceId,
+  boardId,
+  currentId,
+  canManageBoard,
+  editingId,
+  setEditingId,
+  isFiltered,
+  adding,
+  onPick,
+}: {
+  options: StatusOption[];
+  filtered: StatusOption[];
+  workspaceId: string;
+  boardId: string;
+  currentId: string | null;
+  canManageBoard: boolean;
+  editingId: string | null;
+  setEditingId: (id: string | null) => void;
+  isFiltered: boolean;
+  adding: boolean;
+  onPick: (id: string) => void;
+}) {
+  // Optimistic mirror — keeps the dragged row in its new slot before the server
+  // revalidate lands. Reset when the upstream options array changes (e.g.,
+  // someone else reordered via the manage dialog).
+  const [order, setOrder] = useState<StatusOption[]>(options);
+  useEffect(() => {
+    setOrder(options);
+  }, [options]);
+
+  const canReorder = canManageBoard && !isFiltered && !editingId && !adding;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const onDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIx = order.findIndex((s) => s.id === active.id);
+    const newIx = order.findIndex((s) => s.id === over.id);
+    if (oldIx < 0 || newIx < 0) return;
+    const next = arrayMove(order, oldIx, newIx);
+    setOrder(next);
+    const fd = new FormData();
+    fd.set("workspaceId", workspaceId);
+    fd.set("boardId", boardId);
+    fd.set("ids", next.map((s) => s.id).join(","));
+    startTransition(() => reorderStatusColumnsAction(fd));
+  };
+
+  // While filtering, render the filtered slice without drag-handles.
+  const visible = isFiltered
+    ? filtered
+    : (() => {
+        const idIndex = new Map(order.map((s, i) => [s.id, i]));
+        return [...filtered].sort(
+          (a, b) => (idIndex.get(a.id) ?? 0) - (idIndex.get(b.id) ?? 0),
+        );
+      })();
+
+  return (
+    <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1">
+      {visible.length === 0 && !adding && (
+        <li className="px-2 py-3 text-center font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground/70">
+          brak statusów
+        </li>
+      )}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={onDragEnd}
+      >
+        <SortableContext
+          items={visible.map((o) => o.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {visible.map((o) => (
+            <li key={o.id}>
+              {editingId === o.id ? (
+                <EditRow
+                  workspaceId={workspaceId}
+                  option={o}
+                  onDone={() => setEditingId(null)}
+                />
+              ) : (
+                <Row
+                  option={o}
+                  isCurrent={currentId === o.id}
+                  canManage={canManageBoard}
+                  canDelete={canManageBoard && options.length > 1}
+                  canReorder={canReorder}
+                  onPick={() => onPick(o.id)}
+                  onEdit={() => setEditingId(o.id)}
+                  onDelete={() => {
+                    if (!confirm(`Usunąć status „${o.name}"?`)) return;
+                    const fd = new FormData();
+                    fd.set("workspaceId", workspaceId);
+                    fd.set("columnId", o.id);
+                    startTransition(() => deleteStatusColumnAction(fd));
+                  }}
+                />
+              )}
+            </li>
+          ))}
+        </SortableContext>
+      </DndContext>
+    </ul>
   );
 }
