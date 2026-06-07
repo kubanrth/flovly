@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, startTransition } from "react";
+import { useActionState, startTransition, useMemo, useState } from "react";
 import {
   createDealAction,
   updateDealAction,
@@ -8,6 +8,10 @@ import {
 } from "@/app/(app)/w/[workspaceId]/sales/actions";
 import { RichTextEditor, type RichTextDoc } from "@/components/task/rich-text-editor";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import {
+  SearchableDropdown,
+  type SearchableDropdownOption,
+} from "@/components/ui/searchable-dropdown";
 
 export interface DealInitial {
   id?: string;
@@ -26,17 +30,26 @@ export interface DealInitial {
 export interface StageOption {
   id: string;
   name: string;
+  // Kolor etapu — w dropdown'ie pokazujemy kropkę żeby user nie musiał
+  // pamiętać kolejności / kolorów po nazwie.
+  colorHex: string;
 }
 
 export interface MemberOption {
   id: string;
   name: string | null;
   email: string;
+  // Avatar w dropdown'ie + zaznaczonej opcji. Fallback do inicjałów na
+  // brand-gradient (mirror reszty app'a).
+  avatarUrl: string | null;
 }
 
 export interface ContactOption {
   id: string;
   label: string; // company / person fallback
+  // Opcjonalny sub-label (np. email albo telefon) — wyświetlany pod główną
+  // linią w dropdown'ie żeby ujednoznacznić "Anna Kowalska" w dwóch firmach.
+  sublabel?: string | null;
 }
 
 export function DealForm({
@@ -78,6 +91,70 @@ export function DealForm({
     initial?.expectedCloseAt && initial.expectedCloseAt.length > 0
       ? initial.expectedCloseAt.slice(0, 10)
       : "";
+
+  // Client state dla 3 dropdown'ów — wcześniej natywne <select> trzymały
+  // wartość same; teraz controlled żeby ChevronDown + Check + reset działały
+  // spójnie + żeby search nie tracił wybranej opcji po focus'ie.
+  const [stageId, setStageId] = useState(stageValue);
+  const [ownerId, setOwnerId] = useState(initial?.ownerId ?? "");
+  const [contactId, setContactId] = useState(
+    initial?.contactId ?? defaultContactId ?? "",
+  );
+
+  const stageOptions = useMemo<SearchableDropdownOption[]>(
+    () =>
+      stages.map((s) => ({
+        id: s.id,
+        label: s.name,
+        leading: (
+          <span
+            className="grid h-3 w-3 shrink-0 place-items-center rounded-full"
+            style={{ background: s.colorHex }}
+          />
+        ),
+      })),
+    [stages],
+  );
+
+  const ownerOptions = useMemo<SearchableDropdownOption[]>(
+    () =>
+      members.map((m) => {
+        const display = m.name ?? m.email.split("@")[0];
+        const initials = (m.name ?? m.email).slice(0, 2).toUpperCase();
+        return {
+          id: m.id,
+          label: display,
+          sublabel: m.email,
+          searchText: `${m.name ?? ""} ${m.email}`,
+          leading: (
+            <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.55rem] font-bold text-white">
+              {m.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={m.avatarUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                initials
+              )}
+            </span>
+          ),
+        };
+      }),
+    [members],
+  );
+
+  const contactOptions = useMemo<SearchableDropdownOption[]>(
+    () =>
+      contacts.map((c) => ({
+        id: c.id,
+        label: c.label,
+        sublabel: c.sublabel ?? null,
+        searchText: `${c.label} ${c.sublabel ?? ""}`,
+      })),
+    [contacts],
+  );
 
   return (
     <form
@@ -148,59 +225,53 @@ export function DealForm({
       </div>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-        <label className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2">
           <span className="eyebrow">Etap *</span>
-          <select
+          <SearchableDropdown
             name="stageId"
+            value={stageId}
+            onChange={(v) => setStageId(v)}
+            options={stageOptions}
             required
-            defaultValue={stageValue}
-            aria-invalid={!!fieldErrors?.stageId}
-            className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary aria-[invalid=true]:border-destructive"
-          >
-            {stages.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+            placeholder="Wybierz etap…"
+            searchPlaceholder="Szukaj etapu…"
+            ariaLabel="Etap dealu"
+            invalid={!!fieldErrors?.stageId}
+          />
           {fieldErrors?.stageId && (
             <span className="font-mono text-[0.66rem] text-destructive">
               {fieldErrors.stageId}
             </span>
           )}
-        </label>
+        </div>
 
-        <label className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2">
           <span className="eyebrow">Opiekun</span>
-          <select
+          <SearchableDropdown
             name="ownerId"
-            defaultValue={initial?.ownerId ?? ""}
-            className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary"
-          >
-            <option value="">— bez opiekuna —</option>
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name ?? m.email}
-              </option>
-            ))}
-          </select>
-        </label>
+            value={ownerId}
+            onChange={(v) => setOwnerId(v)}
+            options={ownerOptions}
+            placeholder="— bez opiekuna —"
+            emptyLabel="— bez opiekuna —"
+            searchPlaceholder="Szukaj po imieniu lub email…"
+            ariaLabel="Opiekun dealu"
+          />
+        </div>
 
-        <label className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2">
           <span className="eyebrow">Kontakt / klient</span>
-          <select
+          <SearchableDropdown
             name="contactId"
-            defaultValue={initial?.contactId ?? defaultContactId ?? ""}
-            className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary"
-          >
-            <option value="">— bez kontaktu —</option>
-            {contacts.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </label>
+            value={contactId}
+            onChange={(v) => setContactId(v)}
+            options={contactOptions}
+            placeholder="— bez kontaktu —"
+            emptyLabel="— bez kontaktu —"
+            searchPlaceholder="Szukaj po firmie, nazwie, NIP…"
+            ariaLabel="Kontakt dealu"
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">

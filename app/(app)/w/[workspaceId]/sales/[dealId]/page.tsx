@@ -32,7 +32,8 @@ export default async function DealDetailPage({
     db.dealStage.findMany({
       where: { workspaceId, deletedAt: null },
       orderBy: { order: "asc" },
-      select: { id: true, name: true },
+      // colorHex potrzebny do swatch'a w SearchableDropdown.
+      select: { id: true, name: true, colorHex: true },
     }),
     // Stage palette for the timeline pills — we want colorHex too.
     db.dealStage.findMany({
@@ -41,7 +42,11 @@ export default async function DealDetailPage({
     }),
     db.workspaceMembership.findMany({
       where: { workspaceId },
-      include: { user: { select: { id: true, name: true, email: true } } },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, avatarUrl: true },
+        },
+      },
       orderBy: { joinedAt: "asc" },
     }),
     db.contact.findMany({
@@ -53,6 +58,8 @@ export default async function DealDetailPage({
         lastName: true,
         companyName: true,
         email: true,
+        // NIP w sublabel/search — ułatwia "znalezienie firmy po numerze".
+        nip: true,
       },
     }),
     db.dealActivity.findMany({
@@ -158,14 +165,17 @@ export default async function DealDetailPage({
             }}
             stages={stages}
             members={memberships.map((m) => m.user)}
-            contacts={contacts.map((c) => ({
-              id: c.id,
-              label:
-                c.companyName ??
-                [c.firstName, c.lastName].filter(Boolean).join(" ") ??
-                c.email ??
-                "—",
-            }))}
+            contacts={contacts.map((c) => {
+              const person = [c.firstName, c.lastName].filter(Boolean).join(" ");
+              const labelBase =
+                c.companyName ?? (person !== "" ? person : (c.email ?? "—"));
+              // Sublabel = osoba (gdy firma w głównym labelu) lub email / NIP.
+              const sublabel =
+                c.companyName && person !== ""
+                  ? person
+                  : (c.email ?? c.nip ?? null);
+              return { id: c.id, label: labelBase, sublabel };
+            })}
           />
         ) : (
           <p className="rounded-md border border-border bg-card px-4 py-8 text-center text-[0.88rem] text-muted-foreground">

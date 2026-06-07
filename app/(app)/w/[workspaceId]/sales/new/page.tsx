@@ -26,11 +26,16 @@ export default async function NewDealPage({
     db.dealStage.findMany({
       where: { workspaceId, deletedAt: null },
       orderBy: { order: "asc" },
-      select: { id: true, name: true },
+      // colorHex potrzebny do swatch'a w SearchableDropdown.
+      select: { id: true, name: true, colorHex: true },
     }),
     db.workspaceMembership.findMany({
       where: { workspaceId },
-      include: { user: { select: { id: true, name: true, email: true } } },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, avatarUrl: true },
+        },
+      },
       orderBy: { joinedAt: "asc" },
     }),
     db.contact.findMany({
@@ -42,6 +47,7 @@ export default async function NewDealPage({
         lastName: true,
         companyName: true,
         email: true,
+        nip: true,
       },
     }),
   ]);
@@ -72,14 +78,16 @@ export default async function NewDealPage({
           defaultContactId={contactId ?? null}
           stages={stages}
           members={memberships.map((m) => m.user)}
-          contacts={contacts.map((c) => ({
-            id: c.id,
-            label:
-              c.companyName ??
-              [c.firstName, c.lastName].filter(Boolean).join(" ") ??
-              c.email ??
-              "—",
-          }))}
+          contacts={contacts.map((c) => {
+            const person = [c.firstName, c.lastName].filter(Boolean).join(" ");
+            const labelBase =
+              c.companyName ?? (person !== "" ? person : (c.email ?? "—"));
+            const sublabel =
+              c.companyName && person !== ""
+                ? person
+                : (c.email ?? c.nip ?? null);
+            return { id: c.id, label: labelBase, sublabel };
+          })}
         />
       </div>
     </main>
