@@ -476,7 +476,7 @@ export async function patchTaskAction(formData: FormData) {
   const ctx = await requireWorkspaceAction(existing.workspaceId, "task.update");
 
   const data: Record<string, unknown> = {};
-  const keys = ["title", "statusColumnId", "startAt", "stopAt", "rowOrder"] as const;
+  const keys = ["title", "statusColumnId", "startAt", "stopAt", "rowOrder", "contactId"] as const;
   let hasChange = false;
 
   for (const k of keys) {
@@ -499,6 +499,22 @@ export async function patchTaskAction(formData: FormData) {
       if (!Number.isFinite(n)) continue;
       data.rowOrder = n;
       hasChange = true;
+    } else if (k === "contactId") {
+      const v = String(raw);
+      if (v === "") {
+        data.contactId = null;
+        hasChange = true;
+      } else {
+        // Walidacja: kontakt musi być w tym samym workspace co task.
+        const c = await db.contact.findFirst({
+          where: { id: v, workspaceId: existing.workspaceId, deletedAt: null },
+          select: { id: true },
+        });
+        if (c) {
+          data.contactId = c.id;
+          hasChange = true;
+        }
+      }
     }
   }
 

@@ -486,6 +486,10 @@ model Task {
   displayId             Int       @default(0)
   statusColumnId        String?
   milestoneId           String?
+  // F12-K67: opcjonalne powiązanie z kontaktem CRM. Pokazuje task'a w
+  // sekcji "Zadania" w karcie kontaktu. SetNull przy usunięciu kontaktu
+  // — task nie powinien znikać tylko dlatego że kontakt został wyrzucony.
+  contactId             String?
   creatorId             String
   title                 String
   descriptionJson       Json?
@@ -538,6 +542,8 @@ model Task {
   // linksIn = rows where I'm the target. UI merges both to show "linked".
   linksOut     TaskLink[]            @relation("TaskLinkSource")
   linksIn      TaskLink[]            @relation("TaskLinkTarget")
+  // F12-K67: powiązanie z kontaktem CRM.
+  contact      Contact?              @relation("TaskContact", fields: [contactId], references: [id], onDelete: SetNull)
 
   @@index([boardId, statusColumnId, rowOrder])
   @@index([boardId, updatedAt(sort: Desc)])
@@ -1351,6 +1357,8 @@ model Contact {
   deals       Deal[]
   // F12-K64: aktywność/notatki w karcie kontaktu.
   activities  ContactActivity[]
+  // F12-K67: task'i powiązane z tym kontaktem (np. follow-up po spotkaniu).
+  tasks       Task[]            @relation("TaskContact")
 
   @@index([workspaceId, deletedAt])
   @@index([workspaceId, companyName])

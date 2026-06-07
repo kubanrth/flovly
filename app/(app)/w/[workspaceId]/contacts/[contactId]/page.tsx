@@ -35,7 +35,7 @@ export default async function ContactDetailPage({
   // to render — same lazy seeding /sales does on first visit.
   await ensureDefaultStages(workspaceId);
 
-  const [memberships, stages, deals, activities] = await Promise.all([
+  const [memberships, stages, deals, activities, contactTasks] = await Promise.all([
     db.workspaceMembership.findMany({
       where: { workspaceId },
       include: { user: { select: { id: true, name: true, email: true } } },
@@ -55,6 +55,32 @@ export default async function ContactDetailPage({
       take: 200,
       include: {
         actor: { select: { id: true, name: true, email: true, avatarUrl: true } },
+      },
+    }),
+    // F12-K67: zadania powiązane z tym kontaktem przez Task.contactId.
+    // Sortujemy po updatedAt desc żeby ostatnio dotykane były pierwsze.
+    db.task.findMany({
+      where: {
+        contactId,
+        workspaceId,
+        deletedAt: null,
+        board: { deletedAt: null },
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        title: true,
+        displayId: true,
+        stopAt: true,
+        statusColumn: { select: { name: true, colorHex: true } },
+        board: { select: { id: true, name: true } },
+        assignees: {
+          take: 1,
+          include: {
+            user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+          },
+        },
       },
     }),
   ]);
@@ -159,6 +185,8 @@ export default async function ContactDetailPage({
           />
         </div>
 
+        <ContactTasksTile workspaceId={workspaceId} tasks={contactTasks} />
+
         <ContactTimeline
           workspaceId={workspaceId}
           contactId={contact.id}
@@ -248,5 +276,107 @@ function Row({ label, value }: { label: string; value: string | null }) {
         )}
       </span>
     </div>
+  );
+}
+
+// F12-K67: kafelek "Zadania" w karcie kontaktu. Pokazuje task'i powiązane
+// przez Task.contactId — status, board, termin, primary assignee + klik na
+// title prowadzi do task'a. Empty state zachęca do podpięcia pierwszego.
+type ContactTaskRow = {
+  id: string;
+  title: string;
+  displayId: number;
+  stopAt: Date | null;
+  statusColumn: { name: string; colorHex: string } | null;
+  board: { id: string; name: string };
+  assignees: Array<{
+    user: { id: string; name: string | null; email: string; avatarUrl: string | null };
+  }>;
+};
+
+function ContactTasksTile({
+  workspaceId,
+  tasks,
+}: {
+  workspaceId: string;
+  tasks: ContactTaskRow[];
+}) {
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="eyebrow">Zadania powiązane</span>
+        <span className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
+          {tasks.length} {tasks.length === 1 ? "zadanie" : "zadań"}
+        </span>
+      </div>
+      {tasks.length === 0 ? (
+        <p className="rounded-md border border-dashed border-border bg-card px-4 py-6 text-center text-[0.86rem] text-muted-foreground">
+          Brak zadań powiązanych z tym kontaktem. W karcie zadania wybierz tego
+          klienta w polu „Kontakt”, żeby pojawiło się tutaj.
+        </p>
+      ) : (
+        <ul className="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
+          {tasks.map((t) => {
+            const a = t.assignees[0]?.user ?? null;
+            return (
+              <li
+                key={t.id}
+                className="border-b border-border last:border-b-0 hover:bg-accent/30"
+              >
+                <Link
+                  href={`/w/${workspaceId}/t/${t.id}`}
+                  className="flex items-center gap-3 px-3 py-2.5"
+                >
+                  {a ? (
+                    <span
+                      title={a.name ?? a.email}
+                      className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.58rem] font-bold text-white"
+                    >
+                      {a.avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={a.avatarUrl} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        (a.name ?? a.email).slice(0, 2).toUpperCase()
+                      )}
+                    </span>
+                  ) : (
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-muted font-mono text-[0.55rem] uppercase text-muted-foreground/60">
+                      —
+                    </span>
+                  )}
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate font-display text-[0.9rem] font-semibold tracking-[-0.01em]">
+                      {t.title}
+                    </span>
+                    <span className="flex items-center gap-1.5 truncate font-mono text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground">
+                      #{t.displayId} · {t.board.name}
+                      {t.stopAt && (
+                        <>
+                          <span>·</span>
+                          <span>
+                            do {t.stopAt.toLocaleDateString("pl-PL")}
+                          </span>
+                        </>
+                      )}
+                    </span>
+                  </div>
+                  {t.statusColumn && (
+                    <span
+                      className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.12em]"
+                      style={{
+                        color: t.statusColumn.colorHex,
+                        background: `${t.statusColumn.colorHex}22`,
+                      }}
+                    >
+                      {t.statusColumn.name}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }

@@ -13,6 +13,7 @@ import type { Role } from "@/lib/generated/prisma/enums";
 import {
   createTagAction,
   deleteTaskAction,
+  patchTaskAction,
   toggleAssigneeAction,
   toggleTagAction,
   updateTaskAction,
@@ -109,6 +110,10 @@ export interface TaskDetailProps {
   // potrzebujemy aktualnego board.id do generowania linka "wróć".
   boardId: string;
   workspaceBoards: MoveTargetBoard[];
+  // F12-K67: opcjonalny kontakt CRM powiązany z task'iem + pool wszystkich
+  // kontaktów w workspace do picker'a.
+  contactId: string | null;
+  workspaceContacts: { id: string; label: string }[];
 }
 
 export interface LinkedTaskItem {
@@ -161,6 +166,8 @@ export function TaskDetail({
   linkCandidates,
   boardId,
   workspaceBoards,
+  contactId,
+  workspaceContacts,
   customColumns,
   customValues,
 }: TaskDetailProps) {
@@ -308,6 +315,14 @@ export function TaskDetail({
         <ReminderField
           defaultValue={task.reminderOffset ?? "none"}
           reminderAt={task.reminderAt}
+          disabled={!canEdit}
+        />
+
+        <ContactField
+          taskId={task.id}
+          workspaceId={workspaceId}
+          contactId={contactId}
+          contacts={workspaceContacts}
           disabled={!canEdit}
         />
 
@@ -728,5 +743,50 @@ function TagsSection({
         )
       )}
     </section>
+  );
+}
+
+// F12-K67: dropdown wiążący task'a z kontaktem CRM. Autosave przez
+// patchTaskAction po onChange (mirror MilestoneSection / ReminderField
+// pattern). workspaceId potrzebny serwerowi do walidacji że kontakt jest
+// z tego workspace'u, klient tylko go propaguje.
+function ContactField({
+  taskId,
+  workspaceId: _workspaceId,
+  contactId,
+  contacts,
+  disabled,
+}: {
+  taskId: string;
+  workspaceId: string;
+  contactId: string | null;
+  contacts: { id: string; label: string }[];
+  disabled: boolean;
+}) {
+  const submit = (next: string) => {
+    const fd = new FormData();
+    fd.set("id", taskId);
+    fd.set("contactId", next);
+    startTransition(() => patchTaskAction(fd));
+  };
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="eyebrow inline-flex items-center gap-1.5">
+        Kontakt (klient)
+      </span>
+      <select
+        value={contactId ?? ""}
+        onChange={(e) => submit(e.target.value)}
+        disabled={disabled}
+        className="h-10 w-full max-w-[420px] rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <option value="">— brak —</option>
+        {contacts.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.label}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }

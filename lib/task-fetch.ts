@@ -118,7 +118,7 @@ export async function fetchTaskDetail(
   // a PRIVATE board could otherwise still load the task page.
   if (!(await userCanAccessBoard(task.boardId, ctx.userId, ctx.role))) notFound();
 
-  const [members, tags, comments, auditEntries, attachmentRows, candidateRows, workspaceBoardRows] = await Promise.all([
+  const [members, tags, comments, auditEntries, attachmentRows, candidateRows, workspaceBoardRows, workspaceContactRows] = await Promise.all([
     db.workspaceMembership.findMany({
       where: { workspaceId },
       include: {
@@ -171,6 +171,21 @@ export async function fetchTaskDetail(
         id: true,
         name: true,
         workspace: { select: { name: true } },
+      },
+    }),
+    // Pool wszystkich aktywnych kontaktów w workspace dla ContactField w
+    // task-detail. Cap 1000 — workspace'y z setkami klientów zachowują
+    // responsywność, dropdown i tak jest searchable po stronie browsera.
+    db.contact.findMany({
+      where: { workspaceId, deletedAt: null },
+      orderBy: { updatedAt: "desc" },
+      take: 1000,
+      select: {
+        id: true,
+        companyName: true,
+        firstName: true,
+        lastName: true,
+        email: true,
       },
     }),
   ]);
@@ -341,5 +356,17 @@ export async function fetchTaskDetail(
       name: b.name,
       workspaceName: b.workspace.name,
     })),
+    contactId: task.contactId,
+    workspaceContacts: workspaceContactRows.map((c) => {
+      // Label = firma + osoba w nawiasie, fallback na email albo "(bez nazwy)"
+      // gdy kontakt to czysty placeholder.
+      const person = [c.firstName, c.lastName].filter(Boolean).join(" ");
+      // Pierwszeństwo: companyName → osoba → email → placeholder.
+      const labelBase =
+        c.companyName ?? (person !== "" ? person : (c.email ?? "(bez nazwy)"));
+      const suffix =
+        c.companyName && person ? ` · ${person}` : "";
+      return { id: c.id, label: `${labelBase}${suffix}` };
+    }),
   };
 }
