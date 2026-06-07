@@ -6,11 +6,16 @@ import { useRouter } from "next/navigation";
 import {
   DndContext,
   KeyboardSensor,
+  MeasuringStrategy,
+  MouseSensor,
   PointerSensor,
+  TouchSensor,
+  pointerWithin,
+  rectIntersection,
   useSensor,
   useSensors,
-  closestCorners,
   useDroppable,
+  type CollisionDetection,
   type DragEndEvent,
   type DragStartEvent,
   type DragOverEvent,
@@ -84,10 +89,26 @@ export function SalesPipeline({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialDeals.map((d) => `${d.id}:${d.stageId}:${d.rowOrder}`).join(",")]);
 
+  // Same input split as kanban — mouse activates after a tiny drag, touch
+  // needs a brief press so the column isn't grabbed instead of scrolled.
+  // Single PointerSensor previously conflated both inputs and made the
+  // pipeline feel "stuck" when trying to move a deal between stages.
   const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 180, tolerance: 6 },
+    }),
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
+
+  // Hybrid collision: pointerWithin gives precise per-card targeting inside
+  // a column; rectIntersection catches drops on the empty column gaps.
+  const collisionDetection: CollisionDetection = (args) => {
+    const pointer = pointerWithin(args);
+    if (pointer.length > 0) return pointer;
+    return rectIntersection(args);
+  };
 
   // Group deals by stage, sorted by rowOrder. Done in render — fast for the
   // ~hundreds-of-deals scale we expect; no memo bookkeeping needed.
@@ -204,7 +225,11 @@ export function SalesPipeline({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={collisionDetection}
+      // Re-measure droppable rects on every layout change — columns reflow
+      // when deals enter/leave so stale rects caused drops to miss the new
+      // target column.
+      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
@@ -300,7 +325,10 @@ function StageColumn({
     >
       {/* Chevron header — clip-path arrow + stage color background. Sticky on
           scroll so totals stay visible while the column scrolls vertically. */}
-      <div className="sticky top-0 z-10">
+      {/* Sticky chevron header. pointer-events-none w środku z-stack żeby nie
+          przechwytywał drop'ów dnd-kit gdy user przeciąga deal'a nad headerem.
+          Klik na "+" przy nazwie etapu re-enable'uje events na samym przycisku. */}
+      <div className="sticky top-0 z-[1] pointer-events-none">
         <div
           className="flex h-10 items-center justify-between gap-2"
           style={{
@@ -331,7 +359,8 @@ function StageColumn({
             href={`/w/${workspaceId}/sales/new?stageId=${stage.id}`}
             aria-label={`Nowy deal w etapie ${stage.name}`}
             title={`Nowy deal w etapie ${stage.name}`}
-            className="grid h-6 w-6 shrink-0 place-items-center rounded-md transition-colors hover:bg-black/10"
+            // Re-enable klik na "+" — header ma pointer-events-none żeby nie blokował drag'a.
+            className="pointer-events-auto grid h-6 w-6 shrink-0 place-items-center rounded-md transition-colors hover:bg-black/10"
             style={{ color: fg }}
           >
             <span className="text-base leading-none">+</span>

@@ -2,17 +2,28 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 export const ATTACHMENTS_BUCKET = "attachments";
 export const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
+// Video dostaje wyższy próg (50 MB) — typowe nagrania screen-capture'a klienta
+// (np. Loom-export, Cleanshot mp4) potrafią przekroczyć 25 MB. Sprawdzane
+// dodatkowo w isAllowedSize() obok ogólnego MAX_ATTACHMENT_BYTES.
+export const MAX_VIDEO_ATTACHMENT_BYTES = 50 * 1024 * 1024;
 export const SIGNED_DOWNLOAD_TTL_SECONDS = 15 * 60; // 15-minute download URL per brief
 
 // SVG (image/svg+xml) celowo wycięte — może zawierać <script>/event
 // handler'y wykonywane w kontekście naszej domeny gdy plik jest
 // serwowany inline (Supabase signed URL nie dodaje Content-Disposition:
 // attachment). Stored XSS.
+//
+// Video: dozwolone tylko popularne format'y (mp4 / webm / quicktime). Nie
+// dodajemy mkv / avi / wmv żeby uniknąć egzotycznych dekoderów + żeby Safari
+// też potrafiło to puścić w <video>. Limit 50 MB per plik (MAX_VIDEO_*).
 export const ALLOWED_ATTACHMENT_MIMES = new Set([
   "image/png",
   "image/jpeg",
   "image/webp",
   "image/gif",
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
   "application/pdf",
   "application/zip",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -22,6 +33,15 @@ export const ALLOWED_ATTACHMENT_MIMES = new Set([
   "text/csv",
   "text/markdown",
 ]);
+
+export function isVideoMime(mime: string): boolean {
+  return mime.startsWith("video/");
+}
+
+// Cap zależny od typu pliku — video dostaje wyższy próg niż dokumenty.
+export function maxBytesForMime(mime: string): number {
+  return isVideoMime(mime) ? MAX_VIDEO_ATTACHMENT_BYTES : MAX_ATTACHMENT_BYTES;
+}
 
 let cached: SupabaseClient | null = null;
 

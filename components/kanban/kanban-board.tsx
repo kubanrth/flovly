@@ -59,6 +59,7 @@ export interface KanbanTask {
   commentCount: number;
   subtaskCount: number;
   subtaskDoneCount: number;
+  linkedCount: number;
 }
 
 export interface KanbanStatusColumn {
@@ -615,6 +616,7 @@ function CardShell({
         commentCount={task.commentCount}
         subtaskCount={task.subtaskCount}
         subtaskDoneCount={task.subtaskDoneCount}
+        linkedCount={task.linkedCount}
       />
       <div className="mt-auto flex items-center justify-between pt-1">
         {task.assignees.length > 0 ? (

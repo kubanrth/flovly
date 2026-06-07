@@ -27,6 +27,16 @@ export interface AttachmentItem {
 }
 
 const MAX_BYTES = 25 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+
+function maxBytesForClient(mime: string): number {
+  return mime.startsWith("video/") ? MAX_VIDEO_BYTES : MAX_BYTES;
+}
+
+function readableLimit(mime: string): string {
+  const mb = Math.round(maxBytesForClient(mime) / (1024 * 1024));
+  return `${mb} MB`;
+}
 
 export function AttachmentsSection({
   taskId,
@@ -49,8 +59,9 @@ export function AttachmentsSection({
     setError(null);
     const list = Array.from(files);
     for (const file of list) {
-      if (file.size > MAX_BYTES) {
-        setError(`Plik "${file.name}" przekracza 25 MB.`);
+      const limit = maxBytesForClient(file.type);
+      if (file.size > limit) {
+        setError(`Plik "${file.name}" przekracza ${readableLimit(file.type)}.`);
         continue;
       }
       setUploading((u) => [...u, file.name]);
@@ -149,7 +160,7 @@ export function AttachmentsSection({
               <span className="text-primary underline underline-offset-2">wybierz z dysku</span>
             </p>
             <p className="font-mono text-[0.64rem] uppercase tracking-[0.12em] text-muted-foreground">
-              obrazy · pdf · word · excel · txt · max 25 MB
+              obrazy · video (mp4/webm/mov, max 50 MB) · pdf · word · excel · txt · max 25 MB
             </p>
           </div>
           <input

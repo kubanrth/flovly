@@ -62,7 +62,15 @@ export default async function BoardTablePage({
             },
             orderBy: { createdAt: "desc" },
           },
-          _count: { select: { comments: { where: { deletedAt: null } } } },
+          _count: {
+            select: {
+              comments: { where: { deletedAt: null } },
+              // Liczymy obie strony relacji TaskLink — link jest symetryczny w
+              // UI; sumujemy w mapowaniu zanim wyślemy do klienta.
+              linksOut: true,
+              linksIn: true,
+            },
+          },
           // Cheap per-task fetch — most tasks have a handful of subtasks. We
           // need both total + done count for the table hint, so a boolean
           // projection is simplest (Prisma _count doesn't easily expose two
@@ -182,6 +190,7 @@ export default async function BoardTablePage({
           commentCount: t._count.comments,
           subtaskCount: t.subtasks.length,
           subtaskDoneCount: t.subtasks.filter((s) => s.completed).length,
+          linkedCount: t._count.linksOut + t._count.linksIn,
         }))}
         canEdit={canEdit}
         canManagePrefs={canManageBoard}
