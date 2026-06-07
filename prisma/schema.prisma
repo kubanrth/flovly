@@ -87,6 +87,8 @@ model User {
   // F12-K65: vacation/urlop requests — composed/decided/notified per user.
   vacationRequests   VacationRequest[]     @relation("VacationRequester")
   vacationDecisions  VacationRequest[]     @relation("VacationDecider")
+  // F12-K68: wiadomości do klientów (CRM chat → email).
+  contactMessages    ContactMessage[]      @relation("ContactMessageSender")
 
   @@index([isBanned])
   @@index([lastSeenAt])
@@ -199,6 +201,8 @@ model Workspace {
   taskLinks            TaskLink[]
   // F12-K64: aktywność per kontakt.
   contactActivities    ContactActivity[]
+  // F12-K68: wiadomości do klientów (email-based chat z karty kontaktu).
+  contactMessages      ContactMessage[]
 
   @@index([ownerId])
   @@index([deletedAt])
@@ -1359,6 +1363,8 @@ model Contact {
   activities  ContactActivity[]
   // F12-K67: task'i powiązane z tym kontaktem (np. follow-up po spotkaniu).
   tasks       Task[]            @relation("TaskContact")
+  // F12-K68: wiadomości email do/z klienta (chat-like UI w karcie kontaktu).
+  messages    ContactMessage[]
 
   @@index([workspaceId, deletedAt])
   @@index([workspaceId, companyName])
@@ -1518,4 +1524,35 @@ model VacationRequest {
   @@index([requesterId, startDate])
   @@index([status])
   @@index([startDate])
+}
+
+// F12-K68: wiadomość email w karcie kontaktu — chat-like UI dla handlowca.
+// v1 outbound only (Resend wysyła do contact.email z reply-to opiekuna).
+// Inbound (odbieranie odpowiedzi) na osobny sprint — wymaga webhook'a +
+// dedykowanego subdomain'a w Resend (np. inbox.flovly.com).
+//
+// direction = "outbound" — handlowiec → klient
+// direction = "inbound"  — klient → handlowiec (zarezerwowane, póki co nie używane)
+//
+// externalMessageId trzyma message-id z Resend response żeby przyszłe
+// inbox webhook'i mogły dopasować odpowiedź do wątku.
+model ContactMessage {
+  id                String   @id @default(cuid())
+  workspaceId       String
+  contactId         String
+  senderId          String?
+  direction         String
+  fromEmail         String
+  toEmail           String
+  subject           String?
+  bodyText          String
+  externalMessageId String?
+  sentAt            DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact   Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  sender    User?     @relation("ContactMessageSender", fields: [senderId], references: [id])
+
+  @@index([contactId, sentAt(sort: Desc)])
+  @@index([workspaceId])
 }

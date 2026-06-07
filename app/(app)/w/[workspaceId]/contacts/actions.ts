@@ -7,6 +7,8 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { requireWorkspaceAction } from "@/lib/workspace-guard";
 import { writeAudit } from "@/lib/audit";
 import { contactFieldsSchema, hasIdentity } from "@/lib/schemas/contact";
+import { sendEmail } from "@/lib/email";
+import { escapeHtml as escape } from "@/lib/html-escape";
 
 type FieldErrors = Partial<Record<
   | "firstName"
@@ -438,4 +440,134 @@ export async function restoreContactAction(formData: FormData) {
   });
   revalidatePath(`/w/${workspaceId}/contacts`);
   revalidatePath(`/w/${workspaceId}/contacts/${contactId}`);
+}
+
+// F12-K68: outbound wiadomość do klienta — chat-like UI w karcie kontaktu.
+// Wysyła przez Resend i zapisuje wiersz ContactMessage. Reply-To = email
+// handlowca (z workspace user'a) żeby odpowiedzi klienta szły bezpośrednio
+// do jego inbox'u (inbound do app'a = osobny sprint).
+export type ContactMessageState =
+  | { ok: true; messageId: string }
+  | { ok: false; error: string }
+  | null;
+
+export async function sendContactMessageAction(
+  workspaceId: string,
+  contactId: string,
+  _prev: ContactMessageState,
+  formData: FormData,
+): Promise<ContactMessageState> {
+  const subject = String(formData.get("subject") ?? "").trim();
+  const body = String(formData.get("body") ?? "").trim();
+  const fromOverride = String(formData.get("fromEmail") ?? "").trim();
+
+  if (body.length === 0) return { ok: false, error: "Treść wymagana." };
+  if (body.length > 20_000) return { ok: false, error: "Wiadomość za długa." };
+
+  const contact = await db.contact.findUnique({
+    where: { id: contactId },
+    select: {
+      id: true,
+      workspaceId: true,
+      deletedAt: true,
+      email: true,
+      companyName: true,
+      firstName: true,
+      lastName: true,
+      ownerId: true,
+    },
+  });
+  if (!contact || contact.workspaceId !== workspaceId || contact.deletedAt) {
+    return { ok: false, error: "Kontakt nie istnieje." };
+  }
+  if (!contact.email || contact.email.length === 0) {
+    return {
+      ok: false,
+      error: "Kontakt nie ma adresu email — uzupełnij w karcie i spróbuj ponownie.",
+    };
+  }
+
+  const ctx = await requireWorkspaceAction(workspaceId, "contact.update");
+
+  // Sender = wybrany ręcznie email (z dropdown'a) ALBO email opiekuna ALBO
+  // email zalogowanego usera. Resend wyśle z weryfikowanego EMAIL_FROM,
+  // ale Reply-To dorzucamy z senderEmail żeby odpowiedzi szły do handlowca.
+  const owner = contact.ownerId
+    ? await db.user.findUnique({
+        where: { id: contact.ownerId },
+        select: { id: true, name: true, email: true },
+      })
+    : null;
+  const fallbackUser = await db.user.findUnique({
+    where: { id: ctx.userId },
+    select: { id: true, name: true, email: true },
+  });
+  const senderEmail = fromOverride || owner?.email || fallbackUser?.email || "";
+  const senderName = owner?.name ?? fallbackUser?.name ?? null;
+  if (!senderEmail) {
+    return { ok: false, error: "Brak adresu nadawcy." };
+  }
+
+  const recipientName =
+    contact.companyName ??
+    [contact.firstName, contact.lastName].filter(Boolean).join(" ") ??
+    contact.email;
+  const finalSubject =
+    subject.length > 0
+      ? subject
+      : `Wiadomość od ${senderName ?? senderEmail}`;
+
+  // Plain text wrap'owany w prosty HTML — Resend wymaga `html`. Newline'y
+  // konwertujemy na <br>; reszta escapowana.
+  const htmlBody = `<!doctype html><html lang="pl"><body style="font-family:ui-sans-serif,system-ui,sans-serif;color:#0F172A;padding:24px">
+    <div style="max-width:600px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden">
+      <div style="padding:20px 24px">
+        <div style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#64748B">${escape(senderName ?? senderEmail)} pisze do Ciebie</div>
+        <div style="margin-top:14px;line-height:1.6;font-size:15px;white-space:pre-wrap">${escape(body).replace(/\n/g, "<br>")}</div>
+      </div>
+    </div>
+  </body></html>`;
+
+  const result = await sendEmail({
+    to: contact.email,
+    subject: finalSubject,
+    html: htmlBody,
+    replyTo: senderEmail,
+  });
+
+  if (!result.sent) {
+    return {
+      ok: false,
+      error:
+        result.skipped === "no-api-key"
+          ? "Wysyłka nieskonfigurowana (brak RESEND_API_KEY na serwerze)."
+          : result.error ?? "Nie udało się wysłać.",
+    };
+  }
+
+  const message = await db.contactMessage.create({
+    data: {
+      workspaceId,
+      contactId,
+      senderId: ctx.userId,
+      direction: "outbound",
+      fromEmail: senderEmail,
+      toEmail: contact.email,
+      subject: finalSubject,
+      bodyText: body,
+    },
+  });
+
+  await writeAudit({
+    workspaceId,
+    objectType: "ContactActivity",
+    objectId: message.id,
+    actorId: ctx.userId,
+    action: "contact.messageSent",
+    diff: { to: contact.email, subject: finalSubject },
+  });
+
+  void recipientName; // currently unused — kept for future subject template
+  revalidatePath(`/w/${workspaceId}/contacts/${contactId}`);
+  return { ok: true, messageId: message.id };
 }

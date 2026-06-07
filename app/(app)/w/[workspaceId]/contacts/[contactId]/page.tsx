@@ -16,7 +16,13 @@ import {
   type ContactPipelineDeal,
   type ContactPipelineStage,
 } from "@/components/contacts/contact-pipeline";
+import {
+  ContactConversation,
+  type ContactConversationSender,
+  type ContactMessageRow,
+} from "@/components/contacts/contact-conversation";
 import { ensureDefaultStages } from "@/app/(app)/w/[workspaceId]/sales/actions";
+import { auth } from "@/lib/auth";
 
 export default async function ContactDetailPage({
   params,
@@ -35,7 +41,7 @@ export default async function ContactDetailPage({
   // to render — same lazy seeding /sales does on first visit.
   await ensureDefaultStages(workspaceId);
 
-  const [memberships, stages, deals, activities, contactTasks] = await Promise.all([
+  const [memberships, stages, deals, activities, contactTasks, contactMessages, currentSession] = await Promise.all([
     db.workspaceMembership.findMany({
       where: { workspaceId },
       include: { user: { select: { id: true, name: true, email: true } } },
@@ -83,6 +89,17 @@ export default async function ContactDetailPage({
         },
       },
     }),
+    // F12-K68: thread wiadomości email do/z kontaktu. Asc bo render leci
+    // od najstarszej (góra) do najnowszej (dół) — chat pattern.
+    db.contactMessage.findMany({
+      where: { contactId, workspaceId },
+      orderBy: { sentAt: "asc" },
+      take: 200,
+      include: {
+        sender: { select: { id: true, name: true, email: true } },
+      },
+    }),
+    auth(),
   ]);
 
   const stagesProp: ContactPipelineStage[] = stages.map((s) => ({
@@ -128,6 +145,49 @@ export default async function ContactDetailPage({
     [contact.firstName, contact.lastName].filter(Boolean).join(" ") ??
     contact.email ??
     "Kontakt";
+
+  // Sender candidates dla composer'a: opiekun na początku (jeśli ustawiony),
+  // potem zalogowany user, potem reszta workspace'u. Dedup po userId.
+  const ownerMember = contact.ownerId
+    ? memberships.find((m) => m.user.id === contact.ownerId)
+    : null;
+  const currentUserId = currentSession?.user?.id ?? null;
+  const selfMember = currentUserId
+    ? memberships.find((m) => m.user.id === currentUserId)
+    : null;
+  const sortedMembers = (() => {
+    const ordered: typeof memberships = [];
+    const seen = new Set<string>();
+    const push = (m: (typeof memberships)[number] | null | undefined) => {
+      if (!m || seen.has(m.user.id)) return;
+      ordered.push(m);
+      seen.add(m.user.id);
+    };
+    push(ownerMember);
+    push(selfMember);
+    for (const m of memberships) push(m);
+    return ordered;
+  })();
+  const senderCandidates: ContactConversationSender[] = sortedMembers.map((m) => ({
+    id: m.user.id,
+    name: m.user.name,
+    email: m.user.email,
+    // memberships.user nie zawiera avatarUrl w tym query — pomijamy.
+    avatarUrl: null,
+  }));
+  const defaultSenderEmail =
+    ownerMember?.user.email ?? selfMember?.user.email ?? null;
+
+  const messageRows: ContactMessageRow[] = contactMessages.map((m) => ({
+    id: m.id,
+    direction: m.direction,
+    fromEmail: m.fromEmail,
+    toEmail: m.toEmail,
+    subject: m.subject,
+    bodyText: m.bodyText,
+    sentAt: m.sentAt.toISOString(),
+    senderName: m.sender?.name ?? m.sender?.email ?? null,
+  }));
 
   return (
     <main className="flex-1 px-4 py-6 md:px-14 md:py-14">
@@ -184,6 +244,17 @@ export default async function ContactDetailPage({
             deals={dealsProp}
           />
         </div>
+
+        <ContactConversation
+          workspaceId={workspaceId}
+          contactId={contact.id}
+          contactEmail={contact.email}
+          contactLabel={headline}
+          messages={messageRows}
+          senderCandidates={senderCandidates}
+          defaultSenderEmail={defaultSenderEmail}
+          canSend={canEdit}
+        />
 
         <ContactTasksTile workspaceId={workspaceId} tasks={contactTasks} />
 
