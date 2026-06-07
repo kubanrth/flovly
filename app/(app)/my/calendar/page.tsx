@@ -68,6 +68,47 @@ export default async function MyCalendarPage({
     stopAt: a.task.stopAt ? a.task.stopAt.toISOString() : null,
   }));
 
+  // Vacations — user's own (approved + pending so they see what they
+  // requested) + teammates' APPROVED only (don't leak pending plans).
+  // Color hint distinguishes own (sky) vs teammate (slate) at a glance.
+  const workspaceIds = memberships.map((m) => m.workspaceId);
+  const teammateIds = (
+    await db.workspaceMembership.findMany({
+      where: { workspaceId: { in: workspaceIds }, userId: { not: userId } },
+      distinct: ["userId"],
+      select: { userId: true },
+    })
+  ).map((m) => m.userId);
+
+  const vacations = await db.vacationRequest.findMany({
+    where: {
+      OR: [
+        { requesterId: userId, status: { in: ["pending", "approved"] } },
+        { requesterId: { in: teammateIds }, status: "approved" },
+      ],
+    },
+    include: {
+      requester: { select: { id: true, name: true, email: true } },
+    },
+  });
+
+  for (const v of vacations) {
+    const isMine = v.requesterId === userId;
+    const who = v.requester.name ?? v.requester.email;
+    events.push({
+      id: `vacation:${v.id}`,
+      title: isMine ? "Twój urlop" : `${who}`,
+      workspaceId: "vacation",
+      workspaceName: "Urlopy",
+      boardName: isMine ? "Twój" : who,
+      statusColor: isMine ? "#0EA5E9" : "#64748B",
+      startAt: v.startDate.toISOString(),
+      stopAt: v.endDate.toISOString(),
+      kind: "vacation",
+      entityId: v.id,
+    });
+  }
+
   return (
     <AppShell>
       <div className="mb-6 flex flex-col gap-2">

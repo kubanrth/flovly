@@ -9,6 +9,10 @@ import {
   rejectVacationRequestAction,
   type VacationFormState,
 } from "@/app/(app)/vacations/actions";
+import {
+  CalendarMonthGrid,
+  type CalendarEvent,
+} from "@/components/my/calendar/month-grid";
 
 export interface ColleagueUpcoming {
   id: string;
@@ -85,6 +89,7 @@ export function VacationWorkspace({
   currentUserId,
   currentUserName,
   isSuperAdmin,
+  calendarEvents,
   colleagues,
   myRequests,
   pendingForAdmin,
@@ -92,6 +97,8 @@ export function VacationWorkspace({
   currentUserId: string;
   currentUserName: string;
   isSuperAdmin: boolean;
+  // Vacation feed for the calendar block (own pending+approved + teammate approved).
+  calendarEvents: CalendarEvent[];
   colleagues: ColleagueUpcoming[];
   myRequests: MyVacationRequest[];
   pendingForAdmin: PendingForAdminItem[];
@@ -119,6 +126,18 @@ export function VacationWorkspace({
         {isSuperAdmin && pendingForAdmin.length > 0 && (
           <AdminQueue items={pendingForAdmin} />
         )}
+
+        <section className="flex flex-col gap-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <div className="flex flex-col gap-1">
+              <span className="eyebrow">Kalendarz</span>
+              <h2 className="font-display text-[1.2rem] font-bold leading-[1.15] tracking-[-0.02em]">
+                Kto i kiedy
+              </h2>
+            </div>
+          </div>
+          <CalendarMonthGrid events={calendarEvents} />
+        </section>
 
         <ColleaguesList colleagues={colleagues} currentUserId={currentUserId} />
 

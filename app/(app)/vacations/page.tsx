@@ -82,11 +82,46 @@ export default async function VacationsPage() {
       : Promise.resolve([]),
   ]);
 
+  // Combined vacation feed for the calendar block — own (pending + approved)
+  // plus teammate approved. Mirror /my/calendar so the calendars stay in sync.
+  const calendarVacations = await db.vacationRequest.findMany({
+    where: {
+      OR: [
+        { requesterId: userId, status: { in: ["pending", "approved"] } },
+        {
+          requester: {
+            memberships: { some: { workspaceId: { in: workspaceIds } } },
+          },
+          requesterId: { not: userId },
+          status: "approved",
+        },
+      ],
+    },
+    include: {
+      requester: { select: { id: true, name: true, email: true } },
+    },
+  });
+
   return (
     <VacationWorkspace
       currentUserId={userId}
       currentUserName={me?.name ?? me?.email ?? ""}
       isSuperAdmin={!!me?.isSuperAdmin}
+      calendarEvents={calendarVacations.map((v) => ({
+        id: `vacation:${v.id}`,
+        title:
+          v.requesterId === userId
+            ? "Twój urlop"
+            : (v.requester.name ?? v.requester.email),
+        workspaceId: "vacation",
+        workspaceName: "Urlopy",
+        boardName: v.requester.name ?? v.requester.email,
+        statusColor: v.requesterId === userId ? "#0EA5E9" : "#64748B",
+        startAt: v.startDate.toISOString(),
+        stopAt: v.endDate.toISOString(),
+        kind: "vacation" as const,
+        entityId: v.id,
+      }))}
       colleagues={teammates
         // Dedup by userId — distinct on findMany covers same-workspace dupes
         // but the user may appear in multiple workspaces in this list.

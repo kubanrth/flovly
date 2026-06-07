@@ -15,9 +15,9 @@ export interface CalendarEvent {
   stopAt: string | null;
   // Kalendarz workspace'u miesza taski + custom WorkspaceEvent.
   // Klik tasku → nav do /t/<id> (Link). Klik eventu → callback (parent
-  // otwiera dialog ze szczegółami). Default = "task" żeby /my/calendar
-  // nie musiał ustawiać niczego.
-  kind?: "task" | "event";
+  // otwiera dialog ze szczegółami). Klik urlopu → nav do /vacations.
+  // Default = "task" żeby /my/calendar nie musiał ustawiać niczego.
+  kind?: "task" | "event" | "vacation";
   // Raw entity id bez prefixu (poprzednie kody używały prefiksu
   // "task:<id>" / "event:<id>" w polu `id`, co rozwalało route'y bo
   // /t/task:<id> nie istnieje). To pole dostaje czysty id encji.
@@ -207,8 +207,9 @@ export function CalendarMonthGrid({
               </div>
               {dayEvents.slice(0, 2).map((ev) => {
                 const isEvent = ev.kind === "event";
+                const isVacation = ev.kind === "vacation";
                 // Defensive: strip "task:" / "event:" prefix from legacy ids.
-                const rawId = ev.entityId ?? ev.id.replace(/^(task|event):/, "");
+                const rawId = ev.entityId ?? ev.id.replace(/^(task|event|vacation):/, "");
                 const className =
                   "truncate rounded-sm px-1 py-0.5 text-left text-[0.55rem] font-medium transition-colors hover:brightness-95 md:px-1.5 md:text-[0.68rem]";
                 const style = {
@@ -217,6 +218,19 @@ export function CalendarMonthGrid({
                     : "var(--primary)/10",
                   color: ev.statusColor ?? "var(--primary)",
                 };
+                if (isVacation) {
+                  return (
+                    <Link
+                      key={ev.id}
+                      href="/vacations"
+                      title={`Urlop — ${ev.title}`}
+                      className={className}
+                      style={style}
+                    >
+                      ✈ {ev.title}
+                    </Link>
+                  );
+                }
                 if (isEvent) {
                   return (
                     <button
@@ -328,7 +342,8 @@ function DayExpandDialog({
         <ul className="flex flex-col gap-1.5 overflow-y-auto">
           {events.map((ev) => {
             const isEvent = ev.kind === "event";
-            const rawId = ev.entityId ?? ev.id.replace(/^(task|event):/, "");
+            const isVacation = ev.kind === "vacation";
+            const rawId = ev.entityId ?? ev.id.replace(/^(task|event|vacation):/, "");
             const className =
               "flex flex-col gap-0.5 rounded-md border border-border bg-background px-3 py-2 text-left transition-colors hover:border-primary/60";
             const accent = ev.statusColor ?? "var(--primary)";
@@ -339,16 +354,22 @@ function DayExpandDialog({
                     className="h-2 w-2 shrink-0 rounded-full"
                     style={{ background: accent }}
                   />
-                  <span className="text-[0.92rem] font-semibold">{ev.title}</span>
+                  <span className="text-[0.92rem] font-semibold">
+                    {isVacation ? `✈ ${ev.title}` : ev.title}
+                  </span>
                 </span>
                 <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                  {ev.workspaceName} · {ev.boardName}
+                  {isVacation ? "Urlop" : `${ev.workspaceName} · ${ev.boardName}`}
                 </span>
               </>
             );
             return (
               <li key={ev.id}>
-                {isEvent ? (
+                {isVacation ? (
+                  <Link href="/vacations" className={className}>
+                    {inner}
+                  </Link>
+                ) : isEvent ? (
                   <button
                     type="button"
                     onClick={() => onEventClick(rawId)}
