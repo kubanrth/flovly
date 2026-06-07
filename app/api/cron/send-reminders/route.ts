@@ -103,9 +103,63 @@ async function runSweep(now: Date) {
     });
   }
 
+  // F12-K66: deal reminders. Recipient = owner; creator as fallback gdy brak.
+  const dealDue = await db.deal.findMany({
+    where: {
+      reminderAt: { lte: now, not: null },
+      reminderSentAt: null,
+      deletedAt: null,
+    },
+    take: 200,
+    include: {
+      owner: { select: { id: true, email: true, name: true } },
+      creator: { select: { id: true, email: true, name: true } },
+      stage: { select: { name: true } },
+      workspace: { select: { id: true, name: true } },
+    },
+  });
+
+  for (const deal of dealDue) {
+    const recipient = deal.owner ?? deal.creator;
+    const url = appBase
+      ? `${appBase}/w/${deal.workspaceId}/sales/${deal.id}`
+      : `/w/${deal.workspaceId}/sales/${deal.id}`;
+    const when = deal.reminderAt?.toLocaleString("pl-PL", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }) ?? "";
+    const valueLine =
+      deal.valueAmount != null
+        ? `<p style="margin:0 0 6px;color:#475569;line-height:1.55">Wartość: <strong>${deal.valueAmount} ${escape(deal.valueCurrency)}</strong> · Etap: <strong>${escape(deal.stage.name)}</strong></p>`
+        : `<p style="margin:0 0 6px;color:#475569;line-height:1.55">Etap: <strong>${escape(deal.stage.name)}</strong></p>`;
+    const html = `<!doctype html><html lang="pl"><body style="font-family:ui-sans-serif,system-ui,sans-serif;color:#0F172A;padding:24px">
+      <div style="max-width:540px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden">
+        <div style="padding:20px 24px">
+          <div style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7B68EE">Przypomnienie · Plan sprzedaży</div>
+          <h1 style="margin:6px 0 12px;font-size:20px;line-height:1.25">${escape(deal.title)}</h1>
+          ${valueLine}
+          <p style="margin:0 0 6px;color:#475569;line-height:1.55">Workspace: <strong>${escape(deal.workspace.name)}</strong> · Termin: <strong>${escape(when)}</strong></p>
+          <a href="${url}" style="display:inline-block;margin-top:14px;padding:10px 18px;background:linear-gradient(135deg,#7B68EE,#BA68C8);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">Otwórz deal</a>
+        </div>
+      </div>
+    </body></html>`;
+    const r = await sendEmail({
+      to: recipient.email,
+      subject: `⏰ Deal: ${deal.title}`,
+      html,
+    });
+    if (r.sent) sent++;
+    else failures.push(`${recipient.email}: ${r.error ?? r.skipped ?? "unknown"}`);
+    await db.deal.update({
+      where: { id: deal.id },
+      data: { reminderSentAt: now },
+    });
+  }
+
   return {
     tasksProcessed: due.length,
     todosProcessed: todoDue.length,
+    dealsProcessed: dealDue.length,
     emailsSent: sent,
     failures,
   };

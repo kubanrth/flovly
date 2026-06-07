@@ -7,6 +7,7 @@ import {
   type DealFormState,
 } from "@/app/(app)/w/[workspaceId]/sales/actions";
 import { RichTextEditor, type RichTextDoc } from "@/components/task/rich-text-editor";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 export interface DealInitial {
   id?: string;
@@ -18,6 +19,8 @@ export interface DealInitial {
   ownerId: string | null;
   contactId: string | null;
   notesJson: RichTextDoc | null;
+  // F12-K66: przypomnienie cron'owe dla owner'a. ISO datetime.
+  reminderAt: string | null;
 }
 
 export interface StageOption {
@@ -130,6 +133,18 @@ export function DealForm({
             className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary"
           />
         </label>
+        <div className="flex flex-col gap-2">
+          <span className="eyebrow">Przypomnienie</span>
+          {/* Cron /api/cron/send-reminders skanuje co 15 min i wysyła mail do
+              owner'a (creator fallback) gdy reminderAt < now i reminderSentAt
+              jest null. Re-arming czyści reminderSentAt w server action. */}
+          <DateTimePicker
+            name="reminderAt"
+            defaultValue={initial?.reminderAt ?? null}
+            placeholder="Brak przypomnienia"
+            label="Przypomnienie email"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">

@@ -1421,6 +1421,14 @@ model Deal {
   // Task.rowOrder, TodoItem.order, Workspace.order).
   rowOrder        Float     @default(0)
 
+  // F12-K66: przypomnienie dla owner'a (cron /api/cron/send-reminders).
+  // reminderAt = kiedy wysłać; reminderSentAt = kiedy faktycznie poszło,
+  // żeby cron nie wysłał drugiego raza po edycji nie-reminderowych pól.
+  // Re-arming (zmiana reminderAt na nową datę) zeruje reminderSentAt w
+  // updateDealAction tak jak updateTaskAction robi to z taskiem.
+  reminderAt      DateTime?
+  reminderSentAt  DateTime?
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime?

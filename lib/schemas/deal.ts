@@ -32,6 +32,10 @@ export const dealFieldsSchema = z.object({
   stageId: z.string().trim().min(1, "Wybierz etap."),
   ownerId: z.string().trim().min(1).optional().or(z.literal("")),
   contactId: z.string().trim().min(1).optional().or(z.literal("")),
+  // F12-K66: ISO datetime z DateTimePicker'a. Pusty string = brak
+  // przypomnienia. Wstępna walidacja "is string" — final Date parsing
+  // dzieje się w action (parseReminderField).
+  reminderAt: z.string().optional().or(z.literal("")).transform((v) => v ?? ""),
 });
 
 export const dealStageFieldsSchema = z.object({
