@@ -3,6 +3,10 @@ import { Plus, Search } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
+import {
+  ContactsTable,
+  type ContactsTableRow,
+} from "@/components/contacts/contacts-table";
 
 export default async function ContactsListPage({
   params,
@@ -43,10 +47,45 @@ export default async function ContactsListPage({
       position: true,
       email: true,
       phone: true,
+      nip: true,
+      regon: true,
+      vatNumber: true,
+      website: true,
+      street: true,
+      city: true,
+      postalCode: true,
+      country: true,
       updatedAt: true,
       owner: { select: { id: true, name: true, email: true, avatarUrl: true } },
     },
   });
+
+  const rows: ContactsTableRow[] = contacts.map((c) => ({
+    id: c.id,
+    companyName: c.companyName,
+    firstName: c.firstName,
+    lastName: c.lastName,
+    position: c.position,
+    email: c.email,
+    phone: c.phone,
+    nip: c.nip,
+    regon: c.regon,
+    vatNumber: c.vatNumber,
+    website: c.website,
+    street: c.street,
+    city: c.city,
+    postalCode: c.postalCode,
+    country: c.country,
+    updatedAt: c.updatedAt.toISOString(),
+    owner: c.owner
+      ? {
+          id: c.owner.id,
+          name: c.owner.name,
+          email: c.owner.email,
+          avatarUrl: c.owner.avatarUrl,
+        }
+      : null,
+  }));
 
   return (
     <main className="flex-1 px-4 py-6 md:px-14 md:py-14">
@@ -91,81 +130,7 @@ export default async function ContactsListPage({
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left">
-              <thead className="border-b border-border bg-muted/50">
-                <tr className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                  <th className="px-4 py-2">Firma</th>
-                  <th className="px-4 py-2">Osoba</th>
-                  <th className="px-4 py-2">Email</th>
-                  <th className="px-4 py-2">Telefon</th>
-                  <th className="px-4 py-2">Opiekun</th>
-                  <th className="px-4 py-2">Aktualizacja</th>
-                </tr>
-              </thead>
-              <tbody>
-                {contacts.map((c) => {
-                  const personName = [c.firstName, c.lastName]
-                    .filter(Boolean)
-                    .join(" ");
-                  return (
-                    <tr
-                      key={c.id}
-                      className="border-b border-border last:border-b-0 hover:bg-accent/30"
-                    >
-                      <td className="px-4 py-3">
-                        <Link
-                          href={`/w/${workspaceId}/contacts/${c.id}`}
-                          className="block truncate text-[0.92rem] font-medium transition-colors hover:text-primary"
-                        >
-                          {c.companyName ?? "—"}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3 text-[0.86rem]">
-                        {personName || (
-                          <span className="text-muted-foreground/60">—</span>
-                        )}
-                        {c.position && (
-                          <span className="ml-1 font-mono text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground">
-                            · {c.position}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-[0.76rem]">
-                        {c.email ?? (
-                          <span className="text-muted-foreground/60">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-[0.76rem]">
-                        {c.phone ?? (
-                          <span className="text-muted-foreground/60">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-[0.82rem]">
-                        {c.owner ? (
-                          c.owner.name ?? c.owner.email.split("@")[0]
-                        ) : (
-                          <span className="text-muted-foreground/60">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground">
-                        {c.updatedAt.toLocaleDateString("pl-PL")}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          {contacts.length === 0 && (
-            <p className="px-4 py-12 text-center text-[0.88rem] text-muted-foreground">
-              {query
-                ? "Brak dopasowań. Spróbuj innego zapytania."
-                : "Brak kontaktów. Dodaj pierwszego klienta klikając „Nowy kontakt”."}
-            </p>
-          )}
-        </div>
+        <ContactsTable workspaceId={workspaceId} rows={rows} />
       </div>
     </main>
   );
