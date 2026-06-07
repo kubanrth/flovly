@@ -148,12 +148,25 @@ function AssignMenu({
     [members, q],
   );
 
+  // Clamp left ≥ 8 so the popup never starts off the left edge on small viewports
+  // (otherwise the popup pokes outside the viewport and triggers a horizontal
+  // scrollbar on the body — what the user calls "rozciąga ekran"). Width 260
+  // capped via maxWidth so very long names can't expand the popup past viewport.
+  const POPUP_W = 260;
+  const SAFE = 8;
   const style: React.CSSProperties = {
     position: "fixed",
-    left: Math.min(at.x, window.innerWidth - 280),
-    top: Math.min(at.y + 12, window.innerHeight - 320),
+    left: Math.max(
+      SAFE,
+      Math.min(at.x, Math.max(SAFE, window.innerWidth - POPUP_W - SAFE)),
+    ),
+    top: Math.max(
+      SAFE,
+      Math.min(at.y + 12, Math.max(SAFE, window.innerHeight - 320)),
+    ),
     zIndex: 100,
-    width: 260,
+    width: POPUP_W,
+    maxWidth: `calc(100vw - ${SAFE * 2}px)`,
   };
 
   return (

@@ -103,10 +103,15 @@ export async function createTaskAction(
     });
   }
 
-  const lastTask = pickedColumn
+  // Nowe taski lądują na GÓRZE listy w danym statusie. Klient: po utworzeniu
+  // w widoku tabeli scroll/widok przesuwał się w dół, bo nowy task wpadał na
+  // koniec. Bierzemy więc min(rowOrder) - 1; float pozwala na ujemne, bez
+  // przepisywania całej kolumny.
+  const firstTask = pickedColumn
     ? await db.task.findFirst({
         where: { statusColumnId: pickedColumn.id, deletedAt: null },
-        orderBy: { rowOrder: "desc" },
+        orderBy: { rowOrder: "asc" },
+        select: { rowOrder: true },
       })
     : null;
 
@@ -127,7 +132,7 @@ export async function createTaskAction(
       statusColumnId: pickedColumn?.id,
       creatorId: ctx.userId,
       title: parsed.data.title,
-      rowOrder: (lastTask?.rowOrder ?? 0) + 1,
+      rowOrder: (firstTask?.rowOrder ?? 0) - 1,
     },
   });
 
