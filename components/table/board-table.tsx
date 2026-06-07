@@ -411,7 +411,14 @@ export function BoardTable({
             <div className="flex flex-col gap-1">
               <Link
                 href={`/w/${workspaceId}/t/${row.id}`}
-                className="block whitespace-normal break-words font-display text-[0.96rem] font-semibold leading-tight tracking-[-0.01em] transition-colors hover:text-primary"
+                lang="pl"
+                // break-normal + hyphens-auto: zamiast łamać słowo w środku znaku
+                // (browser czasem chował "w" z "opisów" gdy cell był na granicy
+                // szerokości), wyraz wraps w całości albo dostaje miękki łącznik
+                // — co w pl wymaga lang="pl". text-pretty + pr-0.5 dorzucają
+                // budżet na ostatni glif (negatywne tracking + sub-pixel
+                // rounding obcinały ogonek 'ą' / 'ę' / 'ó').
+                className="block whitespace-normal break-normal hyphens-auto text-pretty pr-0.5 font-display text-[0.96rem] font-semibold leading-tight transition-colors hover:text-primary"
               >
                 {info.getValue()}
               </Link>

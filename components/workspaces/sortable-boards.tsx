@@ -282,7 +282,7 @@ function SortableBoardSection({
                       </span>
                     ))}
                   </div>
-                  <span className="truncate font-display text-[0.98rem] font-semibold leading-tight tracking-[-0.01em] transition-colors group-hover:text-primary">
+                  <span className="truncate pr-0.5 font-display text-[0.98rem] font-semibold leading-tight tracking-[-0.01em] transition-colors group-hover:text-primary">
                     {task.title}
                   </span>
                 </div>

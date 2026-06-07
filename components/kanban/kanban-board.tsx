@@ -606,8 +606,13 @@ function CardShell({
       <Link
         href={`/w/${workspaceId}/t/${task.id}`}
         onPointerDown={(e) => e.stopPropagation()}
-        // break-words handles long URLs/IDs that would otherwise stretch the card past 300px.
-        className="font-display text-[0.95rem] font-semibold leading-tight tracking-[-0.01em] whitespace-normal break-words transition-colors hover:text-primary"
+        lang="pl"
+        // break-words zostaje (długie URL'e nie powinny rozpychać karty ponad
+        // 300px), ale dorzucamy hyphens-auto + lang="pl" żeby polskie wyrazy
+        // dostały soft-hyphen ZANIM browser sięgnie po break-words i obetnie
+        // ogonek "ó"/"ą" w środku znaku. text-pretty + pr-0.5 = budżet na
+        // ostatni glif przy negatywnym tracking'u.
+        className="font-display text-[0.95rem] font-semibold leading-tight whitespace-normal break-words hyphens-auto text-pretty pr-0.5 transition-colors hover:text-primary"
       >
         {task.title}
       </Link>
