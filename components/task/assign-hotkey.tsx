@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Search, UserPlus } from "lucide-react";
 import { toggleAssigneeAction } from "@/app/(app)/w/[workspaceId]/t/actions";
@@ -169,10 +170,18 @@ function AssignMenu({
     maxWidth: `calc(100vw - ${SAFE * 2}px)`,
   };
 
-  return (
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <div
       ref={rootRef}
       style={style}
+      // Portal pod document.body — ViewTransition wrapper (animate-in) trzyma
+      // `transform` na ancestorze co zamieniało `position: fixed` na "fixed
+      // wzgl. wrappera" zamiast viewport'u → popup leciał na bok i rozciągał
+      // body horizontal scrollbarem. stopPropagation pointer-down chroni przed
+      // host-dialog outside-click handlerami (base-ui w task modal'u).
+      onPointerDownCapture={(e) => e.stopPropagation()}
+      onMouseDownCapture={(e) => e.stopPropagation()}
       className="overflow-hidden rounded-lg border border-border bg-popover p-2 shadow-[0_16px_40px_-16px_rgba(10,10,40,0.35)]"
     >
       <div className="mb-2 flex items-center gap-2 rounded-md bg-muted/40 px-2 py-1.5">
@@ -244,6 +253,7 @@ function AssignMenu({
       <div className="mt-2 border-t border-border pt-2 font-mono text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground/80">
         ESC — zamknij · klik — przełącz przypisanie
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
