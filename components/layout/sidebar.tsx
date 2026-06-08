@@ -205,7 +205,11 @@ export function Sidebar({
       // (0,1,0) and the sidebar stays hidden on desktop.
       className="group/sidebar flex h-dvh flex-col text-sidebar-foreground transition-[transform,width] duration-200 max-md:fixed max-md:inset-0 max-md:z-40 max-md:w-full max-md:p-0 max-md:data-[mobile-open=false]:-translate-x-full max-md:data-[mobile-open=true]:translate-x-0 md:sticky md:top-0 md:self-start md:p-3.5 md:pr-2 data-[collapsed=true]:md:w-[80px] data-[collapsed=false]:md:w-[252px]"
     >
-      <div className="sidebar-glass relative flex h-full flex-col overflow-hidden backdrop-blur-[40px] backdrop-saturate-[1.8] md:rounded-[20px] max-md:rounded-none max-md:border-0">
+      {/* Mobile: cały sidebar scrolluje jako jedna kolumna (max-md:overflow-y-auto)
+          żeby user nie był zamknięty w zagnieżdżonym scroll'u listy workspace'ów.
+          Desktop: zewnętrzny overflow-hidden, wewnętrzna sekcja workspace'ów ma
+          własny scroll bo header i footer mają trzymać się na top/bottom. */}
+      <div className="sidebar-glass relative flex h-full flex-col md:overflow-hidden max-md:overflow-y-auto backdrop-blur-[40px] backdrop-saturate-[1.8] md:rounded-[20px] max-md:rounded-none max-md:border-0">
       {/* When collapsed, header stacks vertically so the chevron isn't clipped by overflow-hidden. */}
       <div
         className={`flex gap-2 border-b border-black/5 dark:border-white/[0.05] px-3 py-3 max-md:gap-3 max-md:px-4 max-md:py-4 ${
@@ -322,7 +326,10 @@ export function Sidebar({
         />
       </nav>
 
-      <div className="flex-1 overflow-y-auto px-2 py-2">
+      {/* Lista workspace'ów: na mobile DZIELI scroll z resztą sidebar'a (cały
+          drawer scrolluje jednym ruchem). Na desktopie zostaje nested scroll
+          żeby user mógł zerknąć na long list bez utraty header'a + footer'a. */}
+      <div className="px-2 py-2 md:flex-1 md:overflow-y-auto">
         {!collapsed && (
           <div className="mb-2 flex items-center justify-between px-2 max-md:mb-3 max-md:px-3 max-md:pt-2">
             <span className="eyebrow max-md:text-[0.78rem] max-md:tracking-[0.12em]">Przestrzenie</span>

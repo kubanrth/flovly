@@ -21,6 +21,7 @@ import {
   type ContactConversationSender,
   type ContactMessageRow,
 } from "@/components/contacts/contact-conversation";
+import { ContactTaskLinker } from "@/components/contacts/contact-task-linker";
 import { ensureDefaultStages } from "@/app/(app)/w/[workspaceId]/sales/actions";
 import { auth } from "@/lib/auth";
 
@@ -41,7 +42,7 @@ export default async function ContactDetailPage({
   // to render — same lazy seeding /sales does on first visit.
   await ensureDefaultStages(workspaceId);
 
-  const [memberships, stages, deals, activities, contactTasks, contactMessages, currentSession] = await Promise.all([
+  const [memberships, stages, deals, activities, contactTasks, contactMessages, currentSession, linkableTasks] = await Promise.all([
     db.workspaceMembership.findMany({
       where: { workspaceId },
       include: { user: { select: { id: true, name: true, email: true } } },
@@ -100,6 +101,20 @@ export default async function ContactDetailPage({
       },
     }),
     auth(),
+    // F12-K67 update: pool task'ów w workspace BEZ powiązanego kontaktu —
+    // do picker'a "Powiąż istniejące zadanie" w ContactTasksTile. Limit
+    // 500 ostatnio aktualizowanych, reszta filtrowana po stronie klienta.
+    db.task.findMany({
+      where: {
+        workspaceId,
+        deletedAt: null,
+        contactId: null,
+        board: { deletedAt: null },
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 500,
+      select: { id: true, title: true, displayId: true, board: { select: { name: true } } },
+    }),
   ]);
 
   const stagesProp: ContactPipelineStage[] = stages.map((s) => ({
@@ -256,7 +271,16 @@ export default async function ContactDetailPage({
           canSend={canEdit}
         />
 
-        <ContactTasksTile workspaceId={workspaceId} tasks={contactTasks} />
+        <ContactTasksTile
+          workspaceId={workspaceId}
+          contactId={contact.id}
+          tasks={contactTasks}
+          linkableTasks={linkableTasks.map((t) => ({
+            id: t.id,
+            label: `#${t.displayId} · ${t.title}`,
+            sublabel: t.board.name,
+          }))}
+        />
 
         <ContactTimeline
           workspaceId={workspaceId}
@@ -367,10 +391,14 @@ type ContactTaskRow = {
 
 function ContactTasksTile({
   workspaceId,
+  contactId,
   tasks,
+  linkableTasks,
 }: {
   workspaceId: string;
+  contactId: string;
   tasks: ContactTaskRow[];
+  linkableTasks: { id: string; label: string; sublabel?: string | null }[];
 }) {
   return (
     <section className="flex flex-col gap-3">
@@ -380,6 +408,7 @@ function ContactTasksTile({
           {tasks.length} {tasks.length === 1 ? "zadanie" : "zadań"}
         </span>
       </div>
+      <ContactTaskLinker contactId={contactId} candidates={linkableTasks} />
       {tasks.length === 0 ? (
         <p className="rounded-md border border-dashed border-border bg-card px-4 py-6 text-center text-[0.86rem] text-muted-foreground">
           Brak zadań powiązanych z tym kontaktem. W karcie zadania wybierz tego

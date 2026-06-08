@@ -198,8 +198,31 @@ export async function updateTaskAction(
 
   const ctx = await requireWorkspaceAction(existing.workspaceId, "task.update");
 
+  const startAt = parseDate(formData.get("startAt"));
   const stopAt = parseDate(formData.get("stopAt"));
   const reminderAt = resolveReminder(parsed.data.reminderOffset, stopAt);
+
+  // F12-K69: blokada gdy task ma milestone i nowe daty wychodzą poza zakres.
+  if (existing.milestoneId) {
+    const m = await db.milestone.findUnique({
+      where: { id: existing.milestoneId },
+      select: { startAt: true, stopAt: true, title: true },
+    });
+    if (m) {
+      if (startAt && startAt < m.startAt) {
+        return {
+          ok: false,
+          error: `Start zadania (${startAt.toLocaleDateString("pl-PL")}) przed startem milestone'a „${m.title}" (${m.startAt.toLocaleDateString("pl-PL")}). Zmień daty milestone'a albo odepnij zadanie.`,
+        };
+      }
+      if (stopAt && stopAt > m.stopAt) {
+        return {
+          ok: false,
+          error: `Termin zadania (${stopAt.toLocaleDateString("pl-PL")}) po końcu milestone'a „${m.title}" (${m.stopAt.toLocaleDateString("pl-PL")}). Zmień daty milestone'a albo odepnij zadanie.`,
+        };
+      }
+    }
+  }
 
   const updated = await db.task.update({
     where: { id: parsed.data.id },
@@ -207,7 +230,7 @@ export async function updateTaskAction(
       title: parsed.data.title,
       // descriptionJson is handled by updateTaskDescriptionAction.
       statusColumnId: parsed.data.statusColumnId || null,
-      startAt: parseDate(formData.get("startAt")),
+      startAt,
       stopAt,
       reminderAt,
       // Re-arm cron when reminderAt moves: clear reminderSentAt so the new
@@ -519,6 +542,34 @@ export async function patchTaskAction(formData: FormData) {
   }
 
   if (!hasChange) return;
+
+  // F12-K69: blokada gdy task ma milestone i nowy startAt/stopAt wypada poza
+  // zakres milestone.startAt..milestone.stopAt. Klient: "pojawia się
+  // komunikat z blokadą". patchTaskAction nie ma kanonicznego return shape
+  // (działa również jako autosave dla cell'ek tabeli), więc rzucamy Error
+  // — UI wrappery (FieldCell, RichEditorField etc.) złapie i wyświetli toast.
+  if (existing.milestoneId && ("startAt" in data || "stopAt" in data)) {
+    const m = await db.milestone.findUnique({
+      where: { id: existing.milestoneId },
+      select: { startAt: true, stopAt: true, title: true },
+    });
+    if (m) {
+      const nextStart =
+        "startAt" in data ? (data.startAt as Date | null) : existing.startAt;
+      const nextEnd =
+        "stopAt" in data ? (data.stopAt as Date | null) : existing.stopAt;
+      if (nextStart && nextStart < m.startAt) {
+        throw new Error(
+          `Start zadania (${nextStart.toLocaleDateString("pl-PL")}) przed startem milestone'a „${m.title}" (${m.startAt.toLocaleDateString("pl-PL")}). Zmień daty milestone'a albo odepnij zadanie.`,
+        );
+      }
+      if (nextEnd && nextEnd > m.stopAt) {
+        throw new Error(
+          `Termin zadania (${nextEnd.toLocaleDateString("pl-PL")}) po końcu milestone'a „${m.title}" (${m.stopAt.toLocaleDateString("pl-PL")}). Zmień daty milestone'a albo odepnij zadanie.`,
+        );
+      }
+    }
+  }
 
   // Capture previous status before update so we can notify with from → to.
   const statusChanged =

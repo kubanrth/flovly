@@ -205,7 +205,13 @@ export async function deleteMilestoneAction(formData: FormData) {
   revalidate(existing.workspaceId, existing.boardId);
 }
 
-export async function assignTaskToMilestoneAction(formData: FormData) {
+export type AssignToMilestoneResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function assignTaskToMilestoneAction(
+  formData: FormData,
+): Promise<AssignToMilestoneResult | void> {
   const parsed = assignTaskToMilestoneSchema.safeParse({
     taskId: formData.get("taskId"),
     milestoneId: formData.get("milestoneId"),
@@ -224,6 +230,25 @@ export async function assignTaskToMilestoneAction(formData: FormData) {
     // Milestone must live in the task's workspace + board.
     if (m.workspaceId !== task.workspaceId || m.boardId !== task.boardId) return;
     targetMilestoneId = m.id;
+
+    // F12-K69: bloka gdy task ma stopAt/startAt POZA zakresem milestone'a.
+    // Klient chce komunikat ZANIM milestone zostanie przypisany, nie po —
+    // żeby user dostał feedback od razu w UI. UI również waliduje wcześniej
+    // (zob. task-detail MilestonePicker), to tutaj jest server-side guard.
+    const taskStart = task.startAt;
+    const taskEnd = task.stopAt;
+    if (taskStart && taskStart < m.startAt) {
+      return {
+        ok: false,
+        error: `Start zadania (${taskStart.toLocaleDateString("pl-PL")}) przed startem milestone'a (${m.startAt.toLocaleDateString("pl-PL")}). Skoryguj daty zadania lub milestone'a.`,
+      };
+    }
+    if (taskEnd && taskEnd > m.stopAt) {
+      return {
+        ok: false,
+        error: `Termin zadania (${taskEnd.toLocaleDateString("pl-PL")}) po końcu milestone'a (${m.stopAt.toLocaleDateString("pl-PL")}). Skoryguj daty zadania lub milestone'a.`,
+      };
+    }
   }
 
   const updated = await db.task.update({
@@ -245,6 +270,7 @@ export async function assignTaskToMilestoneAction(formData: FormData) {
   // — without it the milestone select snaps back to its prior value.
   revalidatePath(`/w/[workspaceId]/b/[boardId]`, "layout");
   revalidate(updated.workspaceId, updated.boardId);
+  return { ok: true };
 }
 
 // Cross-board roadmap aggregation. Connects an aggregator-board milestone

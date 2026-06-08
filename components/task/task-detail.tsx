@@ -318,13 +318,11 @@ export function TaskDetail({
           disabled={!canEdit}
         />
 
-        <ContactField
-          taskId={task.id}
-          workspaceId={workspaceId}
-          contactId={contactId}
-          contacts={workspaceContacts}
-          disabled={!canEdit}
-        />
+        {/* F12-K67 update: ContactField celowo wyciągnięty z karty zadania —
+            klient nie chciał widzieć picker'a klienta przy każdym tasku w
+            zwykłych tablicach. Linkowanie task ↔ kontakt robi się teraz
+            wyłącznie po stronie kontaktu (ContactTasksTile → "Powiąż
+            zadanie") oraz przez Deal.contactId w Planie sprzedaży. */}
 
         {/* F11-17 (#24): recurring tasks. Template task (rule != null)
             spawns instances via cron daily at 00:05 UTC. Instances
@@ -534,12 +532,20 @@ function MilestoneSection({
   const NONE = "__none__";
   const handleChange = (next: string) => {
     const persisted = next === NONE ? "" : next;
+    const previous = value;
     setValue(persisted);
     const fd = new FormData();
     fd.set("taskId", taskId);
     fd.set("milestoneId", persisted);
     startTransition(async () => {
-      await assignTaskToMilestoneAction(fd);
+      const result = await assignTaskToMilestoneAction(fd);
+      // F12-K69: server zwraca {ok:false,error} gdy daty zadania wychodzą poza
+      // zakres milestone'a. Roll back UI + pokaz komunikat zamiast cichego no-op.
+      if (result && !result.ok) {
+        setValue(previous);
+        alert(result.error);
+        return;
+      }
       router.refresh();
     });
   };

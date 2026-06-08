@@ -301,7 +301,12 @@ export function RoadmapView({
                             >
                               {t.title}
                             </Link>
-                            <form action={assignTaskToMilestoneAction} className="m-0">
+                            <form
+                              action={(fd) => {
+                                void assignTaskToMilestoneAction(fd);
+                              }}
+                              className="m-0"
+                            >
                               <input type="hidden" name="taskId" value={t.id} />
                               <input type="hidden" name="milestoneId" value="" />
                               <button
