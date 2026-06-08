@@ -13,6 +13,10 @@ import {
   type PipelineStage,
 } from "@/components/sales/sales-pipeline";
 import { StageManagerDialog } from "@/components/sales/stage-manager-dialog";
+import {
+  SalesRemindersTile,
+  type SalesReminderRow,
+} from "@/components/sales/sales-reminders-tile";
 
 export default async function SalesPipelinePage({
   params,
@@ -104,6 +108,34 @@ export default async function SalesPipelinePage({
     };
   });
 
+  // F12-K70: kafelek "Nadchodzące przypomnienia" — agregowany widok deal'i
+  // z ustawionym reminderAt, posortowany rosnąco (najpilniejsze pierwsze).
+  // Wykorzystujemy już-pobrane `deals` żeby uniknąć dodatkowego query'a.
+  const stageById = new Map(stages.map((s) => [s.id, s]));
+  const reminderRows: SalesReminderRow[] = deals
+    .filter((d) => d.reminderAt !== null)
+    .sort((a, b) => (a.reminderAt!.getTime() - b.reminderAt!.getTime()))
+    .map((d) => {
+      const personName = [d.contact?.firstName, d.contact?.lastName]
+        .filter(Boolean)
+        .join(" ");
+      const contactLabel = d.contact
+        ? d.contact.companyName ??
+          (personName !== "" ? personName : null)
+        : null;
+      const stage = stageById.get(d.stageId);
+      return {
+        dealId: d.id,
+        title: d.title,
+        reminderAt: d.reminderAt!.toISOString(),
+        ownerName: d.owner?.name ?? null,
+        contactLabel,
+        stageName: stage?.name ?? "—",
+        stageColor: stage?.colorHex ?? "#94A3B8",
+        sent: d.reminderSentAt !== null,
+      };
+    });
+
   return (
     <main className="flex-1 px-4 py-6 md:px-14 md:py-14">
       <div className="mx-auto flex max-w-[1400px] flex-col gap-5 md:gap-6">
@@ -156,11 +188,14 @@ export default async function SalesPipelinePage({
             Brak etapów — odśwież stronę, defaultowe etapy zostały właśnie utworzone.
           </p>
         ) : (
-          <SalesPipeline
-            workspaceId={workspaceId}
-            stages={stagesProp}
-            initialDeals={dealsProp}
-          />
+          <>
+            <SalesRemindersTile workspaceId={workspaceId} rows={reminderRows} />
+            <SalesPipeline
+              workspaceId={workspaceId}
+              stages={stagesProp}
+              initialDeals={dealsProp}
+            />
+          </>
         )}
       </div>
     </main>

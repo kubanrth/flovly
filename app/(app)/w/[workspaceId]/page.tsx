@@ -10,9 +10,11 @@ import {
   parseEnabledViews,
 } from "@/lib/board-views";
 import {
+  SortableBoardsGrid,
   SortableBoardsList,
   type BoardSectionData,
 } from "@/components/workspaces/sortable-boards";
+import { BoardsLayoutToggle } from "@/components/workspaces/boards-layout-toggle";
 
 export default async function WorkspaceOverviewPage({
   params,
@@ -117,7 +119,10 @@ export default async function WorkspaceOverviewPage({
           </div>
         </div>
 
-        <SortableBoardsList workspaceId={workspaceId} boards={boardSections} />
+        <BoardsLayoutToggle
+          grid={<SortableBoardsGrid workspaceId={workspaceId} boards={boardSections} />}
+          list={<SortableBoardsList workspaceId={workspaceId} boards={boardSections} />}
+        />
       </div>
     </AppShell>
   );

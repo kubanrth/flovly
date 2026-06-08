@@ -20,6 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  ArrowRight,
   BarChart3,
   ChevronDown,
   ChevronRight,
@@ -318,5 +319,169 @@ function SortableBoardSection({
         </ul>
       ))}
     </section>
+  );
+}
+
+// =============================================================================
+// GRID variant — kafelki jak na /workspaces (3-col responsive). Klient:
+// "Potrzebujemy zrobić to w formie kafelek, jak w przypadku widoku wszystkich
+// workspace". List variant zostaje jako opcja w BoardsLayoutToggle.
+// =============================================================================
+
+export function SortableBoardsGrid({
+  workspaceId,
+  boards,
+}: {
+  workspaceId: string;
+  boards: BoardSectionData[];
+}) {
+  const [items, setItems] = useState(boards);
+  useEffect(() => {
+    setItems(boards);
+  }, [boards]);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setItems((prev) => {
+      const oldIdx = prev.findIndex((b) => b.id === active.id);
+      const newIdx = prev.findIndex((b) => b.id === over.id);
+      if (oldIdx < 0 || newIdx < 0) return prev;
+      const next = arrayMove(prev, oldIdx, newIdx);
+      const orderedIds = next.map((b) => b.id);
+      startTransition(() => {
+        void reorderBoardsAction(workspaceId, orderedIds);
+      });
+      return next;
+    });
+  };
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <SortableContext items={items.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {items.map((board) => (
+            <SortableBoardCard key={board.id} workspaceId={workspaceId} board={board} />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+function SortableBoardCard({
+  workspaceId,
+  board,
+}: {
+  workspaceId: string;
+  board: BoardSectionData;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: board.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : "auto",
+  } as const;
+
+  // Pick top 3 most recent tasks for preview. SortableBoardsList pokazuje 5,
+  // ale w kafelku jest mniej miejsca po wertykale — 3 zachowuje proporcje.
+  const previewTasks = board.tasks.slice(0, 3);
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group relative ${isDragging ? "cursor-grabbing" : ""}`}
+    >
+      <div className="flex min-h-[260px] flex-col gap-4 rounded-xl border border-border bg-card p-5 pl-12 shadow-[0_1px_2px_rgba(10,10,40,0.04)] transition-all group-hover:-translate-y-[2px] group-hover:border-primary/30 group-hover:shadow-[0_12px_32px_-16px_rgba(123,104,238,0.35)]">
+        <Link
+          href={`/w/${workspaceId}/b/${board.id}/table`}
+          className="flex flex-col gap-2 focus-visible:outline-none"
+        >
+          <span className="eyebrow">Tablica</span>
+          <h2 className="font-display text-[1.25rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground transition-colors group-hover:text-primary">
+            {board.name}
+          </h2>
+          <span className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
+            {board.taskCount} {taskPl(board.taskCount)}
+          </span>
+        </Link>
+
+        {/* View pills — szybkie wejście z kafelka do konkretnego widoku */}
+        <div className="flex flex-wrap gap-1.5">
+          {board.enabledViews.map((view) => {
+            const meta = VIEW_META[view];
+            const Icon = meta.Icon;
+            return (
+              <Link
+                key={view}
+                href={`/w/${workspaceId}/b/${board.id}/${view}`}
+                title={meta.label}
+                className={`inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2 font-mono text-[0.62rem] uppercase tracking-[0.12em] transition-colors hover:border-primary/40 hover:text-foreground ${meta.accent}`}
+              >
+                <Icon size={11} />
+                <span>{meta.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Preview ostatnich 3 tasków */}
+        {previewTasks.length > 0 ? (
+          <ul className="mt-auto flex flex-col gap-1.5 border-t border-border pt-3">
+            {previewTasks.map((task) => (
+              <li key={task.id}>
+                <Link
+                  href={`/w/${workspaceId}/t/${task.id}`}
+                  className="flex items-center gap-2 truncate text-[0.82rem] text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {task.statusColor && (
+                    <span
+                      aria-hidden
+                      className="h-1.5 w-1.5 shrink-0 rounded-full"
+                      style={{ background: task.statusColor }}
+                    />
+                  )}
+                  <span className="truncate">{task.title}</span>
+                </Link>
+              </li>
+            ))}
+            {board.taskCount > previewTasks.length && (
+              <li className="pt-1">
+                <Link
+                  href={`/w/${workspaceId}/b/${board.id}/table`}
+                  className="inline-flex items-center gap-1 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-primary"
+                >
+                  + jeszcze {board.taskCount - previewTasks.length} <ArrowRight size={9} />
+                </Link>
+              </li>
+            )}
+          </ul>
+        ) : (
+          <p className="mt-auto border-t border-border pt-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
+            brak zadań
+          </p>
+        )}
+      </div>
+
+      {/* Drag handle po lewej krawędzi karty */}
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        aria-label="Przeciągnij tablicę"
+        title="Przeciągnij aby zmienić kolejność"
+        className="absolute left-3 top-1/2 grid h-8 w-8 -translate-y-1/2 cursor-grab place-items-center rounded-md text-muted-foreground/50 transition-colors hover:bg-accent hover:text-foreground active:cursor-grabbing"
+      >
+        <GripVertical size={16} />
+      </button>
+    </div>
   );
 }

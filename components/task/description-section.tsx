@@ -49,9 +49,14 @@ export function DescriptionSection({
   };
 
   return (
-    <section className="flex flex-col gap-2">
+    {/* Klient: "zgubię w widoku to wszystko" — opis zlewał się z resztą
+        kontentu karty zadania. Dorzucamy delikatny fioletowo-szary tint
+        (violet/5 + violet/15 border) żeby sekcja była vizualnie wyodrębniona,
+        ale nie krzykliwa. Dopasowane do "Opis" badge'a w TaskActivityHints
+        który również ma violet'owy theme — przez to spójność cross-view. */}
+    <section className="flex flex-col gap-2 rounded-xl border border-violet-500/15 bg-violet-500/[0.04] px-3 py-3 dark:border-violet-400/20 dark:bg-violet-400/[0.05] md:px-4 md:py-3.5">
       <div className="flex items-center justify-between">
-        <span className="eyebrow">Opis</span>
+        <span className="eyebrow text-violet-700/80 dark:text-violet-300/80">Opis</span>
         {mode === "view" && canEdit && (
           <button
             type="button"
