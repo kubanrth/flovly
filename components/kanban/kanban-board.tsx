@@ -310,11 +310,21 @@ export function KanbanBoard({
           <AddKanbanColumnButton workspaceId={workspaceId} boardId={boardId} />
         )}
       </div>
-      <DragOverlay>
-        {activeTask ? (
-          <CardShell task={activeTask} workspaceId={workspaceId} dragging />
-        ) : null}
-      </DragOverlay>
+      {/* Portal DragOverlay pod document.body: DragOverlay używa position: fixed
+          + transform translate3d() do śledzenia kursora, ale `position: fixed`
+          staje się "fixed wzgl. transformed ancestor", jeśli któryś z rodziców
+          ma transform / filter / backdrop-filter. Skutek bez portalu: karta
+          wyświetla się daleko od kursora (klient: "wyskakuje na prawo"). Portal
+          przenosi node bezpośrednio pod body — żaden ancestor go już nie dotyka. */}
+      {typeof document !== "undefined" &&
+        createPortal(
+          <DragOverlay>
+            {activeTask ? (
+              <CardShell task={activeTask} workspaceId={workspaceId} dragging />
+            ) : null}
+          </DragOverlay>,
+          document.body,
+        )}
       {assign.menu}
     </DndContext>
   );
