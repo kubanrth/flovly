@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { RoadmapView } from "@/components/roadmap/roadmap-view";
+import { AggregatorToggle } from "@/components/roadmap/aggregator-toggle";
 import { BackgroundCustomizer } from "@/components/view/background-customizer";
 import { BoardShell } from "@/components/view/board-shell";
 import { ViewTransition } from "@/components/view/view-transition";
@@ -124,6 +125,13 @@ export default async function RoadmapPage({
       />
 
       <ViewTransition>
+      {canManageBoard && (
+        <AggregatorToggle
+          workspaceId={workspaceId}
+          boardId={boardId}
+          initialOn={board.isAggregator}
+        />
+      )}
       <RoadmapView
         workspaceId={workspaceId}
         boardId={boardId}
