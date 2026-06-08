@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
@@ -21,14 +21,21 @@ export function TaskModalShell({
   // saw empty sessionStorage so router.back() jumped an extra level.
   const closingRef = useRef(false);
 
+  // Scroll position podłoża zapisana w momencie OTWARCIA drawer'a. base-ui
+  // robi scroll-lock body kiedy się otwiera; jego własna restore-logic
+  // gubiła pozycję gdy w międzyczasie router.refresh() / revalidatePath
+  // przebudował underlying page (np. nowy task w tabeli) → po zamknięciu
+  // lądowaliśmy na samym dole. Trzymamy własną wartość i restore'ujemy
+  // ręcznie z scroll: false na route push'u.
+  const restoreScrollYRef = useRef<number | null>(null);
+  useEffect(() => {
+    restoreScrollYRef.current = window.scrollY;
+  }, []);
+
   const close = () => {
     if (closingRef.current) return;
     closingRef.current = true;
     setOpen(false);
-    // Honor returnTo only if it was set for THIS task (create flow). A stale entry
-    // from a create-modal that was dismissed by navigation must not hijack the
-    // close of a different task's edit-modal → that caused the "jumps to another
-    // board" bug. Mismatch (or no entry) falls back to history back().
     let returnTo: string | null = null;
     try {
       const raw = sessionStorage.getItem("taskModalReturnTo");
@@ -42,11 +49,20 @@ export function TaskModalShell({
     } catch {
       /* sessionStorage off or bad JSON — fallback to back */
     }
+    // scroll: false → Next.js nie resetuje scroll'a na router push;
+    // potem requestAnimationFrame przywraca zapamiętaną pozycję ZANIM
+    // base-ui zdąży zrobić własny scroll-restore.
+    const restoreY = restoreScrollYRef.current ?? 0;
     if (returnTo) {
-      router.push(returnTo);
+      router.push(returnTo, { scroll: false });
     } else {
       router.back();
     }
+    // Wyłączamy scrollRestoration globalnie na 200ms — wystarczy żeby
+    // route push się rozpropagował, potem ustawiamy własne Y.
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: restoreY, behavior: "instant" });
+    });
   };
 
   return (

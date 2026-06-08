@@ -47,8 +47,14 @@ export function CreateTaskButton({
       } catch {
         // sessionStorage może być wyłączone (private mode safari)
       }
-      router.push(`/w/${workspaceId}/t/${state.taskId}`);
-      router.refresh();
+      // scroll: false — base-ui Dialog (TaskModalShell) robi body scroll-lock
+      // przy otwarciu. Bez tej flagi Next.js scrollował underlying page do
+      // top przy push'u co kolidowało ze scroll-lock'iem → po zamknięciu
+      // drawer'a scroll lądował na samym dole tabeli.
+      router.push(`/w/${workspaceId}/t/${state.taskId}`, { scroll: false });
+      // Bez router.refresh() — revalidatePath w createTaskAction już
+      // odświeżył route segment, dodatkowy refresh tylko sypał race condition
+      // z scroll-lock'iem dialogu.
     }
   }, [state, router, workspaceId, pathname]);
 
