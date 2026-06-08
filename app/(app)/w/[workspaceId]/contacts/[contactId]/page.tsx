@@ -206,7 +206,11 @@ export default async function ContactDetailPage({
 
   return (
     <main className="flex-1 px-4 py-6 md:px-14 md:py-14">
-      <div className="mx-auto flex max-w-3xl flex-col gap-6 md:gap-8">
+      {/* Wyrównanie szerokości do listy kontaktów (max-w-6xl). Wcześniej
+          karta kontaktu była zacieśniona do max-w-3xl (768px) — przez to
+          dłuższe ContactsTable / pipeline'y / thread konwersacji wyglądały
+          klaustrofobicznie obok reszty modułów. */}
+      <div className="mx-auto flex max-w-6xl flex-col gap-6 md:gap-8">
         <div className="flex flex-col gap-3">
           <Link
             href={`/w/${workspaceId}/contacts`}
