@@ -19,6 +19,7 @@ export default async function ContactsListPage({
   const { q } = await searchParams;
   const ctx = await requireWorkspaceMembership(workspaceId);
   const canCreate = can(ctx.role, "contact.create");
+  const canDelete = can(ctx.role, "contact.delete");
 
   const query = (q ?? "").trim();
   const where = query
@@ -130,7 +131,11 @@ export default async function ContactsListPage({
           </div>
         </div>
 
-        <ContactsTable workspaceId={workspaceId} rows={rows} />
+        <ContactsTable
+          workspaceId={workspaceId}
+          rows={rows}
+          canDelete={canDelete}
+        />
       </div>
     </main>
   );

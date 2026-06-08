@@ -19,7 +19,9 @@ export default async function NewContactPage({
 
   const memberships = await db.workspaceMembership.findMany({
     where: { workspaceId },
-    include: { user: { select: { id: true, name: true, email: true } } },
+    include: {
+      user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+    },
     orderBy: { joinedAt: "asc" },
   });
 

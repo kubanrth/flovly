@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Settings2, Check } from "lucide-react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { Settings2, Check, Trash2 } from "lucide-react";
+import { deleteContactAction } from "@/app/(app)/w/[workspaceId]/contacts/actions";
 
 export interface ContactsTableRow {
   id: string;
@@ -79,9 +80,13 @@ const STORAGE_KEY = "flovly:contacts-columns";
 export function ContactsTable({
   workspaceId,
   rows,
+  canDelete = false,
 }: {
   workspaceId: string;
   rows: ContactsTableRow[];
+  // Czy user ma uprawnienie contact.delete. Bez tego trash icon nie rendere'uje
+  // się — chronimy przed klikiem od member'a / viewer'a.
+  canDelete?: boolean;
 }) {
   // Start with the default set so SSR + first paint match. Sync from
   // localStorage in an effect to avoid hydration mismatch.
@@ -136,6 +141,9 @@ export function ContactsTable({
                   {c.label}
                 </th>
               ))}
+              {canDelete && (
+                <th className="w-10 px-2 py-2" aria-label="Akcje" />
+              )}
             </tr>
           </thead>
           <tbody>
@@ -145,6 +153,7 @@ export function ContactsTable({
                 workspaceId={workspaceId}
                 row={row}
                 columns={visibleColumns}
+                canDelete={canDelete}
               />
             ))}
           </tbody>
@@ -163,10 +172,12 @@ function ContactRow({
   workspaceId,
   row,
   columns,
+  canDelete,
 }: {
   workspaceId: string;
   row: ContactsTableRow;
   columns: ColumnDef[];
+  canDelete: boolean;
 }) {
   const personName = [row.firstName, row.lastName].filter(Boolean).join(" ") || null;
   const addressLine = [
@@ -270,13 +281,39 @@ function ContactRow({
     }
   };
 
+  const onDelete = () => {
+    const label =
+      row.companyName ??
+      [row.firstName, row.lastName].filter(Boolean).join(" ") ??
+      row.email ??
+      "ten kontakt";
+    if (!confirm(`Usunąć ${label}? Tego nie da się cofnąć z UI.`)) return;
+    const fd = new FormData();
+    fd.set("workspaceId", workspaceId);
+    fd.set("contactId", row.id);
+    startTransition(() => deleteContactAction(fd));
+  };
+
   return (
-    <tr className="border-b border-border last:border-b-0 hover:bg-accent/30">
+    <tr className="group border-b border-border last:border-b-0 hover:bg-accent/30">
       {columns.map((c) => (
         <td key={c.key} className="px-4 py-3 align-middle">
           {cellFor(c.key)}
         </td>
       ))}
+      {canDelete && (
+        <td className="w-10 px-2 py-3 align-middle">
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label={`Usuń kontakt ${row.companyName ?? row.email ?? row.id}`}
+            title="Usuń kontakt"
+            className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground/40 opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+          >
+            <Trash2 size={12} />
+          </button>
+        </td>
+      )}
     </tr>
   );
 }

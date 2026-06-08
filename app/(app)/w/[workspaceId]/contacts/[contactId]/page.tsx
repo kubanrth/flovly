@@ -45,7 +45,9 @@ export default async function ContactDetailPage({
   const [memberships, stages, deals, activities, contactTasks, contactMessages, currentSession, linkableTasks] = await Promise.all([
     db.workspaceMembership.findMany({
       where: { workspaceId },
-      include: { user: { select: { id: true, name: true, email: true } } },
+      include: {
+        user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+      },
       orderBy: { joinedAt: "asc" },
     }),
     db.dealStage.findMany({

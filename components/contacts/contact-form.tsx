@@ -1,6 +1,10 @@
 "use client";
 
-import { useActionState, startTransition } from "react";
+import { useActionState, startTransition, useMemo, useState } from "react";
+import {
+  SearchableDropdown,
+  type SearchableDropdownOption,
+} from "@/components/ui/searchable-dropdown";
 import {
   createContactAction,
   updateContactAction,
@@ -30,6 +34,9 @@ export interface WorkspaceMemberOption {
   id: string;
   name: string | null;
   email: string;
+  // Avatar dla SearchableDropdown leading slot. Fallback do inicjałów na
+  // brand-gradient gdy null.
+  avatarUrl?: string | null;
 }
 
 export function ContactForm({
@@ -57,6 +64,35 @@ export function ContactForm({
     ? state?.error ?? state?.fieldErrors?._form
     : undefined;
   const flash = state?.ok ? state.message : null;
+
+  // Klient: native <select> dla opiekuna był nieczytelny — lista emaili w
+  // jednolitym stylu. SearchableDropdown daje avatar/inicjały + search po
+  // imię/email + większy hit area.
+  const [ownerId, setOwnerId] = useState(initial?.ownerId ?? "");
+  const ownerOptions = useMemo<SearchableDropdownOption[]>(
+    () =>
+      members.map((m) => {
+        const display = m.name ?? m.email.split("@")[0];
+        const initials = (m.name ?? m.email).slice(0, 2).toUpperCase();
+        return {
+          id: m.id,
+          label: display,
+          sublabel: m.email,
+          searchText: `${m.name ?? ""} ${m.email}`,
+          leading: (
+            <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.55rem] font-bold text-white">
+              {m.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={m.avatarUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                initials
+              )}
+            </span>
+          ),
+        };
+      }),
+    [members],
+  );
 
   return (
     <form
@@ -87,21 +123,19 @@ export function ContactForm({
       </Section>
 
       <Section title="Opiekun" eyebrow="Wewnętrzny">
-        <label className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2">
           <span className="eyebrow">Przypisany do</span>
-          <select
+          <SearchableDropdown
             name="ownerId"
-            defaultValue={initial?.ownerId ?? ""}
-            className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary"
-          >
-            <option value="">— bez opiekuna —</option>
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name ?? m.email}
-              </option>
-            ))}
-          </select>
-        </label>
+            value={ownerId}
+            onChange={(v) => setOwnerId(v)}
+            options={ownerOptions}
+            placeholder="— bez opiekuna —"
+            emptyLabel="— bez opiekuna —"
+            searchPlaceholder="Szukaj po imię lub email…"
+            ariaLabel="Opiekun kontaktu"
+          />
+        </div>
       </Section>
 
       {/* notesJson reserved for a richer editor later; v1 just collects nothing. */}
