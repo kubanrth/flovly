@@ -1442,6 +1442,10 @@ model Deal {
   // updateDealAction tak jak updateTaskAction robi to z taskiem.
   reminderAt      DateTime?
   reminderSentAt  DateTime?
+  // F12-K71: opcjonalna treść do przypomnienia. Klient: "Moduł powinien
+  // mieć opcje na wpisanie specjalnej treści do przypomnienia". Cron
+  // wkleja jako blockquote pod tytułem deal'a w emailu.
+  reminderNote    String?
 
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

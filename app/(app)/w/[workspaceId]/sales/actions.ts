@@ -63,6 +63,7 @@ function parseDealFormData(fd: FormData) {
     ownerId: get("ownerId") ?? "",
     contactId: get("contactId") ?? "",
     reminderAt: get("reminderAt") ?? "",
+    reminderNote: get("reminderNote") ?? "",
   };
 }
 
@@ -183,6 +184,7 @@ export async function createDealAction(
       valueCurrency: parsed.data.valueCurrency,
       expectedCloseAt: parsed.data.expectedCloseAt,
       reminderAt: parseReminderField(parsed.data.reminderAt),
+      reminderNote: parsed.data.reminderNote || null,
       notesJson: parseNotesField(formData),
       rowOrder: await nextRowOrder(stage.id),
     },
@@ -282,6 +284,7 @@ export async function updateDealAction(
     valueCurrency: parsed.data.valueCurrency,
     expectedCloseAt: parsed.data.expectedCloseAt,
     reminderAt: nextReminderAt,
+    reminderNote: parsed.data.reminderNote || null,
     ...(reminderChanged ? { reminderSentAt: null } : {}),
     notesJson: parseNotesField(formData),
     owner: ownerId ? { connect: { id: ownerId } } : { disconnect: true },

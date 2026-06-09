@@ -25,6 +25,9 @@ export interface DealInitial {
   notesJson: RichTextDoc | null;
   // F12-K66: przypomnienie cron'owe dla owner'a. ISO datetime.
   reminderAt: string | null;
+  // F12-K71: opcjonalna treść do przypomnienia, leci jako blockquote
+  // w mailu cron'a. Plain text, ~500 chars max.
+  reminderNote: string | null;
 }
 
 export interface StageOption {
@@ -220,6 +223,16 @@ export function DealForm({
             defaultValue={initial?.reminderAt ?? null}
             placeholder="Brak przypomnienia"
             label="Przypomnienie email"
+          />
+          {/* F12-K71: dopisz custom treść która pojawi się w mailu
+              przypomnienia jako blockquote pod tytułem. */}
+          <textarea
+            name="reminderNote"
+            defaultValue={initial?.reminderNote ?? ""}
+            maxLength={500}
+            rows={2}
+            placeholder="Treść przypomnienia (opcjonalnie) — np. „zadzwonić w sprawie umowy"…"
+            className="min-h-[60px] rounded-md border border-border bg-background p-2 text-[0.86rem] leading-[1.5] outline-none focus:border-primary"
           />
         </div>
       </div>

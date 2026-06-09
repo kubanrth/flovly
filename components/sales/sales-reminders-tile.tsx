@@ -10,6 +10,8 @@ export interface SalesReminderRow {
   stageName: string;
   stageColor: string;
   sent: boolean; // reminderSentAt is set
+  // F12-K71: custom treść (pokazywana w tile + wysyłana w mailu).
+  note: string | null;
 }
 
 // Kafelek "Nadchodzące przypomnienia" nad pipeline'em w /sales. Pokazuje N
@@ -83,6 +85,11 @@ export function SalesRemindersTile({
                     {r.contactLabel ? ` · ${r.contactLabel}` : ""}
                     {r.ownerName ? ` · ${r.ownerName}` : ""}
                   </span>
+                  {r.note && (
+                    <span className="mt-0.5 line-clamp-2 text-[0.78rem] italic leading-[1.4] text-muted-foreground/90">
+                      „{r.note}"
+                    </span>
+                  )}
                 </div>
                 <span
                   className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.12em] ${

@@ -20,7 +20,6 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  ArrowRight,
   BarChart3,
   ChevronDown,
   ChevronRight,
@@ -390,23 +389,25 @@ function SortableBoardCard({
     zIndex: isDragging ? 10 : "auto",
   } as const;
 
-  // Pick top 3 most recent tasks for preview. SortableBoardsList pokazuje 5,
-  // ale w kafelku jest mniej miejsca po wertykale — 3 zachowuje proporcje.
-  const previewTasks = board.tasks.slice(0, 3);
-
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={`group relative ${isDragging ? "cursor-grabbing" : ""}`}
     >
-      <div className="flex min-h-[260px] flex-col gap-4 rounded-xl border border-border bg-card p-5 pl-12 shadow-[0_1px_2px_rgba(10,10,40,0.04)] transition-all group-hover:-translate-y-[2px] group-hover:border-primary/30 group-hover:shadow-[0_12px_32px_-16px_rgba(123,104,238,0.35)]">
+      {/* Klient: "zostawmy tylko informacje o tym jakie są widoki, ale niech
+          się mieszczą w jednej linii. Bez zadań, żeby przestrzenie wyglądały
+          na równe". Fixed h-[180px] zamiast min-h żeby kafelki MIAŁY tę samą
+          wysokość niezależnie od liczby widoków. flex-nowrap + overflow-x-auto
+          na pillach żeby przy 5 włączonych widokach (Tabela/Kanban/Roadmapa/
+          Gantt/Whiteboard) nie złamało się na drugą linię. */}
+      <div className="flex h-[180px] flex-col gap-4 rounded-xl border border-border bg-card p-5 pl-12 shadow-[0_1px_2px_rgba(10,10,40,0.04)] transition-all group-hover:-translate-y-[2px] group-hover:border-primary/30 group-hover:shadow-[0_12px_32px_-16px_rgba(123,104,238,0.35)]">
         <Link
           href={`/w/${workspaceId}/b/${board.id}/table`}
-          className="flex flex-col gap-2 focus-visible:outline-none"
+          className="flex min-w-0 flex-col gap-2 focus-visible:outline-none"
         >
           <span className="eyebrow">Tablica</span>
-          <h2 className="font-display text-[1.25rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground transition-colors group-hover:text-primary">
+          <h2 className="truncate font-display text-[1.25rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground transition-colors group-hover:text-primary">
             {board.name}
           </h2>
           <span className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
@@ -414,8 +415,10 @@ function SortableBoardCard({
           </span>
         </Link>
 
-        {/* View pills — szybkie wejście z kafelka do konkretnego widoku */}
-        <div className="flex flex-wrap gap-1.5">
+        {/* View pills — szybkie wejście z kafelka do konkretnego widoku.
+            flex-nowrap + overflow-x-auto: gdy włączonych jest 5 widoków
+            i kontener jest wąski (md 2-col), poziomy scroll zamiast zawinięcia. */}
+        <div className="-mx-1 mt-auto flex flex-nowrap items-center gap-1.5 overflow-x-auto px-1 pb-1">
           {board.enabledViews.map((view) => {
             const meta = VIEW_META[view];
             const Icon = meta.Icon;
@@ -424,7 +427,7 @@ function SortableBoardCard({
                 key={view}
                 href={`/w/${workspaceId}/b/${board.id}/${view}`}
                 title={meta.label}
-                className={`inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2 font-mono text-[0.62rem] uppercase tracking-[0.12em] transition-colors hover:border-primary/40 hover:text-foreground ${meta.accent}`}
+                className={`inline-flex h-7 shrink-0 items-center gap-1 rounded-md border border-border bg-background px-2 font-mono text-[0.62rem] uppercase tracking-[0.12em] transition-colors hover:border-primary/40 hover:text-foreground ${meta.accent}`}
               >
                 <Icon size={11} />
                 <span>{meta.label}</span>
@@ -432,43 +435,6 @@ function SortableBoardCard({
             );
           })}
         </div>
-
-        {/* Preview ostatnich 3 tasków */}
-        {previewTasks.length > 0 ? (
-          <ul className="mt-auto flex flex-col gap-1.5 border-t border-border pt-3">
-            {previewTasks.map((task) => (
-              <li key={task.id}>
-                <Link
-                  href={`/w/${workspaceId}/t/${task.id}`}
-                  className="flex items-center gap-2 truncate text-[0.82rem] text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {task.statusColor && (
-                    <span
-                      aria-hidden
-                      className="h-1.5 w-1.5 shrink-0 rounded-full"
-                      style={{ background: task.statusColor }}
-                    />
-                  )}
-                  <span className="truncate">{task.title}</span>
-                </Link>
-              </li>
-            ))}
-            {board.taskCount > previewTasks.length && (
-              <li className="pt-1">
-                <Link
-                  href={`/w/${workspaceId}/b/${board.id}/table`}
-                  className="inline-flex items-center gap-1 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-primary"
-                >
-                  + jeszcze {board.taskCount - previewTasks.length} <ArrowRight size={9} />
-                </Link>
-              </li>
-            )}
-          </ul>
-        ) : (
-          <p className="mt-auto border-t border-border pt-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
-            brak zadań
-          </p>
-        )}
       </div>
 
       {/* Drag handle po lewej krawędzi karty */}

@@ -132,11 +132,17 @@ async function runSweep(now: Date) {
       deal.valueAmount != null
         ? `<p style="margin:0 0 6px;color:#475569;line-height:1.55">Wartość: <strong>${deal.valueAmount} ${escape(deal.valueCurrency)}</strong> · Etap: <strong>${escape(deal.stage.name)}</strong></p>`
         : `<p style="margin:0 0 6px;color:#475569;line-height:1.55">Etap: <strong>${escape(deal.stage.name)}</strong></p>`;
+    // F12-K71: custom treść przypomnienia jako blockquote. Newline'y w
+    // notatce konwertujemy na <br> żeby user mógł rozbić zdania.
+    const noteBlock = deal.reminderNote
+      ? `<blockquote style="margin:14px 0 4px;padding:10px 14px;border-left:3px solid #7B68EE;background:#F8F7FF;border-radius:0 8px 8px 0;color:#1F1A4D;font-size:14px;line-height:1.55;white-space:pre-wrap">${escape(deal.reminderNote).replace(/\n/g, "<br>")}</blockquote>`
+      : "";
     const html = `<!doctype html><html lang="pl"><body style="font-family:ui-sans-serif,system-ui,sans-serif;color:#0F172A;padding:24px">
       <div style="max-width:540px;margin:0 auto;background:#fff;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden">
         <div style="padding:20px 24px">
           <div style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7B68EE">Przypomnienie · Plan sprzedaży</div>
           <h1 style="margin:6px 0 12px;font-size:20px;line-height:1.25">${escape(deal.title)}</h1>
+          ${noteBlock}
           ${valueLine}
           <p style="margin:0 0 6px;color:#475569;line-height:1.55">Workspace: <strong>${escape(deal.workspace.name)}</strong> · Termin: <strong>${escape(when)}</strong></p>
           <a href="${url}" style="display:inline-block;margin-top:14px;padding:10px 18px;background:linear-gradient(135deg,#7B68EE,#BA68C8);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">Otwórz deal</a>

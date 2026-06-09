@@ -36,6 +36,14 @@ export const dealFieldsSchema = z.object({
   // przypomnienia. Wstępna walidacja "is string" — final Date parsing
   // dzieje się w action (parseReminderField).
   reminderAt: z.string().optional().or(z.literal("")).transform((v) => v ?? ""),
+  // F12-K71: opcjonalna treść do przypomnienia (cron wkleja w mailu jako
+  // blockquote). 500 chars max — wystarczy na 2-3 zdania.
+  reminderNote: z
+    .string()
+    .max(500, "Treść przypomnienia max 500 znaków.")
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => v?.trim() ?? ""),
 });
 
 export const dealStageFieldsSchema = z.object({

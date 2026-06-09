@@ -164,6 +164,7 @@ export default async function DealDetailPage({
               contactId: deal.contactId,
               notesJson: (deal.notesJson ?? null) as RichTextDoc | null,
               reminderAt: deal.reminderAt ? deal.reminderAt.toISOString() : null,
+              reminderNote: deal.reminderNote,
             }}
             stages={stages}
             members={memberships.map((m) => m.user)}
