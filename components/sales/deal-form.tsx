@@ -231,7 +231,7 @@ export function DealForm({
             defaultValue={initial?.reminderNote ?? ""}
             maxLength={500}
             rows={2}
-            placeholder="Treść przypomnienia (opcjonalnie) — np. „zadzwonić w sprawie umowy"…"
+            placeholder='Treść przypomnienia (opcjonalnie) — np. „zadzwonić w sprawie umowy”…'
             className="min-h-[60px] rounded-md border border-border bg-background p-2 text-[0.86rem] leading-[1.5] outline-none focus:border-primary"
           />
         </div>

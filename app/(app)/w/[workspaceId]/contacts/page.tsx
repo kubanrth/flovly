@@ -88,8 +88,8 @@ export default async function ContactsListPage({
       : null,
   }));
 
+  // py-16 zamiast py-14 żeby wyrównać do AppShell ("inne moduły systemu").
   return (
-    {/* py-16 zamiast py-14 żeby wyrównać do AppShell ("inne moduły systemu"). */}
     <main className="flex-1 px-4 py-6 md:px-14 md:py-16">
       <div className="mx-auto flex max-w-6xl flex-col gap-5 md:gap-6">
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end md:justify-between md:gap-4">
