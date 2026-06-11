@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -16,6 +16,7 @@ import {
   SquarePen,
   StickyNote,
   Trash2,
+  X,
 } from "lucide-react";
 import {
   createNoteAction,
@@ -301,35 +302,77 @@ function FolderRow({
 }
 
 function NewFolderForm() {
+  // Klient: "Dodajmy do NOTATEK przycisk 'nowy folder', który wygląda
+  // inaczej". Dwa stany: collapsed = brand-gradient CTA, expanded = input
+  // do wpisania nazwy + Save/Cancel. Wyrazistsze od poprzedniej inline'owej
+  // formy która zlewała się z resztą sidebar'a.
+  const [expanded, setExpanded] = useState(false);
   const [name, setName] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (expanded) inputRef.current?.focus();
+  }, [expanded]);
+
+  if (!expanded) {
+    return (
+      <button
+        type="button"
+        onClick={() => setExpanded(true)}
+        className="mt-1 flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-brand-gradient px-3 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        <Plus size={14} /> Nowy folder
+      </button>
+    );
+  }
+
   return (
     <form
       action={(fd) =>
         startTransition(async () => {
           await createNoteFolderAction(fd);
           setName("");
+          setExpanded(false);
         })
       }
-      className="flex items-center gap-1 border-t border-border pt-2"
+      className="mt-1 flex flex-col gap-1.5 rounded-lg border border-primary/30 bg-primary/[0.04] p-2"
     >
       <input
+        ref={inputRef}
         name="name"
         value={name}
         onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            setName("");
+            setExpanded(false);
+          }
+        }}
         required
         maxLength={80}
-        placeholder="nowy folder"
-        className="h-9 flex-1 rounded-md border border-transparent bg-background px-2 text-[0.9rem] outline-none placeholder:text-muted-foreground/60 focus:border-primary/40 md:h-8 md:text-[0.82rem]"
+        placeholder="nazwa folderu…"
+        className="h-9 rounded-md border border-border bg-background px-2 text-[0.88rem] outline-none placeholder:text-muted-foreground/60 focus:border-primary"
       />
-      <button
-        type="submit"
-        disabled={!name.trim()}
-        aria-label="Dodaj folder"
-        title="Dodaj folder (Enter)"
-        className="grid h-9 w-9 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 md:h-7 md:w-7"
-      >
-        <Plus size={14} />
-      </button>
+      <div className="flex items-center gap-1">
+        <button
+          type="submit"
+          disabled={!name.trim()}
+          className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-md bg-brand-gradient px-2 font-sans text-[0.78rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Dodaj
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setName("");
+            setExpanded(false);
+          }}
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          aria-label="Anuluj"
+        >
+          <X size={13} />
+        </button>
+      </div>
     </form>
   );
 }

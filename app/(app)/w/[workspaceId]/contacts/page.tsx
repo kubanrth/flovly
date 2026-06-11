@@ -95,7 +95,8 @@ export default async function ContactsListPage({
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end md:justify-between md:gap-4">
           <div className="flex flex-col gap-2">
             <span className="eyebrow">Kontakty B2B</span>
-            <h1 className="font-display text-[1.5rem] font-bold leading-[1.1] tracking-[-0.03em] md:text-[2rem]">
+            {/* text-[2.2rem] wyrównuje header do reszty modułów. */}
+            <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
               {contacts.length} {pluralPl(contacts.length, "kontakt", "kontakty", "kontaktów")}
             </h1>
           </div>

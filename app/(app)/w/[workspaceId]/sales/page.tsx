@@ -144,7 +144,10 @@ export default async function SalesPipelinePage({
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end md:justify-between md:gap-4">
           <div className="flex flex-col gap-2">
             <span className="eyebrow">Plan sprzedaży</span>
-            <h1 className="font-display text-[1.5rem] font-bold leading-[1.1] tracking-[-0.03em] md:text-[2rem]">
+            {/* text-[2.2rem] żeby wyrównać z resztą modułów (workspaces /
+                my-tasks używają tego samego). Wcześniejsze 1.5rem→2rem
+                sprawiało że header był "niski" obok pozostałych. */}
+            <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
               Pipeline
             </h1>
             <div className="flex flex-wrap items-center gap-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">

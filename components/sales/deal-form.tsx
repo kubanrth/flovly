@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, startTransition, useMemo, useState } from "react";
+import { Bell, Check } from "lucide-react";
 import {
   createDealAction,
   updateDealAction,
@@ -213,27 +214,50 @@ export function DealForm({
             className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary"
           />
         </label>
-        <div className="flex flex-col gap-2">
-          <span className="eyebrow">Przypomnienie</span>
-          {/* Cron /api/cron/send-reminders skanuje co 15 min i wysyła mail do
-              owner'a (creator fallback) gdy reminderAt < now i reminderSentAt
-              jest null. Re-arming czyści reminderSentAt w server action. */}
+      </div>
+
+      {/* F12-K71 v2: reminder w osobnym brand-purple card'zie (mirror
+          NewReminderForm w /my/reminders). Klient: "przypomnienie wygląda
+          jakby niezapisane, wykorzystajmy wygląd modułu przypomnienia z
+          głównego widoku". Dotąd były to zwykłe inline pola w grid'zie, więc
+          po zapisie textarea wracała do "Brak przypomnienia" placeholder'a
+          i user nie miał feedback'u że coś zostało zapisane.
+          Cron /api/cron/send-reminders co 15 min skanuje gdy reminderAt < now
+          i reminderSentAt = null. Re-arming czyści reminderSentAt. */}
+      <div className="flex flex-col gap-4 rounded-xl border border-primary/40 bg-primary/5 p-5">
+        <div className="flex items-baseline gap-2">
+          <Bell size={13} className="text-primary" />
+          <span className="eyebrow">Przypomnienie email</span>
+          {initial?.reminderAt && (
+            <span className="ml-auto inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 font-mono text-[0.58rem] uppercase tracking-[0.12em] text-emerald-700 dark:border-emerald-400/40 dark:text-emerald-300">
+              <Check size={9} /> ustawione
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <span className="eyebrow">Kiedy wysłać</span>
           <DateTimePicker
             name="reminderAt"
             defaultValue={initial?.reminderAt ?? null}
-            placeholder="Brak przypomnienia"
-            label="Przypomnienie email"
+            placeholder="Wybierz datę i godzinę"
+            label="Termin przypomnienia"
           />
-          {/* F12-K71: dopisz custom treść która pojawi się w mailu
-              przypomnienia jako blockquote pod tytułem. */}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <span className="eyebrow">Treść (opcjonalna)</span>
           <textarea
             name="reminderNote"
             defaultValue={initial?.reminderNote ?? ""}
             maxLength={500}
-            rows={2}
-            placeholder='Treść przypomnienia (opcjonalnie) — np. „zadzwonić w sprawie umowy”…'
-            className="min-h-[60px] rounded-md border border-border bg-background p-2 text-[0.86rem] leading-[1.5] outline-none focus:border-primary"
+            rows={3}
+            placeholder='Co Ci ma się przypomnieć? np. „zadzwonić w sprawie umowy"…'
+            className="min-h-[80px] resize-y rounded-md border border-border bg-background p-2.5 text-[0.88rem] leading-[1.55] outline-none focus:border-primary"
           />
+          <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground/70">
+            wkleja się w mailu jako blockquote pod tytułem deal'a
+          </span>
         </div>
       </div>
 

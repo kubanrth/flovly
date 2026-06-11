@@ -73,9 +73,14 @@ export function TaskModalShell({
       }}
     >
       <BaseDialog.Portal>
-        <BaseDialog.Backdrop className="fixed inset-0 z-40 bg-background/70 backdrop-blur-sm data-[closed]:opacity-0 data-[open]:opacity-100" />
+        {/* z-[85] / z-[90] — sidebar hamburger ma z-[80] (sidebar.tsx). Bez
+            tego krzyżyk drawer'a chował się pod hamburgerem na mobile —
+            klient: "po stworzeniu zadania nie da się go zamknąć, bo krzyżyk
+            wchodzi pod menu hamburgera". Backdrop też musi być nad hamburgerem
+            inaczej user mógłby trafić w hamburger w obszarze przyciemnienia. */}
+        <BaseDialog.Backdrop className="fixed inset-0 z-[85] bg-background/70 backdrop-blur-sm data-[closed]:opacity-0 data-[open]:opacity-100" />
         <BaseDialog.Popup
-          className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[720px] flex-col overflow-y-auto border-l border-border bg-background shadow-[0_24px_48px_-12px_rgba(0,0,0,0.25)] data-[closed]:translate-x-full data-[open]:translate-x-0 transition-transform duration-200"
+          className="fixed inset-y-0 right-0 z-[90] flex w-full max-w-[720px] flex-col overflow-y-auto border-l border-border bg-background shadow-[0_24px_48px_-12px_rgba(0,0,0,0.25)] data-[closed]:translate-x-full data-[open]:translate-x-0 transition-transform duration-200"
           initialFocus={undefined}
         >
           {/* F12-K41: padding sm:px-8 — na mobile (~360-400px szerokości
