@@ -308,7 +308,12 @@ function SecretDisplay({ secret }: { secret: string }) {
         }}
         className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
       >
-        {copied ? <Check size={13} /> : <Copy size={13} />}
+        <span
+          key={copied ? "check" : "copy"}
+          className="inline-flex animate-in fade-in zoom-in-50 duration-200"
+        >
+          {copied ? <Check size={13} /> : <Copy size={13} />}
+        </span>
       </button>
     </div>
   );

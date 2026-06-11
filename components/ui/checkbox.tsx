@@ -55,13 +55,15 @@ export function Checkbox({
         onClick={onClick}
         className={`peer ${dim} cursor-pointer appearance-none rounded-[4px] border border-border bg-background transition-colors checked:border-primary checked:bg-primary indeterminate:border-primary indeterminate:bg-primary hover:border-primary/70 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-1 focus-visible:ring-offset-background`}
       />
-      {checked && !indeterminate && (
-        <Check
-          size={px - 4}
-          strokeWidth={3.5}
-          className="pointer-events-none absolute text-primary-foreground"
-        />
-      )}
+      {/* Check zawsze w DOM, widoczność przez peer-checked TRANSITION (nie
+          keyframe): brak popu przy mount'cie tabeli z N zaznaczonymi wierszami,
+          a szybkie klikanie płynnie zawraca animację zamiast ją kolejkować.
+          Easing spójny z toast-in (cubic-bezier(0.22,1,0.36,1), bounce 0). */}
+      <Check
+        size={px - 4}
+        strokeWidth={3.5}
+        className="pointer-events-none absolute scale-50 text-primary-foreground opacity-0 transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] peer-checked:scale-100 peer-checked:opacity-100"
+      />
       {indeterminate && !checked && (
         <Minus
           size={px - 4}

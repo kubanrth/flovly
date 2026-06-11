@@ -191,7 +191,14 @@ export function InviteForm({
               onClick={copyUrl}
               className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-border px-3 font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
             >
-              {copied ? <Check size={13} /> : <Copy size={13} />}
+              {/* key = remount na zmianę stanu → animowany swap ikonki
+                  (fade + zoom, recepta na contextual icon transitions) */}
+              <span
+                key={copied ? "check" : "copy"}
+                className="inline-flex animate-in fade-in zoom-in-50 duration-200"
+              >
+                {copied ? <Check size={13} /> : <Copy size={13} />}
+              </span>
               {copied ? "Skopiowano" : "Kopiuj"}
             </button>
           </div>

@@ -3,7 +3,6 @@
 import { startTransition, useState } from "react";
 import {
   ChevronDown,
-  ChevronRight,
   FolderOpen,
   Pencil,
   Plus,
@@ -91,7 +90,12 @@ function FolderBlock({
           className="grid h-6 w-6 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors hover:text-foreground"
           aria-label={open ? "Zwiń folder" : "Rozwiń folder"}
         >
-          {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          {/* Jeden chevron z rotacją (jak w sidebarze) zamiast skokowej
+              podmiany ChevronRight/ChevronDown. */}
+          <ChevronDown
+            size={14}
+            className={`transition-transform duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] ${open ? "rotate-0" : "-rotate-90"}`}
+          />
         </button>
         <FolderOpen size={14} className="text-primary shrink-0" />
 

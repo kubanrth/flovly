@@ -503,3 +503,52 @@
 .lg-seg-btn {
   z-index: 1; /* sit above the sliding indicator */
 }
+
+/* ───────────────────────── Motion ─────────────────────────
+   Toast enter/exit (notification-toaster.tsx). Enter = materialize
+   (opacity + translateY + blur); exit celowo subtelniejszy — uwaga
+   usera idzie już gdzie indziej. Transform na karcie toasta jest
+   bezpieczny: brak fixed/dnd descendantów (por. komentarz
+   w view-transition.tsx — tam transform na KONTENERZE widoku łamał
+   dnd-kit; tu animujemy leaf element). */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.97);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+    filter: blur(4px);
+  }
+}
+.toast-card {
+  animation: toast-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.toast-card[data-leaving] {
+  animation: toast-out 160ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+/* Global reduced-motion safety net. Pokrywa też tw-animate-css'owe
+   animate-in/out w dialogach/popoverach, które same tego nie robią.
+   .animate-spin wyłączony z bloku — zamrożony spinner przestaje
+   komunikować ładowanie. Duration 0.01ms (nie `none`): animationend
+   nadal odpala, więc logika sprzątająca po exit-animacjach działa. */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.animate-spin),
+  *:not(.animate-spin)::before,
+  *:not(.animate-spin)::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

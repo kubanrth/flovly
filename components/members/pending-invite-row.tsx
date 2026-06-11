@@ -69,7 +69,12 @@ export function PendingInviteRow({
           onClick={copyUrl}
           className="inline-flex h-8 items-center gap-1.5 rounded-sm border border-border px-3 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
         >
-          {copied ? <Check size={12} /> : <Copy size={12} />}
+          <span
+            key={copied ? "check" : "copy"}
+            className="inline-flex animate-in fade-in zoom-in-50 duration-200"
+          >
+            {copied ? <Check size={12} /> : <Copy size={12} />}
+          </span>
           {copied ? "skopiowano" : "kopiuj link"}
         </button>
         <form action={cancelInviteAction}>

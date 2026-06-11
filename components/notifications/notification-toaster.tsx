@@ -30,10 +30,16 @@ import {
 
 const AUTO_DISMISS_MS = 12_000;
 const MAX_VISIBLE = 5;
+// Fallback: jeśli animationend nigdy nie dojdzie (np. tab w tle), tick
+// twardo usuwa karty wiszące w stanie leaving dłużej niż to.
+const LEAVING_TIMEOUT_MS = 1_000;
 
 interface ToastItem extends ToastNotificationPayload {
   // Klient-only: kiedy toast został zaserwowany — używane do auto-dismiss.
   shownAt: number;
+  // Karta gra exit-animację; usunięcie ze state'u robi onAnimationEnd.
+  leaving?: boolean;
+  leavingAt?: number;
 }
 
 export function NotificationToaster({ userId }: { userId: string }) {
@@ -66,11 +72,30 @@ export function NotificationToaster({ userId }: { userId: string }) {
     const tick = () => {
       setItems((prev) => {
         const now = Date.now();
-        return prev.filter(
-          (t) =>
-            hoverIdRef.current === t.id ||
-            now - t.shownAt < AUTO_DISMISS_MS,
-        );
+        let changed = false;
+        const next: ToastItem[] = [];
+        for (const t of prev) {
+          if (t.leaving) {
+            // Exit-animacja gra; usuwa onAnimationEnd. Twardy fallback
+            // gdyby event przepadł (tab w tle nie gra animacji).
+            if (now - (t.leavingAt ?? now) > LEAVING_TIMEOUT_MS) {
+              changed = true;
+              continue;
+            }
+            next.push(t);
+            continue;
+          }
+          if (
+            hoverIdRef.current !== t.id &&
+            now - t.shownAt >= AUTO_DISMISS_MS
+          ) {
+            changed = true;
+            next.push({ ...t, leaving: true, leavingAt: now });
+            continue;
+          }
+          next.push(t);
+        }
+        return changed ? next : prev;
       });
     };
     const start = () => {
@@ -99,7 +124,19 @@ export function NotificationToaster({ userId }: { userId: string }) {
     };
   }, [items.length]);
 
+  // Dismiss = odpal exit-animację; faktyczne usunięcie robi onAnimationEnd
+  // (remove). Dzięki temu karta wychodzi płynnie zamiast znikać skokowo.
   const dismiss = (id: string) => {
+    setItems((prev) =>
+      prev.map((t) =>
+        t.id === id && !t.leaving
+          ? { ...t, leaving: true, leavingAt: Date.now() }
+          : t,
+      ),
+    );
+  };
+
+  const remove = (id: string) => {
     setItems((prev) => prev.filter((t) => t.id !== id));
   };
 
@@ -112,6 +149,7 @@ export function NotificationToaster({ userId }: { userId: string }) {
           key={t.id}
           item={t}
           onDismiss={() => dismiss(t.id)}
+          onRemove={() => remove(t.id)}
           onMouseEnter={() => (hoverIdRef.current = t.id)}
           onMouseLeave={() => {
             if (hoverIdRef.current === t.id) hoverIdRef.current = null;
@@ -125,11 +163,13 @@ export function NotificationToaster({ userId }: { userId: string }) {
 function ToastCard({
   item,
   onDismiss,
+  onRemove,
   onMouseEnter,
   onMouseLeave,
 }: {
   item: ToastItem;
   onDismiss: () => void;
+  onRemove: () => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }) {
@@ -140,7 +180,13 @@ function ToastCard({
     <div
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className="pointer-events-auto flex items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)] backdrop-blur"
+      data-leaving={item.leaving ? "" : undefined}
+      onAnimationEnd={() => {
+        // Gdy leaving, jedyna grająca animacja to toast-out → koniec =
+        // bezpieczne usunięcie. Enter-animacja nie ma ustawionego leaving.
+        if (item.leaving) onRemove();
+      }}
+      className="toast-card pointer-events-auto flex items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)] backdrop-blur"
     >
       <span
         className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${colorClass}`}
