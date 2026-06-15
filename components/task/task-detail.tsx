@@ -210,12 +210,14 @@ export function TaskDetail({
 
   return (
     <div className="flex flex-col gap-6 md:gap-10">
-      {/* Meta: ID + actions */}
-      <div className="flex items-center justify-between">
+      {/* Meta: ID + actions. Mobile (max-md): pille zawijają się na drugą
+          linię — gap-2 zamiast gap-4, flex-wrap włączone. Każda akcja ma
+          własny kolor (sky / violet / destructive) — łatwo zidentyfikować. */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
           zadanie · #{task.displayId || "—"}
         </span>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2">
           {canEdit && (
             <SendEmailDialog
               taskId={task.id}
@@ -240,9 +242,9 @@ export function TaskDetail({
               <input type="hidden" name="workspaceId" value={workspaceId} />
               <button
                 type="submit"
-                className="inline-flex items-center gap-1.5 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-destructive"
+                className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-destructive/30 bg-destructive/10 px-3 font-sans text-[0.78rem] font-semibold text-destructive transition-colors hover:border-destructive/50 hover:bg-destructive/15 active:scale-[0.97] motion-reduce:active:scale-100"
               >
-                <Trash2 size={12} /> usuń zadanie
+                <Trash2 size={12} /> Usuń
               </button>
             </form>
           )}

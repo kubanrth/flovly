@@ -70,10 +70,15 @@ function TabLink({
   active: boolean;
 }) {
   return (
+    // Emil's "should this animate at all?" — tabs są klikane stale, więc
+    // tylko transition-colors (border + bg + text), bez transformy/spring.
+    // active:scale-[0.98] = 1 frame visual press feedback, motion-reduce
+    // wyłącza. Routing nav daje ostry switch routera, scale daje user'owi
+    // "kliknięte" cue zanim Next.js wystartuje navigation.
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 font-sans text-[0.82rem] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+      className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 font-sans text-[0.82rem] font-medium transition-colors active:scale-[0.98] motion-reduce:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
         active
           ? "border-primary/40 bg-primary/10 text-primary"
           : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-accent hover:text-foreground"

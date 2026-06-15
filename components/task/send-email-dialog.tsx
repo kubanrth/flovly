@@ -54,12 +54,20 @@ export function SendEmailDialog({
 
   return (
     <>
+      {/* Klient (mobile screen): action triggery w nagłówku karty zadania
+          były text-only muted i zlewały się ze sobą. Teraz colored pill:
+          sky tint dla "Wyślij mailem" (mail = komunikacja, sky). h-8 daje
+          32px hit-area na palca. */}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-primary"
+        // Emil's restraint: pill jest często klikany, więc transition-colors zamiast
+// transform — active:scale-[0.97] daje tylko bardzo subtelny press feedback
+// (~30ms percepcji) bez czytania jako "ozdobne". motion-reduce respect przez
+// active:scale na transformie który prefers-reduced-motion neutralizuje.
+className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 font-sans text-[0.78rem] font-semibold text-sky-700 transition-colors hover:border-sky-500/50 hover:bg-sky-500/15 active:scale-[0.97] motion-reduce:active:scale-100 dark:border-sky-400/40 dark:bg-sky-400/10 dark:text-sky-300"
       >
-        <Mail size={12} /> wyślij mailem
+        <Mail size={12} /> Wyślij mailem
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>

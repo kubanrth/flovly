@@ -68,9 +68,9 @@ export function MoveTaskMenu({
         type="button"
         onClick={() => setOpen((v) => !v)}
         title="Przenieś zadanie do innej tablicy"
-        className="inline-flex items-center gap-1.5 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground"
+        className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 font-sans text-[0.78rem] font-semibold text-violet-700 transition-colors hover:border-violet-500/50 hover:bg-violet-500/15 active:scale-[0.97] motion-reduce:active:scale-100 dark:border-violet-400/40 dark:bg-violet-400/10 dark:text-violet-300"
       >
-        <FolderTree size={12} /> przenieś
+        <FolderTree size={12} /> Przenieś
       </button>
       {open && (
         <div className="absolute right-0 top-full z-40 mt-2 w-[300px] overflow-hidden rounded-lg border border-border bg-popover shadow-[0_16px_40px_-16px_rgba(10,10,40,0.35)]">

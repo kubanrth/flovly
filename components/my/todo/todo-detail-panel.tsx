@@ -6,9 +6,11 @@ import {
   BellOff,
   CalendarDays,
   CheckCircle2,
+  CheckSquare,
   Circle,
   Plus,
   Star,
+  StickyNote,
   Sun,
   Trash2,
   X,
@@ -257,12 +259,14 @@ function StepsSection({
   const [title, setTitle] = useState("");
   const done = steps.filter((s) => s.completed).length;
 
-  // Klient: "zlana ściana" — pod-zadania dostają emerald tint pasujący do
-  // subtask-pill'a w TaskActivityHints. Spójny color-language cross-view.
+  // Klient: "zlana ściana" — pod-zadania dostają emerald tint + 3px lewy
+  // border jako visual anchor. Spójny color-language cross-view z subtask-
+  // pill'em w TaskActivityHints.
   return (
-    <section className="flex flex-col gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/[0.04] p-3 dark:border-emerald-400/30 dark:bg-emerald-400/[0.05]">
+    <section className="flex flex-col gap-2 rounded-md border border-emerald-500/30 border-l-[3px] border-l-emerald-500 bg-emerald-500/[0.05] p-3 dark:border-emerald-400/30 dark:border-l-emerald-400 dark:bg-emerald-400/[0.06]">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300">
+          <CheckSquare size={11} />
           Pod-zadania {steps.length > 0 && `· ${done}/${steps.length}`}
         </span>
       </div>
@@ -501,20 +505,32 @@ function DateRow({
   tint?: "neutral" | "sky" | "violet";
 }) {
   const local = value ? toLocalInput(value) : "";
+  // Klient na mobile dalej widział "ścianę" mimo subtelnych tintów. Wzmacniam:
+  // - kolorowy lewy border 3px (visual anchor po lewej stronie)
+  // - większy padding pionowy żeby sekcje miały oddech
+  // - label w tym samym kolorze co tint (mocniejszy color cue)
   const tintClass =
     tint === "sky"
-      ? "border-sky-500/30 bg-sky-500/[0.04] dark:border-sky-400/30 dark:bg-sky-400/[0.05]"
+      ? "border-sky-500/30 bg-sky-500/[0.05] border-l-[3px] border-l-sky-500 dark:border-sky-400/30 dark:bg-sky-400/[0.06] dark:border-l-sky-400"
       : tint === "violet"
-        ? "border-violet-500/30 bg-violet-500/[0.04] dark:border-violet-400/30 dark:bg-violet-400/[0.05]"
+        ? "border-violet-500/30 bg-violet-500/[0.05] border-l-[3px] border-l-violet-500 dark:border-violet-400/30 dark:bg-violet-400/[0.06] dark:border-l-violet-400"
         : "border-border bg-background";
+  const labelColor =
+    tint === "sky"
+      ? "text-sky-700 dark:text-sky-300"
+      : tint === "violet"
+        ? "text-violet-700 dark:text-violet-300"
+        : "text-muted-foreground";
   return (
     <form
       action={(fd) => startTransition(() => action(fd))}
-      className={`flex items-center gap-3 rounded-md border px-3 py-2 ${tintClass}`}
+      className={`flex items-center gap-3 rounded-md border px-3 py-3 ${tintClass}`}
     >
       <input type="hidden" name="id" value={id} />
-      <span className="shrink-0 text-muted-foreground">{icon}</span>
-      <span className="shrink-0 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+      <span className="shrink-0">{icon}</span>
+      <span
+        className={`shrink-0 font-mono text-[0.62rem] uppercase tracking-[0.14em] font-semibold ${labelColor}`}
+      >
         {label}
       </span>
       <input
@@ -552,11 +568,11 @@ function NotesEditor({ id, initial }: { id: string; initial: string }) {
     fd.set("notes", value);
     startTransition(() => updateTodoNotesAction(fd));
   };
-  // Notatki dostają amber tint — pasuje do StickyNote ikonki sidebar'a
-  // notatek (lucide stale renderuje StickyNote w żółtym ducku).
+  // Notatki dostają amber tint + 3px lewy border anchor.
   return (
-    <div className="flex flex-col gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/[0.04] p-3 dark:border-amber-400/30 dark:bg-amber-400/[0.05]">
-      <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-amber-700/80 dark:text-amber-300/80">
+    <div className="flex flex-col gap-1.5 rounded-md border border-amber-500/30 border-l-[3px] border-l-amber-500 bg-amber-500/[0.05] p-3 dark:border-amber-400/30 dark:border-l-amber-400 dark:bg-amber-400/[0.06]">
+      <span className="inline-flex items-center gap-1.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-300">
+        <StickyNote size={11} />
         Notatki
       </span>
       <textarea

@@ -1118,6 +1118,21 @@ function CanvasEditorInner({
 
   return (
     <div className="relative h-full w-full" ref={flowWrapperRef}>
+      {/* F12-K72: mobile notice — whiteboard z React Flow + 13-color paletą
+          + multiple tool stripami nie da się dobrze ścisnąć w 380px viewport.
+          Klient: "Whiteboard w wersji mobilnej całkowicie niefunkcjonalny".
+          Honest banner: na mobile do edycji daje tylko zoom/pan + minimap,
+          do realnej edycji odsyłamy na desktop. Dismiss button. */}
+      <div className="absolute left-2 right-2 top-2 z-30 flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-50 px-3 py-2 text-[0.78rem] text-amber-900 shadow-[0_4px_12px_-4px_rgba(245,158,11,0.3)] dark:border-amber-400/40 dark:bg-amber-950/60 dark:text-amber-200 md:hidden">
+        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-amber-500/20 text-[0.7rem]">
+          📱
+        </span>
+        <span className="flex-1 leading-tight">
+          Whiteboard najlepiej działa na desktopie. Na mobile możesz oglądać
+          i zoomować — edycja wygodniejsza w przeglądarce desktopowej.
+        </span>
+      </div>
+
       {/* Custom markers for connector endings React Flow doesn't ship. */}
       <svg className="absolute h-0 w-0" aria-hidden>
         <defs>
@@ -1374,7 +1389,9 @@ function CanvasEditorInner({
                     type="button"
                     onClick={() => recolorSelected(c)}
                     disabled={selectedNodes.length === 0}
-                    className="h-5 w-5 rounded-full border border-border transition-transform hover:scale-110 disabled:cursor-not-allowed disabled:opacity-40"
+                    // mobile h-7 w-7 (28px) zamiast h-5 w-5 (20px) — bliżej
+                    // iOS HIG min hit-area (44px) bez rozsadzania toolbar'a.
+                    className="h-7 w-7 rounded-full border border-border transition-transform hover:scale-110 disabled:cursor-not-allowed disabled:opacity-40 md:h-5 md:w-5"
                     style={{ background: c }}
                     aria-label={`Tło ${c}`}
                     title={`Tło ${c}`}
