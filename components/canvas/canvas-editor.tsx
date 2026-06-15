@@ -46,6 +46,7 @@ import {
   StickyNote,
   Timer as TimerIcon,
   Info,
+  Minimize2,
   Trash2,
   Type as TypeIcon,
   Unlink2,
@@ -1119,12 +1120,21 @@ function CanvasEditorInner({
 
   return (
     <div className="relative h-full w-full" ref={flowWrapperRef}>
-      {/* F12-K72 v2: mobile hint — wcześniejsza wersja (full-width amber banner
-          na top'ie) zasłaniała canvas. Mural / FigJam / Miro nie pokazują
-          żadnego full-width banner'a na mobile — canvas zawsze full-screen,
-          UI w rogu. Naśladuję: mały dismissible chip top-right, auto-hide
-          po klik'u (persist w localStorage). Tylko mobile. */}
-      <MobileWhiteboardHint />
+      {/* F12-K72 v3: Mural-style mobile UI — pionowy floating toolbar po
+          lewej + fullscreen button bottom-right. Klient: dostał screenshot
+          Mural mobile i chce 1:1 — toolbar po lewej z kluczowymi narzędziami,
+          fullscreen toggle żeby edycja była komfortowa. v2 (dismissible info
+          chip) tylko informowała "użyj desktop'a", nie dawała narzędzi.
+          Renderowane tylko gdy canEdit + mobile (max-md). */}
+      {canEdit && (
+        <MobileCanvasToolbar
+          toolMode={toolMode}
+          setToolMode={setToolMode}
+          addShape={addShape}
+          imageInputRef={imageInputRef}
+        />
+      )}
+      <MobileFullscreenToggle wrapperRef={flowWrapperRef} />
 
       {/* Custom markers for connector endings React Flow doesn't ship. */}
       <svg className="absolute h-0 w-0" aria-hidden>
@@ -1266,8 +1276,10 @@ function CanvasEditorInner({
         />
       )}
 
+      {/* Top toolbar tylko na desktop (md:flex) — na mobile używamy vertical
+          left toolbar'a (Mural-style) renderowanego poniżej. */}
       {canEdit && (
-        <div className="pointer-events-none absolute left-1/2 top-3 flex -translate-x-1/2 flex-col items-center gap-2">
+        <div className="pointer-events-none absolute left-1/2 top-3 hidden -translate-x-1/2 flex-col items-center gap-2 md:flex">
           <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-border bg-card/95 p-1 shadow-lg backdrop-blur">
             <ToolButton
               label="Wskaźnik (V)"
@@ -2557,71 +2569,140 @@ function FontSizePicker({
   );
 }
 
-// F12-K72 v2: dismissible mobile hint chip dla whiteboard'a. Wcześniejszy
-// full-width banner zasłaniał canvas (klient: "zaslania totalnie"). Mural /
-// FigJam / Miro w mobile UI ZAWSZE zostawiają canvas full-screen i UI w
-// rogu — naśladuję ten pattern.
+// F12-K72 v3: Mural-style mobile floating LEFT toolbar. Pionowy stack ciemnych
+// pill button'ów po lewej krawędzi, każdy z ikoną — odpowiednik tego co Mural
+// pokazuje w mobile (select+hand grouped na górze, content tools poniżej).
+// Tylko mobile (max-md). Klient: screenshot Mural'a oraz request "tak samo
+// powinno być u nas z whiteboard".
 //
-// Default: zwinięty info button (Info icon) w prawym górnym rogu, łatwo
-// schowany pod hamburger'em ale nie blokujący środka. Klik = expand do
-// pełnej dymka. Drugi klik (X) = persist dismissed w localStorage.
-const MOBILE_HINT_KEY = "flovly:whiteboard-mobile-hint-dismissed";
-
-function MobileWhiteboardHint() {
-  const [dismissed, setDismissed] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-
-  useEffect(() => {
-    try {
-      if (localStorage.getItem(MOBILE_HINT_KEY) === "1") {
-        setDismissed(true);
-      }
-    } catch {
-      /* localStorage off — pokazujemy default */
-    }
-  }, []);
-
-  const dismiss = () => {
-    setDismissed(true);
-    try {
-      localStorage.setItem(MOBILE_HINT_KEY, "1");
-    } catch {
-      /* storage off */
-    }
-  };
-
-  if (dismissed) return null;
-
+// Wzór wizualny (dark pill / white icon) ułatwia rozpoznanie aktywnego tool'a
+// + dobrze kontrastuje na białym canvasie. setToolMode / addShape przekazane
+// przez parent component żeby user nie tracił stanu canvas'u.
+function MobileCanvasToolbar({
+  toolMode,
+  setToolMode,
+  addShape,
+  imageInputRef,
+}: {
+  toolMode: ToolMode;
+  setToolMode: (m: ToolMode) => void;
+  addShape: (k: ShapeKind) => void;
+  imageInputRef: React.RefObject<HTMLInputElement | null>;
+}) {
   return (
-    <div className="absolute right-2 top-2 z-30 md:hidden">
-      {expanded ? (
-        // Mała dymka — top-right, max-w żeby nie ciągnęła się przez całą szerokość.
-        <div className="flex max-w-[260px] items-start gap-2 rounded-lg border border-border bg-card/95 px-3 py-2 text-[0.78rem] leading-tight shadow-[0_4px_12px_-4px_rgba(10,10,40,0.2)] backdrop-blur">
-          <Info size={13} className="mt-0.5 shrink-0 text-amber-500" />
-          <span className="flex-1 text-foreground">
-            Whiteboard najlepiej działa na desktopie. Tu możesz oglądać + zoomować.
-          </span>
-          <button
-            type="button"
-            onClick={dismiss}
-            aria-label="Zamknij"
-            className="grid h-5 w-5 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:scale-95"
-          >
-            <X size={11} />
-          </button>
-        </div>
-      ) : (
-        // Zwinięty info dot. Klik = expand.
-        <button
-          type="button"
-          onClick={() => setExpanded(true)}
-          aria-label="Wskazówka — Whiteboard na mobile"
-          title="Wskazówka"
-          className="grid h-8 w-8 place-items-center rounded-full border border-amber-500/40 bg-amber-50 text-amber-700 shadow-[0_2px_6px_-2px_rgba(245,158,11,0.4)] transition-all hover:bg-amber-100 active:scale-95 dark:bg-amber-950/70 dark:text-amber-200"
-        >
-          <Info size={14} />
-        </button>
-      )}
+    <div className="pointer-events-auto absolute left-2 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-1.5 rounded-2xl border border-white/10 bg-neutral-900/95 p-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] backdrop-blur md:hidden">
+      <MobileToolButton
+        active={toolMode === "select"}
+        onClick={() => setToolMode("select")}
+        label="Wskaźnik"
+      >
+        <MousePointer2 size={15} />
+      </MobileToolButton>
+      <MobileToolButton
+        active={toolMode === "pen"}
+        onClick={() => setToolMode("pen")}
+        label="Pisak"
+      >
+        <Pencil size={15} />
+      </MobileToolButton>
+      <span className="mx-1 h-px bg-white/10" aria-hidden />
+      <MobileToolButton onClick={() => addShape("STICKY")} label="Sticky note">
+        <StickyNote size={15} />
+      </MobileToolButton>
+      <MobileToolButton onClick={() => addShape("TEXT")} label="Tekst">
+        <TypeIcon size={15} />
+      </MobileToolButton>
+      <MobileToolButton onClick={() => addShape("RECTANGLE")} label="Prostokąt">
+        <SquareIcon size={15} />
+      </MobileToolButton>
+      <MobileToolButton onClick={() => addShape("CIRCLE")} label="Koło">
+        <CircleIcon size={15} />
+      </MobileToolButton>
+      <MobileToolButton onClick={() => addShape("FRAME")} label="Ramka">
+        <FrameIcon size={15} />
+      </MobileToolButton>
+      <MobileToolButton
+        onClick={() => imageInputRef.current?.click()}
+        label="Obraz"
+      >
+        <ImageIcon size={15} />
+      </MobileToolButton>
     </div>
   );
 }
+
+function MobileToolButton({
+  active,
+  onClick,
+  label,
+  children,
+}: {
+  active?: boolean;
+  onClick: () => void;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={`grid h-10 w-10 place-items-center rounded-xl transition-all active:scale-95 ${
+        active
+          ? "bg-primary text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+          : "text-white/85 hover:bg-white/10"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+// F12-K72 v3: fullscreen toggle bottom-right. Klient: "powinna byc opcja
+// powikeszenia tego whiteboardu do full screen, tak samo wyaczenie i tam
+// mozesz totalnie to edytowac". Używamy Fullscreen API (browser native) —
+// element wrapper'a rozszerza się do całego viewport'u + ekran browsera
+// schowa też hamburger, header itp. Esc / ponowny klik wychodzi.
+function MobileFullscreenToggle({
+  wrapperRef,
+}: {
+  wrapperRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const onChange = () => {
+      setIsFullscreen(document.fullscreenElement === wrapperRef.current);
+    };
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, [wrapperRef]);
+
+  const toggle = async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await wrapperRef.current?.requestFullscreen();
+      }
+    } catch {
+      /* user denied / browser nie wspiera — silent fail */
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={isFullscreen ? "Wyjdź z trybu pełnoekranowego" : "Tryb pełnoekranowy"}
+      title={isFullscreen ? "Wyjdź z full screen" : "Full screen"}
+      className="pointer-events-auto absolute bottom-3 right-3 z-20 grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-neutral-900/95 text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)] backdrop-blur transition-all hover:bg-neutral-800 active:scale-95 md:hidden"
+    >
+      {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+    </button>
+  );
+}
+
+// MobileWhiteboardHint usunięty w v3 — zastąpiony przez MobileCanvasToolbar
+// + MobileFullscreenToggle które dają realny mobile UX zamiast info chip'a.
