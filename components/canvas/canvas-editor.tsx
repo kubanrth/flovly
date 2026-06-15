@@ -1132,6 +1132,18 @@ function CanvasEditorInner({
           setToolMode={setToolMode}
           addShape={addShape}
           imageInputRef={imageInputRef}
+          penColor={penColor}
+          setPenColor={setPenColor}
+          penSize={penSize}
+          setPenSize={setPenSize}
+          strokesCount={strokes.length}
+          clearAllStrokes={clearAllStrokes}
+          selectedCount={selectedCount}
+          deleteSelected={deleteSelected}
+          exportPng={exportPng}
+          save={save}
+          saveState={saveState}
+          onPickTemplate={(k) => applyTemplate(k)}
         />
       )}
       <MobileFullscreenToggle wrapperRef={flowWrapperRef} />
@@ -2569,65 +2581,259 @@ function FontSizePicker({
   );
 }
 
-// F12-K72 v3: Mural-style mobile floating LEFT toolbar. Pionowy stack ciemnych
-// pill button'ów po lewej krawędzi, każdy z ikoną — odpowiednik tego co Mural
-// pokazuje w mobile (select+hand grouped na górze, content tools poniżej).
-// Tylko mobile (max-md). Klient: screenshot Mural'a oraz request "tak samo
-// powinno być u nas z whiteboard".
+// F12-K72 v4: Mural-style mobile vertical toolbar — KOMPLET narzędzi z
+// desktop'a, pogrupowane mądrze. Klient: "zeby wszystkie opcje z desktopowej
+// apki sie znalazly. tylko pogrupuj jakos madrze".
 //
-// Wzór wizualny (dark pill / white icon) ułatwia rozpoznanie aktywnego tool'a
-// + dobrze kontrastuje na białym canvasie. setToolMode / addShape przekazane
-// przez parent component żeby user nie tracił stanu canvas'u.
+// Grupy (top → bottom):
+//   1. MODE (Wskaźnik / Pisak) — zawsze widoczne
+//   2. SHAPES expander → Prostokąt / Romb / Koło (popover right)
+//   3. CONTENT (Sticky / Tekst / Ramka) — zawsze widoczne (najczęstsze)
+//   4. MEDIA (Obraz)
+//   5. TEMPLATES expander → grid template'ów (popover right)
+//   6. ACTIONS (Eksport PNG / Usuń [context] / Zapisz)
+//
+// Context-aware bottom-bar:
+//   - Pen mode → kolory + grubości + clear strokes
+//
+// Cały toolbar overflow-y-auto żeby na małych viewportach (np. iPhone SE
+// 568px height) działał scroll wewnętrzny.
 function MobileCanvasToolbar({
   toolMode,
   setToolMode,
   addShape,
   imageInputRef,
+  penColor,
+  setPenColor,
+  penSize,
+  setPenSize,
+  strokesCount,
+  clearAllStrokes,
+  selectedCount,
+  deleteSelected,
+  exportPng,
+  save,
+  saveState,
+  onPickTemplate,
 }: {
   toolMode: ToolMode;
   setToolMode: (m: ToolMode) => void;
   addShape: (k: ShapeKind) => void;
   imageInputRef: React.RefObject<HTMLInputElement | null>;
+  penColor: string;
+  setPenColor: (c: string) => void;
+  penSize: PenSize;
+  setPenSize: (s: PenSize) => void;
+  strokesCount: number;
+  clearAllStrokes: () => void;
+  selectedCount: number;
+  deleteSelected: () => void;
+  exportPng: () => void | Promise<void>;
+  save: () => void | Promise<void>;
+  saveState: "idle" | "saving" | "saved" | "error";
+  onPickTemplate: (k: TemplateKey) => void;
 }) {
+  const [shapesOpen, setShapesOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+
   return (
-    <div className="pointer-events-auto absolute left-2 top-1/2 z-20 flex -translate-y-1/2 flex-col gap-1.5 rounded-2xl border border-white/10 bg-neutral-900/95 p-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] backdrop-blur md:hidden">
-      <MobileToolButton
-        active={toolMode === "select"}
-        onClick={() => setToolMode("select")}
-        label="Wskaźnik"
-      >
-        <MousePointer2 size={15} />
-      </MobileToolButton>
-      <MobileToolButton
-        active={toolMode === "pen"}
-        onClick={() => setToolMode("pen")}
-        label="Pisak"
-      >
-        <Pencil size={15} />
-      </MobileToolButton>
-      <span className="mx-1 h-px bg-white/10" aria-hidden />
-      <MobileToolButton onClick={() => addShape("STICKY")} label="Sticky note">
-        <StickyNote size={15} />
-      </MobileToolButton>
-      <MobileToolButton onClick={() => addShape("TEXT")} label="Tekst">
-        <TypeIcon size={15} />
-      </MobileToolButton>
-      <MobileToolButton onClick={() => addShape("RECTANGLE")} label="Prostokąt">
-        <SquareIcon size={15} />
-      </MobileToolButton>
-      <MobileToolButton onClick={() => addShape("CIRCLE")} label="Koło">
-        <CircleIcon size={15} />
-      </MobileToolButton>
-      <MobileToolButton onClick={() => addShape("FRAME")} label="Ramka">
-        <FrameIcon size={15} />
-      </MobileToolButton>
-      <MobileToolButton
-        onClick={() => imageInputRef.current?.click()}
-        label="Obraz"
-      >
-        <ImageIcon size={15} />
-      </MobileToolButton>
-    </div>
+    <>
+      <div className="pointer-events-auto absolute left-2 top-1/2 z-20 flex max-h-[calc(100dvh-48px)] -translate-y-1/2 flex-col gap-1 overflow-y-auto rounded-2xl border border-white/10 bg-neutral-900/95 p-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:hidden">
+        {/* MODE */}
+        <MobileToolButton
+          active={toolMode === "select"}
+          onClick={() => setToolMode("select")}
+          label="Wskaźnik"
+        >
+          <MousePointer2 size={15} />
+        </MobileToolButton>
+        <MobileToolButton
+          active={toolMode === "pen"}
+          onClick={() => setToolMode("pen")}
+          label="Pisak"
+        >
+          <Pencil size={15} />
+        </MobileToolButton>
+
+        <span className="mx-1 h-px bg-white/10" aria-hidden />
+
+        {/* SHAPES — expand on tap → popover po prawej */}
+        <div className="relative">
+          <MobileToolButton
+            active={shapesOpen}
+            onClick={() => setShapesOpen((v) => !v)}
+            label="Kształty"
+          >
+            <SquareIcon size={15} />
+          </MobileToolButton>
+          {shapesOpen && (
+            <div className="absolute left-[calc(100%+8px)] top-0 flex gap-1 rounded-xl border border-white/10 bg-neutral-900/95 p-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] backdrop-blur">
+              <MobileToolButton
+                onClick={() => {
+                  addShape("RECTANGLE");
+                  setShapesOpen(false);
+                }}
+                label="Prostokąt"
+              >
+                <SquareIcon size={15} />
+              </MobileToolButton>
+              <MobileToolButton
+                onClick={() => {
+                  addShape("DIAMOND");
+                  setShapesOpen(false);
+                }}
+                label="Romb"
+              >
+                <DiamondIcon size={15} />
+              </MobileToolButton>
+              <MobileToolButton
+                onClick={() => {
+                  addShape("CIRCLE");
+                  setShapesOpen(false);
+                }}
+                label="Koło"
+              >
+                <CircleIcon size={15} />
+              </MobileToolButton>
+            </div>
+          )}
+        </div>
+
+        {/* CONTENT */}
+        <MobileToolButton onClick={() => addShape("STICKY")} label="Sticky note">
+          <StickyNote size={15} />
+        </MobileToolButton>
+        <MobileToolButton onClick={() => addShape("TEXT")} label="Tekst">
+          <TypeIcon size={15} />
+        </MobileToolButton>
+        <MobileToolButton onClick={() => addShape("FRAME")} label="Ramka">
+          <FrameIcon size={15} />
+        </MobileToolButton>
+
+        {/* MEDIA */}
+        <MobileToolButton
+          onClick={() => imageInputRef.current?.click()}
+          label="Obraz"
+        >
+          <ImageIcon size={15} />
+        </MobileToolButton>
+
+        <span className="mx-1 h-px bg-white/10" aria-hidden />
+
+        {/* TEMPLATES — expand on tap → popover po prawej */}
+        <div className="relative">
+          <MobileToolButton
+            active={templatesOpen}
+            onClick={() => setTemplatesOpen((v) => !v)}
+            label="Szablony"
+          >
+            <LayoutTemplate size={15} />
+          </MobileToolButton>
+          {templatesOpen && (
+            <div className="absolute left-[calc(100%+8px)] top-0 flex max-h-[60dvh] w-[200px] flex-col gap-1 overflow-y-auto rounded-xl border border-white/10 bg-neutral-900/95 p-2 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] backdrop-blur">
+              {TEMPLATES.map((t) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => {
+                    onPickTemplate(t.key);
+                    setTemplatesOpen(false);
+                  }}
+                  className="flex items-center gap-2 rounded-md px-2 py-2 text-left text-[0.82rem] text-white/90 transition-colors hover:bg-white/10 active:scale-[0.98]"
+                >
+                  <span>{t.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <span className="mx-1 h-px bg-white/10" aria-hidden />
+
+        {/* ACTIONS */}
+        <MobileToolButton
+          onClick={() => void exportPng()}
+          label="Eksport PNG"
+        >
+          <Download size={15} />
+        </MobileToolButton>
+        {selectedCount > 0 && (
+          <MobileToolButton
+            onClick={deleteSelected}
+            label={`Usuń (${selectedCount})`}
+            tone="destructive"
+          >
+            <Trash2 size={15} />
+          </MobileToolButton>
+        )}
+        <MobileToolButton
+          onClick={() => void save()}
+          label={
+            saveState === "saving"
+              ? "Zapisuję…"
+              : saveState === "saved"
+                ? "Zapisano"
+                : "Zapisz"
+          }
+          tone="primary"
+        >
+          <Save size={15} />
+        </MobileToolButton>
+      </div>
+
+      {/* Context-aware pen panel — pokazuje się TYLKO gdy pen mode, na dole
+          ekranu nad fullscreen button'em. Mirror desktop'owej pen options
+          row, ale w kompaktowej formie horizontal. */}
+      {toolMode === "pen" && (
+        <div className="pointer-events-auto absolute bottom-3 left-1/2 z-20 flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border border-white/10 bg-neutral-900/95 px-2 py-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:hidden">
+          {PEN_COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setPenColor(c)}
+              aria-label={`Kolor ${c}`}
+              className="h-7 w-7 shrink-0 rounded-full border border-white/20 transition-transform active:scale-90"
+              style={{
+                background: c,
+                outline: penColor === c ? "2px solid #fff" : "none",
+                outlineOffset: 2,
+              }}
+            />
+          ))}
+          <span className="mx-1 h-5 w-px shrink-0 bg-white/10" aria-hidden />
+          {PEN_SIZES.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setPenSize(s)}
+              aria-label={`Grubość ${s}px`}
+              className={`grid h-7 w-7 shrink-0 place-items-center rounded-md transition-colors active:scale-90 ${
+                penSize === s ? "bg-white/15" : "hover:bg-white/10"
+              }`}
+            >
+              <span
+                className="block rounded-full"
+                style={{ background: penColor, width: s + 3, height: s + 3 }}
+              />
+            </button>
+          ))}
+          {strokesCount > 0 && (
+            <>
+              <span className="mx-1 h-5 w-px shrink-0 bg-white/10" aria-hidden />
+              <button
+                type="button"
+                onClick={clearAllStrokes}
+                aria-label={`Wyczyść rysunki (${strokesCount})`}
+                title={`Wyczyść rysunki (${strokesCount})`}
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-white/80 transition-colors hover:bg-white/10 active:scale-90"
+              >
+                <Trash2 size={13} />
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -2636,23 +2842,30 @@ function MobileToolButton({
   onClick,
   label,
   children,
+  tone = "default",
 }: {
   active?: boolean;
   onClick: () => void;
   label: string;
   children: React.ReactNode;
+  // tone primary = brand gradient (Zapisz), destructive = czerwony (Usuń),
+  // default = white/85 z hover bg-white/10. active flag = aktualny tool.
+  tone?: "default" | "primary" | "destructive";
 }) {
+  const toneClass = active
+    ? "bg-primary text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+    : tone === "primary"
+      ? "bg-brand-gradient text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+      : tone === "destructive"
+        ? "bg-red-500/20 text-red-200 hover:bg-red-500/30"
+        : "text-white/85 hover:bg-white/10";
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={label}
       title={label}
-      className={`grid h-10 w-10 place-items-center rounded-xl transition-all active:scale-95 ${
-        active
-          ? "bg-primary text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
-          : "text-white/85 hover:bg-white/10"
-      }`}
+      className={`grid h-10 w-10 place-items-center rounded-xl transition-all active:scale-95 ${toneClass}`}
     >
       {children}
     </button>
