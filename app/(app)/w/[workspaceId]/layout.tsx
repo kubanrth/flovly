@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { EditableWorkspaceName } from "@/components/workspaces/editable-workspace-name";
+import { WorkspaceTabs } from "@/components/workspaces/workspace-tabs";
 
 export default async function WorkspaceLayout({
   children,
@@ -46,31 +46,11 @@ export default async function WorkspaceLayout({
           )}
         </div>
 
-        <nav className="-mx-4 flex items-center gap-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:gap-6 md:overflow-visible md:px-0">
-          <Link
-            href={`/w/${workspace.id}`}
-            className="eyebrow shrink-0 transition-colors hover:text-foreground focus-visible:text-foreground"
-          >
-            Przegląd
-          </Link>
-          <Link
-            href={`/w/${workspace.id}/members`}
-            className="eyebrow shrink-0 transition-colors hover:text-foreground focus-visible:text-foreground"
-          >
-            Członkowie
-          </Link>
-          {canEditSettings && (
-            <Link
-              href={`/w/${workspace.id}/settings`}
-              className="eyebrow shrink-0 transition-colors hover:text-foreground focus-visible:text-foreground"
-            >
-              Ustawienia
-            </Link>
-          )}
-          <span className="eyebrow shrink-0 text-muted-foreground/60 max-md:hidden">
-            Twoja rola: <span className="text-foreground">{ctx.role.toLowerCase()}</span>
-          </span>
-        </nav>
+        <WorkspaceTabs
+          workspaceId={workspace.id}
+          canEditSettings={canEditSettings}
+          roleLabel={ctx.role.toLowerCase()}
+        />
       </header>
 
       <main className="flex-1 px-4 py-5 md:px-14 md:py-10">{children}</main>
