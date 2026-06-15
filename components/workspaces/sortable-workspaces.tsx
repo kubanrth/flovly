@@ -206,9 +206,13 @@ function SortableWorkspaceRow({ workspace: w }: { workspace: WorkspaceRow }) {
         >
           <GripVertical size={14} />
         </button>
+        {/* Mobile: vertical stack — desktop grid columns ściskały nazwę
+            workspace'a do 2 znaków (klient: "Pr...", "Ki...", "E..."). Tytuł
+            ma teraz pełną szerokość w pierwszym rzędzie, meta-info pod nim
+            jako mono-pille. md+ wraca do gridu z 4 kolumnami. */}
         <Link
           href={`/w/${w.id}`}
-          className="group grid flex-1 grid-cols-[minmax(0,1fr)_90px_130px_30px] items-center gap-4 px-3 py-3.5 transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none"
+          className="group flex flex-1 flex-col gap-2 px-3 py-3 transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none md:grid md:grid-cols-[minmax(0,1fr)_90px_130px_30px] md:items-center md:gap-4 md:py-3.5"
         >
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="truncate font-display text-[1.05rem] font-semibold leading-tight tracking-[-0.01em] transition-colors group-hover:text-primary">
@@ -219,16 +223,21 @@ function SortableWorkspaceRow({ workspace: w }: { workspace: WorkspaceRow }) {
               {w.description ? ` · ${w.description}` : ""}
             </span>
           </div>
-          <span className="font-mono text-[0.68rem] uppercase tracking-[0.12em] text-muted-foreground">
-            {w.role.toLowerCase()}
-          </span>
-          <span className="font-mono text-[0.68rem] uppercase tracking-[0.12em] text-muted-foreground">
-            {w.boardCount} {boardPl(w.boardCount)}
-          </span>
-          <ArrowRight
-            size={14}
-            className="justify-self-end text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
-          />
+
+          {/* Mobile: meta jako bottom row (pille zamiast kolumn). md+: trzy
+              osobne kolumny grid'a. */}
+          <div className="flex items-center gap-2 md:contents">
+            <span className="inline-flex items-center rounded-full border border-border bg-card px-2 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground md:rounded-none md:border-0 md:bg-transparent md:px-0">
+              {w.role.toLowerCase()}
+            </span>
+            <span className="inline-flex items-center rounded-full border border-border bg-card px-2 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground md:rounded-none md:border-0 md:bg-transparent md:px-0">
+              {w.boardCount} {boardPl(w.boardCount)}
+            </span>
+            <ArrowRight
+              size={14}
+              className="ml-auto text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary md:ml-0 md:justify-self-end"
+            />
+          </div>
         </Link>
       </div>
     </li>

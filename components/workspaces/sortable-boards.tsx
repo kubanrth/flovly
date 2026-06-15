@@ -401,7 +401,10 @@ function SortableBoardCard({
           wysokość niezależnie od liczby widoków. flex-nowrap + overflow-x-auto
           na pillach żeby przy 5 włączonych widokach (Tabela/Kanban/Roadmapa/
           Gantt/Whiteboard) nie złamało się na drugą linię. */}
-      <div className="flex h-[180px] flex-col gap-4 rounded-xl border border-border bg-card p-5 pl-12 shadow-[0_1px_2px_rgba(10,10,40,0.04)] transition-all group-hover:-translate-y-[2px] group-hover:border-primary/30 group-hover:shadow-[0_12px_32px_-16px_rgba(123,104,238,0.35)]">
+      {/* Desktop: h-[180px] żeby wszystkie kafelki w grid'zie były równe.
+          Mobile: min-h żeby wrap'nięte pills (Roadmapa/Whiteboard) mogły
+          przelać się na drugą linię bez ucinania. */}
+      <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 pl-12 shadow-[0_1px_2px_rgba(10,10,40,0.04)] transition-all group-hover:-translate-y-[2px] group-hover:border-primary/30 group-hover:shadow-[0_12px_32px_-16px_rgba(123,104,238,0.35)] max-md:min-h-[180px] md:h-[180px]">
         <Link
           href={`/w/${workspaceId}/b/${board.id}/table`}
           className="flex min-w-0 flex-col gap-2 focus-visible:outline-none"
@@ -416,9 +419,10 @@ function SortableBoardCard({
         </Link>
 
         {/* View pills — szybkie wejście z kafelka do konkretnego widoku.
-            flex-nowrap + overflow-x-auto: gdy włączonych jest 5 widoków
-            i kontener jest wąski (md 2-col), poziomy scroll zamiast zawinięcia. */}
-        <div className="-mx-1 mt-auto flex flex-nowrap items-center gap-1.5 overflow-x-auto px-1 pb-1">
+            Mobile (max-md): flex-wrap żeby Roadmapa/Whiteboard nie były ucięte
+            poza prawą krawędzią (klient: "Roadmapa ucięta"). md+: flex-nowrap
+            + overflow-x-auto żeby pojedyncza linia w gridzie 3-col. */}
+        <div className="-mx-1 mt-auto flex items-center gap-1.5 px-1 pb-1 max-md:flex-wrap md:flex-nowrap md:overflow-x-auto">
           {board.enabledViews.map((view) => {
             const meta = VIEW_META[view];
             const Icon = meta.Icon;

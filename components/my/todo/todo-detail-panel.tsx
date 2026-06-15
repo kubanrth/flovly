@@ -148,16 +148,24 @@ export function TodoDetailPanel({
         value={item.dueDate}
         formName="dueDate"
         action={setTodoDueDateAction}
+        tint="sky"
       />
 
       {/* Reminder */}
       <DateRow
         label="Przypomnienie"
-        icon={item.reminderAt ? <Bell size={13} className="text-primary" /> : <BellOff size={13} />}
+        icon={
+          item.reminderAt ? (
+            <Bell size={13} className="text-violet-600 dark:text-violet-400" />
+          ) : (
+            <BellOff size={13} className="text-violet-500/60" />
+          )
+        }
         id={item.id}
         value={item.reminderAt}
         formName="reminderAt"
         action={setTodoReminderAction}
+        tint="violet"
       />
 
       {/* Notes */}
@@ -250,7 +258,9 @@ function StepsSection({
   const done = steps.filter((s) => s.completed).length;
 
   return (
-    <section className="flex flex-col gap-2 rounded-md border border-border bg-background p-3">
+    {/* Klient: "zlana ściana" — pod-zadania dostają emerald tint pasujący do
+        subtask-pill'a w TaskActivityHints. Spójny color-language cross-view. */}
+    <section className="flex flex-col gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/[0.04] p-3 dark:border-emerald-400/30 dark:bg-emerald-400/[0.05]">
       <div className="flex items-center justify-between">
         <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
           Pod-zadania {steps.length > 0 && `· ${done}/${steps.length}`}
@@ -477,6 +487,7 @@ function DateRow({
   value,
   formName,
   action,
+  tint = "neutral",
 }: {
   label: string;
   icon: React.ReactNode;
@@ -484,12 +495,22 @@ function DateRow({
   value: string | null;
   formName: "dueDate" | "reminderAt";
   action: (formData: FormData) => Promise<void>;
+  // Color theme — klient: "zlana ściana", potrzeba odróżnić sekcje od siebie.
+  // Każda sekcja dostaje swój subtelny background/border tint pasujący do
+  // funkcji (sky = termin/kalendarz, violet = przypomnienie/dzwonek).
+  tint?: "neutral" | "sky" | "violet";
 }) {
   const local = value ? toLocalInput(value) : "";
+  const tintClass =
+    tint === "sky"
+      ? "border-sky-500/30 bg-sky-500/[0.04] dark:border-sky-400/30 dark:bg-sky-400/[0.05]"
+      : tint === "violet"
+        ? "border-violet-500/30 bg-violet-500/[0.04] dark:border-violet-400/30 dark:bg-violet-400/[0.05]"
+        : "border-border bg-background";
   return (
     <form
       action={(fd) => startTransition(() => action(fd))}
-      className="flex items-center gap-3 rounded-md border border-border bg-background px-3 py-2"
+      className={`flex items-center gap-3 rounded-md border px-3 py-2 ${tintClass}`}
     >
       <input type="hidden" name="id" value={id} />
       <span className="shrink-0 text-muted-foreground">{icon}</span>
@@ -532,8 +553,10 @@ function NotesEditor({ id, initial }: { id: string; initial: string }) {
     startTransition(() => updateTodoNotesAction(fd));
   };
   return (
-    <div className="flex flex-col gap-1">
-      <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+    {/* Notatki dostają amber tint — pasuje do StickyNote ikonki sidebar'a
+        notatek (lucide stale renderuje StickyNote w żółtym ducku). */}
+    <div className="flex flex-col gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/[0.04] p-3 dark:border-amber-400/30 dark:bg-amber-400/[0.05]">
+      <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-amber-700/80 dark:text-amber-300/80">
         Notatki
       </span>
       <textarea
