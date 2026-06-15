@@ -234,7 +234,11 @@ export function SalesPipeline({
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
     >
-      <div className="flex gap-1 overflow-x-auto pb-4">
+      {/* Mobile: vertical stack (max-md:flex-col + większy gap) — klient:
+          poziomy scroll po 280px-szerokich kolumnach na 380-410px viewportcie
+          mobile był koszmarem. Desktop: oryginalny horizontal flex z chevron
+          headerami. */}
+      <div className="flex gap-1 pb-4 max-md:flex-col max-md:gap-3 md:overflow-x-auto">
         {sortedStages.map((stage, idx) => {
           const colDeals = dealsByStage.get(stage.id) ?? [];
           const totals = totalsByStage.get(stage.id) ?? {};
@@ -320,15 +324,18 @@ function StageColumn({
     <div
       ref={setNodeRef}
       data-stage-id={stage.id}
-      className="flex w-[280px] shrink-0 flex-col gap-2 rounded-xl bg-card/40 pb-3 transition-colors data-[over=true]:bg-primary/5"
+      // max-md:w-full → full-width pojedyncza kolumna w stack'u; desktop
+      // zostaje na fixed 280px żeby pipeline trzymał chevron design.
+      className="flex w-[280px] shrink-0 flex-col gap-2 rounded-xl bg-card/40 pb-3 transition-colors data-[over=true]:bg-primary/5 max-md:w-full"
       data-over={isOver ? "true" : "false"}
     >
-      {/* Chevron header — clip-path arrow + stage color background. Sticky on
-          scroll so totals stay visible while the column scrolls vertically. */}
-      {/* Sticky chevron header. pointer-events-none w środku z-stack żeby nie
-          przechwytywał drop'ów dnd-kit gdy user przeciąga deal'a nad headerem.
-          Klik na "+" przy nazwie etapu re-enable'uje events na samym przycisku. */}
-      <div className="sticky top-0 z-[1] pointer-events-none">
+      {/* Desktop: chevron header (clip-path strzałka) ze sticky-top. Mobile:
+          plain rounded-lg header — chevron clip + pełna szerokość = brzydki
+          wycinek po prawej. Sticky też off na mobile bo każda kolumna jest
+          w osobnym vertical slot'cie.
+          Dwa render'y bo dynamic clip-path nie da się prosto override'ować
+          z CSS class'y — łatwiej dwa div'y z visibility. */}
+      <div className="hidden md:sticky md:top-0 md:z-[1] md:pointer-events-none md:block">
         <div
           className="flex h-10 items-center justify-between gap-2"
           style={{
@@ -337,7 +344,6 @@ function StageColumn({
             clipPath: chevronClipPath(isFirst, isLast),
             paddingLeft: headerLeftPad,
             paddingRight: headerRightPad,
-            // Single-column edge case: still feel like a pill.
             borderRadius: isFirst && isLast ? 10 : 0,
           }}
         >
@@ -366,6 +372,36 @@ function StageColumn({
             <span className="text-base leading-none">+</span>
           </Link>
         </div>
+      </div>
+
+      {/* Mobile header — plain rounded full-width pill, bez chevron clip-path'a.
+          Full color background z stage.colorHex + "+" po prawej. */}
+      <div
+        className="flex h-11 items-center justify-between gap-2 rounded-lg px-3 md:hidden"
+        style={{ background: stage.colorHex, color: fg }}
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="truncate font-display text-[0.92rem] font-semibold tracking-[-0.01em]">
+            {stage.name}
+          </span>
+          <span
+            className="shrink-0 rounded-full px-2 py-0.5 font-mono text-[0.62rem] font-semibold tabular-nums"
+            style={{
+              background:
+                fg === "#fff" ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.08)",
+            }}
+          >
+            {deals.length}
+          </span>
+        </div>
+        <Link
+          href={`/w/${workspaceId}/sales/new?stageId=${stage.id}`}
+          aria-label={`Nowy deal w etapie ${stage.name}`}
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors hover:bg-black/10"
+          style={{ color: fg }}
+        >
+          <span className="text-lg leading-none">+</span>
+        </Link>
       </div>
 
       {Object.keys(totals).length > 0 && (
