@@ -45,6 +45,7 @@ import {
   Square as SquareIcon,
   StickyNote,
   Timer as TimerIcon,
+  Info,
   Trash2,
   Type as TypeIcon,
   Unlink2,
@@ -1118,20 +1119,12 @@ function CanvasEditorInner({
 
   return (
     <div className="relative h-full w-full" ref={flowWrapperRef}>
-      {/* F12-K72: mobile notice — whiteboard z React Flow + 13-color paletą
-          + multiple tool stripami nie da się dobrze ścisnąć w 380px viewport.
-          Klient: "Whiteboard w wersji mobilnej całkowicie niefunkcjonalny".
-          Honest banner: na mobile do edycji daje tylko zoom/pan + minimap,
-          do realnej edycji odsyłamy na desktop. Dismiss button. */}
-      <div className="absolute left-2 right-2 top-2 z-30 flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-50 px-3 py-2 text-[0.78rem] text-amber-900 shadow-[0_4px_12px_-4px_rgba(245,158,11,0.3)] dark:border-amber-400/40 dark:bg-amber-950/60 dark:text-amber-200 md:hidden">
-        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-amber-500/20 text-[0.7rem]">
-          📱
-        </span>
-        <span className="flex-1 leading-tight">
-          Whiteboard najlepiej działa na desktopie. Na mobile możesz oglądać
-          i zoomować — edycja wygodniejsza w przeglądarce desktopowej.
-        </span>
-      </div>
+      {/* F12-K72 v2: mobile hint — wcześniejsza wersja (full-width amber banner
+          na top'ie) zasłaniała canvas. Mural / FigJam / Miro nie pokazują
+          żadnego full-width banner'a na mobile — canvas zawsze full-screen,
+          UI w rogu. Naśladuję: mały dismissible chip top-right, auto-hide
+          po klik'u (persist w localStorage). Tylko mobile. */}
+      <MobileWhiteboardHint />
 
       {/* Custom markers for connector endings React Flow doesn't ship. */}
       <svg className="absolute h-0 w-0" aria-hidden>
@@ -2559,6 +2552,75 @@ function FontSizePicker({
             Auto (domyślny)
           </button>
         </div>
+      )}
+    </div>
+  );
+}
+
+// F12-K72 v2: dismissible mobile hint chip dla whiteboard'a. Wcześniejszy
+// full-width banner zasłaniał canvas (klient: "zaslania totalnie"). Mural /
+// FigJam / Miro w mobile UI ZAWSZE zostawiają canvas full-screen i UI w
+// rogu — naśladuję ten pattern.
+//
+// Default: zwinięty info button (Info icon) w prawym górnym rogu, łatwo
+// schowany pod hamburger'em ale nie blokujący środka. Klik = expand do
+// pełnej dymka. Drugi klik (X) = persist dismissed w localStorage.
+const MOBILE_HINT_KEY = "flovly:whiteboard-mobile-hint-dismissed";
+
+function MobileWhiteboardHint() {
+  const [dismissed, setDismissed] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(MOBILE_HINT_KEY) === "1") {
+        setDismissed(true);
+      }
+    } catch {
+      /* localStorage off — pokazujemy default */
+    }
+  }, []);
+
+  const dismiss = () => {
+    setDismissed(true);
+    try {
+      localStorage.setItem(MOBILE_HINT_KEY, "1");
+    } catch {
+      /* storage off */
+    }
+  };
+
+  if (dismissed) return null;
+
+  return (
+    <div className="absolute right-2 top-2 z-30 md:hidden">
+      {expanded ? (
+        // Mała dymka — top-right, max-w żeby nie ciągnęła się przez całą szerokość.
+        <div className="flex max-w-[260px] items-start gap-2 rounded-lg border border-border bg-card/95 px-3 py-2 text-[0.78rem] leading-tight shadow-[0_4px_12px_-4px_rgba(10,10,40,0.2)] backdrop-blur">
+          <Info size={13} className="mt-0.5 shrink-0 text-amber-500" />
+          <span className="flex-1 text-foreground">
+            Whiteboard najlepiej działa na desktopie. Tu możesz oglądać + zoomować.
+          </span>
+          <button
+            type="button"
+            onClick={dismiss}
+            aria-label="Zamknij"
+            className="grid h-5 w-5 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:scale-95"
+          >
+            <X size={11} />
+          </button>
+        </div>
+      ) : (
+        // Zwinięty info dot. Klik = expand.
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          aria-label="Wskazówka — Whiteboard na mobile"
+          title="Wskazówka"
+          className="grid h-8 w-8 place-items-center rounded-full border border-amber-500/40 bg-amber-50 text-amber-700 shadow-[0_2px_6px_-2px_rgba(245,158,11,0.4)] transition-all hover:bg-amber-100 active:scale-95 dark:bg-amber-950/70 dark:text-amber-200"
+        >
+          <Info size={14} />
+        </button>
       )}
     </div>
   );
