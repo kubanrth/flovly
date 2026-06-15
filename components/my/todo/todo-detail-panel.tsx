@@ -257,9 +257,9 @@ function StepsSection({
   const [title, setTitle] = useState("");
   const done = steps.filter((s) => s.completed).length;
 
+  // Klient: "zlana ściana" — pod-zadania dostają emerald tint pasujący do
+  // subtask-pill'a w TaskActivityHints. Spójny color-language cross-view.
   return (
-    {/* Klient: "zlana ściana" — pod-zadania dostają emerald tint pasujący do
-        subtask-pill'a w TaskActivityHints. Spójny color-language cross-view. */}
     <section className="flex flex-col gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/[0.04] p-3 dark:border-emerald-400/30 dark:bg-emerald-400/[0.05]">
       <div className="flex items-center justify-between">
         <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
@@ -552,9 +552,9 @@ function NotesEditor({ id, initial }: { id: string; initial: string }) {
     fd.set("notes", value);
     startTransition(() => updateTodoNotesAction(fd));
   };
+  // Notatki dostają amber tint — pasuje do StickyNote ikonki sidebar'a
+  // notatek (lucide stale renderuje StickyNote w żółtym ducku).
   return (
-    {/* Notatki dostają amber tint — pasuje do StickyNote ikonki sidebar'a
-        notatek (lucide stale renderuje StickyNote w żółtym ducku). */}
     <div className="flex flex-col gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/[0.04] p-3 dark:border-amber-400/30 dark:bg-amber-400/[0.05]">
       <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-amber-700/80 dark:text-amber-300/80">
         Notatki
