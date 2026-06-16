@@ -20,6 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  ArrowRight,
   BarChart3,
   ChevronDown,
   ChevronRight,
@@ -67,6 +68,19 @@ export interface BoardTask {
   tags: { id: string; name: string; colorHex: string }[];
 }
 
+// Klient: "zamienmy w momencie jak wchodzisz w dana przestrzen i wybierasz
+// widok lista to zrob taki sam widok jak wchodzisz we wszystkie przestrzenie
+// i dajesz widok lista". Stary SortableBoardsList renderował SortableBoard-
+// Section z rich task-preview'em (rozwijane sekcje z status badges, dates,
+// assignees). Klient woli prostszy row-based list jak na /workspaces.
+//
+// Nowy layout = 1:1 SortableWorkspacesList:
+//   - <ul> z overflow-hidden rounded-xl border bg-card
+//   - per row: drag handle + Link z grid'em [name minmax(0,1fr) | view-pills 130px | tasks 70px | arrow 30px]
+//   - mobile: vertical stack (md+ wraca do grid)
+//
+// Stary SortableBoardSection przemianowany na SortableBoardSectionLegacy —
+// zostaje na wypadek gdyby ktoś chciał wrócić, ale nie jest exportowany.
 export function SortableBoardsList({
   workspaceId,
   boards,
@@ -75,6 +89,9 @@ export function SortableBoardsList({
   boards: BoardSectionData[];
 }) {
   const [items, setItems] = useState(boards);
+  useEffect(() => {
+    setItems(boards);
+  }, [boards]);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -96,14 +113,118 @@ export function SortableBoardsList({
     });
   };
 
+  if (items.length === 0) {
+    return (
+      <ul className="overflow-hidden rounded-xl border border-border bg-card">
+        <li className="px-5 py-6 text-center text-[0.9rem] text-muted-foreground">
+          Brak tablic — utwórz pierwszą.
+        </li>
+      </ul>
+    );
+  }
+
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={items.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-        {items.map((board) => (
-          <SortableBoardSection key={board.id} workspaceId={workspaceId} board={board} />
-        ))}
+        <ul className="overflow-hidden rounded-xl border border-border bg-card">
+          {items.map((board) => (
+            <SortableBoardRow
+              key={board.id}
+              workspaceId={workspaceId}
+              board={board}
+            />
+          ))}
+        </ul>
       </SortableContext>
     </DndContext>
+  );
+}
+
+// Row mirror SortableWorkspaceRow — grid 4-col na desktop, vertical stack
+// mobile. View pills w środkowej kolumnie zamiast "rola"/"slug" usera.
+function SortableBoardRow({
+  workspaceId,
+  board,
+}: {
+  workspaceId: string;
+  board: BoardSectionData;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: board.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    background: isDragging ? "var(--accent)" : undefined,
+  } as const;
+
+  // Top 4 view'ów żeby nie ciągnąć całej listy w wąskiej kolumnie. Reszta
+  // dostępna po kliknięciu w wiersz (Link → /b/[id]/table). 4 jest blisko
+  // pełnej listy (max 5: Tabela/Kanban/Roadmapa/Gantt/Whiteboard).
+  const visibleViews = board.enabledViews.slice(0, 4);
+  const moreCount = board.enabledViews.length - visibleViews.length;
+
+  return (
+    <li ref={setNodeRef} style={style} className="border-b border-border last:border-b-0">
+      <div className="flex items-center gap-1 pl-2">
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          aria-label="Przeciągnij tablicę"
+          title="Przeciągnij aby zmienić kolejność"
+          className="grid h-8 w-8 shrink-0 cursor-grab place-items-center rounded-md text-muted-foreground/50 transition-colors hover:bg-accent hover:text-foreground active:cursor-grabbing"
+        >
+          <GripVertical size={14} />
+        </button>
+        <Link
+          href={`/w/${workspaceId}/b/${board.id}/table`}
+          className="group flex flex-1 flex-col gap-2 px-3 py-3 transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none md:grid md:grid-cols-[minmax(0,1fr)_180px_70px_30px] md:items-center md:gap-4 md:py-3.5"
+        >
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="truncate font-display text-[1.05rem] font-semibold leading-tight tracking-[-0.01em] transition-colors group-hover:text-primary">
+              {board.name}
+            </span>
+            <span className="truncate font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
+              Tablica · {board.taskCount} {taskPl(board.taskCount)}
+            </span>
+          </div>
+
+          {/* Meta: view pills + task count + arrow. Mobile: bottom row pills. */}
+          <div className="flex items-center gap-2 md:contents">
+            <div className="flex flex-wrap items-center gap-1">
+              {visibleViews.map((view) => {
+                const meta = VIEW_META[view];
+                const Icon = meta.Icon;
+                return (
+                  <span
+                    key={view}
+                    title={meta.label}
+                    className={`inline-flex h-6 items-center gap-1 rounded-md border border-border bg-background px-1.5 font-mono text-[0.6rem] uppercase tracking-[0.12em] ${meta.accent}`}
+                  >
+                    <Icon size={10} />
+                    <span className="max-md:hidden">{meta.label}</span>
+                  </span>
+                );
+              })}
+              {moreCount > 0 && (
+                <span className="inline-flex h-6 items-center rounded-md border border-border bg-background px-1.5 font-mono text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground">
+                  +{moreCount}
+                </span>
+              )}
+            </div>
+            <span className="inline-flex items-center rounded-full border border-border bg-card px-2 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground md:rounded-none md:border-0 md:bg-transparent md:px-0">
+              {board.taskCount} {taskPl(board.taskCount)}
+            </span>
+            <ArrowRight
+              size={14}
+              className="ml-auto text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary md:ml-0 md:justify-self-end"
+            />
+          </div>
+        </Link>
+      </div>
+    </li>
   );
 }
 
