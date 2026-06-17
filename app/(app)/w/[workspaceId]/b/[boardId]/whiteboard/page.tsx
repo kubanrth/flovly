@@ -16,8 +16,10 @@ async function ensureBoardCanvas(
   creatorId: string,
   boardName: string,
 ) {
+  // F12-K73: filtruj po kind żeby nie złapać przypadkiem canvasu Task Line
+  // (Board ma teraz N canvasów, po jednym per kind).
   const existing = await db.processCanvas.findFirst({
-    where: { boardId, deletedAt: null },
+    where: { boardId, kind: "whiteboard", deletedAt: null },
     include: {
       nodes: {
         include: {

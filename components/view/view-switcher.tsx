@@ -16,6 +16,7 @@ import {
   BarChart3,
   Pencil,
   FileText,
+  Workflow,
   X,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -60,6 +61,7 @@ const DEFAULT_ICONS: Record<ViewName, React.ReactNode> = {
   roadmap: <GitBranch size={14} />,
   gantt: <BarChart3 size={14} />,
   whiteboard: <Pencil size={14} />,
+  taskline: <Workflow size={14} />,
 };
 const DEFAULT_LABELS: Record<ViewName, string> = {
   table: "Tabela",
@@ -67,6 +69,7 @@ const DEFAULT_LABELS: Record<ViewName, string> = {
   roadmap: "Roadmapa",
   gantt: "Gantt",
   whiteboard: "Whiteboard",
+  taskline: "Linia zadań",
 };
 
 export function ViewSwitcher({
@@ -123,6 +126,12 @@ export function ViewSwitcher({
       label: "Whiteboard",
       icon: DEFAULT_ICONS.whiteboard,
       path: `/w/${workspaceId}/b/${boardId}/whiteboard`,
+    },
+    {
+      name: "taskline",
+      label: "Linia zadań",
+      icon: DEFAULT_ICONS.taskline,
+      path: `/w/${workspaceId}/b/${boardId}/taskline`,
     },
   ];
 

@@ -3,7 +3,14 @@
 // invoke them directly — Next.js refuses to call exports from a
 // "use client" module server-side.
 
-export type ViewName = "table" | "kanban" | "roadmap" | "gantt" | "whiteboard";
+export type ViewName =
+  | "table"
+  | "kanban"
+  | "roadmap"
+  | "gantt"
+  | "whiteboard"
+  // F12-K73: Task Line — workflow zadań po prawej + sidebar po lewej.
+  | "taskline";
 
 export const ALL_VIEWS: ViewName[] = [
   "table",
@@ -11,6 +18,7 @@ export const ALL_VIEWS: ViewName[] = [
   "roadmap",
   "gantt",
   "whiteboard",
+  "taskline",
 ];
 
 // Maps the Prisma `ViewType` enum (uppercase) onto the lowercase ViewName
@@ -27,6 +35,8 @@ export function viewTypeToName(type: string): ViewName | null {
       return "gantt";
     case "WHITEBOARD":
       return "whiteboard";
+    case "TASKLINE":
+      return "taskline";
     default:
       return null;
   }

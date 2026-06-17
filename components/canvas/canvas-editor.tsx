@@ -154,6 +154,9 @@ const SHAPE_DEFAULTS: Record<ShapeKind, { width: number; height: number; color: 
   IMAGE: { width: 280, height: 200, color: "#FFFFFF" },
   // TEXT uses colorHex as background + separate textColorHex for text color.
   TEXT: { width: 220, height: 60, color: "#FFFFFF" },
+  // F12-K73 TASK_REF — task card sizing. Renderowany tylko w view 'taskline',
+  // przez external drop z TaskLineSidebar.
+  TASK_REF: { width: 240, height: 90, color: "#FFFFFF" },
 };
 
 const STICKY_COLORS = [

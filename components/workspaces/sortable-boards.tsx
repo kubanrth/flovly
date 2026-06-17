@@ -29,6 +29,7 @@ import {
   KanbanSquare,
   Pencil,
   Table2,
+  Workflow,
 } from "lucide-react";
 import { ViewSwitcher } from "@/components/view/view-switcher";
 import { reorderBoardsAction } from "@/app/(app)/w/[workspaceId]/b/actions";
@@ -48,6 +49,7 @@ const VIEW_META: Record<
   roadmap: { label: "Roadmapa", Icon: GitBranch, accent: "text-sky-500" },
   gantt: { label: "Gantt", Icon: BarChart3, accent: "text-rose-500" },
   whiteboard: { label: "Whiteboard", Icon: Pencil, accent: "text-emerald-500" },
+  taskline: { label: "Linia zadań", Icon: Workflow, accent: "text-fuchsia-500" },
 };
 
 export interface BoardSectionData {

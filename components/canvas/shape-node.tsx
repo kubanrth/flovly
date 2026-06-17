@@ -23,7 +23,11 @@ export type ShapeKind =
   | "FRAME"
   | "TEXT"
   // data.imagePath points to storage key in Supabase `attachments` bucket.
-  | "IMAGE";
+  | "IMAGE"
+  // F12-K73: Task Line node. data trzyma { taskId, taskTitle, statusName,
+  // statusColor, flowMark }. Renderuje się jako task card z opcjonalnym
+  // start/end ring'iem.
+  | "TASK_REF";
 
 export interface ShapeNodeData {
   shape: ShapeKind;

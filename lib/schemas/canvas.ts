@@ -8,6 +8,8 @@ export const NODE_SHAPES = [
   "FRAME",
   "TEXT",
   "IMAGE",
+  // F12-K73: Task Line reference node. dataJson trzyma taskId + snapshot.
+  "TASK_REF",
 ] as const;
 export type NodeShape = (typeof NODE_SHAPES)[number];
 
@@ -52,6 +54,13 @@ const nodeSnapshotSchema = z.object({
   imagePath: z.string().max(500).nullable().optional(),
   // Explicit text color override (null = auto from background).
   textColorHex: z.string().regex(HEX_RE).nullable().optional(),
+  // F12-K73 TASK_REF-only — referencja do task'a + snapshot do offline render'u.
+  taskId: z.string().min(1).max(64).nullable().optional(),
+  taskTitle: z.string().max(400).nullable().optional(),
+  statusName: z.string().max(120).nullable().optional(),
+  statusColor: z.string().regex(HEX_RE).nullable().optional(),
+  // flowMark: 'start' = początek flow'u (zielony ring), 'end' = koniec.
+  flowMark: z.enum(["start", "end"]).nullable().optional(),
 });
 
 const edgeSnapshotSchema = z.object({

@@ -52,7 +52,8 @@ export default async function CustomBoardViewPage({
   const canCustomize = can(ctx.role, "background.customize");
 
   const actions =
-    view.type === "WHITEBOARD" ? null : (
+    // F12-K73: TASKLINE jak WHITEBOARD — canvas-based, brak BackgroundCustomizer'a.
+    view.type === "WHITEBOARD" || view.type === "TASKLINE" ? null : (
       <>
         {canCustomize && (
           <BackgroundCustomizer

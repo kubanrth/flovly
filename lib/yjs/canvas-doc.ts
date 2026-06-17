@@ -18,6 +18,10 @@ export const SHAPES = [
   "FRAME",
   "TEXT",
   "IMAGE",
+  // F12-K73: Task Line reference node. data trzyma { taskId, taskTitle,
+  // statusName, statusColor, flowMark } w `dataJson` (Prisma) lub odpowiednio
+  // w Yjs node Map'ie.
+  "TASK_REF",
 ] as const;
 export type CanvasShape = (typeof SHAPES)[number];
 export const EDGE_ENDS = ["arrow", "none", "diamond", "circle"] as const;
@@ -43,6 +47,15 @@ export interface CanvasNodeValue {
   textColorHex?: string | null;
   // null/undef = bazowy rozmiar (15px albo auto-calc po height dla TEXT).
   fontSize?: number | null;
+  // F12-K73 TASK_REF-only — referencja do task'a + snapshot tytułu/status'u
+  // żeby render działał bez DB hit'a (snapshot odświeżany przy server fetch).
+  taskId?: string | null;
+  taskTitle?: string | null;
+  statusName?: string | null;
+  statusColor?: string | null;
+  // flowMark: 'start' = początek workflow'u (zielony ring), 'end' = koniec
+  // (czerwony), null = zwykłe zadanie. Multi-start / multi-end dozwolone.
+  flowMark?: "start" | "end" | null;
 }
 
 export interface CanvasEdgeValue {
@@ -114,6 +127,14 @@ function toNodeYMap(node: CanvasNodeValue): Y.Map<unknown> {
   if (node.imagePath) m.set("imagePath", node.imagePath);
   if (node.textColorHex) m.set("textColorHex", node.textColorHex);
   if (typeof node.fontSize === "number") m.set("fontSize", node.fontSize);
+  // F12-K73 TASK_REF fields. taskId jest niezmienny po utworzeniu node'a;
+  // taskTitle / statusName / statusColor to snapshot odświeżany przy server
+  // fetchu (gdy task się zmieni i page się odświeży). flowMark toggluje user.
+  if (node.taskId) m.set("taskId", node.taskId);
+  if (node.taskTitle) m.set("taskTitle", node.taskTitle);
+  if (node.statusName) m.set("statusName", node.statusName);
+  if (node.statusColor) m.set("statusColor", node.statusColor);
+  if (node.flowMark) m.set("flowMark", node.flowMark);
   return m;
 }
 
@@ -169,6 +190,27 @@ export function setNodeValue(
     if (prevFontSize !== nextFontSize) {
       if (nextFontSize === null) existing.delete("fontSize");
       else existing.set("fontSize", nextFontSize);
+    }
+    // F12-K73 TASK_REF diff. flowMark to jedyne pole które user edytuje na
+    // żywo — taskId/taskTitle są ustawiane przy create. Diff zapobiega
+    // spurious Yjs broadcast'om.
+    if ((existing.get("taskId") ?? null) !== (node.taskId ?? null)) {
+      existing.set("taskId", node.taskId ?? null);
+    }
+    if ((existing.get("taskTitle") ?? null) !== (node.taskTitle ?? null)) {
+      existing.set("taskTitle", node.taskTitle ?? null);
+    }
+    if ((existing.get("statusName") ?? null) !== (node.statusName ?? null)) {
+      existing.set("statusName", node.statusName ?? null);
+    }
+    if ((existing.get("statusColor") ?? null) !== (node.statusColor ?? null)) {
+      existing.set("statusColor", node.statusColor ?? null);
+    }
+    const prevFlowMark = existing.get("flowMark") ?? null;
+    const nextFlowMark = node.flowMark ?? null;
+    if (prevFlowMark !== nextFlowMark) {
+      if (nextFlowMark === null) existing.delete("flowMark");
+      else existing.set("flowMark", nextFlowMark);
     }
   } else {
     nodesMap.set(node.id, toNodeYMap(node));
@@ -245,6 +287,14 @@ export function readCanvasSnapshot(refs: CanvasYRefs): {
           : undefined,
       reactions: Object.keys(reactions).length > 0 ? reactions : undefined,
       locked: value.get("locked") === true ? true : undefined,
+      taskId: asNullString(value.get("taskId")) ?? undefined,
+      taskTitle: asNullString(value.get("taskTitle")) ?? undefined,
+      statusName: asNullString(value.get("statusName")) ?? undefined,
+      statusColor: asNullString(value.get("statusColor")) ?? undefined,
+      flowMark: (() => {
+        const v = value.get("flowMark");
+        return v === "start" || v === "end" ? v : undefined;
+      })(),
     });
   });
   const edges: CanvasEdgeValue[] = [];

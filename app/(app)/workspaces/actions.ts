@@ -38,6 +38,7 @@ const ALL_VIEW_TYPES: ViewType[] = [
   ViewType.ROADMAP,
   ViewType.GANTT,
   ViewType.WHITEBOARD,
+  ViewType.TASKLINE,
 ];
 
 // Parses enabledViews[] multi-checkbox into ViewType enum values.
@@ -75,9 +76,12 @@ export async function createWorkspaceAction(
 
   const slug = await uniqueSlug(slugify(parsed.data.name));
   const enabledViews = parseSelectedViews(formData);
-  // WHITEBOARD uses ProcessCanvas (auto-created on first visit); other four need
-  // seed BoardView rows so background customization has a row to update.
-  const seedBoardViews = enabledViews.filter((t) => t !== ViewType.WHITEBOARD);
+  // WHITEBOARD i TASKLINE używają ProcessCanvas (auto-created on first visit);
+  // reszta widoków potrzebuje seed BoardView rows żeby background customization
+  // miał wiersz do update'u.
+  const seedBoardViews = enabledViews.filter(
+    (t) => t !== ViewType.WHITEBOARD && t !== ViewType.TASKLINE,
+  );
 
   const workspace = await db.workspace.create({
     data: {

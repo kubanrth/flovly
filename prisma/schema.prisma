@@ -259,6 +259,9 @@ enum ViewType {
   ROADMAP
   GANTT
   WHITEBOARD
+  // F12-K73: Task Line — task workflow visualization (sidebar list +
+  // dedicated ProcessCanvas with kind='taskline').
+  TASKLINE
 }
 
 // F12-K8: per-board visibility. PUBLIC = open to everyone in the workspace
@@ -300,7 +303,10 @@ model Board {
   milestones    Milestone[]
   links         BoardLink[]
   linkFolders   LinkFolder[]
-  canvas        ProcessCanvas?
+  // F12-K73: Board ma teraz wiele canvasów rozróżnianych przez kind
+  // (whiteboard, taskline). Stara 1:1 relation `canvas` zamieniona na
+  // 1:N `canvases` — kod konsumujący filtruje po kind przy fetchu.
+  canvases      ProcessCanvas[] @relation("BoardCanvases")
 
   @@index([workspaceId])
   @@index([deletedAt])
@@ -971,8 +977,12 @@ model ProcessCanvas {
   workspaceId String
   // F8: whiteboards migrated to board-level. `boardId` is nullable
   // only for legacy workspace-level canvases created before F8; new
-  // canvases always set it. One canvas per board (enforced by @@unique).
-  boardId     String?   @unique
+  // canvases always set it. Para (boardId, kind) jest unikalna — tablica
+  // może mieć po jednym canvasie każdego rodzaju (whiteboard, taskline).
+  boardId     String?
+  // F12-K73: rodzaj canvas'u. Domyślnie 'whiteboard' (legacy migrate).
+  // 'taskline' = canvas dla widoku Task Line (workflow zadań).
+  kind        String    @default("whiteboard")
   name        String
   creatorId   String
   yjsState    Bytes?
@@ -982,13 +992,14 @@ model ProcessCanvas {
   deletedAt   DateTime?
 
   workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  board     Board?          @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  board     Board?          @relation("BoardCanvases", fields: [boardId], references: [id], onDelete: Cascade)
   creator   User            @relation("CanvasCreator", fields: [creatorId], references: [id])
   nodes     ProcessNode[]
   edges     ProcessEdge[]
   // F10-W: pen-tool strokes captured by the user (Mural-style drawing).
   strokes   ProcessStroke[]
 
+  @@unique([boardId, kind])
   @@index([workspaceId])
 }
 
@@ -1005,6 +1016,10 @@ enum NodeShape {
   // F12-K37: image node — colorHex pole nieużywane, dataJson trzyma
   // { imagePath: string } (storage key w bucket'cie attachments).
   IMAGE
+  // F12-K73: reference do Task. dataJson trzyma { taskId, taskTitle,
+  // statusName, statusColor, flowMark: 'start' | 'end' | null }. Używane
+  // tylko w canvasie 'taskline' — workflow visualization.
+  TASK_REF
 }
 
 // F10-W: free-drawing strokes (pen tool) on a canvas. Each row = one

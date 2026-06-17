@@ -367,7 +367,7 @@ export async function createBoardViewAction(
   // Revalidate every default route so the pill list updates on any landing page.
   // Layout revalidate covers the sidebar (which also reads workspace.enabledViews).
   const base = `/w/${parsed.data.workspaceId}/b/${parsed.data.boardId}`;
-  for (const p of ["table", "kanban", "roadmap", "gantt", "whiteboard"]) {
+  for (const p of ["table", "kanban", "roadmap", "gantt", "whiteboard", "taskline"]) {
     revalidatePath(`${base}/${p}`);
   }
   revalidatePath("/", "layout");
@@ -406,7 +406,7 @@ export async function deleteBoardViewAction(formData: FormData) {
   });
   // Revalidate every concrete view page so the pill list updates on reload.
   const base = `/w/${view.board.workspaceId}/b/${view.board.id}`;
-  for (const p of ["table", "kanban", "roadmap", "gantt", "whiteboard"]) {
+  for (const p of ["table", "kanban", "roadmap", "gantt", "whiteboard", "taskline"]) {
     revalidatePath(`${base}/${p}`);
   }
 }
