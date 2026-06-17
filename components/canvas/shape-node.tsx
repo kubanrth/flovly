@@ -999,29 +999,9 @@ function TaskRefShape({
           }
         }}
       >
-        {/* Flow mark badge (top-right) */}
-        {flowMark && (
-          <span
-            style={{
-              position: "absolute",
-              top: -10,
-              right: 12,
-              padding: "2px 8px",
-              borderRadius: 999,
-              fontSize: 9,
-              fontWeight: 700,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: "#fff",
-              background: flowMark === "start" ? "#10B981" : "#F43F5E",
-              boxShadow: "0 2px 6px -2px rgba(0,0,0,0.25)",
-            }}
-          >
-            {flowMark === "start" ? "START" : "Koniec"}
-          </span>
-        )}
-
-        {/* Status dot + status name */}
+        {/* Status row: dot + status name + (auto spacer) + flow mark badge.
+            Badge inline w wierszu, nie floating poza kartą (klient: "to co
+            sie oznacza jest jakby off widok"). */}
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span
             style={{
@@ -1042,10 +1022,28 @@ function TaskRefShape({
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
+              flex: 1,
             }}
           >
             {statusName ?? "Bez statusu"}
           </span>
+          {flowMark && (
+            <span
+              style={{
+                padding: "2px 7px",
+                borderRadius: 999,
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "#fff",
+                background: flowMark === "start" ? "#10B981" : "#F43F5E",
+                flexShrink: 0,
+              }}
+            >
+              {flowMark === "start" ? "Start" : "Koniec"}
+            </span>
+          )}
         </div>
 
         {/* Title */}

@@ -1,7 +1,7 @@
 "use client";
 
 import "@xyflow/react/dist/style.css";
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -2130,6 +2130,28 @@ function ContextMenu({
   onSetFlowMark?: (mark: "start" | "end" | null) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  // F12-K73 fix: menu clip'owało się przy dolnej krawędzi viewport'u gdy
+  // user kliknął prawym przy nisko siedzącym node'zie. Po pierwszym render
+  // mierzymy menu i flippujemy do góry / w lewo gdy by wychodziło poza.
+  const [adjusted, setAdjusted] = useState<{ top: number; left: number } | null>(null);
+  useLayoutEffect(() => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const PAD = 8;
+    let nextTop = y;
+    let nextLeft = x;
+    if (y + rect.height + PAD > window.innerHeight) {
+      // Flip do góry: ustaw bottom = y, czyli top = y - height.
+      nextTop = Math.max(PAD, y - rect.height);
+    }
+    if (x + rect.width + PAD > window.innerWidth) {
+      nextLeft = Math.max(PAD, x - rect.width);
+    }
+    if (nextTop !== y || nextLeft !== x) {
+      setAdjusted({ top: nextTop, left: nextLeft });
+    }
+  }, [x, y]);
+
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
       // `Node` is shadowed by @xyflow's Node type — use globalThis.Node for the DOM check.
@@ -2146,10 +2168,11 @@ function ContextMenu({
     };
   }, [onClose]);
 
+  const pos = adjusted ?? { top: y, left: x };
   return (
     <div
       ref={ref}
-      style={{ position: "fixed", top: y, left: x, zIndex: 60 }}
+      style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 60 }}
       className="w-52 rounded-lg border border-border bg-popover p-1 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
     >
       {hasSelection && (
