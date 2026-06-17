@@ -440,14 +440,19 @@ function LineSection({
         )}
       </div>
 
-      {/* Body — pusta linia lub flow z kafelkami */}
+      {/* Body — pusta linia lub flow z kafelkami w grid'cie 3 kolumn na desktop */}
       {isEmpty ? (
         <EmptyLineDropZone canEdit={canEdit} onDrop={(e) => onDrop(e, -1)} />
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={bodyIds} strategy={rectSortingStrategy}>
             <div
-              className="flex flex-wrap content-start items-stretch gap-2 max-md:flex-col max-md:flex-nowrap"
+              // Grid daje przewidywalne 3 kafelki w rzędzie. Strzałki sa
+              // absolute-positioned wewnątrz każdej komórki — right
+              // arrow w obrębie rzędu, down arrow na końcu rzędu (jasny
+              // wskaźnik "kontynuacja w nowym rzędzie").
+              // Mobile: grid-cols-1 = stack pionowy.
+              className="grid grid-cols-1 gap-y-6 md:grid-cols-3 md:gap-x-10 md:gap-y-12"
               onDragOver={(e) => {
                 if (e.dataTransfer.types.includes("application/x-flovly-task-id")) {
                   e.preventDefault();
@@ -461,28 +466,28 @@ function LineSection({
               {renderItems.map((item, i) => {
                 const isLast = i === renderItems.length - 1;
                 const isAnchor = item.flowMark !== null;
+                const isEndAnchor = item.flowMark === "end";
+                // 3 kafelki w rzędzie na desktop → indeksy 2, 5, 8... to koniec rzędu.
+                const isEndOfRow = (i + 1) % 3 === 0;
                 return (
                   <FlowSlot
                     key={item.id}
                     item={item}
                     isLast={isLast}
                     isAnchor={isAnchor}
+                    isEndAnchor={isEndAnchor}
+                    isEndOfRow={isEndOfRow}
                     onRemove={() => onRemove(item.id)}
                     onFlowMark={(m) => onFlowMark(item.id, m)}
-                    onSidebarDropAfter={(e) => {
-                      // Drop tuż za tym slotem — index w body.
-                      if (isAnchor && item.flowMark === "end") {
-                        // Drop ZA End'em → wstaw przed End'em jako ostatni body.
-                        onDrop(e, body.length - 1);
-                      } else {
-                        const bodyIdx = body.findIndex((b) => b.id === item.id);
-                        onDrop(e, bodyIdx);
-                      }
-                    }}
                     canEdit={canEdit}
                   />
                 );
               })}
+              {canEdit && (
+                <EndDropCell
+                  onDrop={(e) => onDrop(e, body.length - 1)}
+                />
+              )}
             </div>
           </SortableContext>
         </DndContext>
@@ -492,22 +497,27 @@ function LineSection({
 }
 
 // ─────────── FlowSlot ─────────────────────────────────────────────────────
+// Pojedyncza komórka grid'u. Card w środku + absolute-positioned arrow
+// (right na desktop w obrębie rzędu, down na końcu rzędu i mobile).
+// Po End anchor'ze NIE rysujemy strzałki — End to terminator linii.
 
 function FlowSlot({
   item,
   isLast,
   isAnchor,
+  isEndAnchor,
+  isEndOfRow,
   onRemove,
   onFlowMark,
-  onSidebarDropAfter,
   canEdit,
 }: {
   item: TaskLineFlowItem;
   isLast: boolean;
   isAnchor: boolean;
+  isEndAnchor: boolean;
+  isEndOfRow: boolean;
   onRemove: () => void;
   onFlowMark: (mark: "start" | "end" | null) => void;
-  onSidebarDropAfter: (e: React.DragEvent) => void;
   canEdit: boolean;
 }) {
   // Start/End nie są sortable.
@@ -520,22 +530,45 @@ function FlowSlot({
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const showArrow = !isLast && !isEndAnchor;
+
   return (
-    <div className="flex items-center gap-2 max-md:flex-col max-md:gap-1">
-      <div ref={setNodeRef} style={style} {...attributes}>
-        <TaskLineCard
-          item={item}
-          listeners={canEdit && !isAnchor ? listeners : undefined}
-          onRemove={onRemove}
-          onFlowMark={onFlowMark}
-          canEdit={canEdit}
-        />
-      </div>
-      {!isLast ? (
-        <FlowArrow />
-      ) : canEdit ? (
-        <FlowDropZone onDrop={onSidebarDropAfter} />
-      ) : null}
+    <div ref={setNodeRef} style={style} {...attributes} className="relative">
+      <TaskLineCard
+        item={item}
+        listeners={canEdit && !isAnchor ? listeners : undefined}
+        onRemove={onRemove}
+        onFlowMark={onFlowMark}
+        canEdit={canEdit}
+      />
+      {showArrow && (
+        <>
+          {/* Desktop arrow: → w obrębie rzędu, ↓ na końcu rzędu (kontynuacja) */}
+          {isEndOfRow ? (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -bottom-7 left-1/2 hidden -translate-x-1/2 text-muted-foreground/60 md:block"
+              title="Kontynuacja w następnym rzędzie"
+            >
+              <ChevronDown size={22} strokeWidth={2.5} />
+            </span>
+          ) : (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -right-7 top-1/2 hidden -translate-y-1/2 text-muted-foreground/60 md:block"
+            >
+              <ChevronRight size={22} strokeWidth={2.5} />
+            </span>
+          )}
+          {/* Mobile arrow: zawsze ↓ */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -bottom-4 left-1/2 -translate-x-1/2 text-muted-foreground/60 md:hidden"
+          >
+            <ChevronDown size={18} strokeWidth={2.5} />
+          </span>
+        </>
+      )}
     </div>
   );
 }
@@ -566,7 +599,7 @@ function TaskLineCard({
   return (
     <div
       {...listeners}
-      className={`group relative flex w-[240px] flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-sm transition-all hover:border-primary/40 hover:shadow-md max-md:w-full ${ring} ${listeners ? "cursor-grab active:cursor-grabbing" : ""}`}
+      className={`group relative flex w-full flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-sm transition-all hover:border-primary/40 hover:shadow-md ${ring} ${listeners ? "cursor-grab active:cursor-grabbing" : ""}`}
     >
       {item.flowMark === "start" && (
         <span className="absolute -top-2 left-3 rounded-full bg-emerald-500 px-2 py-0.5 font-mono text-[0.55rem] uppercase tracking-[0.16em] text-white shadow-sm">
@@ -697,20 +730,9 @@ function FlowMarkButton({
   );
 }
 
-function FlowArrow() {
-  return (
-    <>
-      <span aria-hidden className="text-muted-foreground/60 max-md:hidden">
-        <ChevronRight size={18} strokeWidth={2.5} />
-      </span>
-      <span aria-hidden className="text-muted-foreground/60 md:hidden">
-        <ChevronDown size={18} strokeWidth={2.5} />
-      </span>
-    </>
-  );
-}
-
-function FlowDropZone({ onDrop }: { onDrop: (e: React.DragEvent) => void }) {
+// Grid-cell drop zone — kolejna komórka po ostatnim kafelku, na dropowanie
+// nowego zadania. Wypełnia całą komórkę (w-full), wysokość zbliżona do karty.
+function EndDropCell({ onDrop }: { onDrop: (e: React.DragEvent) => void }) {
   const [hover, setHover] = useState(false);
   return (
     <div
@@ -726,9 +748,11 @@ function FlowDropZone({ onDrop }: { onDrop: (e: React.DragEvent) => void }) {
         onDrop(e);
       }}
       data-hover={hover ? "true" : "false"}
-      className="grid h-[90px] w-[120px] place-items-center rounded-xl border border-dashed border-border/60 bg-card/30 text-[0.7rem] text-muted-foreground/60 transition-all data-[hover=true]:border-primary/60 data-[hover=true]:bg-primary/5 data-[hover=true]:text-foreground max-md:h-[60px] max-md:w-full"
+      className="grid min-h-[110px] w-full place-items-center rounded-xl border border-dashed border-border/60 bg-card/30 text-[0.78rem] text-muted-foreground/60 transition-all data-[hover=true]:border-primary/60 data-[hover=true]:bg-primary/5 data-[hover=true]:text-foreground"
     >
-      + dodaj
+      <span className="font-mono text-[0.65rem] uppercase tracking-[0.14em]">
+        + dodaj zadanie
+      </span>
     </div>
   );
 }
