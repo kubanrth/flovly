@@ -1552,7 +1552,12 @@ function CanvasEditorInner({
               </div>
             ) : (
               <div className="flex items-center gap-1 px-1">
-                {(selectedNodes.some((n) => n.data.shape === "STICKY")
+                {/* TASK_REF dostaje też pastelową paletę (STICKY_COLORS) —
+                    biały task card + delikatne tła ładnie się komponują.
+                    Klient: "dodaj opcje zmieniania kolorow tez tych zadan". */}
+                {(selectedNodes.some(
+                  (n) => n.data.shape === "STICKY" || n.data.shape === "TASK_REF",
+                )
                   ? STICKY_COLORS
                   : PALETTE
                 ).map((c) => (

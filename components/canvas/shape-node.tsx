@@ -248,6 +248,7 @@ export const ShapeNode = memo(function ShapeNode({
         nodeId={id}
         width={d.width}
         height={d.height}
+        colorHex={d.colorHex}
         taskId={(d.taskId as string | null) ?? null}
         taskTitle={(d.taskTitle as string | null) ?? null}
         statusName={(d.statusName as string | null) ?? null}
@@ -935,6 +936,7 @@ function TaskRefShape({
   nodeId,
   width,
   height,
+  colorHex,
   taskId,
   taskTitle,
   statusName,
@@ -946,6 +948,10 @@ function TaskRefShape({
   nodeId: string;
   width: number;
   height: number;
+  // Color picker w top toolbar'ze recolor'uje TASK_REF tak samo jak STICKY
+  // (klient: "dodaj opcje zmieniania kolorow tez tych zadan"). Default
+  // #FFFFFF gdy node świeży, ale po zmianie w UI siedzi w node.colorHex.
+  colorHex: string;
   taskId: string | null;
   taskTitle: string | null;
   statusName: string | null;
@@ -982,7 +988,7 @@ function TaskRefShape({
           width,
           height,
           borderRadius: 12,
-          background: "#FFFFFF",
+          background: colorHex || "#FFFFFF",
           border: "1px solid rgba(15, 23, 42, 0.12)",
           boxShadow,
           padding: 10,
