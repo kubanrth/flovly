@@ -275,7 +275,7 @@ export async function reorderStatusColumnsAction(formData: FormData) {
 const createViewSchema = z.object({
   workspaceId: z.string().min(1),
   boardId: z.string().min(1),
-  type: z.enum(["TABLE", "KANBAN", "ROADMAP", "GANTT", "WHITEBOARD"]),
+  type: z.enum(["TABLE", "KANBAN", "ROADMAP", "GANTT", "WHITEBOARD", "TASKLINE"]),
   // Empty string = recreate the default for this type (only allowed if none exists).
   name: z.string().trim().max(60).optional(),
 });

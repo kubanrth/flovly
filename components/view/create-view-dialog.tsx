@@ -9,6 +9,7 @@ import {
   BarChart3,
   Pencil,
   Plus,
+  Workflow,
 } from "lucide-react";
 import {
   Dialog,
@@ -24,7 +25,7 @@ import {
 import type { ViewName } from "@/components/view/view-switcher";
 
 const TYPE_OPTIONS: {
-  value: "TABLE" | "KANBAN" | "ROADMAP" | "GANTT" | "WHITEBOARD";
+  value: "TABLE" | "KANBAN" | "ROADMAP" | "GANTT" | "WHITEBOARD" | "TASKLINE";
   name: ViewName;
   label: string;
   icon: typeof Table2;
@@ -34,6 +35,7 @@ const TYPE_OPTIONS: {
   { value: "ROADMAP", name: "roadmap", label: "Roadmapa", icon: GitBranch },
   { value: "GANTT", name: "gantt", label: "Gantt", icon: BarChart3 },
   { value: "WHITEBOARD", name: "whiteboard", label: "Whiteboard", icon: Pencil },
+  { value: "TASKLINE", name: "taskline", label: "Linia zadań", icon: Workflow },
 ];
 
 // Compact `+ Nowy widok` button rendered next to the ViewSwitcher.
