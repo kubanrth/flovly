@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { TaskLineSidebar } from "@/components/canvas/taskline-sidebar";
 import {
   TaskLineFlow,
@@ -65,10 +65,12 @@ export function TaskLineWorkspace({
     return m;
   }, [tasks]);
 
-  // Zadania już w jakiejkolwiek linii → odfiltruj z sidebar'a (dedup globalny).
-  const placedTaskIds = useMemo(
+  // Zadania już w jakiejkolwiek linii → odfiltruj z sidebar'a.
+  // State (NIE useMemo z initialItems) — sidebar musi się updateować w
+  // czasie rzeczywistym gdy user drop'uje nowe lub usuwa z flow.
+  // TaskLineFlow notyfikuje przez onPlacedTaskIdsChange.
+  const [placedTaskIds, setPlacedTaskIds] = useState<Set<string>>(
     () => new Set(initialItems.map((i) => i.taskId)),
-    [initialItems],
   );
   const availableTasks = useMemo(
     () => tasks.filter((t) => !placedTaskIds.has(t.id)),
@@ -89,6 +91,7 @@ export function TaskLineWorkspace({
           initialRows={initialRows}
           boardTasks={boardTasksMap}
           canEdit={canEdit}
+          onPlacedTaskIdsChange={setPlacedTaskIds}
         />
       </div>
     </div>

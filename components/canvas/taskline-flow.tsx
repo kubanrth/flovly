@@ -7,7 +7,7 @@
 //   End zawsze na końcu). Dropping nowego task'a → wstawia PRZED End.
 // - "+ Nowa linia" przycisk na dole tworzy kolejną pustą linię.
 
-import { useMemo, useState, useTransition } from "react";
+import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -28,6 +28,7 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   ChevronRight,
   ChevronDown,
+  CornerDownLeft,
   X,
   Flag,
   FlagOff,
@@ -78,16 +79,27 @@ export function TaskLineFlow({
   initialRows,
   boardTasks,
   canEdit,
+  onPlacedTaskIdsChange,
 }: {
   canvasId: string;
   initialItems: TaskLineFlowItem[];
   initialRows: TaskLineRowMeta[];
   boardTasks: Map<string, BoardTaskMeta>;
   canEdit: boolean;
+  // Notyfikuje parent o aktualnym secie taskId'ów w jakiejkolwiek linii.
+  // Parent używa do filtrowania sidebar'a (dropowane taski znikają z listy
+  // available, usunięte z flow wracają).
+  onPlacedTaskIdsChange?: (ids: Set<string>) => void;
 }) {
   const [items, setItems] = useState<TaskLineFlowItem[]>(initialItems);
   const [rows, setRows] = useState<TaskLineRowMeta[]>(initialRows);
   const [, startTransition] = useTransition();
+
+  // Notyfikacja parent'a o zmianach placedTaskIds — sidebar refresh.
+  useEffect(() => {
+    if (!onPlacedTaskIdsChange) return;
+    onPlacedTaskIdsChange(new Set(items.map((i) => i.taskId)));
+  }, [items, onPlacedTaskIdsChange]);
 
   // Items pogrupowane per linia + posortowane po x asc.
   const itemsByLine = useMemo(() => {
@@ -469,18 +481,26 @@ function LineSection({
                 const isEndAnchor = item.flowMark === "end";
                 // 3 kafelki w rzędzie na desktop → indeksy 2, 5, 8... to koniec rzędu.
                 const isEndOfRow = (i + 1) % 3 === 0;
+                // Czy dropzone będzie ostatnim element'em w grid'cie (drop
+                // appendowany po wszystkich) — gdy tak, dawajmy divider'a po
+                // tym kafelku, bo jest "ostatni przed wrap" jeśli kończy rząd.
+                const willHaveMoreContent = !isLast || canEdit;
+                const showWrapDivider =
+                  isEndOfRow && willHaveMoreContent && !isLast;
                 return (
-                  <FlowSlot
-                    key={item.id}
-                    item={item}
-                    isLast={isLast}
-                    isAnchor={isAnchor}
-                    isEndAnchor={isEndAnchor}
-                    isEndOfRow={isEndOfRow}
-                    onRemove={() => onRemove(item.id)}
-                    onFlowMark={(m) => onFlowMark(item.id, m)}
-                    canEdit={canEdit}
-                  />
+                  <Fragment key={item.id}>
+                    <FlowSlot
+                      item={item}
+                      isLast={isLast}
+                      isAnchor={isAnchor}
+                      isEndAnchor={isEndAnchor}
+                      isEndOfRow={isEndOfRow}
+                      onRemove={() => onRemove(item.id)}
+                      onFlowMark={(m) => onFlowMark(item.id, m)}
+                      canEdit={canEdit}
+                    />
+                    {showWrapDivider && <RowWrapDivider />}
+                  </Fragment>
                 );
               })}
               {canEdit && (
@@ -497,8 +517,10 @@ function LineSection({
 }
 
 // ─────────── FlowSlot ─────────────────────────────────────────────────────
-// Pojedyncza komórka grid'u. Card w środku + absolute-positioned arrow
-// (right na desktop w obrębie rzędu, down na końcu rzędu i mobile).
+// Pojedyncza komórka grid'u. Card w środku + absolute right-arrow w obrębie
+// rzędu. Na końcu rzędu (desktop) NIE rysujemy strzałki — w jej miejscu jest
+// RowWrapDivider (full-width col-span-3 element wstawiony w grid). Mobile:
+// zawsze ↓ down arrow między kafelkami (bez divider'a — single column anyway).
 // Po End anchor'ze NIE rysujemy strzałki — End to terminator linii.
 
 function FlowSlot({
@@ -520,7 +542,6 @@ function FlowSlot({
   onFlowMark: (mark: "start" | "end" | null) => void;
   canEdit: boolean;
 }) {
-  // Start/End nie są sortable.
   const sortable = useSortable({ id: item.id, disabled: !canEdit || isAnchor });
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortable;
 
@@ -543,16 +564,9 @@ function FlowSlot({
       />
       {showArrow && (
         <>
-          {/* Desktop arrow: → w obrębie rzędu, ↓ na końcu rzędu (kontynuacja) */}
-          {isEndOfRow ? (
-            <span
-              aria-hidden
-              className="pointer-events-none absolute -bottom-7 left-1/2 hidden -translate-x-1/2 text-muted-foreground/60 md:block"
-              title="Kontynuacja w następnym rzędzie"
-            >
-              <ChevronDown size={22} strokeWidth={2.5} />
-            </span>
-          ) : (
+          {/* Desktop: → right (TYLKO gdy nie koniec rzędu — koniec rzędu
+              ma RowWrapDivider w grid'cie po tym slot'cie). */}
+          {!isEndOfRow && (
             <span
               aria-hidden
               className="pointer-events-none absolute -right-7 top-1/2 hidden -translate-y-1/2 text-muted-foreground/60 md:block"
@@ -560,7 +574,7 @@ function FlowSlot({
               <ChevronRight size={22} strokeWidth={2.5} />
             </span>
           )}
-          {/* Mobile arrow: zawsze ↓ */}
+          {/* Mobile: zawsze ↓ */}
           <span
             aria-hidden
             className="pointer-events-none absolute -bottom-4 left-1/2 -translate-x-1/2 text-muted-foreground/60 md:hidden"
@@ -569,6 +583,24 @@ function FlowSlot({
           </span>
         </>
       )}
+    </div>
+  );
+}
+
+// ─────────── RowWrapDivider — full-width connector między rzędami ─────────
+// Tylko desktop. Wizualnie spinają rząd 1 z rzędem 2: gradientowa linia +
+// circular icon ↩ wskazująca że flow "schodzi w lewo, do następnego rzędu".
+// Wstawiany w grid'cie po każdym kafelku na pozycji (i+1) % 3 === 0 (oprócz
+// ostatniego). col-span-full sprawia że zajmuje pełną szerokość 3 kolumn.
+
+function RowWrapDivider() {
+  return (
+    <div className="col-span-full hidden items-center gap-3 py-1 md:flex">
+      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/40 to-primary/60" />
+      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-primary/30 bg-primary/10 text-primary shadow-sm">
+        <CornerDownLeft size={14} strokeWidth={2.5} />
+      </div>
+      <div className="h-px flex-1 bg-gradient-to-r from-primary/60 via-primary/40 to-transparent" />
     </div>
   );
 }
