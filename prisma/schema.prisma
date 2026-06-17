@@ -1002,9 +1002,35 @@ model ProcessCanvas {
   edges     ProcessEdge[]
   // F10-W: pen-tool strokes captured by the user (Mural-style drawing).
   strokes   ProcessStroke[]
+  // F12-K73 v3: each canvas of kind='taskline' can have multiple "lines"
+  // (parallel workflows on the same view). Empty for whiteboard canvases.
+  taskLineRows TaskLineRow[]
 
   @@unique([boardId, kind])
   @@index([workspaceId])
+}
+
+// F12-K73 v3: a single horizontal flow of TASK_REF nodes ("line of tasks").
+// User: "powinna być opcja robienia kilku linii zadań" — one canvas can
+// host multiple parallel sequences. ProcessNode.dataJson.lineId points at
+// the row this node belongs to.
+//
+// Auto-positioning rules (enforced in server actions):
+//   - per-row Start node always sits at lowest x (line head)
+//   - per-row End node always sits at highest x (line tail)
+//   - dropping new task into row → inserts BEFORE End if present
+model TaskLineRow {
+  id        String   @id @default(cuid())
+  canvasId  String
+  name      String   @default("Nowa linia")
+  // Sort key in canvas-level row stacking (top-to-bottom on desktop).
+  order     Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  canvas ProcessCanvas @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+
+  @@index([canvasId, order])
 }
 
 enum NodeShape {

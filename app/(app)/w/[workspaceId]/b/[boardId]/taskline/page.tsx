@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { BoardShell } from "@/components/view/board-shell";
 import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
@@ -11,11 +12,12 @@ import {
   TaskLineWorkspace,
   type TaskLineTask,
 } from "@/components/canvas/taskline-workspace";
-import type { TaskLineFlowItem } from "@/components/canvas/taskline-flow";
+import type {
+  TaskLineFlowItem,
+  TaskLineRowMeta,
+} from "@/components/canvas/taskline-flow";
 
-// F12-K73 v2: Task Line jako linear flow (BEZ whiteboard'a).
-// Auto-create canvas'u kind='taskline' na pierwszy visit. Ze starych nodes
-// (jeśli istnieją z v1) bierzemy tylko TASK_REF — reszta ignorowana.
+// F12-K73 v3: Task Line jako multi-line linear flow.
 async function ensureTaskLineCanvas(
   boardId: string,
   workspaceId: string,
@@ -25,11 +27,11 @@ async function ensureTaskLineCanvas(
   const existing = await db.processCanvas.findFirst({
     where: { boardId, kind: "taskline", deletedAt: null },
     include: {
-      // Tylko TASK_REF nodes — v2 nie używa innych shape'ów.
       nodes: {
         where: { shape: "TASK_REF" },
         orderBy: { x: "asc" },
       },
+      taskLineRows: { orderBy: { order: "asc" } },
     },
   });
   if (existing) return existing;
@@ -47,9 +49,44 @@ async function ensureTaskLineCanvas(
         where: { shape: "TASK_REF" },
         orderBy: { x: "asc" },
       },
+      taskLineRows: { orderBy: { order: "asc" } },
     },
   });
   return created;
+}
+
+// Lazy backfill: jeśli canvas nie ma żadnej linii, tworzymy domyślną
+// "Linia 1" + przypisujemy wszystkie istniejące node'y do niej (update
+// dataJson.lineId). Działa na pierwszy visit po deploy'u v3.
+async function ensureDefaultLine(
+  canvasId: string,
+  existingNodes: { id: string; dataJson: Prisma.JsonValue | null }[],
+  existingRows: { id: string }[],
+) {
+  if (existingRows.length > 0) return existingRows;
+
+  const row = await db.taskLineRow.create({
+    data: { canvasId, name: "Linia 1", order: 0 },
+  });
+
+  // Backfill — wszystkim node'om wpisujemy lineId = row.id.
+  if (existingNodes.length > 0) {
+    await db.$transaction(
+      existingNodes.map((n) => {
+        const meta =
+          n.dataJson && typeof n.dataJson === "object" && !Array.isArray(n.dataJson)
+            ? { ...(n.dataJson as Record<string, unknown>) }
+            : {};
+        meta.lineId = row.id;
+        return db.processNode.update({
+          where: { id: n.id },
+          data: { dataJson: meta as Prisma.InputJsonValue },
+        });
+      }),
+    );
+  }
+
+  return [{ id: row.id }];
 }
 
 export default async function BoardTaskLinePage({
@@ -100,6 +137,19 @@ export default async function BoardTaskLinePage({
     }),
   ]);
 
+  // Lazy migrate — gdy canvas nie ma żadnej linii (świeży po v2→v3 deploy).
+  await ensureDefaultLine(canvas.id, canvas.nodes, canvas.taskLineRows);
+
+  // Re-fetch po ensureDefaultLine — żeby dostać świeże dataJson + rows.
+  const rowsAfter = await db.taskLineRow.findMany({
+    where: { canvasId: canvas.id },
+    orderBy: { order: "asc" },
+  });
+  const nodesAfter = await db.processNode.findMany({
+    where: { canvasId: canvas.id, shape: "TASK_REF" },
+    orderBy: { x: "asc" },
+  });
+
   const taskLineTasks: TaskLineTask[] = tasks.map((t) => ({
     id: t.id,
     title: t.title,
@@ -122,11 +172,9 @@ export default async function BoardTaskLinePage({
   }));
 
   // Build initial items dla TaskLineFlow z TASK_REF nodes.
-  // Snapshot taskTitle/status z dataJson MOŻE być nieaktualny (task zmienił
-  // tytuł między visit'ami), więc dla każdego node'a próbujemy też wyjąć
-  // świeże dane z dociągniętych tasków.
   const tasksById = new Map(taskLineTasks.map((t) => [t.id, t]));
-  const initialItems: TaskLineFlowItem[] = canvas.nodes
+  const firstRowId = rowsAfter[0]?.id ?? null;
+  const initialItems: TaskLineFlowItem[] = nodesAfter
     .map((n) => {
       const meta =
         n.dataJson && typeof n.dataJson === "object" && !Array.isArray(n.dataJson)
@@ -135,6 +183,11 @@ export default async function BoardTaskLinePage({
       const taskId = typeof meta.taskId === "string" ? meta.taskId : null;
       if (!taskId) return null;
       const fresh = tasksById.get(taskId);
+      const lineId =
+        typeof meta.lineId === "string" && rowsAfter.some((r) => r.id === meta.lineId)
+          ? meta.lineId
+          : firstRowId;
+      if (!lineId) return null;
       return {
         id: n.id,
         taskId,
@@ -153,9 +206,16 @@ export default async function BoardTaskLinePage({
             ? (meta.flowMark as "start" | "end")
             : null,
         x: n.x,
+        lineId,
       } satisfies TaskLineFlowItem;
     })
     .filter((x): x is TaskLineFlowItem => x !== null);
+
+  const initialRows: TaskLineRowMeta[] = rowsAfter.map((r) => ({
+    id: r.id,
+    name: r.name,
+    order: r.order,
+  }));
 
   return (
     <BoardShell bgCss={null}>
@@ -176,6 +236,7 @@ export default async function BoardTaskLinePage({
           tasks={taskLineTasks}
           members={members}
           initialItems={initialItems}
+          initialRows={initialRows}
         />
       </ViewTransition>
     </BoardShell>

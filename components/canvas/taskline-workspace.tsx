@@ -6,6 +6,7 @@ import {
   TaskLineFlow,
   type BoardTaskMeta,
   type TaskLineFlowItem,
+  type TaskLineRowMeta,
 } from "@/components/canvas/taskline-flow";
 
 export interface TaskLineAssignee {
@@ -31,11 +32,8 @@ export interface TaskLineMember {
   avatarUrl: string | null;
 }
 
-// F12-K73 v2: orchestrator widoku Task Line.
-// Layout: sidebar (lista task'ów do przeciągnięcia) + flow (sekwencja kafelków).
-// Bez CanvasEditor'a — to jest dedykowany linear-flow view, nie whiteboard.
-//
-// Mobile: flex-col (sidebar nad flow). Desktop: flex-row.
+// F12-K73 v3: orchestrator — multi-line task flow.
+// Sidebar (lewa) + multi-row flow (prawa). Bez CanvasEditor.
 export function TaskLineWorkspace({
   workspaceId,
   canvasId,
@@ -43,6 +41,7 @@ export function TaskLineWorkspace({
   tasks,
   members,
   initialItems,
+  initialRows,
 }: {
   workspaceId: string;
   canvasId: string;
@@ -50,10 +49,8 @@ export function TaskLineWorkspace({
   tasks: TaskLineTask[];
   members: TaskLineMember[];
   initialItems: TaskLineFlowItem[];
+  initialRows: TaskLineRowMeta[];
 }) {
-  // Map taskId → meta, używana przez drop handler w TaskLineFlow przy
-  // wstawianiu nowych kafelków (server zwraca tylko nodeId+x, resztę
-  // bierzemy z tej mapy).
   const boardTasksMap = useMemo(() => {
     const m = new Map<string, BoardTaskMeta>();
     for (const t of tasks) {
@@ -68,8 +65,7 @@ export function TaskLineWorkspace({
     return m;
   }, [tasks]);
 
-  // Zadania już dodane do flow → wyfiltruj z sidebar'a (UX: nie pokazujemy
-  // duplikatów których nie da się drugi raz upuścić).
+  // Zadania już w jakiejkolwiek linii → odfiltruj z sidebar'a (dedup globalny).
   const placedTaskIds = useMemo(
     () => new Set(initialItems.map((i) => i.taskId)),
     [initialItems],
@@ -90,6 +86,7 @@ export function TaskLineWorkspace({
         <TaskLineFlow
           canvasId={canvasId}
           initialItems={initialItems}
+          initialRows={initialRows}
           boardTasks={boardTasksMap}
           canEdit={canEdit}
         />

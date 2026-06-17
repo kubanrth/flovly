@@ -1,25 +1,11 @@
 "use client";
 
-// F12-K73 v2: prawa strona widoku Task Line. ZERO whiteboard'a — nie
-// używamy CanvasEditor, React Flow, edges, shape tools, color picker'a
-// itd. To jest "kanban kafelek → następny kafelek → strzałka" linear
-// flow.
-//
-// Layout:
-//   - Empty: placeholder w środku obszaru "Dodaj pierwsze zadanie..."
-//   - Z zadaniami: poziome kafelki + strzałki → na desktopie (flex-wrap),
-//     pionowe kafelki + strzałki ↓ na mobile (flex-col).
-//
-// Interakcje:
-//   - Drop z sidebar'a (MIME application/x-flovly-task-id) → append na koniec
-//   - Drag karty wewnątrz flow → reorder (@dnd-kit/sortable)
-//   - X na karcie → remove
-//   - Right-click / long-press → menu z "Oznacz jako początkowe / końcowe"
-//
-// State management:
-//   - Optimistic local items (sorted by .x)
-//   - Server actions: append/reorder/remove/setFlowMark
-//   - Po każdej akcji: lokalny state + tle wysyłka, rollback gdy server error
+// F12-K73 v3: Multi-line Task Line.
+// - Każda linia (TaskLineRow) renderuje się jako osobna sekcja: header
+//   (nazwa + delete + create) + flow (kafelki + strzałki + drop zone).
+// - Start/End w danej linii są auto-pozycjonowane (Start zawsze na początku,
+//   End zawsze na końcu). Dropping nowego task'a → wstawia PRZED End.
+// - "+ Nowa linia" przycisk na dole tworzy kolejną pustą linię.
 
 import { useMemo, useState, useTransition } from "react";
 import {
@@ -39,13 +25,26 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ChevronRight, ChevronDown, X, Flag, FlagOff, Square } from "lucide-react";
+import {
+  ChevronRight,
+  ChevronDown,
+  X,
+  Flag,
+  FlagOff,
+  Square,
+  Plus,
+  Trash2,
+  Pencil,
+} from "lucide-react";
 import {
   appendTaskToFlowAction,
   reorderTaskLineAction,
   removeFromFlowAction,
+  setFlowMarkInLineAction,
+  createLineAction,
+  renameLineAction,
+  deleteLineAction,
 } from "@/app/(app)/w/[workspaceId]/c/taskline-actions";
-import { setFlowMarkAction } from "@/app/(app)/w/[workspaceId]/c/actions";
 
 export type TaskLineFlowItem = {
   id: string; // ProcessNode id
@@ -55,7 +54,14 @@ export type TaskLineFlowItem = {
   statusColor: string | null;
   displayId: number | null;
   flowMark: "start" | "end" | null;
-  x: number; // sort key (Float)
+  x: number;
+  lineId: string;
+};
+
+export type TaskLineRowMeta = {
+  id: string;
+  name: string;
+  order: number;
 };
 
 export type BoardTaskMeta = {
@@ -69,56 +75,52 @@ export type BoardTaskMeta = {
 export function TaskLineFlow({
   canvasId,
   initialItems,
+  initialRows,
   boardTasks,
   canEdit,
 }: {
   canvasId: string;
   initialItems: TaskLineFlowItem[];
+  initialRows: TaskLineRowMeta[];
   boardTasks: Map<string, BoardTaskMeta>;
   canEdit: boolean;
 }) {
-  // Sort initial by x asc — pozycja w sequence.
-  const [items, setItems] = useState<TaskLineFlowItem[]>(() =>
-    [...initialItems].sort((a, b) => a.x - b.x),
-  );
+  const [items, setItems] = useState<TaskLineFlowItem[]>(initialItems);
+  const [rows, setRows] = useState<TaskLineRowMeta[]>(initialRows);
   const [, startTransition] = useTransition();
-  const [dragHoverIdx, setDragHoverIdx] = useState<number | null>(null);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-
-  const itemIds = useMemo(() => items.map((i) => i.id), [items]);
+  // Items pogrupowane per linia + posortowane po x asc.
+  const itemsByLine = useMemo(() => {
+    const map = new Map<string, TaskLineFlowItem[]>();
+    for (const row of rows) map.set(row.id, []);
+    for (const it of items) {
+      const bucket = map.get(it.lineId);
+      if (bucket) bucket.push(it);
+    }
+    for (const bucket of map.values()) bucket.sort((a, b) => a.x - b.x);
+    return map;
+  }, [items, rows]);
 
   // ─────────── Drop z sidebar'a ──────────────────────────────────────────
 
-  const handleSidebarDrop = (e: React.DragEvent, insertAfterIdx: number) => {
+  const handleSidebarDrop = (
+    e: React.DragEvent,
+    lineId: string,
+    insertAfterIdx: number,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragHoverIdx(null);
     if (!canEdit) return;
 
     const taskId = e.dataTransfer.getData("application/x-flovly-task-id");
     if (!taskId) return;
-    if (items.find((i) => i.taskId === taskId)) return; // dedup
+    if (items.find((i) => i.taskId === taskId)) return; // dedup global
 
     const meta = boardTasks.get(taskId);
     if (!meta) return;
 
-    // Optimistic: dorzucamy tymczasowy kafelek. crypto.randomUUID jest
-    // dostępny w przeglądarce + Node 16+, działa w event handler'ach.
+    // Optimistic — wstaw tymczasowy kafelek (server policzy ostateczny x).
     const tempId = `tmp-${crypto.randomUUID()}`;
-    const prevX =
-      insertAfterIdx >= 0
-        ? items[insertAfterIdx].x
-        : items.length > 0
-          ? items[0].x - 1000
-          : 0;
-    const nextX =
-      insertAfterIdx + 1 < items.length ? items[insertAfterIdx + 1].x : prevX + 1000;
-    const newX = (prevX + nextX) / 2;
-
     const optimistic: TaskLineFlowItem = {
       id: tempId,
       taskId,
@@ -127,19 +129,17 @@ export function TaskLineFlow({
       statusColor: meta.statusColor,
       displayId: meta.displayId,
       flowMark: null,
-      x: newX,
+      x: 0, // placeholder, server zwróci prawdziwy
+      lineId,
     };
-    setItems((prev) =>
-      [...prev.slice(0, insertAfterIdx + 1), optimistic, ...prev.slice(insertAfterIdx + 1)].sort(
-        (a, b) => a.x - b.x,
-      ),
-    );
+    setItems((prev) => [...prev, optimistic]);
 
     startTransition(async () => {
       const result = await appendTaskToFlowAction({
         canvasId,
+        lineId,
         taskId,
-        insertAfterIndex: insertAfterIdx >= 0 ? insertAfterIdx : -1,
+        insertAfterIndex: insertAfterIdx >= 0 ? insertAfterIdx : undefined,
       });
       if (result.ok) {
         setItems((prev) =>
@@ -148,35 +148,48 @@ export function TaskLineFlow({
           ),
         );
       } else {
-        // Rollback.
         setItems((prev) => prev.filter((i) => i.id !== tempId));
       }
     });
   };
 
-  // ─────────── Reorder (dnd-kit) ─────────────────────────────────────────
+  // ─────────── Reorder (dnd-kit, per linia) ──────────────────────────────
 
-  const handleDragEnd = (e: DragEndEvent) => {
+  const handleDragEnd = (e: DragEndEvent, lineId: string) => {
     if (!canEdit) return;
     const { active, over } = e;
     if (!over || active.id === over.id) return;
 
-    const oldIdx = items.findIndex((i) => i.id === active.id);
-    const newIdx = items.findIndex((i) => i.id === over.id);
+    const lineItems = itemsByLine.get(lineId) ?? [];
+    const body = lineItems.filter((i) => i.flowMark === null);
+
+    const oldIdx = body.findIndex((i) => i.id === active.id);
+    const newIdx = body.findIndex((i) => i.id === over.id);
     if (oldIdx === -1 || newIdx === -1) return;
 
-    const next = arrayMove(items, oldIdx, newIdx);
-    // Optimistic: nadajemy x = i*1000 lokalnie.
-    setItems(next.map((it, i) => ({ ...it, x: i * 1000 })));
+    const nextBody = arrayMove(body, oldIdx, newIdx);
+    // Optimistic — przepisujemy x'y body (1000, 2000, ...). Start/End mają
+    // pozycje sztywne (Start = 0, End = max).
+    const startNode = lineItems.find((i) => i.flowMark === "start");
+    const endNode = lineItems.find((i) => i.flowMark === "end");
+    const nextItems = items.map((it) => {
+      if (it.lineId !== lineId) return it;
+      if (it === startNode) return { ...it, x: 0 };
+      if (it === endNode) return { ...it, x: (nextBody.length + 1) * 1000 };
+      const idx = nextBody.findIndex((n) => n.id === it.id);
+      if (idx === -1) return it;
+      return { ...it, x: (idx + 1) * 1000 };
+    });
+    setItems(nextItems);
 
     startTransition(async () => {
       const result = await reorderTaskLineAction({
         canvasId,
-        orderedNodeIds: next.map((it) => it.id),
+        lineId,
+        orderedBodyNodeIds: nextBody.map((it) => it.id),
       });
       if (!result.ok) {
-        // Rollback — wracamy do poprzedniej kolejności.
-        setItems(items);
+        setItems(items); // rollback
       }
     });
   };
@@ -197,82 +210,293 @@ export function TaskLineFlow({
 
   // ─────────── Flow mark (start / end / clear) ───────────────────────────
 
-  const handleFlowMark = (nodeId: string, mark: "start" | "end" | null) => {
+  const handleFlowMark = (
+    nodeId: string,
+    lineId: string,
+    mark: "start" | "end" | null,
+  ) => {
     if (!canEdit) return;
     const snapshot = items;
-    setItems((prev) =>
-      prev.map((i) => (i.id === nodeId ? { ...i, flowMark: mark } : i)),
-    );
+    // Optimistic: ustaw mark + przesuń wizualnie na początek/koniec.
+    // Wyczyść poprzedniego holdera tego samego markera w tej linii.
+    setItems((prev) => {
+      const lineItems = prev.filter((i) => i.lineId === lineId);
+      const targetIdx = lineItems.findIndex((i) => i.id === nodeId);
+      if (targetIdx === -1) return prev;
+      const others = lineItems.filter((i) => i.id !== nodeId);
+      const minX = others.length > 0 ? Math.min(...others.map((i) => i.x)) : 0;
+      const maxX = others.length > 0 ? Math.max(...others.map((i) => i.x)) : 0;
+      return prev.map((it) => {
+        if (it.lineId !== lineId) return it;
+        if (it.id === nodeId) {
+          let newX = it.x;
+          if (mark === "start") newX = minX - 1000;
+          else if (mark === "end") newX = maxX + 1000;
+          return { ...it, flowMark: mark, x: newX };
+        }
+        if (it.flowMark === mark && mark !== null) {
+          return { ...it, flowMark: null };
+        }
+        return it;
+      });
+    });
     startTransition(async () => {
-      const result = await setFlowMarkAction({ canvasId, nodeId, mark });
+      const result = await setFlowMarkInLineAction({
+        canvasId,
+        lineId,
+        nodeId,
+        mark,
+      });
       if (!result.ok) setItems(snapshot);
+    });
+  };
+
+  // ─────────── Line management ───────────────────────────────────────────
+
+  const handleCreateLine = () => {
+    if (!canEdit) return;
+    startTransition(async () => {
+      const result = await createLineAction({ canvasId });
+      if (result.ok) {
+        setRows((prev) => [
+          ...prev,
+          { id: result.lineId, name: result.name, order: result.order },
+        ]);
+      }
+    });
+  };
+
+  const handleRenameLine = (lineId: string, name: string) => {
+    if (!canEdit) return;
+    const snapshot = rows;
+    setRows((prev) => prev.map((r) => (r.id === lineId ? { ...r, name } : r)));
+    startTransition(async () => {
+      const result = await renameLineAction({ lineId, name });
+      if (!result.ok) setRows(snapshot);
+    });
+  };
+
+  const handleDeleteLine = (lineId: string) => {
+    if (!canEdit) return;
+    if (rows.length <= 1) return; // ostatniej nie kasuj
+    const snapshot = { rows, items };
+    setRows((prev) => prev.filter((r) => r.id !== lineId));
+    setItems((prev) => prev.filter((i) => i.lineId !== lineId));
+    startTransition(async () => {
+      const result = await deleteLineAction({ lineId });
+      if (!result.ok) {
+        setRows(snapshot.rows);
+        setItems(snapshot.items);
+      }
     });
   };
 
   // ─────────── Render ────────────────────────────────────────────────────
 
-  if (items.length === 0) {
-    return (
-      <EmptyDropZone
-        canEdit={canEdit}
-        onDrop={(e) => handleSidebarDrop(e, -1)}
-        onDragOver={(e) => {
-          if (e.dataTransfer.types.includes("application/x-flovly-task-id")) {
-            e.preventDefault();
-            setDragHoverIdx(-1);
-          }
-        }}
-        onDragLeave={() => setDragHoverIdx(null)}
-        hovered={dragHoverIdx === -1}
-      />
-    );
-  }
+  const sortedRows = useMemo(
+    () => [...rows].sort((a, b) => a.order - b.order),
+    [rows],
+  );
 
   return (
-    <div className="flex h-full min-h-[420px] flex-col overflow-hidden">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={itemIds}
-          // rectSorting działa równie dobrze dla pionowo i poziomo wrap'ujących
-          // siatek — dnd-kit ogarnia oba dzięki rectangular hit testingowi.
-          strategy={rectSortingStrategy}
+    <div className="flex h-full min-h-[420px] flex-col overflow-y-auto p-4">
+      {sortedRows.map((row) => (
+        <LineSection
+          key={row.id}
+          row={row}
+          items={itemsByLine.get(row.id) ?? []}
+          canEdit={canEdit}
+          canDelete={sortedRows.length > 1}
+          onDrop={(e, idx) => handleSidebarDrop(e, row.id, idx)}
+          onDragEnd={(e) => handleDragEnd(e, row.id)}
+          onRemove={handleRemove}
+          onFlowMark={(nodeId, mark) => handleFlowMark(nodeId, row.id, mark)}
+          onRename={(name) => handleRenameLine(row.id, name)}
+          onDeleteLine={() => handleDeleteLine(row.id)}
+        />
+      ))}
+
+      {canEdit && (
+        <button
+          type="button"
+          onClick={handleCreateLine}
+          className="mt-3 inline-flex h-10 items-center justify-center gap-2 self-start rounded-lg border border-dashed border-border bg-background px-4 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground max-md:self-stretch"
         >
-          <div
-            className="flex flex-1 flex-wrap content-start items-stretch gap-2 overflow-y-auto p-4 max-md:flex-col max-md:items-stretch max-md:flex-nowrap"
-            onDragOver={(e) => {
-              if (e.dataTransfer.types.includes("application/x-flovly-task-id")) {
-                e.preventDefault();
-              }
-            }}
-            onDrop={(e) => handleSidebarDrop(e, items.length - 1)}
-          >
-            {items.map((item, i) => (
-              <FlowSlot
-                key={item.id}
-                item={item}
-                isLast={i === items.length - 1}
-                onRemove={() => handleRemove(item.id)}
-                onFlowMark={(m) => handleFlowMark(item.id, m)}
-                onSidebarDropAfter={(e) => handleSidebarDrop(e, i)}
-                canEdit={canEdit}
-              />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+          <Plus size={12} />
+          <span>Nowa linia</span>
+        </button>
+      )}
     </div>
   );
 }
 
-// ─────────── FlowSlot: kafelek + strzałka za nim ───────────────────────────
+// ─────────── LineSection — pojedyncza linia ──────────────────────────────
+
+function LineSection({
+  row,
+  items,
+  canEdit,
+  canDelete,
+  onDrop,
+  onDragEnd,
+  onRemove,
+  onFlowMark,
+  onRename,
+  onDeleteLine,
+}: {
+  row: TaskLineRowMeta;
+  items: TaskLineFlowItem[];
+  canEdit: boolean;
+  canDelete: boolean;
+  onDrop: (e: React.DragEvent, insertAfterIdx: number) => void;
+  onDragEnd: (e: DragEndEvent) => void;
+  onRemove: (nodeId: string) => void;
+  onFlowMark: (nodeId: string, mark: "start" | "end" | null) => void;
+  onRename: (name: string) => void;
+  onDeleteLine: () => void;
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const [editing, setEditing] = useState(false);
+  const [draftName, setDraftName] = useState(row.name);
+
+  // Itemy w kolejności renderu: Start → body → End.
+  const startItem = items.find((i) => i.flowMark === "start") ?? null;
+  const endItem = items.find((i) => i.flowMark === "end") ?? null;
+  const body = items.filter((i) => i.flowMark === null);
+  const renderItems = [
+    ...(startItem ? [startItem] : []),
+    ...body,
+    ...(endItem ? [endItem] : []),
+  ];
+  // dnd-kit sortable ids — tylko body (Start/End nie są sortowalne).
+  const bodyIds = useMemo(() => body.map((b) => b.id), [body]);
+
+  const isEmpty = items.length === 0;
+
+  return (
+    <section className="mb-4 flex flex-col gap-2 rounded-xl border border-border bg-card/40 p-3">
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        {editing && canEdit ? (
+          <input
+            value={draftName}
+            onChange={(e) => setDraftName(e.target.value)}
+            onBlur={() => {
+              setEditing(false);
+              if (draftName.trim() && draftName.trim() !== row.name) {
+                onRename(draftName.trim());
+              } else {
+                setDraftName(row.name);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Escape") {
+                setDraftName(row.name);
+                setEditing(false);
+              }
+            }}
+            autoFocus
+            className="flex-1 border-b border-border bg-transparent text-[0.85rem] font-semibold outline-none focus:border-primary"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => canEdit && setEditing(true)}
+            className="flex-1 text-left text-[0.85rem] font-semibold text-foreground hover:text-primary"
+            title={canEdit ? "Kliknij aby zmienić nazwę" : ""}
+          >
+            {row.name}
+          </button>
+        )}
+        <span className="font-mono text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground/70">
+          {items.length} {items.length === 1 ? "zadanie" : "zadań"}
+        </span>
+        {canEdit && (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            aria-label="Zmień nazwę"
+            title="Zmień nazwę"
+            className="grid h-6 w-6 place-items-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <Pencil size={11} />
+          </button>
+        )}
+        {canEdit && canDelete && (
+          <button
+            type="button"
+            onClick={onDeleteLine}
+            aria-label="Skasuj linię"
+            title="Skasuj linię (wraz z zadaniami)"
+            className="grid h-6 w-6 place-items-center rounded text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500"
+          >
+            <Trash2 size={11} />
+          </button>
+        )}
+      </div>
+
+      {/* Body — pusta linia lub flow z kafelkami */}
+      {isEmpty ? (
+        <EmptyLineDropZone canEdit={canEdit} onDrop={(e) => onDrop(e, -1)} />
+      ) : (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <SortableContext items={bodyIds} strategy={rectSortingStrategy}>
+            <div
+              className="flex flex-wrap content-start items-stretch gap-2 max-md:flex-col max-md:flex-nowrap"
+              onDragOver={(e) => {
+                if (e.dataTransfer.types.includes("application/x-flovly-task-id")) {
+                  e.preventDefault();
+                }
+              }}
+              onDrop={(e) => {
+                // Append na koniec body (przed End jeśli istnieje).
+                onDrop(e, body.length - 1);
+              }}
+            >
+              {renderItems.map((item, i) => {
+                const isLast = i === renderItems.length - 1;
+                const isAnchor = item.flowMark !== null;
+                return (
+                  <FlowSlot
+                    key={item.id}
+                    item={item}
+                    isLast={isLast}
+                    isAnchor={isAnchor}
+                    onRemove={() => onRemove(item.id)}
+                    onFlowMark={(m) => onFlowMark(item.id, m)}
+                    onSidebarDropAfter={(e) => {
+                      // Drop tuż za tym slotem — index w body.
+                      if (isAnchor && item.flowMark === "end") {
+                        // Drop ZA End'em → wstaw przed End'em jako ostatni body.
+                        onDrop(e, body.length - 1);
+                      } else {
+                        const bodyIdx = body.findIndex((b) => b.id === item.id);
+                        onDrop(e, bodyIdx);
+                      }
+                    }}
+                    canEdit={canEdit}
+                  />
+                );
+              })}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
+    </section>
+  );
+}
+
+// ─────────── FlowSlot ─────────────────────────────────────────────────────
 
 function FlowSlot({
   item,
   isLast,
+  isAnchor,
   onRemove,
   onFlowMark,
   onSidebarDropAfter,
@@ -280,12 +504,14 @@ function FlowSlot({
 }: {
   item: TaskLineFlowItem;
   isLast: boolean;
+  isAnchor: boolean;
   onRemove: () => void;
   onFlowMark: (mark: "start" | "end" | null) => void;
   onSidebarDropAfter: (e: React.DragEvent) => void;
   canEdit: boolean;
 }) {
-  const sortable = useSortable({ id: item.id, disabled: !canEdit });
+  // Start/End nie są sortable.
+  const sortable = useSortable({ id: item.id, disabled: !canEdit || isAnchor });
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortable;
 
   const style = {
@@ -299,15 +525,12 @@ function FlowSlot({
       <div ref={setNodeRef} style={style} {...attributes}>
         <TaskLineCard
           item={item}
-          listeners={canEdit ? listeners : undefined}
+          listeners={canEdit && !isAnchor ? listeners : undefined}
           onRemove={onRemove}
           onFlowMark={onFlowMark}
           canEdit={canEdit}
         />
       </div>
-      {/* Strzałka między kartami — ChevronRight na desktop, ChevronDown na mobile.
-          Na ostatniej karcie pokazujemy "drop zone" zamiast strzałki — drop po
-          tej karcie dodaje nowy task. */}
       {!isLast ? (
         <FlowArrow />
       ) : canEdit ? (
@@ -343,9 +566,8 @@ function TaskLineCard({
   return (
     <div
       {...listeners}
-      className={`group relative flex w-[240px] flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-sm transition-all hover:border-primary/40 hover:shadow-md max-md:w-full ${ring} ${canEdit ? "cursor-grab active:cursor-grabbing" : ""}`}
+      className={`group relative flex w-[240px] flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-sm transition-all hover:border-primary/40 hover:shadow-md max-md:w-full ${ring} ${listeners ? "cursor-grab active:cursor-grabbing" : ""}`}
     >
-      {/* Badge gdy start/end */}
       {item.flowMark === "start" && (
         <span className="absolute -top-2 left-3 rounded-full bg-emerald-500 px-2 py-0.5 font-mono text-[0.55rem] uppercase tracking-[0.16em] text-white shadow-sm">
           Start
@@ -357,7 +579,6 @@ function TaskLineCard({
         </span>
       )}
 
-      {/* Górny wiersz: displayId + status pill + X */}
       <div className="flex items-center gap-2">
         {item.statusColor && (
           <span
@@ -398,12 +619,10 @@ function TaskLineCard({
         )}
       </div>
 
-      {/* Tytuł zadania */}
       <div className="line-clamp-2 text-[0.88rem] font-semibold leading-tight text-foreground">
         {item.taskTitle}
       </div>
 
-      {/* Flow mark mini-controls — kompaktowe, w stopce karty */}
       {canEdit && (
         <div className="flex items-center gap-1 border-t border-border/60 pt-2">
           <FlowMarkButton
@@ -478,16 +697,12 @@ function FlowMarkButton({
   );
 }
 
-// ─────────── Arrow + DropZone components ──────────────────────────────────
-
 function FlowArrow() {
   return (
     <>
-      {/* Desktop: → */}
       <span aria-hidden className="text-muted-foreground/60 max-md:hidden">
         <ChevronRight size={18} strokeWidth={2.5} />
       </span>
-      {/* Mobile: ↓ */}
       <span aria-hidden className="text-muted-foreground/60 md:hidden">
         <ChevronDown size={18} strokeWidth={2.5} />
       </span>
@@ -518,38 +733,32 @@ function FlowDropZone({ onDrop }: { onDrop: (e: React.DragEvent) => void }) {
   );
 }
 
-// ─────────── EmptyDropZone — full-area drop target gdy lista pusta ────────
-
-function EmptyDropZone({
+function EmptyLineDropZone({
   canEdit,
   onDrop,
-  onDragOver,
-  onDragLeave,
-  hovered,
 }: {
   canEdit: boolean;
   onDrop: (e: React.DragEvent) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDragLeave: () => void;
-  hovered: boolean;
 }) {
+  const [hover, setHover] = useState(false);
   return (
     <div
-      onDrop={canEdit ? onDrop : undefined}
-      onDragOver={canEdit ? onDragOver : undefined}
-      onDragLeave={canEdit ? onDragLeave : undefined}
-      data-hover={hovered ? "true" : "false"}
-      className="flex h-full min-h-[420px] flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border/60 bg-card/30 px-6 text-center transition-all data-[hover=true]:border-primary/60 data-[hover=true]:bg-primary/5"
+      onDrop={canEdit ? (e) => { setHover(false); onDrop(e); } : undefined}
+      onDragOver={canEdit ? (e) => {
+        if (e.dataTransfer.types.includes("application/x-flovly-task-id")) {
+          e.preventDefault();
+          setHover(true);
+        }
+      } : undefined}
+      onDragLeave={canEdit ? () => setHover(false) : undefined}
+      data-hover={hover ? "true" : "false"}
+      className="flex min-h-[140px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border/50 bg-card/20 px-6 text-center transition-all data-[hover=true]:border-primary/60 data-[hover=true]:bg-primary/5"
     >
-      <div className="grid h-14 w-14 place-items-center rounded-full bg-brand-gradient text-white shadow-brand">
-        <ChevronRight size={24} />
-      </div>
-      <h3 className="font-display text-[1.1rem] font-bold leading-tight tracking-[-0.02em] text-foreground">
+      <p className="text-[0.85rem] font-medium text-foreground">
         Dodaj pierwsze zadanie
-      </h3>
-      <p className="max-w-[36ch] text-[0.88rem] leading-[1.55] text-muted-foreground">
-        Przeciągnij zadanie z listy po lewej, żeby utworzyć linię zadań. Kolejne
-        kafelki połączą się w sekwencję &mdash; widoczny postęp pracy.
+      </p>
+      <p className="max-w-[40ch] text-[0.78rem] leading-[1.5] text-muted-foreground">
+        Przeciągnij zadanie z listy po lewej, żeby utworzyć linię zadań.
       </p>
     </div>
   );
