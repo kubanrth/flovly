@@ -107,26 +107,64 @@ function toProviderTools(tools: ChatTool[]) {
   }));
 }
 
+// Retryable error types z Groq:
+//   - 429 rate limit (most common)
+//   - 503 service unavailable
+//   - timeout / network reset
+function isRetryableGroqError(e: unknown): { retryable: boolean; status?: number } {
+  if (!e || typeof e !== "object") return { retryable: false };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const status = (e as any).status as number | undefined;
+  if (status === 429 || status === 503 || status === 502 || status === 504) {
+    return { retryable: true, status };
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const code = (e as any).code as string | undefined;
+  if (code === "ETIMEDOUT" || code === "ECONNRESET" || code === "ECONNREFUSED") {
+    return { retryable: true };
+  }
+  return { retryable: false, status };
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function callGroq(
   messages: ChatMessageInput[],
   tools: ChatTool[],
+  retryCount = 0,
 ): Promise<ChatResult | null> {
   const client = getGroqClient();
   if (!client) return null;
 
   const start = Date.now();
-  // groq-sdk types są generated z OpenAI spec — używamy any-cast tylko
-  // do tool_calls bo SDK 1.2.1 ma węższy union niż realne API.
-  const response = await client.chat.completions.create({
-    model: GROQ_MODEL,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    messages: toProviderMessages(messages) as any,
-    tools: tools.length > 0 ? toProviderTools(tools) : undefined,
-    // Niska temperatura — pytania o dane workspace muszą być deterministyczne,
-    // nie chcemy żeby Czesiek "kreatywnie" zmyślał liczby zadań.
-    temperature: 0.2,
-    max_tokens: 1024,
-  });
+  let response;
+  try {
+    // groq-sdk types są generated z OpenAI spec — używamy any-cast tylko
+    // do tool_calls bo SDK 1.2.1 ma węższy union niż realne API.
+    response = await client.chat.completions.create({
+      model: GROQ_MODEL,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      messages: toProviderMessages(messages) as any,
+      tools: tools.length > 0 ? toProviderTools(tools) : undefined,
+      temperature: 0.2,
+      max_tokens: 1024,
+    });
+  } catch (e) {
+    const { retryable, status } = isRetryableGroqError(e);
+    if (retryable && retryCount < 2) {
+      // Exponential backoff: 1.5s, 3s. Groq rate-limit window resetuje
+      // się typowo w <60s; 2 retry zwykle wystarczy.
+      const delay = 1500 * (retryCount + 1);
+      console.warn(
+        `[llm] Groq ${status ?? "network"} error — retry ${retryCount + 1}/2 za ${delay}ms`,
+      );
+      await sleep(delay);
+      return callGroq(messages, tools, retryCount + 1);
+    }
+    // Non-retryable albo wyczerpane retry — propaguj z lepszym message'em.
+    const errMsg = e instanceof Error ? e.message : String(e);
+    throw new Error(`Groq ${status ?? "?"}: ${errMsg.slice(0, 200)}`);
+  }
 
   const choice = response.choices[0];
   const rawToolCalls = choice.message.tool_calls ?? [];

@@ -113,15 +113,34 @@ export function CzesiekPanel({
         });
 
         if (!res.ok) {
-          // Replace optimistic z error message.
+          // Próbujemy wyciągnąć konkretny error message z serwera.
+          let errDetail = "spróbuj za chwilę";
+          try {
+            const errData = (await res.json()) as { message?: string };
+            if (typeof errData.message === "string") {
+              if (errData.message.includes("429")) {
+                errDetail = "przekroczyliśmy limit zapytań do AI, poczekaj 60 sekund";
+              } else if (errData.message.includes("timeout")) {
+                errDetail = "AI nie odpowiedziało w czasie, spróbuj jeszcze raz";
+              } else if (errData.message.includes("401") || errData.message.includes("403")) {
+                errDetail = "problem z autoryzacją — skontaktuj się z adminem";
+              } else {
+                errDetail = `błąd: ${errData.message.slice(0, 100)}`;
+              }
+            }
+          } catch {
+            // ignore JSON parse failures
+          }
+          // Replace optimistic z error message. Transient — znika gdy następny
+          // request się powiedzie (serwer wraca świeży messages array z DB,
+          // który nie zawiera tej wiadomości błędu).
           setMessages((prev) =>
             prev
               .filter((m) => m.id !== optimisticId)
               .concat({
-                id: `err-${Date.now()}`,
+                id: `err-${crypto.randomUUID()}`,
                 role: "assistant",
-                content:
-                  "Ateron nie odpowiada. Spróbuj za chwilę albo skontaktuj się z adminem.",
+                content: `Ateron nie odpowiada — ${errDetail}.`,
                 toolName: null,
                 createdAt: new Date().toISOString(),
               }),

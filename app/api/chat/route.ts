@@ -163,20 +163,16 @@ export async function POST(request: Request) {
     try {
       result = await chat(llmHistory, TOOL_DEFS);
     } catch (e) {
-      console.error("[/api/chat] LLM error", e);
-      // Save error message tak żeby user widział co poszło nie tak.
-      await db.chatMessage.create({
-        data: {
-          sessionId,
-          role: "assistant",
-          content:
-            "Przepraszam, Ateron nie może teraz odpowiedzieć — wystąpił problem z połączeniem do AI. Spróbuj za chwilę.",
-        },
-      });
+      const errMsg = e instanceof Error ? e.message : String(e);
+      console.error(`[/api/chat] LLM error: ${errMsg}`);
+      // NIE zapisujemy error message do DB — tylko zwracamy 503. Klient
+      // pokaże transient error bubble (znika po następnym successful
+      // response). Bez tego user widziałby DWIE wiadomości błędu (saved
+      // w DB + client-side transient).
       return NextResponse.json(
         {
           error: "LLM unavailable",
-          message: e instanceof Error ? e.message : "unknown",
+          message: errMsg,
         },
         { status: 503 },
       );
