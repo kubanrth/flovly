@@ -1,4 +1,4 @@
-// F12-K74 Czesiek AI — tool definitions + executors.
+// F12-K74 Ateron AI — tool definitions + executors.
 //
 // Tool calling pattern (OpenAI/Groq compatible):
 //   1. /api/chat dostaje user message → wysyła do LLM razem z TOOL_DEFS.
@@ -12,6 +12,10 @@
 // których nie ma dostępu nawet jeśli przekona LLM'a żeby je zapytał.
 //
 // MVP scope: READ-only. Żaden tool nie modyfikuje danych w bazie.
+//
+// v3 (po pierwszych testach z klientem): tool params akceptują NAZWY (imię,
+// nazwa tablicy) zamiast tylko cuid'ków. LLM nie musi wcześniej wołać
+// list_boards żeby znaleźć id — robimy fuzzy lookup wewnątrz każdego toola.
 
 import { db } from "@/lib/db";
 import type { ChatTool } from "@/lib/llm";
@@ -21,15 +25,13 @@ export type ToolContext = {
   userId: string;
 };
 
-// JSON Schema dla parametrów tool'a. Trzymane w jednym miejscu żeby
-// definicja i parsowanie były spójne (LLM widzi exactly to co my walidujemy).
 export const TOOL_DEFS: ChatTool[] = [
   {
     name: "list_boards",
     description:
-      "Zwraca listę wszystkich tablic w workspace do których użytkownik ma dostęp. " +
+      "Zwraca listę wszystkich tablic (projektów) w workspace do których użytkownik ma dostęp. " +
       "Każda tablica ma id, name, opis, ilość zadań aktywnych. " +
-      "Użyj gdy user pyta 'jakie tablice mamy', 'pokaż wszystkie tablice', 'ile tablic'.",
+      "Użyj gdy user pyta 'jakie tablice mamy', 'pokaż wszystkie tablice', 'ile tablic', 'jakie mam projekty'.",
     parameters: {
       type: "object",
       properties: {},
@@ -37,28 +39,56 @@ export const TOOL_DEFS: ChatTool[] = [
     },
   },
   {
-    name: "list_tasks",
+    name: "find_user",
     description:
-      "Zwraca listę zadań w workspace lub w konkretnej tablicy. Filtruje opcjonalnie " +
-      "po assignee, status, deadlinach. Zwraca max 30 zadań posortowane po updatedAt DESC. " +
-      "Użyj gdy user pyta 'pokaż zadania X', 'co robi Y', 'zadania w tablicy Z'.",
+      "Wyszukuje użytkownika w workspace po imieniu, nazwisku lub fragmencie emaila. " +
+      "Zwraca dopasowanych userów z ich id. Przykład: find_user('Kuba') → znajdzie 'Kuba Wernicki'. " +
+      "UŻYJ ZAWSZE gdy user wymienia kogoś po imieniu w pytaniu, ZANIM wywołasz inne tools — " +
+      "po id użytkownika możesz potem precyzyjnie filtrować zadania, aktywność itd.",
     parameters: {
       type: "object",
       properties: {
-        boardId: {
+        query: {
+          type: "string",
+          description: "Imię / nazwisko / fragment maila do dopasowania.",
+        },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "list_tasks",
+    description:
+      "Zwraca zadania w workspace. Możesz filtrować po nazwie tablicy, imieniu osoby przypisanej, " +
+      "statusie lub stanie ukończenia. Domyślnie EXCLUDE ukończonych (z timerCompletedAt). " +
+      "Zwraca max 30 zadań. " +
+      "Użyj gdy user pyta 'pokaż zadania X', 'co robi Y', 'zadania w tablicy Z', 'co ma do zrobienia X', 'co mam do zrobienia'.",
+    parameters: {
+      type: "object",
+      properties: {
+        board: {
           type: "string",
           description:
-            "Opcjonalne — gdy podane, ograniczamy do tej tablicy. " +
-            "Jeśli user wymienił nazwę tablicy, najpierw wywołaj list_boards żeby znaleźć id.",
+            "Opcjonalne — nazwa tablicy ALBO board id. Robimy fuzzy match (np. 'P&R' " +
+            "znajdzie 'P&R Flovly'). Gdy puste = wszystkie tablice user'a.",
         },
-        assigneeUserId: {
-          type: "string",
-          description: "Opcjonalne — filter po przypisanym userze.",
-        },
-        statusName: {
+        assignee: {
           type: "string",
           description:
-            "Opcjonalne — case-insensitive nazwa kolumny status (np. 'todo', 'in progress', 'done').",
+            "Opcjonalne — imię/nazwisko/email osoby przypisanej ALBO user id. Robimy fuzzy " +
+            "match. Jeśli user pyta 'co mam do zrobienia' / 'moje zadania' — przekaż " +
+            "tu specjalną wartość 'ME' (Ateron użyje zalogowanego usera).",
+        },
+        status: {
+          type: "string",
+          description:
+            "Opcjonalne — nazwa kolumny status (np. 'todo', 'in progress'). Fuzzy contains.",
+        },
+        includeCompleted: {
+          type: "boolean",
+          description:
+            "Default false (NIE pokazujemy ukończonych). Ustaw true gdy user pyta wprost o " +
+            "ukończone albo 'wszystkie zadania, łącznie z zamkniętymi'.",
         },
         limit: {
           type: "number",
@@ -71,15 +101,20 @@ export const TOOL_DEFS: ChatTool[] = [
   {
     name: "list_overdue_tasks",
     description:
-      "Zwraca zadania, których stopAt jest w przeszłości i które nie są zakończone " +
-      "(nie mają timerCompletedAt). Posortowane po stopAt ASC (najstarsze przeterminowane na górze). " +
-      "Użyj gdy user pyta 'co jest przeterminowane', 'co spóźnione', 'opóźnione'.",
+      "Zwraca zadania których stopAt jest w przeszłości i które nie są zakończone " +
+      "(brak timerCompletedAt). Posortowane po stopAt ASC (najstarsze przeterminowane na górze). " +
+      "Użyj gdy user pyta 'co przeterminowane', 'co spóźnione', 'opóźnione', 'co po deadlinie'.",
     parameters: {
       type: "object",
       properties: {
-        boardId: {
+        board: {
           type: "string",
-          description: "Opcjonalne ograniczenie do jednej tablicy.",
+          description: "Opcjonalne — nazwa tablicy ALBO board id. Fuzzy match.",
+        },
+        assignee: {
+          type: "string",
+          description:
+            "Opcjonalne — imię/email/id osoby przypisanej. 'ME' = zalogowany user.",
         },
         limit: { type: "number" },
       },
@@ -89,17 +124,16 @@ export const TOOL_DEFS: ChatTool[] = [
   {
     name: "get_user_activity",
     description:
-      "Zwraca aktywność danego użytkownika z ostatnich X dni — które zadania edytował, " +
-      "tworzył, komentował, zmieniał status. Dane pochodzą z AuditLog. " +
-      "Użyj gdy user pyta 'co X robił', 'aktywność Y', 'co się działo z X'.",
+      "Zwraca aktywność danego użytkownika z ostatnich X dni — edytował, tworzył, " +
+      "komentował, zmieniał status zadań. Dane z AuditLog. " +
+      "Użyj gdy user pyta 'co X robił', 'aktywność Y', 'co się działo z X', 'co dziś zrobił X'.",
     parameters: {
       type: "object",
       properties: {
         userIdOrName: {
           type: "string",
           description:
-            "ID użytkownika ALBO imię/email do wyszukania. Najpierw spróbuj jako ID, " +
-            "jeśli nie znajdzie, robimy fuzzy search po name/email.",
+            "Imię/nazwisko/email/id użytkownika. Robimy fuzzy match. 'ME' = zalogowany user.",
         },
         days: {
           type: "number",
@@ -139,6 +173,8 @@ export async function executeChatTool(
     switch (name) {
       case "list_boards":
         return { ok: true, data: await toolListBoards(ctx) };
+      case "find_user":
+        return { ok: true, data: await toolFindUser(ctx, args) };
       case "list_tasks":
         return { ok: true, data: await toolListTasks(ctx, args) };
       case "list_overdue_tasks":
@@ -159,12 +195,7 @@ export async function executeChatTool(
   }
 }
 
-// ─────────── Pomocnik: lista board ID'ów do których user ma dostęp ─────────
-// Logika:
-//   1. Pobieramy wszystkie boards w workspace (z deletedAt = null).
-//   2. Dla boardów PRIVATE filtrujemy do tych gdzie user ma BoardMembership
-//      ALBO jest workspace ADMIN'em.
-// Wynik = string[] z board.id które LLM może bezpiecznie pytać.
+// ─────────── Pomocnik: getAccessibleBoardIds ──────────────────────────────
 
 async function getAccessibleBoardIds(ctx: ToolContext): Promise<string[]> {
   const membership = await db.workspaceMembership.findUnique({
@@ -199,6 +230,119 @@ async function getAccessibleBoardIds(ctx: ToolContext): Promise<string[]> {
     .map((b) => b.id);
 }
 
+// ─────────── Pomocnik: resolveBoardId (cuid lub nazwa) ────────────────────
+// Zwraca pasujący board.id albo null. Strategia:
+//   1. Jeśli string wygląda jak cuid (24-30 znaków, alfanum) i jest w
+//      accessibleBoards → użyj go.
+//   2. W przeciwnym razie fuzzy contains po board.name (case-insensitive),
+//      jeśli jeden match → użyj. Wiele → null + lista kandydatów.
+
+async function resolveBoardId(
+  ctx: ToolContext,
+  query: string,
+): Promise<
+  | { found: true; boardId: string; name: string }
+  | { found: false; candidates: { id: string; name: string }[] }
+> {
+  const accessible = await getAccessibleBoardIds(ctx);
+  if (accessible.length === 0) return { found: false, candidates: [] };
+
+  // Direct ID hit (cuid match).
+  if (accessible.includes(query)) {
+    const b = await db.board.findUnique({
+      where: { id: query },
+      select: { name: true },
+    });
+    if (b) return { found: true, boardId: query, name: b.name };
+  }
+
+  // Fuzzy name match.
+  const matches = await db.board.findMany({
+    where: {
+      id: { in: accessible },
+      name: { contains: query, mode: "insensitive" },
+    },
+    select: { id: true, name: true },
+    take: 10,
+  });
+
+  if (matches.length === 1) {
+    return { found: true, boardId: matches[0].id, name: matches[0].name };
+  }
+  return { found: false, candidates: matches };
+}
+
+// ─────────── Pomocnik: resolveUserId (cuid, nazwa lub 'ME') ───────────────
+
+async function resolveUserId(
+  ctx: ToolContext,
+  query: string,
+): Promise<
+  | { found: true; userId: string; name: string; email: string }
+  | { found: false; candidates: { id: string; name: string | null; email: string }[] }
+> {
+  // Sygnatura 'ME' = zalogowany user.
+  if (query.toUpperCase() === "ME") {
+    const me = await db.user.findUnique({
+      where: { id: ctx.userId },
+      select: { id: true, name: true, email: true },
+    });
+    if (me) {
+      return {
+        found: true,
+        userId: me.id,
+        name: me.name ?? me.email.split("@")[0],
+        email: me.email,
+      };
+    }
+  }
+
+  // Members tego workspace'u.
+  const members = await db.user.findMany({
+    where: {
+      memberships: { some: { workspaceId: ctx.workspaceId } },
+    },
+    select: { id: true, name: true, email: true },
+  });
+
+  // Direct id hit.
+  const byId = members.find((u) => u.id === query);
+  if (byId) {
+    return {
+      found: true,
+      userId: byId.id,
+      name: byId.name ?? byId.email.split("@")[0],
+      email: byId.email,
+    };
+  }
+
+  // Fuzzy match — name lub email contains (case-insensitive).
+  const lc = query.toLowerCase();
+  const matches = members.filter((u) => {
+    const name = (u.name ?? "").toLowerCase();
+    const email = u.email.toLowerCase();
+    return name.includes(lc) || email.includes(lc);
+  });
+
+  if (matches.length === 1) {
+    return {
+      found: true,
+      userId: matches[0].id,
+      name: matches[0].name ?? matches[0].email.split("@")[0],
+      email: matches[0].email,
+    };
+  }
+
+  return {
+    found: false,
+    candidates: matches.slice(0, 5).map((u) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+    })),
+  };
+}
+
 // ─────────── Tool: list_boards ─────────────────────────────────────────────
 
 async function toolListBoards(ctx: ToolContext) {
@@ -226,14 +370,45 @@ async function toolListBoards(ctx: ToolContext) {
   };
 }
 
+// ─────────── Tool: find_user ──────────────────────────────────────────────
+
+async function toolFindUser(ctx: ToolContext, args: Record<string, unknown>) {
+  const query = typeof args.query === "string" ? args.query.trim() : "";
+  if (!query) return { count: 0, users: [], error: "Brak query." };
+
+  const lc = query.toLowerCase();
+  const members = await db.user.findMany({
+    where: {
+      memberships: { some: { workspaceId: ctx.workspaceId } },
+    },
+    select: { id: true, name: true, email: true },
+  });
+
+  const matches = members.filter((u) => {
+    const name = (u.name ?? "").toLowerCase();
+    const email = u.email.toLowerCase();
+    return name.includes(lc) || email.includes(lc) || u.id === query;
+  });
+
+  return {
+    count: matches.length,
+    users: matches.slice(0, 10).map((u) => ({
+      id: u.id,
+      name: u.name ?? u.email.split("@")[0],
+      email: u.email,
+    })),
+  };
+}
+
 // ─────────── Tool: list_tasks ──────────────────────────────────────────────
 
 async function toolListTasks(ctx: ToolContext, args: Record<string, unknown>) {
-  const boardId = typeof args.boardId === "string" ? args.boardId : undefined;
-  const assigneeUserId =
-    typeof args.assigneeUserId === "string" ? args.assigneeUserId : undefined;
-  const statusName =
-    typeof args.statusName === "string" ? args.statusName.toLowerCase() : undefined;
+  const boardQuery = typeof args.board === "string" ? args.board.trim() : undefined;
+  const assigneeQuery =
+    typeof args.assignee === "string" ? args.assignee.trim() : undefined;
+  const statusFilter =
+    typeof args.status === "string" ? args.status.toLowerCase() : undefined;
+  const includeCompleted = args.includeCompleted === true;
   const limit = Math.min(
     50,
     typeof args.limit === "number" && args.limit > 0 ? args.limit : 30,
@@ -242,13 +417,38 @@ async function toolListTasks(ctx: ToolContext, args: Record<string, unknown>) {
   const accessibleBoards = await getAccessibleBoardIds(ctx);
   if (accessibleBoards.length === 0) return { count: 0, tasks: [] };
 
-  // Gdy LLM podał konkretny boardId — sprawdzamy że user ma do niego dostęp.
-  if (boardId && !accessibleBoards.includes(boardId)) {
-    return {
-      count: 0,
-      tasks: [],
-      note: "Nie masz dostępu do tej tablicy.",
-    };
+  // Resolve board (jeśli podano).
+  let boardId: string | undefined;
+  let boardName: string | undefined;
+  if (boardQuery) {
+    const resolved = await resolveBoardId(ctx, boardQuery);
+    if (!resolved.found) {
+      return {
+        count: 0,
+        tasks: [],
+        note: `Nie znaleziono jednoznacznie tablicy pasującej do "${boardQuery}".`,
+        candidates: resolved.candidates,
+      };
+    }
+    boardId = resolved.boardId;
+    boardName = resolved.name;
+  }
+
+  // Resolve assignee (jeśli podano).
+  let assigneeUserId: string | undefined;
+  let assigneeName: string | undefined;
+  if (assigneeQuery) {
+    const resolved = await resolveUserId(ctx, assigneeQuery);
+    if (!resolved.found) {
+      return {
+        count: 0,
+        tasks: [],
+        note: `Nie znaleziono jednoznacznie użytkownika pasującego do "${assigneeQuery}".`,
+        candidates: resolved.candidates,
+      };
+    }
+    assigneeUserId = resolved.userId;
+    assigneeName = resolved.name;
   }
 
   const tasks = await db.task.findMany({
@@ -256,6 +456,7 @@ async function toolListTasks(ctx: ToolContext, args: Record<string, unknown>) {
       workspaceId: ctx.workspaceId,
       deletedAt: null,
       boardId: boardId ?? { in: accessibleBoards },
+      ...(includeCompleted ? {} : { timerCompletedAt: null }),
       ...(assigneeUserId
         ? { assignees: { some: { userId: assigneeUserId } } }
         : {}),
@@ -280,14 +481,21 @@ async function toolListTasks(ctx: ToolContext, args: Record<string, unknown>) {
     take: limit,
   });
 
-  const filtered = statusName
-    ? tasks.filter((t) => t.statusColumn?.name.toLowerCase().includes(statusName))
+  const filtered = statusFilter
+    ? tasks.filter((t) =>
+        t.statusColumn?.name.toLowerCase().includes(statusFilter),
+      )
     : tasks;
 
   return {
     count: filtered.length,
+    filters: {
+      board: boardName ?? null,
+      assignee: assigneeName ?? null,
+      status: statusFilter ?? null,
+      includeCompleted,
+    },
     tasks: filtered.map((t) => ({
-      id: t.id,
       displayId: t.displayId,
       title: t.title,
       board: t.board.name,
@@ -308,7 +516,9 @@ async function toolListOverdueTasks(
   ctx: ToolContext,
   args: Record<string, unknown>,
 ) {
-  const boardId = typeof args.boardId === "string" ? args.boardId : undefined;
+  const boardQuery = typeof args.board === "string" ? args.board.trim() : undefined;
+  const assigneeQuery =
+    typeof args.assignee === "string" ? args.assignee.trim() : undefined;
   const limit = Math.min(
     50,
     typeof args.limit === "number" && args.limit > 0 ? args.limit : 30,
@@ -317,8 +527,36 @@ async function toolListOverdueTasks(
   const accessibleBoards = await getAccessibleBoardIds(ctx);
   if (accessibleBoards.length === 0) return { count: 0, tasks: [] };
 
-  if (boardId && !accessibleBoards.includes(boardId)) {
-    return { count: 0, tasks: [], note: "Nie masz dostępu do tej tablicy." };
+  let boardId: string | undefined;
+  let boardName: string | undefined;
+  if (boardQuery) {
+    const resolved = await resolveBoardId(ctx, boardQuery);
+    if (!resolved.found) {
+      return {
+        count: 0,
+        tasks: [],
+        note: `Nie znaleziono tablicy "${boardQuery}".`,
+        candidates: resolved.candidates,
+      };
+    }
+    boardId = resolved.boardId;
+    boardName = resolved.name;
+  }
+
+  let assigneeUserId: string | undefined;
+  let assigneeName: string | undefined;
+  if (assigneeQuery) {
+    const resolved = await resolveUserId(ctx, assigneeQuery);
+    if (!resolved.found) {
+      return {
+        count: 0,
+        tasks: [],
+        note: `Nie znaleziono użytkownika "${assigneeQuery}".`,
+        candidates: resolved.candidates,
+      };
+    }
+    assigneeUserId = resolved.userId;
+    assigneeName = resolved.name;
   }
 
   const now = new Date();
@@ -329,6 +567,9 @@ async function toolListOverdueTasks(
       boardId: boardId ?? { in: accessibleBoards },
       stopAt: { lt: now },
       timerCompletedAt: null,
+      ...(assigneeUserId
+        ? { assignees: { some: { userId: assigneeUserId } } }
+        : {}),
     },
     select: {
       id: true,
@@ -349,14 +590,16 @@ async function toolListOverdueTasks(
 
   return {
     count: tasks.length,
+    filters: {
+      board: boardName ?? null,
+      assignee: assigneeName ?? null,
+    },
     tasks: tasks.map((t) => ({
-      id: t.id,
       displayId: t.displayId,
       title: t.title,
       board: t.board.name,
       status: t.statusColumn?.name ?? null,
       deadline: t.stopAt?.toISOString() ?? null,
-      // Liczba dni opóźnienia — wygodniejsze niż liczenie po stronie LLM.
       daysOverdue: t.stopAt
         ? Math.floor((now.getTime() - t.stopAt.getTime()) / 86_400_000)
         : null,
@@ -373,9 +616,9 @@ async function toolGetUserActivity(
   ctx: ToolContext,
   args: Record<string, unknown>,
 ) {
-  const needle =
+  const query =
     typeof args.userIdOrName === "string" ? args.userIdOrName.trim() : "";
-  if (!needle) return { count: 0, events: [], error: "Brak userIdOrName." };
+  if (!query) return { count: 0, events: [], error: "Brak userIdOrName." };
 
   const days = Math.min(
     30,
@@ -386,57 +629,22 @@ async function toolGetUserActivity(
     typeof args.limit === "number" && args.limit > 0 ? args.limit : 30,
   );
 
-  // Najpierw szukamy po id, potem po name/email (case-insensitive contains).
-  // Ograniczamy do member'ów tego workspace'u — Czesiek nie widzi cudzych
-  // workspace'ów.
-  const candidates = await db.user.findMany({
-    where: {
-      AND: [
-        {
-          memberships: {
-            some: { workspaceId: ctx.workspaceId },
-          },
-        },
-        {
-          OR: [
-            { id: needle },
-            { name: { contains: needle, mode: "insensitive" } },
-            { email: { contains: needle, mode: "insensitive" } },
-          ],
-        },
-      ],
-    },
-    select: { id: true, name: true, email: true },
-    take: 5,
-  });
-
-  if (candidates.length === 0) {
+  const resolved = await resolveUserId(ctx, query);
+  if (!resolved.found) {
     return {
       count: 0,
       events: [],
-      note: `Nie znalazłem użytkownika pasującego do "${needle}" w tym workspace.`,
-    };
-  }
-  if (candidates.length > 1) {
-    return {
-      count: 0,
-      events: [],
-      candidates: candidates.map((u) => ({
-        id: u.id,
-        name: u.name ?? u.email.split("@")[0],
-        email: u.email,
-      })),
-      note: "Znalazłem kilku użytkowników — zapytaj o doprecyzowanie.",
+      note: `Nie znaleziono użytkownika pasującego do "${query}".`,
+      candidates: resolved.candidates,
     };
   }
 
-  const target = candidates[0];
   const since = new Date(Date.now() - days * 86_400_000);
 
   const events = await db.auditLog.findMany({
     where: {
       workspaceId: ctx.workspaceId,
-      actorId: target.id,
+      actorId: resolved.userId,
       createdAt: { gte: since },
     },
     select: {
@@ -450,7 +658,6 @@ async function toolGetUserActivity(
     take: limit,
   });
 
-  // Doklejamy human-readable label dla Task / Board żeby LLM widział tytuły.
   const taskIds = events
     .filter((e) => e.objectType === "Task")
     .map((e) => e.objectId);
@@ -477,9 +684,8 @@ async function toolGetUserActivity(
 
   return {
     user: {
-      id: target.id,
-      name: target.name ?? target.email.split("@")[0],
-      email: target.email,
+      name: resolved.name,
+      email: resolved.email,
     },
     sinceDays: days,
     count: events.length,

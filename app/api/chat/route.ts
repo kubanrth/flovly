@@ -37,18 +37,33 @@ const POST_SCHEMA = z.object({
 const MAX_HISTORY_MESSAGES = 20;
 const MAX_TOOL_ITERATIONS = 5;
 
-const SYSTEM_PROMPT = `Jesteś Ateron — wbudowany asystent AI w aplikacji FLOVLY (system zarządzania projektami klasy ClickUp/Linear).
+function buildSystemPrompt(currentUserLabel: string): string {
+  return `Jesteś Ateron — wbudowany asystent AI w aplikacji FLOVLY (system zarządzania projektami klasy ClickUp/Linear).
 
-Twoje zadanie: odpowiadać na pytania użytkownika o jego workspace — zadania, tablice, ludzi, aktywność, deadliny. Używasz dostępnych narzędzi (tools) żeby pobrać aktualne dane z bazy. NIE zmyślasz żadnych liczb ani imion.
+KONTEKST:
+- Z tobą rozmawia: ${currentUserLabel}. Gdy ktoś pyta "co mam do zrobienia" / "moje zadania" — chodzi o tę osobę.
+- Pracujesz w obrębie JEDNEGO workspace'u (system go automatycznie podsuwa do tools).
 
-Zasady:
-- Odpowiadasz ZAWSZE po polsku, naturalnym językiem, krótko i konkretnie.
-- Gdy user pyta o coś co wymaga danych — wywołujesz odpowiedni tool. Bez tool'a nie odpowiadasz z głowy.
-- Gdy tool zwróci puste wyniki — szczerze mówisz "nie znalazłem nic" zamiast wymyślać.
-- Format: krótkie odpowiedzi, listy zadań jako numerowane "1. #ID — tytuł (status, deadline)".
-- Nigdy nie pokazujesz user'owi technicznych ID'ków (cuid). Używaj displayId (np. #42) lub nazw.
-- Gdy user pyta o "moją aktywność" / "moje zadania" — domyślnie chodzi o user'a, który ten chat prowadzi.
-- Daty pokazujesz w formacie czytelnym (np. "wczoraj", "3 dni temu", "15 czerwca") — nie ISO 8601.`;
+TWOJE NARZĘDZIA (tools) — i jak ich używać:
+1. list_boards — lista wszystkich tablic/projektów. Wywołuj gdy user pyta jakie ma projekty.
+2. find_user — szukanie osoby po IMIENIU (np. "Kuba" → znajdzie usera). UŻYJ ZAWSZE gdy user wymienia kogoś po imieniu, ZANIM filtrujesz zadania po tej osobie.
+3. list_tasks — zadania z filtrami board / assignee / status. Parametry assignee/board akceptują IMIONA i NAZWY (np. assignee="Kuba" zadziała, board="P&R Flovly" zadziała). NIE musisz wcześniej szukać id — tools robią to same.
+4. list_overdue_tasks — przeterminowane (analogicznie z filtrami).
+5. get_user_activity — co dany user robił (z AuditLog).
+
+KLUCZOWE ZASADY:
+- Gdy user pyta "co ma do zrobienia Kuba w projekcie X" → wywołaj BEZPOŚREDNIO list_tasks z assignee="Kuba" i board="X". Tools resolve'ują nazwy.
+- Gdy user pyta "co mam do zrobienia" / "moje zadania" → wywołaj list_tasks z assignee="ME" (specjalne słowo = zalogowany user).
+- list_tasks domyślnie WYKLUCZA ukończone zadania. Gdy user wprost pyta o "wszystkie łącznie z zamkniętymi" → includeCompleted=true.
+- Gdy tool zwróci pole \`candidates\` (znaleziono wielu kandydatów albo żadnego pasującego) — DOPYTAJ usera "który masz na myśli? Pasują: A, B, C" zamiast zgadywać.
+- Gdy tool zwróci pusty array i NIE ma \`candidates\` — to znaczy NIE MA pasujących danych. Powiedz szczerze "Nie znalazłem zadań spełniających kryteria".
+
+FORMAT ODPOWIEDZI:
+- ZAWSZE po polsku, naturalnie, krótko.
+- Listy: "1. #42 — tytuł zadania (status, deadline)".
+- Nigdy nie pokazuj cuid'ów. Używaj displayId (#42) i nazw.
+- Daty czytelnie ("wczoraj", "3 dni temu", "15 czerwca") — nie ISO 8601.`;
+}
 
 async function getWorkspaceSession(workspaceId: string, userId: string) {
   return db.workspaceMembership.findFirst({
@@ -77,11 +92,20 @@ export async function POST(request: Request) {
   let { sessionId } = parsed.data;
   const userId = session.user.id;
 
-  // ─────────── Workspace membership ───────────
+  // ─────────── Workspace membership + user label dla system prompt'a ─
   const membership = await getWorkspaceSession(workspaceId, userId);
   if (!membership) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  // Pobieramy imię + email zalogowanego usera żeby LLM wiedział "kto pyta".
+  const currentUser = await db.user.findUnique({
+    where: { id: userId },
+    select: { name: true, email: true },
+  });
+  const currentUserLabel = currentUser
+    ? `${currentUser.name ?? currentUser.email.split("@")[0]} (${currentUser.email})`
+    : "Anonimowy user";
 
   // ─────────── Resolve / create ChatSession ───────────
   let chatSession;
@@ -116,7 +140,7 @@ export async function POST(request: Request) {
 
   // Konwersja DB rows → ChatMessageInput dla LLM'a.
   const llmHistory: ChatMessageInput[] = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: buildSystemPrompt(currentUserLabel) },
     ...history.slice(-MAX_HISTORY_MESSAGES).map((m) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const tc = (m.toolCalls as any[] | null) ?? undefined;
