@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { themeBootScript } from "@/components/layout/theme-toggle";
@@ -25,6 +25,15 @@ export const metadata: Metadata = {
   title: "FLOVLY · System Zarządzania Projektami",
   description: "Wewnętrzny system zarządzania projektami.",
   robots: { index: false, follow: false },
+};
+
+// viewportFit=cover żeby env(safe-area-inset-*) zwracało prawdziwe wartości
+// na iPhonie X+. Bez tego FAB / sticky elements mogłyby nakładać się na
+// home indicator / notch area.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

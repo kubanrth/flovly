@@ -25,7 +25,14 @@ export function CzesiekFab({ workspaceId }: { workspaceId: string }) {
         aria-label="Otwórz Aterona"
         title="Ateron AI — twój asystent"
         data-open={open ? "true" : "false"}
-        className="fixed bottom-4 right-4 z-30 grid h-14 w-14 place-items-center rounded-full bg-brand-gradient text-white shadow-brand transition-[transform,box-shadow,opacity] duration-200 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary data-[open=true]:scale-90 data-[open=true]:opacity-0 md:bottom-6 md:right-6 md:h-[58px] md:w-[58px]"
+        // Mobile: respektujemy env(safe-area-inset-bottom) żeby na iPhonie
+        // z home indicator'em FAB nie nakładał się na swipe area. Min 1rem
+        // odstępu, na top tego dodajemy safe area gdy device ma notch.
+        style={{
+          bottom: "calc(1rem + env(safe-area-inset-bottom, 0px))",
+          right: "calc(1rem + env(safe-area-inset-right, 0px))",
+        }}
+        className="fixed z-30 grid h-14 w-14 place-items-center rounded-full bg-brand-gradient text-white shadow-brand transition-[transform,box-shadow,opacity] duration-200 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary data-[open=true]:scale-90 data-[open=true]:opacity-0 md:!bottom-6 md:!right-6 md:h-[58px] md:w-[58px]"
       >
         <span className="font-display text-[1.1rem] font-bold leading-none tracking-[-0.02em]">
           At
