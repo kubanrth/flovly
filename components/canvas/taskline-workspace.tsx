@@ -1,13 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { CanvasEditorLazy } from "@/components/canvas/canvas-editor-lazy";
-import type {
-  BoardTaskMeta,
-  EditorInitialEdge,
-  EditorInitialNode,
-} from "@/components/canvas/canvas-editor";
 import { TaskLineSidebar } from "@/components/canvas/taskline-sidebar";
+import {
+  TaskLineFlow,
+  type BoardTaskMeta,
+  type TaskLineFlowItem,
+} from "@/components/canvas/taskline-flow";
 
 export interface TaskLineAssignee {
   id: string;
@@ -32,33 +31,29 @@ export interface TaskLineMember {
   avatarUrl: string | null;
 }
 
-// F12-K73: orchestrator widoku Task Line. Sidebar po lewej (search + filter +
-// draggable cards), CanvasEditor po prawej z props boardTasks Map'ą — drop
-// handler tworzy TASK_REF node przy upuszczeniu task'a z sidebar'a.
+// F12-K73 v2: orchestrator widoku Task Line.
+// Layout: sidebar (lista task'ów do przeciągnięcia) + flow (sekwencja kafelków).
+// Bez CanvasEditor'a — to jest dedykowany linear-flow view, nie whiteboard.
+//
+// Mobile: flex-col (sidebar nad flow). Desktop: flex-row.
 export function TaskLineWorkspace({
   workspaceId,
-  boardId: _boardId,
   canvasId,
   canEdit,
-  canCreateTask,
   tasks,
   members,
-  workspaceTasks,
-  initialNodes,
-  initialEdges,
+  initialItems,
 }: {
   workspaceId: string;
-  boardId: string;
   canvasId: string;
   canEdit: boolean;
-  canCreateTask: boolean;
   tasks: TaskLineTask[];
   members: TaskLineMember[];
-  workspaceTasks: { id: string; title: string }[];
-  initialNodes: EditorInitialNode[];
-  initialEdges: EditorInitialEdge[];
+  initialItems: TaskLineFlowItem[];
 }) {
-  // Map taskId → meta dla addTaskRefNode (drop handler) — O(1) lookup.
+  // Map taskId → meta, używana przez drop handler w TaskLineFlow przy
+  // wstawianiu nowych kafelków (server zwraca tylko nodeId+x, resztę
+  // bierzemy z tej mapy).
   const boardTasksMap = useMemo(() => {
     const m = new Map<string, BoardTaskMeta>();
     for (const t of tasks) {
@@ -73,28 +68,30 @@ export function TaskLineWorkspace({
     return m;
   }, [tasks]);
 
+  // Zadania już dodane do flow → wyfiltruj z sidebar'a (UX: nie pokazujemy
+  // duplikatów których nie da się drugi raz upuścić).
+  const placedTaskIds = useMemo(
+    () => new Set(initialItems.map((i) => i.taskId)),
+    [initialItems],
+  );
+  const availableTasks = useMemo(
+    () => tasks.filter((t) => !placedTaskIds.has(t.id)),
+    [tasks, placedTaskIds],
+  );
+
   return (
-    // Klient: "Zadania jak się skończy szerokość ekranu to mają schodzić w
-    // dół" — flex-col na max-md (sidebar pod canvas'em na mobile),
-    // flex-row na md+. Canvas dostaje większą część ekranu (flex-1) z
-    // min-height żeby na mobile dało się pracować.
     <div className="flex flex-col gap-3 md:flex-row md:gap-4 h-[calc(100dvh-18rem)] min-h-[640px]">
       <TaskLineSidebar
         workspaceId={workspaceId}
-        tasks={tasks}
+        tasks={availableTasks}
         members={members}
       />
       <div className="flex-1 overflow-hidden rounded-xl border border-border bg-card min-h-[420px]">
-        <CanvasEditorLazy
-          workspaceId={workspaceId}
+        <TaskLineFlow
           canvasId={canvasId}
-          canEdit={canEdit}
-          canCreateTask={canCreateTask}
-          initialNodes={initialNodes}
-          initialEdges={initialEdges}
-          workspaceTasks={workspaceTasks}
-          defaultBoardId={_boardId}
+          initialItems={initialItems}
           boardTasks={boardTasksMap}
+          canEdit={canEdit}
         />
       </div>
     </div>
