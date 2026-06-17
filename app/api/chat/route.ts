@@ -34,35 +34,30 @@ const POST_SCHEMA = z.object({
   message: z.string().min(1).max(4000),
 });
 
-const MAX_HISTORY_MESSAGES = 20;
+// Trzymamy mniej historii dla szybszego LLM call'a (mniej tokenów input).
+// Trade-off: model nie pamięta starych konwersacji w tej sesji.
+const MAX_HISTORY_MESSAGES = 12;
 const MAX_TOOL_ITERATIONS = 5;
 
 function buildSystemPrompt(currentUserLabel: string): string {
-  return `Jesteś Ateron — wbudowany asystent AI w aplikacji FLOVLY (system zarządzania projektami klasy ClickUp/Linear).
+  // Krótki, zwięzły prompt — fewer tokens = faster LLM call.
+  return `Jesteś Ateron — asystent AI w aplikacji FLOVLY (system PM klasy ClickUp).
 
-KONTEKST:
-- Z tobą rozmawia: ${currentUserLabel}. Gdy ktoś pyta "co mam do zrobienia" / "moje zadania" — chodzi o tę osobę.
-- Pracujesz w obrębie JEDNEGO workspace'u (system go automatycznie podsuwa do tools).
+Z tobą rozmawia: ${currentUserLabel}. Pytanie "co mam do zrobienia" = dotyczy tej osoby.
 
-TWOJE NARZĘDZIA (tools) — i jak ich używać:
-1. list_boards — lista wszystkich tablic/projektów. Wywołuj gdy user pyta jakie ma projekty.
-2. find_user — szukanie osoby po IMIENIU (np. "Kuba" → znajdzie usera). UŻYJ ZAWSZE gdy user wymienia kogoś po imieniu, ZANIM filtrujesz zadania po tej osobie.
-3. list_tasks — zadania z filtrami board / assignee / status. Parametry assignee/board akceptują IMIONA i NAZWY (np. assignee="Kuba" zadziała, board="P&R Flovly" zadziała). NIE musisz wcześniej szukać id — tools robią to same.
-4. list_overdue_tasks — przeterminowane (analogicznie z filtrami).
-5. get_user_activity — co dany user robił (z AuditLog).
+TOOLS — parametry assignee/board AKCEPTUJĄ IMIONA i NAZWY (np. assignee="Kuba", board="P&R"). NIE rób wcześniej lookup'ów.
+- list_boards: lista projektów
+- find_user: szuka osoby po imieniu (gdy potrzebujesz pewności)
+- list_tasks: zadania (default = bez ukończonych; assignee="ME" = zalogowany user)
+- list_overdue_tasks: przeterminowane
+- get_user_activity: co user robił (AuditLog)
 
-KLUCZOWE ZASADY:
-- Gdy user pyta "co ma do zrobienia Kuba w projekcie X" → wywołaj BEZPOŚREDNIO list_tasks z assignee="Kuba" i board="X". Tools resolve'ują nazwy.
-- Gdy user pyta "co mam do zrobienia" / "moje zadania" → wywołaj list_tasks z assignee="ME" (specjalne słowo = zalogowany user).
-- list_tasks domyślnie WYKLUCZA ukończone zadania. Gdy user wprost pyta o "wszystkie łącznie z zamkniętymi" → includeCompleted=true.
-- Gdy tool zwróci pole \`candidates\` (znaleziono wielu kandydatów albo żadnego pasującego) — DOPYTAJ usera "który masz na myśli? Pasują: A, B, C" zamiast zgadywać.
-- Gdy tool zwróci pusty array i NIE ma \`candidates\` — to znaczy NIE MA pasujących danych. Powiedz szczerze "Nie znalazłem zadań spełniających kryteria".
+ZASADY:
+- Wywołuj tools RÓWNOLEGLE gdy potrzebujesz wielu danych (np. list_tasks dla 2 osób).
+- Tool zwraca \`candidates\` (kilka pasujących) → DOPYTAJ usera, nie zgaduj.
+- Tool zwraca pusty wynik bez \`candidates\` → szczerze "nie znalazłem".
 
-FORMAT ODPOWIEDZI:
-- ZAWSZE po polsku, naturalnie, krótko.
-- Listy: "1. #42 — tytuł zadania (status, deadline)".
-- Nigdy nie pokazuj cuid'ów. Używaj displayId (#42) i nazw.
-- Daty czytelnie ("wczoraj", "3 dni temu", "15 czerwca") — nie ISO 8601.`;
+FORMAT: po polsku, krótko, listy "#42 — tytuł (status, deadline)". Daty czytelnie. Nigdy nie pokazuj cuid'ów.`;
 }
 
 async function getWorkspaceSession(workspaceId: string, userId: string) {
@@ -160,6 +155,7 @@ export async function POST(request: Request) {
 
   const toolCtx: ToolContext = { workspaceId, userId };
   let lastModel: string | null = null;
+  const startedAt = Date.now();
 
   // ─────────── Agentic loop ───────────
   for (let iter = 0; iter < MAX_TOOL_ITERATIONS; iter++) {
@@ -226,26 +222,47 @@ export async function POST(request: Request) {
       toolCalls: result.toolCalls,
     });
 
-    for (const call of result.toolCalls) {
-      const toolResult = await executeChatTool(call.name, call.arguments, toolCtx);
-      const serialized = JSON.stringify(toolResult);
-      await db.chatMessage.create({
-        data: {
-          sessionId,
-          role: "tool",
-          content: serialized,
-          toolCallId: call.id,
-          toolName: call.name,
-        },
-      });
+    // Wykonujemy WSZYSTKIE tool calls z tego turn'a RÓWNOLEGLE. LLM
+    // zwraca je w jednym message gdy są niezależne (np. list_tasks dla
+    // 2 różnych board'ów) — sekwencyjne wykonanie zżerało N*200-500ms,
+    // równoległe ~max(200-500ms). Po wykonaniu push'ujemy w oryginalnej
+    // kolejności żeby LLM widział match między tool_call_id ↔ tool_result.
+    const toolStart = Date.now();
+    const toolResults = await Promise.all(
+      result.toolCalls.map((call) => executeChatTool(call.name, call.arguments, toolCtx)),
+    );
+    const toolDuration = Date.now() - toolStart;
+    console.log(
+      `[chat] iter ${iter} — ${result.toolCalls.length} tools w ${toolDuration}ms (LLM ${result.latencyMs}ms, model ${result.model})`,
+    );
+
+    // Save tool messages + push do history w oryginalnej kolejności.
+    await Promise.all(
+      result.toolCalls.map((call, idx) => {
+        const serialized = JSON.stringify(toolResults[idx]);
+        return db.chatMessage.create({
+          data: {
+            sessionId,
+            role: "tool",
+            content: serialized,
+            toolCallId: call.id,
+            toolName: call.name,
+          },
+        });
+      }),
+    );
+    for (let idx = 0; idx < result.toolCalls.length; idx++) {
+      const call = result.toolCalls[idx];
       llmHistory.push({
         role: "tool",
-        content: serialized,
+        content: JSON.stringify(toolResults[idx]),
         toolCallId: call.id,
         toolName: call.name,
       });
     }
   }
+
+  console.log(`[chat] total ${Date.now() - startedAt}ms (model ${lastModel})`);
 
   // ─────────── Update session metadata ───────────
   const titleNeedsUpdate = chatSession.title === "Nowa rozmowa";

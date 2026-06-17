@@ -55,8 +55,14 @@ export type ChatResult = {
   finishReason: string;
 };
 
-const GROQ_MODEL = "llama-3.3-70b-versatile";
-const OPENAI_MODEL = "gpt-4o-mini";
+// Domyślnie llama-3.3-70b-versatile (najlepsza jakość tool calling).
+// Override via env GROQ_MODEL — opcje:
+//   - "llama-3.3-70b-versatile"  → smart, ~1-3s per call (default)
+//   - "llama-3.1-8b-instant"     → szybkie, ~200-500ms per call, slight quality drop
+//   - "mixtral-8x7b-32768"       → balanced, ~500ms-1s
+//   - "gemma2-9b-it"             → fast, ~300-700ms
+const GROQ_MODEL = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
+const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
 function getGroqClient(): Groq | null {
   const key = process.env.GROQ_API_KEY;
