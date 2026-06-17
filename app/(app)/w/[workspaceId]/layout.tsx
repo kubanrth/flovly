@@ -4,6 +4,7 @@ import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { EditableWorkspaceName } from "@/components/workspaces/editable-workspace-name";
 import { WorkspaceTabs } from "@/components/workspaces/workspace-tabs";
+import { CzesiekFab } from "@/components/czesiek/czesiek-fab";
 
 export default async function WorkspaceLayout({
   children,
@@ -55,6 +56,7 @@ export default async function WorkspaceLayout({
 
       <main className="flex-1 px-4 py-5 md:px-14 md:py-10">{children}</main>
       {modal}
+      <CzesiekFab workspaceId={workspace.id} />
     </>
   );
 }

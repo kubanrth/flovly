@@ -89,6 +89,8 @@ model User {
   vacationDecisions  VacationRequest[]     @relation("VacationDecider")
   // F12-K68: wiadomości do klientów (CRM chat → email).
   contactMessages    ContactMessage[]      @relation("ContactMessageSender")
+  // F12-K74: Czesiek AI chat sessions (per user per workspace).
+  chatSessions       ChatSession[]         @relation("ChatSessionUser")
 
   @@index([isBanned])
   @@index([lastSeenAt])
@@ -203,6 +205,8 @@ model Workspace {
   contactActivities    ContactActivity[]
   // F12-K68: wiadomości do klientów (email-based chat z karty kontaktu).
   contactMessages      ContactMessage[]
+  // F12-K74: Czesiek AI chat sessions per workspace.
+  chatSessions         ChatSession[]
 
   @@index([ownerId])
   @@index([deletedAt])
@@ -1574,4 +1578,53 @@ model ContactMessage {
 
   @@index([contactId, sentAt(sort: Desc)])
   @@index([workspaceId])
+}
+
+// F12-K74: Czesiek AI — embedded chat assistant.
+// Session = jedna rozmowa per user per workspace. User może mieć wiele
+// sesji (lewy sidebar w panelu chat). title = pierwsze 60 znaków pierwszego
+// user message'a (auto-set po pierwszej wymianie), póki co pusty/"Nowa rozmowa".
+model ChatSession {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  title       String   @default("Nowa rozmowa")
+  // model identifier ostatnio użytego LLM'a (np. "llama-3.3-70b-versatile").
+  // Ułatwia debug "ten user miał słabe odpowiedzi przy Llama, sprawdź czy
+  // fallback zadziałał".
+  lastModel   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  archivedAt  DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation("ChatSessionUser", fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+
+  @@index([workspaceId, userId, updatedAt(sort: Desc)])
+  @@index([userId])
+}
+
+// Role: "user" / "assistant" / "tool".
+// content: tekst (user/assistant) lub stringified JSON result (tool).
+// toolCalls: array of {id, name, args} gdy assistant decyduje wywołać tools.
+// Po stronie history: każdy tool_call assistanta ma matching "tool" message
+// z tym samym callId (OpenAI/Groq tool-calling spec).
+model ChatMessage {
+  id          String   @id @default(cuid())
+  sessionId   String
+  role        String
+  content     String   @db.Text
+  toolCallId  String?
+  toolName    String?
+  toolCalls   Json?
+  tokensIn    Int?
+  tokensOut   Int?
+  // latencyMs = czas LLM round-tripa. Ułatwia "Groq is slow today" debug.
+  latencyMs   Int?
+  createdAt   DateTime @default(now())
+
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
 }
