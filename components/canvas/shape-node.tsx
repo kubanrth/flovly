@@ -240,6 +240,25 @@ export const ShapeNode = memo(function ShapeNode({
     );
   }
 
+  // F12-K73: Task Line reference node — task card z opcjonalnym start/end
+  // ring'iem + badge.
+  if (d.shape === "TASK_REF") {
+    return (
+      <TaskRefShape
+        nodeId={id}
+        width={d.width}
+        height={d.height}
+        taskId={(d.taskId as string | null) ?? null}
+        taskTitle={(d.taskTitle as string | null) ?? null}
+        statusName={(d.statusName as string | null) ?? null}
+        statusColor={(d.statusColor as string | null) ?? null}
+        flowMark={(d.flowMark as "start" | "end" | null | undefined) ?? null}
+        workspaceId={(d.workspaceId as string | undefined) ?? null}
+        selected={!!selected}
+      />
+    );
+  }
+
   const textColor = d.textColorHex || textColorFor(d.colorHex);
   const accent = accentFor(d.colorHex);
   const selectedRing = selected
@@ -907,4 +926,144 @@ function textColorFor(hex: string): string {
   const b = parseInt(hex.slice(5, 7), 16);
   const y = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
   return y > 0.6 ? "#0F172A" : "#FFFFFF";
+}
+
+// F12-K73: Task Line reference node. Renderuje task card z displayId pill +
+// title + status badge. flowMark='start' = emerald ring + "START" badge;
+// 'end' = rose ring + "KONIEC" badge. Click → /t/[taskId] otwiera kartę.
+function TaskRefShape({
+  nodeId,
+  width,
+  height,
+  taskId,
+  taskTitle,
+  statusName,
+  statusColor,
+  flowMark,
+  workspaceId,
+  selected,
+}: {
+  nodeId: string;
+  width: number;
+  height: number;
+  taskId: string | null;
+  taskTitle: string | null;
+  statusName: string | null;
+  statusColor: string | null;
+  flowMark: "start" | "end" | null | undefined;
+  workspaceId: string | null;
+  selected: boolean;
+}) {
+  const ringColor =
+    flowMark === "start"
+      ? "rgba(16, 185, 129, 0.85)" // emerald-500
+      : flowMark === "end"
+        ? "rgba(244, 63, 94, 0.85)" // rose-500
+        : null;
+  const selectedRing = selected
+    ? "0 0 0 2px color-mix(in oklch, var(--primary) 50%, transparent)"
+    : "none";
+  const flowRing = ringColor ? `0 0 0 3px ${ringColor}` : "none";
+  const boxShadow = [selectedRing, flowRing].filter((s) => s !== "none").join(", ") || "none";
+
+  const fillColor = statusColor ?? "#94A3B8";
+  return (
+    <>
+      <ShapeResizer
+        nodeId={nodeId}
+        visible={selected}
+        minWidth={180}
+        minHeight={70}
+        keepAspectRatio={false}
+      />
+      <ShapeHandles />
+      <div
+        style={{
+          width,
+          height,
+          borderRadius: 12,
+          background: "#FFFFFF",
+          border: "1px solid rgba(15, 23, 42, 0.12)",
+          boxShadow,
+          padding: 10,
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          overflow: "hidden",
+          cursor: workspaceId && taskId ? "pointer" : "default",
+        }}
+        onDoubleClick={() => {
+          if (workspaceId && taskId && typeof window !== "undefined") {
+            window.open(`/w/${workspaceId}/t/${taskId}`, "_self");
+          }
+        }}
+      >
+        {/* Flow mark badge (top-right) */}
+        {flowMark && (
+          <span
+            style={{
+              position: "absolute",
+              top: -10,
+              right: 12,
+              padding: "2px 8px",
+              borderRadius: 999,
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "#fff",
+              background: flowMark === "start" ? "#10B981" : "#F43F5E",
+              boxShadow: "0 2px 6px -2px rgba(0,0,0,0.25)",
+            }}
+          >
+            {flowMark === "start" ? "START" : "Koniec"}
+          </span>
+        )}
+
+        {/* Status dot + status name */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 999,
+              background: fillColor,
+              flexShrink: 0,
+            }}
+          />
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "#64748B",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {statusName ?? "Bez statusu"}
+          </span>
+        </div>
+
+        {/* Title */}
+        <div
+          style={{
+            fontSize: 14,
+            fontWeight: 600,
+            color: "#0F172A",
+            lineHeight: 1.3,
+            overflow: "hidden",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+          }}
+        >
+          {taskTitle ?? "(zadanie usunięte)"}
+        </div>
+      </div>
+    </>
+  );
 }

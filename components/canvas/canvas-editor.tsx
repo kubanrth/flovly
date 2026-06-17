@@ -50,12 +50,14 @@ import {
   Trash2,
   Type as TypeIcon,
   Unlink2,
+  Workflow,
   X,
 } from "lucide-react";
 import { toPng } from "html-to-image";
 import {
   requestCanvasImageUploadAction,
   saveCanvasSnapshotAction,
+  setFlowMarkAction,
 } from "@/app/(app)/w/[workspaceId]/c/actions";
 import {
   createAndLinkTaskFromNodeAction,
@@ -848,6 +850,31 @@ function CanvasEditorInner({
     for (const n of touched) commitNodeToY(n);
   }, [setNodes, commitNodeToY]);
 
+  // F12-K73: toggle flow mark na single TASK_REF node'zie + sync z serverem
+  // (audit log + persist w dataJson). Yjs lokalnie aktualizujemy od razu;
+  // server action jest "fire-and-forget" — gdy padnie, next save snapshot
+  // i tak doprowadzi DB do zgodności.
+  const setFlowMarkOnSelected = useCallback(
+    (mark: "start" | "end" | null) => {
+      const target = nodes.find(
+        (n) => n.selected && n.data.shape === "TASK_REF",
+      );
+      if (!target) return;
+      const next: RFNode = {
+        ...target,
+        data: { ...target.data, flowMark: mark },
+      };
+      setNodes((ns) => ns.map((n) => (n.id === target.id ? next : n)));
+      commitNodeToY(next);
+      void setFlowMarkAction({
+        canvasId,
+        nodeId: target.id,
+        mark,
+      });
+    },
+    [nodes, setNodes, commitNodeToY, canvasId],
+  );
+
   const renameSelected = useCallback(() => {
     const target = nodes.find((n) => n.selected);
     if (!target) return;
@@ -1400,6 +1427,19 @@ function CanvasEditorInner({
           onBringFront={bringSelectedToFront}
           onReact={toggleReaction}
           onToggleLock={toggleLockSelected}
+          // F12-K73: flow mark opcje pojawiają się TYLKO gdy single TASK_REF
+          // wybrany — inaczej cała sekcja zostaje schowana (onSetFlowMark
+          // undefined w ContextMenu → null branch).
+          taskRefFlowMark={
+            singleSelectedNode?.data.shape === "TASK_REF"
+              ? ((singleSelectedNode.data.flowMark as "start" | "end" | null | undefined) ?? null)
+              : undefined
+          }
+          onSetFlowMark={
+            singleSelectedNode?.data.shape === "TASK_REF"
+              ? setFlowMarkOnSelected
+              : undefined
+          }
         />
       )}
 
@@ -2071,6 +2111,10 @@ function ContextMenu({
   onBringFront,
   onReact,
   onToggleLock,
+  // F12-K73 Task Line: gdy single TASK_REF selected, kontekst pokazuje
+  // 3 opcje flow mark (początek/koniec/wyczyść). undefined = nie pokazuj.
+  taskRefFlowMark,
+  onSetFlowMark,
 }: {
   x: number;
   y: number;
@@ -2082,6 +2126,8 @@ function ContextMenu({
   onBringFront: () => void;
   onReact: (emoji: string) => void;
   onToggleLock: () => void;
+  taskRefFlowMark?: "start" | "end" | null;
+  onSetFlowMark?: (mark: "start" | "end" | null) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -2157,6 +2203,44 @@ function ContextMenu({
           onClose();
         }}
       />
+      {/* F12-K73: Task Line flow mark section. Renderowane tylko gdy
+          selected single TASK_REF (taskRefFlowMark prop ustawiony). */}
+      {onSetFlowMark && (
+        <>
+          <div className="my-1 h-px bg-border" />
+          <div className="px-2 py-1 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground/80">
+            Flow
+          </div>
+          <CtxItem
+            icon={<Workflow size={11} />}
+            label="Oznacz jako początkowe"
+            disabled={taskRefFlowMark === "start"}
+            onClick={() => {
+              onSetFlowMark("start");
+              onClose();
+            }}
+          />
+          <CtxItem
+            icon={<Workflow size={11} />}
+            label="Oznacz jako końcowe"
+            disabled={taskRefFlowMark === "end"}
+            onClick={() => {
+              onSetFlowMark("end");
+              onClose();
+            }}
+          />
+          {taskRefFlowMark && (
+            <CtxItem
+              icon={<X size={11} />}
+              label="Wyczyść oznaczenie"
+              onClick={() => {
+                onSetFlowMark(null);
+                onClose();
+              }}
+            />
+          )}
+        </>
+      )}
       <div className="my-1 h-px bg-border" />
       <CtxItem
         icon={<Trash2 size={11} />}
