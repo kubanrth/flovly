@@ -55,6 +55,11 @@ export type ChatResult = {
   finishReason: string;
 };
 
+// Który provider próbujemy najpierw. Default "groq" (free tier).
+// Ustaw LLM_PRIMARY=openai gdy chcesz mieć OpenAI jako primary (dla
+// stabilności / wyższych limitów). Wtedy Groq leci jako fallback.
+const LLM_PRIMARY = (process.env.LLM_PRIMARY ?? "groq").toLowerCase();
+
 // Domyślnie llama-3.3-70b-versatile (najlepsza jakość tool calling).
 // Override via env GROQ_MODEL — opcje:
 //   - "llama-3.3-70b-versatile"  → smart, ~1-3s per call (default)
@@ -67,6 +72,8 @@ const GROQ_MODEL = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
 // Ustaw "none" żeby wyłączyć fallback (tylko primary).
 const GROQ_FALLBACK_MODEL =
   process.env.GROQ_FALLBACK_MODEL ?? "llama-3.1-8b-instant";
+// gpt-4o-mini = najtańsza opcja OpenAI (~$0.15/1M input). Override przez
+// OPENAI_MODEL jeśli chcesz gpt-4o lub gpt-4.1-mini itp.
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
 function getGroqClient(): Groq | null {
@@ -268,42 +275,62 @@ async function callOpenAI(
   };
 }
 
-// Główny entry point. Cascading fallback:
-//   1. Groq primary model (GROQ_MODEL, default llama-3.3-70b-versatile)
-//   2. Groq fallback model (GROQ_FALLBACK_MODEL, default llama-3.1-8b-instant)
-//      ← przydatne gdy primary wyczerpał TPD (osobny licznik per model)
-//   3. OpenAI gpt-4o-mini (jeśli OPENAI_API_KEY ustawiony)
+// Główny entry point. Order próbowania zależy od LLM_PRIMARY:
 //
-// Throw z czytelnym komunikatem gdy wszystkie zawiodą.
+// LLM_PRIMARY=groq (default, free):
+//   1. Groq primary model (np. llama-3.3-70b-versatile)
+//   2. Groq fallback model (np. llama-3.1-8b-instant, osobny TPD)
+//   3. OpenAI gpt-4o-mini (jeśli OPENAI_API_KEY)
+//
+// LLM_PRIMARY=openai (płatne, stabilne):
+//   1. OpenAI gpt-4o-mini (jeśli OPENAI_API_KEY)
+//   2. Groq primary model (free safety net)
+//   3. Groq fallback model
 export async function chat(
   messages: ChatMessageInput[],
   tools: ChatTool[] = [],
 ): Promise<ChatResult> {
   const groqClient = getGroqClient();
   const hasOpenAi = !!process.env.OPENAI_API_KEY;
+  const openAiFirst = LLM_PRIMARY === "openai";
 
-  let primaryGroqError: unknown = null;
-  let fallbackGroqError: unknown = null;
+  const errors: Record<string, string> = {};
 
-  // 1. Groq primary
-  if (groqClient) {
+  // Helper — próbuje OpenAI, capture'uje error.
+  const tryOpenAi = async (): Promise<ChatResult | null> => {
+    if (!hasOpenAi) return null;
+    try {
+      const result = await callOpenAI(messages, tools);
+      if (result) return result;
+    } catch (e) {
+      errors.openai = e instanceof Error ? e.message : String(e);
+      console.warn(`[llm] OpenAI failed: ${errors.openai}`);
+    }
+    return null;
+  };
+
+  // Helper — próbuje Groq primary, capture'uje error.
+  const tryGroqPrimary = async (): Promise<ChatResult | null> => {
+    if (!groqClient) return null;
     try {
       const result = await callGroq(messages, tools);
       if (result) return result;
     } catch (e) {
-      primaryGroqError = e;
-      console.warn(
-        `[llm] Groq primary (${GROQ_MODEL}) failed: ${e instanceof Error ? e.message : e}`,
-      );
+      errors.groqPrimary = e instanceof Error ? e.message : String(e);
+      console.warn(`[llm] Groq primary (${GROQ_MODEL}) failed: ${errors.groqPrimary}`);
     }
-  }
+    return null;
+  };
 
-  // 2. Groq fallback (różny model = osobny TPD)
-  if (
-    groqClient &&
-    GROQ_FALLBACK_MODEL !== "none" &&
-    GROQ_FALLBACK_MODEL !== GROQ_MODEL
-  ) {
+  // Helper — próbuje Groq fallback (różny model = osobny TPD).
+  const tryGroqFallback = async (): Promise<ChatResult | null> => {
+    if (
+      !groqClient ||
+      GROQ_FALLBACK_MODEL === "none" ||
+      GROQ_FALLBACK_MODEL === GROQ_MODEL
+    ) {
+      return null;
+    }
     try {
       const result = await callGroq(messages, tools, GROQ_FALLBACK_MODEL);
       if (result) {
@@ -313,54 +340,49 @@ export async function chat(
         return result;
       }
     } catch (e) {
-      fallbackGroqError = e;
+      errors.groqFallback = e instanceof Error ? e.message : String(e);
       console.warn(
-        `[llm] Groq fallback (${GROQ_FALLBACK_MODEL}) failed: ${e instanceof Error ? e.message : e}`,
+        `[llm] Groq fallback (${GROQ_FALLBACK_MODEL}) failed: ${errors.groqFallback}`,
       );
     }
+    return null;
+  };
+
+  // Cascade order.
+  const cascade = openAiFirst
+    ? [tryOpenAi, tryGroqPrimary, tryGroqFallback]
+    : [tryGroqPrimary, tryGroqFallback, tryOpenAi];
+
+  for (const step of cascade) {
+    const result = await step();
+    if (result) return result;
   }
 
-  // 3. OpenAI
-  if (hasOpenAi) {
-    try {
-      const result = await callOpenAI(messages, tools);
-      if (result) {
-        console.log("[llm] OpenAI fallback used");
-        return result;
-      }
-    } catch (e) {
-      console.error(`[llm] OpenAI failed: ${e instanceof Error ? e.message : e}`);
-      throw new Error(
-        `Wszystkie LLM providery padły. Groq: ${
-          primaryGroqError instanceof Error ? primaryGroqError.message : "?"
-        }. OpenAI: ${e instanceof Error ? e.message : "?"}`,
-      );
-    }
-  }
-
-  // Wszystko padło. Konkretny komunikat zależy od tego co próbowaliśmy.
-  if (primaryGroqError) {
-    const msg = primaryGroqError instanceof Error ? primaryGroqError.message : "?";
-    const isTPD = msg.includes("429 TPD");
-    if (isTPD) {
-      throw new Error(
-        `Wyczerpaliśmy dzienny limit AI (Groq TPD). ${
-          fallbackGroqError ? "Model zapasowy też padł. " : ""
-        }${
-          hasOpenAi
-            ? "OpenAI nie odpowiedział."
-            : "Ustaw OPENAI_API_KEY w env vars jako fallback, albo poczekaj do północy UTC."
-        }`,
-      );
-    }
+  // Wszystko padło. Czytelny komunikat zależnie od config'u.
+  if (openAiFirst && !hasOpenAi) {
     throw new Error(
-      `Groq nieosiągalny: ${msg.slice(0, 150)}. ${
-        hasOpenAi ? "OpenAI też padł." : "Ustaw OPENAI_API_KEY jako fallback."
+      "LLM_PRIMARY=openai ale OPENAI_API_KEY nie ustawiony. Dodaj klucz w env vars albo zmień LLM_PRIMARY=groq.",
+    );
+  }
+  if (!hasOpenAi && !groqClient) {
+    throw new Error(
+      "Brak skonfigurowanego LLM providera. Ustaw GROQ_API_KEY lub OPENAI_API_KEY w env.",
+    );
+  }
+  // Sprawdź czy główny error to TPD.
+  const primaryErr = openAiFirst ? errors.openai : errors.groqPrimary;
+  if (primaryErr?.includes("429 TPD") || primaryErr?.includes("tokens per day")) {
+    throw new Error(
+      `Wyczerpaliśmy dzienny limit AI. ${
+        hasOpenAi
+          ? "OpenAI też padł."
+          : "Dodaj OPENAI_API_KEY jako fallback albo poczekaj do północy UTC."
       }`,
     );
   }
-
   throw new Error(
-    "Brak skonfigurowanego LLM providera. Ustaw GROQ_API_KEY (rekomendowane) lub OPENAI_API_KEY w .env.",
+    `Wszystkie LLM providery padły. ${Object.entries(errors)
+      .map(([k, v]) => `${k}: ${v.slice(0, 80)}`)
+      .join(" | ")}`,
   );
 }
