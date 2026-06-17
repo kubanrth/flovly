@@ -74,7 +74,7 @@ export function CzesiekThread({
                 handleSubmit();
               }
             }}
-            placeholder="Zapytaj Czesieka…"
+            placeholder="Zapytaj Aterona…"
             rows={1}
             disabled={sending}
             className="max-h-[120px] min-h-[28px] flex-1 resize-none bg-transparent py-1 text-[0.88rem] outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
@@ -105,7 +105,7 @@ function EmptyState({ onPick }: { onPick: (q: string) => void }) {
       </div>
       <div className="space-y-1">
         <h3 className="font-display text-[1.1rem] font-bold leading-tight tracking-[-0.02em] text-foreground">
-          Cześć, jestem Czesiek
+          Cześć, jestem Ateron
         </h3>
         <p className="text-[0.82rem] leading-[1.5] text-muted-foreground">
           Zapytaj o cokolwiek związanego z tym workspace &mdash;<br />

@@ -37,7 +37,7 @@ const POST_SCHEMA = z.object({
 const MAX_HISTORY_MESSAGES = 20;
 const MAX_TOOL_ITERATIONS = 5;
 
-const SYSTEM_PROMPT = `Jesteś Czesiek — wbudowany asystent AI w aplikacji FLOVLY (system zarządzania projektami klasy ClickUp/Linear).
+const SYSTEM_PROMPT = `Jesteś Ateron — wbudowany asystent AI w aplikacji FLOVLY (system zarządzania projektami klasy ClickUp/Linear).
 
 Twoje zadanie: odpowiadać na pytania użytkownika o jego workspace — zadania, tablice, ludzi, aktywność, deadliny. Używasz dostępnych narzędzi (tools) żeby pobrać aktualne dane z bazy. NIE zmyślasz żadnych liczb ani imion.
 
@@ -150,7 +150,7 @@ export async function POST(request: Request) {
           sessionId,
           role: "assistant",
           content:
-            "Przepraszam, nie mogę teraz odpowiedzieć — wystąpił problem z połączeniem do AI. Spróbuj za chwilę.",
+            "Przepraszam, Ateron nie może teraz odpowiedzieć — wystąpił problem z połączeniem do AI. Spróbuj za chwilę.",
         },
       });
       return NextResponse.json(

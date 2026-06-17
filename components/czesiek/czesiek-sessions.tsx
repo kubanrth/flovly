@@ -32,7 +32,7 @@ export function CzesiekSessions({
 
       {sessions.length === 0 ? (
         <p className="mt-2 px-2 text-[0.72rem] leading-[1.45] text-muted-foreground/70">
-          Brak rozmów. Zacznij pytaniem &mdash; Czesiek odpowie.
+          Brak rozmów. Zacznij pytaniem &mdash; Ateron odpowie.
         </p>
       ) : (
         <ul className="flex flex-1 flex-col gap-0.5 overflow-y-auto pt-1">

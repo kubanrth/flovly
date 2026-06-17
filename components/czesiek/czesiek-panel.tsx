@@ -121,7 +121,7 @@ export function CzesiekPanel({
                 id: `err-${Date.now()}`,
                 role: "assistant",
                 content:
-                  "Czesiek nie odpowiada. Spróbuj za chwilę albo skontaktuj się z adminem.",
+                  "Ateron nie odpowiada. Spróbuj za chwilę albo skontaktuj się z adminem.",
                 toolName: null,
                 createdAt: new Date().toISOString(),
               }),
@@ -167,7 +167,7 @@ export function CzesiekPanel({
         data-open={open ? "true" : "false"}
         role="dialog"
         aria-modal="true"
-        aria-label="Czesiek AI"
+        aria-label="Ateron AI"
         className="fixed inset-0 z-50 flex translate-x-full flex-col border-l border-border bg-background opacity-0 transition-[transform,opacity] duration-300 ease-out data-[open=true]:translate-x-0 data-[open=true]:opacity-100 md:left-auto md:w-[720px] md:shadow-2xl"
         style={{ pointerEvents: open ? "auto" : "none" }}
       >
@@ -175,11 +175,11 @@ export function CzesiekPanel({
         <header className="flex items-center justify-between border-b border-border bg-card px-3.5 py-2.5">
           <div className="flex items-center gap-2">
             <span className="grid h-7 w-7 place-items-center rounded-full bg-brand-gradient text-[0.7rem] font-bold text-white shadow-sm">
-              Cz
+              At
             </span>
             <div className="flex flex-col">
               <span className="font-display text-[0.95rem] font-bold leading-none text-foreground">
-                Czesiek AI
+                Ateron AI
               </span>
               <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground/70">
                 Twój asystent workspace'u
