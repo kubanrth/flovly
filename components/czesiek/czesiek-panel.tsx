@@ -118,14 +118,18 @@ export function CzesiekPanel({
           try {
             const errData = (await res.json()) as { message?: string };
             if (typeof errData.message === "string") {
-              if (errData.message.includes("429")) {
-                errDetail = "przekroczyliśmy limit zapytań do AI, poczekaj 60 sekund";
-              } else if (errData.message.includes("timeout")) {
+              const m = errData.message;
+              if (m.includes("TPD") || m.includes("dzienny limit") || m.includes("tokens per day")) {
+                errDetail =
+                  "wyczerpaliśmy dzienny limit AI (reset o północy UTC). Poproś admina o włączenie OpenAI fallback'u";
+              } else if (m.includes("429")) {
+                errDetail = "przekroczyliśmy chwilowy limit zapytań, poczekaj 60 sekund";
+              } else if (m.includes("timeout")) {
                 errDetail = "AI nie odpowiedziało w czasie, spróbuj jeszcze raz";
-              } else if (errData.message.includes("401") || errData.message.includes("403")) {
+              } else if (m.includes("401") || m.includes("403")) {
                 errDetail = "problem z autoryzacją — skontaktuj się z adminem";
               } else {
-                errDetail = `błąd: ${errData.message.slice(0, 100)}`;
+                errDetail = `błąd: ${m.slice(0, 120)}`;
               }
             }
           } catch {
