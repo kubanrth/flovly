@@ -10,6 +10,7 @@ export type AuditObjectType =
   | "Attachment"
   | "Tag"
   | "ProcessCanvas"
+  | "ProcessNode"
   | "SupportTicket"
   | "Contact"
   | "Deal"

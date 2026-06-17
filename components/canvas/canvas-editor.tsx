@@ -108,6 +108,12 @@ export interface EditorInitialNode {
   // Explicit text color override (default = auto contrast).
   textColorHex?: string | null;
   fontSize?: number | null;
+  // F12-K73 TASK_REF-only.
+  taskId?: string | null;
+  taskTitle?: string | null;
+  statusName?: string | null;
+  statusColor?: string | null;
+  flowMark?: "start" | "end" | null;
 }
 
 export interface WorkspaceTaskOption {
@@ -240,6 +246,13 @@ function toRFNode(n: EditorInitialNode, workspaceId: string): RFNode {
         typeof (n as { fontSize?: number | null }).fontSize === "number"
           ? (n as { fontSize: number }).fontSize
           : undefined,
+      // F12-K73 TASK_REF — przekazuje snapshot do shape-node renderera +
+      // flowMark do ring/badge logiki.
+      taskId: n.taskId ?? null,
+      taskTitle: n.taskTitle ?? null,
+      statusName: n.statusName ?? null,
+      statusColor: n.statusColor ?? null,
+      flowMark: n.flowMark ?? null,
     },
     width: n.width,
     height: n.height,
@@ -273,12 +286,25 @@ export function CanvasEditor(props: {
   canCreateTask: boolean;
   workspaceTasks: WorkspaceTaskOption[];
   defaultBoardId: string | null;
+  // F12-K73 Task Line: mapa task'ów dostępnych do drag'a z sidebar'a
+  // (key = taskId). Włącza drop handler na flowWrapper'ze + addTaskRefNode.
+  boardTasks?: Map<string, BoardTaskMeta>;
 }) {
   return (
     <ReactFlowProvider>
       <CanvasEditorInner {...props} />
     </ReactFlowProvider>
   );
+}
+
+// F12-K73: meta wystarczająca do utworzenia TASK_REF node'a bez DB hit'a.
+// Snapshot odświeżany przy server fetchu page'u (gdy task się zmieni).
+export interface BoardTaskMeta {
+  id: string;
+  title: string;
+  statusName: string | null;
+  statusColor: string | null;
+  displayId: number | null;
 }
 
 function CanvasEditorInner({
@@ -291,6 +317,7 @@ function CanvasEditorInner({
   canCreateTask,
   workspaceTasks,
   defaultBoardId,
+  boardTasks,
 }: {
   workspaceId: string;
   canvasId: string;
@@ -301,6 +328,7 @@ function CanvasEditorInner({
   canCreateTask: boolean;
   workspaceTasks: WorkspaceTaskOption[];
   defaultBoardId: string | null;
+  boardTasks?: Map<string, BoardTaskMeta>;
 }) {
   const router = useRouter();
   const reactFlow = useReactFlow();
@@ -598,6 +626,67 @@ function CanvasEditorInner({
       commitNodeToY(rfNode);
     },
     [setNodes, workspaceId, commitNodeToY],
+  );
+
+  // F12-K73 Task Line: tworzy TASK_REF node z metadat'ami task'a w
+  // sprecyzowanej pozycji canvas world coordinates. Wywoływane przez
+  // drop handler na flowWrapper'ze. Zapobiega duplikatom — gdyby user
+  // przeciągnął ten sam task drugi raz na ten canvas, nie tworzymy
+  // duplikatu (zamiast tego select + center existing).
+  const addTaskRefNode = useCallback(
+    (taskId: string, worldX: number, worldY: number) => {
+      if (!boardTasks) return;
+      const task = boardTasks.get(taskId);
+      if (!task) return;
+
+      // Dedup — jeden TASK_REF na task w tym canvasie. Reuse existing.
+      const existing = nodes.find(
+        (n) => n.data.shape === "TASK_REF" && n.data.taskId === taskId,
+      );
+      if (existing) {
+        setNodes((ns) =>
+          ns.map((n) => ({ ...n, selected: n.id === existing.id })),
+        );
+        reactFlow.fitView({
+          nodes: [{ id: existing.id }],
+          padding: 0.5,
+          duration: 300,
+        });
+        return;
+      }
+
+      const defaults = SHAPE_DEFAULTS.TASK_REF;
+      const id = cuidish();
+      // Center na world position drop'u
+      const x = worldX - defaults.width / 2;
+      const y = worldY - defaults.height / 2;
+      const rfNode: RFNode = {
+        id,
+        type: "shape",
+        position: { x, y },
+        data: {
+          shape: "TASK_REF",
+          label: null,
+          colorHex: defaults.color,
+          width: defaults.width,
+          height: defaults.height,
+          linkedTasks: [],
+          workspaceId,
+          taskId: task.id,
+          taskTitle: task.title,
+          statusName: task.statusName,
+          statusColor: task.statusColor,
+          flowMark: null,
+        },
+        width: defaults.width,
+        height: defaults.height,
+        zIndex: 0,
+        selected: true,
+      };
+      setNodes((ns) => [...ns.map((n) => ({ ...n, selected: false })), rfNode]);
+      commitNodeToY(rfNode);
+    },
+    [boardTasks, nodes, setNodes, workspaceId, commitNodeToY, reactFlow],
   );
 
   // 3-step upload: requestUpload (signed URL) → PUT → create IMAGE node with imagePath = storageKey.
@@ -1122,7 +1211,30 @@ function CanvasEditorInner({
   /* eslint-enable react-hooks/preserve-manual-memoization */
 
   return (
-    <div className="relative h-full w-full" ref={flowWrapperRef}>
+    <div
+      className="relative h-full w-full"
+      ref={flowWrapperRef}
+      // F12-K73 Task Line drop handler — zewnętrzne taski dropowane z
+      // TaskLineSidebar. dataTransfer key dedykowany (nie kolizja z text/plain).
+      onDragOver={(e) => {
+        if (!boardTasks) return;
+        if (e.dataTransfer.types.includes("application/x-flovly-task-id")) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "copy";
+        }
+      }}
+      onDrop={(e) => {
+        if (!boardTasks) return;
+        const id = e.dataTransfer.getData("application/x-flovly-task-id");
+        if (!id) return;
+        e.preventDefault();
+        const world = reactFlow.screenToFlowPosition({
+          x: e.clientX,
+          y: e.clientY,
+        });
+        addTaskRefNode(id, world.x, world.y);
+      }}
+    >
       {/* F12-K72 v3: Mural-style mobile UI — pionowy floating toolbar po
           lewej + fullscreen button bottom-right. Klient: dostał screenshot
           Mural mobile i chce 1:1 — toolbar po lewej z kluczowymi narzędziami,

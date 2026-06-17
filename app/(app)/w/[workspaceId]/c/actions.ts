@@ -33,6 +33,13 @@ function nodeMeta(n: NodeSnapshotInput): Prisma.InputJsonValue | typeof Prisma.D
   if (n.locked) meta.locked = true;
   if (n.imagePath) meta.imagePath = n.imagePath;
   if (n.textColorHex) meta.textColorHex = n.textColorHex;
+  // F12-K73 TASK_REF fields — taskId niezmienny, snapshot odświeżany przez
+  // server fetch, flowMark toggluje user przez setFlowMarkAction.
+  if (n.taskId) meta.taskId = n.taskId;
+  if (n.taskTitle) meta.taskTitle = n.taskTitle;
+  if (n.statusName) meta.statusName = n.statusName;
+  if (n.statusColor) meta.statusColor = n.statusColor;
+  if (n.flowMark) meta.flowMark = n.flowMark;
   if (Object.keys(meta).length === 0) return Prisma.DbNull;
   return meta as Prisma.InputJsonValue;
 }
@@ -392,4 +399,81 @@ export async function getCanvasImageDownloadUrl(
     console.warn("[canvas-image] download URL failed", err);
     return null;
   }
+}
+
+// F12-K73: oznaczanie node'a TASK_REF jako początek/koniec workflow'u.
+// Patches ProcessNode.dataJson.flowMark — Yjs collab po stronie klienta
+// dba o sync ze stanem canvas'u. Brak Yjs origin (LOCAL_ORIGIN) bo
+// action jest standalone — klient sam aktualizuje canvas po sukcesie.
+const setFlowMarkSchema = z.object({
+  canvasId: z.string().min(1),
+  nodeId: z.string().min(1),
+  // null = wyczyść mark (zwykłe zadanie).
+  mark: z.enum(["start", "end"]).nullable(),
+});
+
+export type SetFlowMarkResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+export async function setFlowMarkAction(
+  input: z.infer<typeof setFlowMarkSchema>,
+): Promise<SetFlowMarkResult> {
+  const parsed = setFlowMarkSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const canvas = await db.processCanvas.findUnique({
+    where: { id: parsed.data.canvasId },
+    select: { id: true, workspaceId: true, deletedAt: true, kind: true },
+  });
+  if (!canvas || canvas.deletedAt) {
+    return { ok: false, error: "Canvas nie istnieje." };
+  }
+
+  const ctx = await requireWorkspaceAction(canvas.workspaceId, "canvas.edit");
+
+  const node = await db.processNode.findUnique({
+    where: { id: parsed.data.nodeId },
+    select: { id: true, canvasId: true, shape: true, dataJson: true },
+  });
+  if (!node || node.canvasId !== canvas.id) {
+    return { ok: false, error: "Node nie istnieje." };
+  }
+  if (node.shape !== "TASK_REF") {
+    return { ok: false, error: "Mark dostępny tylko dla węzłów Task Ref." };
+  }
+
+  const existingMeta =
+    node.dataJson && typeof node.dataJson === "object" && !Array.isArray(node.dataJson)
+      ? (node.dataJson as Record<string, unknown>)
+      : {};
+  const nextMeta: Record<string, unknown> = { ...existingMeta };
+  if (parsed.data.mark === null) {
+    delete nextMeta.flowMark;
+  } else {
+    nextMeta.flowMark = parsed.data.mark;
+  }
+
+  await db.processNode.update({
+    where: { id: node.id },
+    data: {
+      dataJson:
+        Object.keys(nextMeta).length === 0
+          ? Prisma.DbNull
+          : (nextMeta as Prisma.InputJsonValue),
+    },
+  });
+
+  await writeAudit({
+    workspaceId: canvas.workspaceId,
+    objectType: "ProcessNode",
+    objectId: node.id,
+    actorId: ctx.userId,
+    action: "canvas.node.flowMark",
+    diff: { mark: parsed.data.mark, canvasKind: canvas.kind },
+  });
+
+  return { ok: true };
 }
