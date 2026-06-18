@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<style>
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  @page { size: 1592px 3000px; margin: 0; }
+  @media print {
+    html, body { width: 1592px; }
+    *, *::before, *::after {
+      animation-delay: -99s !important; animation-duration: .001s !important;
+      animation-iteration-count: 1 !important; animation-fill-mode: both !important;
+      animation-play-state: running !important; transition-duration: 0s !important;
+    }
+  }
+</style>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  @keyframes fl-drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(18px,-22px) scale(1.08); } }
+  @keyframes fl-drift2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-20px,16px) scale(1.1); } }
+  @keyframes fl-pulse { 0% { transform: scale(1); opacity: .55; } 70% { transform: scale(2.4); opacity: 0; } 100% { opacity: 0; } }
+</style>
+</helmet>
+
+<div style="--brand-a: {{ brandA }}; --brand-b: {{ brandB }}; --accent: {{ accent }}; width: max-content; min-width: 100%; min-height: 100vh; box-sizing: border-box; padding: 56px 48px 96px; background: #ECE8F4; font-family: 'Onest', system-ui, sans-serif; position: relative; overflow: hidden;">
+
+  <div style="position: absolute; top: -180px; left: -120px; width: 720px; height: 720px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.34), rgba(122,51,236,0) 66%); filter: blur(50px); animation: fl-drift 22s ease-in-out infinite; pointer-events: none;"></div>
+  <div style="position: absolute; top: 320px; right: -160px; width: 760px; height: 760px; border-radius: 50%; background: radial-gradient(circle, rgba(225,49,143,.26), rgba(225,49,143,0) 66%); filter: blur(60px); animation: fl-drift2 26s ease-in-out infinite; pointer-events: none;"></div>
+  <div style="position: absolute; bottom: 200px; left: 40%; width: 620px; height: 620px; border-radius: 50%; background: radial-gradient(circle, rgba(52,190,248,.18), rgba(52,190,248,0) 66%); filter: blur(70px); pointer-events: none;"></div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 22px; width: 1496px; margin: 0 auto;">
+
+    <!-- ===== COVER ===== -->
+    <section style="position: relative; overflow: hidden; background: linear-gradient(150deg, #1A1226 0%, #241334 48%, #2E1530 100%); border-radius: 30px; padding: 52px 56px; box-shadow: 0 30px 80px -30px rgba(46,19,52,.6), inset 0 1px 0 rgba(255,255,255,.06);">
+      <div style="position: absolute; top: -120px; right: -60px; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(circle, rgba(225,49,143,.5), rgba(122,51,236,0) 65%); filter: blur(40px); pointer-events: none;"></div>
+      <div style="position: absolute; bottom: -160px; left: 20%; width: 460px; height: 460px; border-radius: 50%; background: radial-gradient(circle, rgba(52,190,248,.34), rgba(52,190,248,0) 65%); filter: blur(50px); pointer-events: none;"></div>
+      <div style="position: relative; display: flex; justify-content: space-between; align-items: flex-end; gap: 40px;">
+        <div style="max-width: 760px;">
+          <div style="display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.78);">
+            <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--accent, #34BEF8); box-shadow: 0 0 10px var(--accent, #34BEF8);"></span>
+            Brand System v2 · 2026
+          </div>
+          <div style="display: flex; align-items: center; gap: 22px; margin-top: 28px;">
+            <div style="position: relative; width: 76px; height: 76px; border-radius: 22px; background: linear-gradient(140deg, var(--brand-a, #7A33EC), var(--brand-b, #E1318F)); display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 30px -8px rgba(225,49,143,.55), inset 0 1px 0 rgba(255,255,255,.4);">
+              <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6.5 12 16l7-9.5" opacity="0.45"></path><path d="M5 11 12 20.5l7-9.5"></path></svg>
+            </div>
+            <div>
+              <div style="font-size: 60px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; display: flex;">
+                <span style="color: #fff;">FLO</span>
+                <span style="background: linear-gradient(135deg, var(--brand-a, #7A33EC), var(--brand-b, #E1318F)); -webkit-background-clip: text; background-clip: text; color: transparent;">V</span>
+                <span style="color: #fff;">LY</span>
+              </div>
+              <div style="margin-top: 6px; font-size: 17px; color: rgba(255,255,255,.6); letter-spacing: .01em;">Workflow that flows.</div>
+            </div>
+          </div>
+          <p style="margin: 28px 0 0; font-size: 17px; line-height: 1.6; color: rgba(255,255,255,.66); max-width: 620px;">Premium liquid-glass kierunek dla systemu zarządzania projektami. Warstwowa głębia, frosted surfaces i brand aura — narzędzie z 2026, nie z 2022.</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.4); margin-bottom: 2px;">Tagline — 3 opcje</div>
+          <div style="padding: 12px 16px; border-radius: 14px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); color: #fff; font-size: 15px; font-weight: 600;">Workflow that flows.</div>
+          <div style="padding: 12px 16px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); color: rgba(255,255,255,.78); font-size: 15px;">Flow into focus.</div>
+          <div style="padding: 12px 16px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); color: rgba(255,255,255,.78); font-size: 15px;">Każde zadanie, w rytmie.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== LOGO SYSTEM ===== -->
+    <section style="background: #fff; border: 1px solid #ECE9F1; border-radius: 26px; padding: 34px 36px; box-shadow: 0 1px 2px rgba(20,17,27,.04), 0 18px 40px -24px rgba(20,17,27,.16);">
+      <span style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #847B96; margin-bottom: 22px;">01 — Logo &amp; Mark</span>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;">
+        <div style="grid-column: span 2; background: #FBFAFC; border: 1px solid #ECE9F1; border-radius: 18px; padding: 30px; display: flex; align-items: center; gap: 18px;">
+          <div style="width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(140deg, var(--brand-a, #7A33EC), var(--brand-b, #E1318F)); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 8px 20px -6px rgba(225,49,143,.45), inset 0 1px 0 rgba(255,255,255,.4);">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6.5 12 16l7-9.5" opacity="0.45"></path><path d="M5 11 12 20.5l7-9.5"></path></svg>
+          </div>
+          <div style="font-size: 38px; font-weight: 800; letter-spacing: -0.04em; display: flex; color: #14111B;">FLO<span style="background: linear-gradient(135deg, var(--brand-a, #7A33EC), var(--brand-b, #E1318F)); -webkit-background-clip: text; background-clip: text; color: transparent;">V</span>LY</div>
+        </div>
+        <div style="background: #14111B; border-radius: 18px; padding: 30px; display: flex; flex-direction: column; justify-content: center; gap: 14px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.4);">Monochrome — dark</span>
+          <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">FLOVLY</div>
+        </div>
+        <div style="background: #FBFAFC; border: 1px solid #ECE9F1; border-radius: 18px; padding: 30px; display: flex; flex-direction: column; justify-content: center; gap: 14px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #A9A1B8;">Monochrome — light</span>
+          <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #14111B;">FLOVLY</div>
+        </div>
+        <div style="background: #FBFAFC; border: 1px solid #ECE9F1; border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 16px; align-items: center; justify-content: center;">
+          <span style="align-self: flex-start; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #A9A1B8;">App icon — 1024 / 16</span>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 60px; height: 60px; border-radius: 16px; background: linear-gradient(140deg, var(--brand-a, #7A33EC), var(--brand-b, #E1318F)); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 18px -6px rgba(225,49,143,.5), inset 0 1px 0 rgba(255,255,255,.4);"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6.5 12 16l7-9.5" opacity="0.45"></path><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+            <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(140deg, var(--brand-a, #7A33EC), var(--brand-b, #E1318F)); display: flex; align-items: center; justify-content: center; box-shadow: inset 0 1px 0 rgba(255,255,255,.4);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+            <div style="width: 16px; height: 16px; border-radius: 5px; background: linear-gradient(140deg, var(--brand-a, #7A33EC), var(--brand-b, #E1318F));"></div>
+          </div>
+        </div>
+        <div style="grid-column: span 2; background: linear-gradient(135deg, #FBFAFC, #F3EFFA); border: 1px solid #ECE9F1; border-radius: 18px; padding: 30px; display: flex; align-items: center; gap: 18px;">
+          <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(140deg, var(--brand-a, #7A33EC), var(--brand-b, #E1318F)); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 8px 18px -6px rgba(225,49,143,.4);"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+          <div style="height: 40px; width: 1px; background: #DEDAE6;"></div>
+          <div>
+            <div style="font-size: 24px; font-weight: 800; letter-spacing: -0.03em; color: #14111B; display: flex;">FLO<span style="background: linear-gradient(135deg, var(--brand-a, #7A33EC), var(--brand-b, #E1318F)); -webkit-background-clip: text; background-clip: text; color: transparent;">V</span>LY</div>
+            <div style="font-size: 13px; color: #847B96; margin-top: 2px;">Workflow that flows — pełna sygnatura</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== COLOR ===== -->
+    <section style="background: #fff; border: 1px solid #ECE9F1; border-radius: 26px; padding: 34px 36px; box-shadow: 0 1px 2px rgba(20,17,27,.04), 0 18px 40px -24px rgba(20,17,27,.16);">
+      <span style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #847B96; margin-bottom: 22px;">02 — Color Tokens</span>
+      <div style="display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; margin-bottom: 18px;">
+        <div style="position: relative; overflow: hidden; border-radius: 18px; padding: 26px; background: linear-gradient(120deg, var(--brand-a, #7A33EC), var(--brand-b, #E1318F)); box-shadow: 0 16px 36px -16px rgba(122,51,236,.5);">
+          <div style="font-size: 13px; font-weight: 600; color: rgba(255,255,255,.85);">Brand Primary — gradient</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: rgba(255,255,255,.7); margin-top: 4px;">linear 135° · #7A33EC → #E1318F</div>
+          <div style="display: flex; gap: 8px; margin-top: 26px;">
+            <sc-for list="{{ brandRamp }}" as="sw" hint-placeholder-count="5">
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                <div style="height: 38px; border-radius: 10px; background: {{ sw.hex }}; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);"></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: rgba(255,255,255,.78); text-align: center;">{{ sw.hex }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="border-radius: 18px; padding: 26px; background: #FBFAFC; border: 1px solid #ECE9F1;">
+          <div style="font-size: 13px; font-weight: 600; color: #221E2A;">Accent — Sky (sparkling highlight)</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #847B96; margin-top: 4px;">focus rings · badges · active</div>
+          <div style="display: flex; gap: 8px; margin-top: 26px;">
+            <sc-for list="{{ accentRamp }}" as="sw" hint-placeholder-count="3">
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                <div style="height: 38px; border-radius: 10px; background: {{ sw.hex }};"></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #847B96; text-align: center;">{{ sw.hex }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; margin-bottom: 6px;">
+        <sc-for list="{{ neutrals }}" as="sw" hint-placeholder-count="12">
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="height: 56px; border-radius: 10px; background: {{ sw.hex }}; border: 1px solid rgba(20,17,27,.06);"></div>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #847B96; text-align: center;">{{ sw.s }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A9A1B8; margin: 4px 0 22px;">Neutral — warm gray, 12 step</div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+        <sc-for list="{{ semantic }}" as="sw" hint-placeholder-count="4">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: #FBFAFC; border: 1px solid #ECE9F1;">
+            <div style="width: 30px; height: 30px; border-radius: 9px; background: {{ sw.hex }}; flex: none;"></div>
+            <div>
+              <div style="font-size: 13px; font-weight: 600; color: #221E2A;">{{ sw.n }}</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #847B96;">{{ sw.hex }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ===== TYPE + MOTION ===== -->
+    <section style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 22px;">
+      <div style="background: #fff; border: 1px solid #ECE9F1; border-radius: 26px; padding: 34px 36px; box-shadow: 0 1px 2px rgba(20,17,27,.04), 0 18px 40px -24px rgba(20,17,27,.16);">
+        <span style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #847B96; margin-bottom: 6px;">03 — Typography</span>
+        <div style="font-size: 14px; color: #655C77; margin-bottom: 22px;">Onest — display &amp; body · JetBrains Mono — code &amp; ID</div>
+        <div style="display: flex; flex-direction: column;">
+          <sc-for list="{{ typeScale }}" as="t" hint-placeholder-count="11">
+            <div style="display: flex; align-items: baseline; gap: 20px; padding: 11px 0; border-bottom: 1px solid #F5F3F8;">
+              <div style="width: 124px; flex: none;">
+                <div style="font-size: 13px; font-weight: 600; color: #221E2A;">{{ t.n }}</div>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #A9A1B8;">{{ t.px }}/{{ t.lh }} · {{ t.tr }}</div>
+              </div>
+              <div style="flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: {{ t.px }}px; font-weight: {{ t.w }}; letter-spacing: {{ t.tr }}; line-height: 1.1; color: #14111B;">Flovly płynie</div>
+            </div>
+          </sc-for>
+          <div style="display: flex; align-items: baseline; gap: 20px; padding: 11px 0;">
+            <div style="width: 124px; flex: none;">
+              <div style="font-size: 13px; font-weight: 600; color: #221E2A;">Mono</div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #A9A1B8;">13/1.4 · code &amp; ID</div>
+            </div>
+            <div style="flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #6A24DC;">FLV-2048 · #task_038</div>
+          </div>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #ECE9F1; border-radius: 26px; padding: 34px 36px; box-shadow: 0 1px 2px rgba(20,17,27,.04), 0 18px 40px -24px rgba(20,17,27,.16);">
+        <span style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #847B96; margin-bottom: 6px;">04 — Motion</span>
+        <div style="font-size: 14px; color: #655C77; margin-bottom: 20px;">Spring easing · 200–500ms</div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <sc-for list="{{ motion }}" as="m" hint-placeholder-count="4">
+            <div style="padding: 14px 16px; border-radius: 14px; background: #FBFAFC; border: 1px solid #ECE9F1;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="font-size: 14px; font-weight: 700; color: #221E2A;">{{ m.n }}</div>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #6A24DC;">{{ m.d }}</div>
+              </div>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #A9A1B8; margin-top: 4px;">{{ m.e }}</div>
+              <div style="font-size: 12.5px; color: #655C77; margin-top: 4px;">{{ m.u }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== HERO: WORKSPACE OVERVIEW (light + dark) ===== -->
+    <div style="margin-top: 14px; margin-bottom: 4px;">
+      <span style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #655C77;">05 — Hero · Workspace Overview</span>
+      <div style="font-size: 14px; color: #847B96; margin-top: 4px;">1440 desktop · light (primary canvas) &amp; dark (dev) parity</div>
+    </div>
+    <div style="display: flex; gap: 26px; align-items: flex-start;">
+
+      <!-- LIGHT FRAME -->
+      <div style="flex: none; width: 735px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #847B96; margin-bottom: 10px;">Light</div>
+        <div style="position: relative; overflow: hidden; border-radius: 26px; background: #ECE7F4; box-shadow: 0 30px 70px -30px rgba(46,19,52,.4), 0 2px 6px rgba(20,17,27,.06); border: 1px solid rgba(255,255,255,.6);">
+          <div style="position: absolute; top: -120px; left: -80px; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.4), transparent 65%); filter: blur(30px); pointer-events: none;"></div>
+          <div style="position: absolute; bottom: -100px; right: -60px; width: 380px; height: 380px; border-radius: 50%; background: radial-gradient(circle, rgba(225,49,143,.3), transparent 65%); filter: blur(36px); pointer-events: none;"></div>
+          <div style="position: relative; display: flex; height: 560px;">
+
+            <aside style="flex: none; width: 210px; padding: 18px 14px; display: flex; flex-direction: column; gap: 4px; background: rgba(255,255,255,.5); backdrop-filter: blur(30px) saturate(160%); -webkit-backdrop-filter: blur(30px) saturate(160%); border-right: 1px solid rgba(255,255,255,.6);">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 6px 8px 16px;">
+                <div style="width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(140deg, var(--brand-a, #7A33EC), var(--brand-b, #E1318F)); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px -3px rgba(225,49,143,.5);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+                <div style="font-size: 18px; font-weight: 800; letter-spacing: -0.03em; color: #14111B;">FLOVLY</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 12px; white-space: nowrap; background: linear-gradient(135deg, rgba(122,51,236,.12), rgba(225,49,143,.1)); box-shadow: inset 0 0 0 1px rgba(122,51,236,.18); color: #5A1FB8; font-size: 13.5px; font-weight: 600;">{{ navActive.icon }}<span>{{ navActive.label }}</span></div>
+              <nav style="display: flex; flex-direction: column; gap: 2px; color: #655C77;">
+                <sc-for list="{{ navRest }}" as="n" hint-placeholder-count="6">
+                  <div style="display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 12px; white-space: nowrap; font-size: 13.5px; font-weight: 500; cursor: pointer; transition: background .2s;" style-hover="background: rgba(122,51,236,.07);">{{ n.icon }}<span>{{ n.label }}</span></div>
+                </sc-for>
+              </nav>
+              <div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 9px; border-radius: 13px; background: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.7);">
+                <div style="width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(140deg, #34BEF8, #7A33EC); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700;">AD</div>
+                <div style="min-width: 0;"><div style="font-size: 12.5px; font-weight: 600; color: #221E2A; white-space: nowrap;">Adam D.</div><div style="font-size: 11px; color: #847B96; white-space: nowrap;">Owner</div></div>
+              </div>
+            </aside>
+
+            <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+              <header style="display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: rgba(255,255,255,.45); backdrop-filter: blur(30px) saturate(160%); -webkit-backdrop-filter: blur(30px) saturate(160%); border-bottom: 1px solid rgba(255,255,255,.6);">
+                <div>
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #A9A1B8;">Workspace</div>
+                  <div style="font-size: 17px; font-weight: 700; letter-spacing: -0.01em; color: #14111B;">Studio Nebula</div>
+                </div>
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 11px; background: rgba(255,255,255,.6); border: 1px solid rgba(255,255,255,.8); color: #847B96; font-size: 13px; width: 168px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3-3"></path></svg>Szukaj…
+                </div>
+                <div style="display: flex; margin-left: 2px;">
+                  <div style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; background: linear-gradient(140deg,#7A33EC,#E1318F);"></div>
+                  <div style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; margin-left: -8px; background: linear-gradient(140deg,#34BEF8,#10B981);"></div>
+                  <div style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; margin-left: -8px; background: linear-gradient(140deg,#F59E0B,#E1318F);"></div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 7px; padding: 9px 14px; border-radius: 12px; background: linear-gradient(135deg, var(--brand-a, #7A33EC), var(--brand-b, #E1318F)); color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 6px 16px -6px rgba(122,51,236,.6);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Tablica</div>
+              </header>
+
+              <div style="flex: 1; overflow: hidden; padding: 22px 20px;">
+                <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px;">
+                  <div style="font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: #14111B;">Tablice</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #847B96;">4 aktywne</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                  <sc-for list="{{ boards }}" as="b" hint-placeholder-count="4">
+                    <div style="position: relative; overflow: hidden; padding: 16px; border-radius: 18px; background: rgba(255,255,255,.6); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); border: 1px solid rgba(255,255,255,.8); box-shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 14px 30px -18px rgba(76,29,149,.3); cursor: pointer; transition: transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s;" style-hover="transform: translateY(-3px); box-shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 22px 44px -18px rgba(76,29,149,.42);">
+                      <div style="position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: {{ b.color }};"></div>
+                      <div style="display: flex; align-items: flex-start; gap: 11px;">
+                        <div style="width: 38px; height: 38px; border-radius: 11px; background: {{ b.color }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700; flex: none; box-shadow: 0 6px 14px -5px {{ b.color }};">{{ b.init }}</div>
+                        <div style="min-width: 0; flex: 1;">
+                          <div style="font-size: 14.5px; font-weight: 700; color: #14111B; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ b.name }}</div>
+                          <div style="font-size: 12px; color: #847B96; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ b.desc }}</div>
+                        </div>
+                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: #655C77; padding: 3px 8px; border-radius: 8px; background: rgba(122,51,236,.08); flex: none;">{{ b.tasks }}</div>
+                      </div>
+                      <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 14px;">
+                        <sc-for list="{{ viewPills }}" as="v" hint-placeholder-count="5">
+                          <span style="padding: 4px 9px; border-radius: 8px; background: rgba(255,255,255,.7); border: 1px solid rgba(20,17,27,.06); font-size: 11px; font-weight: 500; color: #4B4359;">{{ v }}</span>
+                        </sc-for>
+                        <span style="padding: 4px 9px; border-radius: 8px; background: rgba(122,51,236,.1); font-size: 11px; font-weight: 600; color: #6A24DC;">+2</span>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- AI orb -->
+          <div style="position: absolute; right: 18px; bottom: 18px; width: 48px; height: 48px; border-radius: 16px; background: linear-gradient(140deg, #34BEF8, #7A33EC); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; font-weight: 700; box-shadow: 0 10px 24px -8px rgba(122,51,236,.6);"><span style="position: absolute; inset: 0; border-radius: 16px; border: 2px solid #34BEF8; animation: fl-pulse 2.6s ease-out infinite;"></span>At</div>
+        </div>
+      </div>
+
+      <!-- DARK FRAME -->
+      <div style="flex: none; width: 735px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #847B96; margin-bottom: 10px;">Dark</div>
+        <div style="position: relative; overflow: hidden; border-radius: 26px; background: #0C0A14; box-shadow: 0 30px 70px -30px rgba(0,0,0,.7), 0 2px 6px rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.08);">
+          <div style="position: absolute; top: -130px; left: -70px; width: 440px; height: 440px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.55), transparent 64%); filter: blur(34px); pointer-events: none;"></div>
+          <div style="position: absolute; bottom: -110px; right: -50px; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(225,49,143,.42), transparent 64%); filter: blur(40px); pointer-events: none;"></div>
+          <div style="position: absolute; top: 200px; right: 120px; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(52,190,248,.28), transparent 64%); filter: blur(44px); pointer-events: none;"></div>
+          <div style="position: relative; display: flex; height: 560px;">
+
+            <aside style="flex: none; width: 210px; padding: 18px 14px; display: flex; flex-direction: column; gap: 4px; background: rgba(255,255,255,.05); backdrop-filter: blur(30px) saturate(160%); -webkit-backdrop-filter: blur(30px) saturate(160%); border-right: 1px solid rgba(255,255,255,.08);">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 6px 8px 16px;">
+                <div style="width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(140deg, var(--brand-a, #7A33EC), var(--brand-b, #E1318F)); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px -3px rgba(225,49,143,.7);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+                <div style="font-size: 18px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">FLOVLY</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 12px; white-space: nowrap; background: linear-gradient(135deg, rgba(155,107,242,.28), rgba(225,49,143,.2)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); color: #fff; font-size: 13.5px; font-weight: 600;">{{ navActive.icon }}<span>{{ navActive.label }}</span></div>
+              <nav style="display: flex; flex-direction: column; gap: 2px; color: #A9A1B8;">
+                <sc-for list="{{ navRest }}" as="n" hint-placeholder-count="6">
+                  <div style="display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 12px; white-space: nowrap; font-size: 13.5px; font-weight: 500; cursor: pointer; transition: background .2s;" style-hover="background: rgba(255,255,255,.07); color: #fff;">{{ n.icon }}<span>{{ n.label }}</span></div>
+                </sc-for>
+              </nav>
+              <div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 9px; border-radius: 13px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);">
+                <div style="width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(140deg, #34BEF8, #7A33EC); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700;">AD</div>
+                <div style="min-width: 0;"><div style="font-size: 12.5px; font-weight: 600; color: #fff; white-space: nowrap;">Adam D.</div><div style="font-size: 11px; color: #A9A1B8; white-space: nowrap;">Owner</div></div>
+              </div>
+            </aside>
+
+            <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+              <header style="display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: rgba(255,255,255,.04); backdrop-filter: blur(30px) saturate(160%); -webkit-backdrop-filter: blur(30px) saturate(160%); border-bottom: 1px solid rgba(255,255,255,.08);">
+                <div>
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #6B6478;">Workspace</div>
+                  <div style="font-size: 17px; font-weight: 700; letter-spacing: -0.01em; color: #fff;">Studio Nebula</div>
+                </div>
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 11px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); color: #8B8398; font-size: 13px; width: 168px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3-3"></path></svg>Szukaj…
+                </div>
+                <div style="display: flex; margin-left: 2px;">
+                  <div style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid #15121F; background: linear-gradient(140deg,#7A33EC,#E1318F);"></div>
+                  <div style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid #15121F; margin-left: -8px; background: linear-gradient(140deg,#34BEF8,#10B981);"></div>
+                  <div style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid #15121F; margin-left: -8px; background: linear-gradient(140deg,#F59E0B,#E1318F);"></div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 7px; padding: 9px 14px; border-radius: 12px; background: linear-gradient(135deg, var(--brand-a, #7A33EC), var(--brand-b, #E1318F)); color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 6px 16px -6px rgba(122,51,236,.7);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Tablica</div>
+              </header>
+
+              <div style="flex: 1; overflow: hidden; padding: 22px 20px;">
+                <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px;">
+                  <div style="font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Tablice</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #8B8398;">4 aktywne</div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                  <sc-for list="{{ boards }}" as="b" hint-placeholder-count="4">
+                    <div style="position: relative; overflow: hidden; padding: 16px; border-radius: 18px; background: rgba(255,255,255,.06); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 1px 0 rgba(255,255,255,.08) inset, 0 14px 30px -18px rgba(0,0,0,.6); cursor: pointer; transition: transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s;" style-hover="transform: translateY(-3px); box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 22px 44px -16px rgba(122,51,236,.5);">
+                      <div style="position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: {{ b.color }};"></div>
+                      <div style="display: flex; align-items: flex-start; gap: 11px;">
+                        <div style="width: 38px; height: 38px; border-radius: 11px; background: {{ b.color }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700; flex: none; box-shadow: 0 6px 16px -5px {{ b.color }};">{{ b.init }}</div>
+                        <div style="min-width: 0; flex: 1;">
+                          <div style="font-size: 14.5px; font-weight: 700; color: #fff; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ b.name }}</div>
+                          <div style="font-size: 12px; color: #8B8398; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ b.desc }}</div>
+                        </div>
+                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: #C9C3D4; padding: 3px 8px; border-radius: 8px; background: rgba(255,255,255,.08); flex: none;">{{ b.tasks }}</div>
+                      </div>
+                      <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 14px;">
+                        <sc-for list="{{ viewPills }}" as="v" hint-placeholder-count="5">
+                          <span style="padding: 4px 9px; border-radius: 8px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.08); font-size: 11px; font-weight: 500; color: #C9C3D4;">{{ v }}</span>
+                        </sc-for>
+                        <span style="padding: 4px 9px; border-radius: 8px; background: rgba(155,107,242,.25); font-size: 11px; font-weight: 600; color: #C9B6F7;">+2</span>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="position: absolute; right: 18px; bottom: 18px; width: 48px; height: 48px; border-radius: 16px; background: linear-gradient(140deg, #34BEF8, #7A33EC); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; font-weight: 700; box-shadow: 0 10px 28px -6px rgba(122,51,236,.8);"><span style="position: absolute; inset: 0; border-radius: 16px; border: 2px solid #34BEF8; animation: fl-pulse 2.6s ease-out infinite;"></span>At</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1600, &quot;height&quot;: 1000}, &quot;brandStart&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#7A33EC&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;brandEnd&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#E1318F&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;accent&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#34BEF8&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  ic(...ds) {
+    return React.createElement('svg', { width: 19, height: 19, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.75, strokeLinecap: 'round', strokeLinejoin: 'round' }, ds.map((d, i) => React.createElement('path', { key: i, d })));
+  }
+  renderVals() {
+    const p = this.props || {};
+    const brandA = p.brandStart || '#7A33EC';
+    const brandB = p.brandEnd || '#E1318F';
+    const accent = p.accent || '#34BEF8';
+    const ic = this.ic.bind(this);
+    return {
+      brandA, brandB, accent,
+      navActive: { label: 'Tablice', icon: ic('M4 4h6v6H4z', 'M14 4h6v6h-6z', 'M14 14h6v6h-6z', 'M4 14h6v6H4z') },
+      navRest: [
+        { label: 'Moje zadania', icon: ic('M22 11.08V12a10 10 0 1 1-5.93-9.14', 'M22 4 12 14.01l-3-3') },
+        { label: 'TO DO', icon: ic('M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01') },
+        { label: 'Wiki', icon: ic('M12 7v14', 'M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z') },
+        { label: 'Kontakty', icon: ic('M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2', 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8', 'M22 21v-2a4 4 0 0 0-3-3.87', 'M16 3.13a4 4 0 0 1 0 7.75') },
+        { label: 'Deale', icon: ic('M22 7 13.5 15.5l-5-5L2 17', 'M16 7h6v6') },
+        { label: 'Kontrol panel', icon: ic('M12 14l4-4', 'M3.34 19a10 10 0 1 1 17.32 0') }
+      ],
+      boards: [
+        { name: 'Redesign Aplikacji', desc: 'Liquid glass refresh · H2', tasks: '58', color: '#7A33EC', init: 'RA' },
+        { name: 'Marketing Q3', desc: 'Kampanie, content, social', tasks: '34', color: '#34BEF8', init: 'MQ' },
+        { name: 'Onboarding DANIELOS', desc: 'Wdrożenie klienta', tasks: '21', color: '#10B981', init: 'OD' },
+        { name: 'Backlog Produktu', desc: 'Pomysły i research', tasks: '73', color: '#F59E0B', init: 'BP' }
+      ],
+      viewPills: ['Tabela', 'Kanban', 'Roadmapa', 'Gantt', 'Kalendarz'],
+      neutrals: [
+        { s: '0', hex: '#FBFAFC' }, { s: '50', hex: '#F5F3F8' }, { s: '100', hex: '#ECE9F1' },
+        { s: '200', hex: '#DEDAE6' }, { s: '300', hex: '#C9C3D4' }, { s: '400', hex: '#A9A1B8' },
+        { s: '500', hex: '#847B96' }, { s: '600', hex: '#655C77' }, { s: '700', hex: '#4B4359' },
+        { s: '800', hex: '#352F40' }, { s: '900', hex: '#221E2A' }, { s: '950', hex: '#14111B' }
+      ],
+      brandRamp: [
+        { n: 'Violet 400', hex: '#9B6BF2' }, { n: 'Violet 500', hex: '#7A33EC' }, { n: 'Violet 600', hex: '#6A24DC' },
+        { n: 'Magenta 500', hex: '#E1318F' }, { n: 'Magenta 600', hex: '#C9237B' }
+      ],
+      accentRamp: [
+        { n: 'Sky 400', hex: '#5BCBFA' }, { n: 'Sky 500', hex: '#34BEF8' }, { n: 'Sky 600', hex: '#14A6E4' }
+      ],
+      semantic: [
+        { n: 'Success', hex: '#10B981' }, { n: 'Warning', hex: '#F59E0B' }, { n: 'Danger', hex: '#F43F5E' }, { n: 'Info', hex: '#0EA5E9' }
+      ],
+      typeScale: [
+        { n: 'Display XL', px: '64', w: '800', tr: '-0.03em', lh: '1.0' },
+        { n: 'Display', px: '48', w: '800', tr: '-0.025em', lh: '1.05' },
+        { n: 'Heading 1', px: '36', w: '700', tr: '-0.02em', lh: '1.1' },
+        { n: 'Heading 2', px: '28', w: '700', tr: '-0.015em', lh: '1.2' },
+        { n: 'Heading 3', px: '22', w: '600', tr: '-0.01em', lh: '1.3' },
+        { n: 'Heading 4', px: '18', w: '600', tr: '-0.005em', lh: '1.35' },
+        { n: 'Body Large', px: '17', w: '400', tr: '0', lh: '1.5' },
+        { n: 'Body', px: '15', w: '400', tr: '0', lh: '1.55' },
+        { n: 'Body Small', px: '14', w: '400', tr: '0', lh: '1.5' },
+        { n: 'Caption', px: '13', w: '500', tr: '0.005em', lh: '1.4' },
+        { n: 'Micro / Label', px: '12', w: '600', tr: '0.02em', lh: '1.35' }
+      ],
+      motion: [
+        { n: 'Instant', d: '100ms', e: 'ease-out', u: 'Toggle, checkbox, ripple' },
+        { n: 'Quick', d: '200ms', e: 'cubic-bezier(.4,0,.2,1)', u: 'Hover, focus, tooltip' },
+        { n: 'Smooth', d: '350ms', e: 'cubic-bezier(.34,1.56,.64,1)', u: 'Karty, drawer, popover' },
+        { n: 'Dramatic', d: '500ms', e: 'cubic-bezier(.16,1,.3,1)', u: 'Tranzycje widoków, modale' }
+      ]
+    };
+  }
+}
+</script>
+<script>
+addEventListener('load', () => {
+  (async () => {
+    try { await document.fonts.ready; } catch (e) {}
+    const imgs = Array.from(document.images).filter((i) => !i.complete);
+    await Promise.race([
+      Promise.allSettled(imgs.map((i) => i.decode())),
+      new Promise((r) => setTimeout(r, 8000)),
+    ]);
+    setTimeout(() => window.print(), 700);
+  })();
+});
+</script>
+</body>
+</html>

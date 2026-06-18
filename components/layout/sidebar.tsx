@@ -65,6 +65,11 @@ import { reorderBoardsAction } from "@/app/(app)/w/[workspaceId]/b/actions";
 import { CreateBoardDialog } from "@/components/workspaces/create-board-dialog";
 import { DeleteBoardDialog } from "@/components/workspaces/delete-board-dialog";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { ProfileDropdown } from "@/components/profile/profile-dropdown";
+import {
+  WorkspaceSwitcher,
+  type WorkspaceSwitcherItem,
+} from "@/components/workspaces/workspace-switcher";
 
 export interface SidebarUser {
   id: string;
@@ -352,13 +357,32 @@ export function Sidebar({
           </div>
 
           {/* ─── SEKCJA "PRZESTRZENIE" — workspaces list + DnD reorder ─── */}
-          {/* Na mobile DZIELI scroll z resztą sidebar'a; na desktopie nested scroll. */}
+          {/* Na mobile DZIELI scroll z resztą sidebar'a; na desktopie nested scroll.
+              F12-K83: Header "Przestrzenie" jest teraz triggerem do WorkspaceSwitcher
+              popover (quick-switch); pełna lista poniżej pozostaje (DnD + boards). */}
           <div className="px-3 pb-2 pt-3 md:flex-1 md:overflow-y-auto max-md:px-4 max-md:pt-4">
             {!collapsed && (
               <div className="mb-2 flex items-center justify-between px-1.5 max-md:mb-3">
-                <span className="eyebrow max-md:text-[0.78rem] max-md:tracking-[0.12em]">
-                  Przestrzenie
-                </span>
+                <WorkspaceSwitcher
+                  workspaces={workspaceItems.map(
+                    (w): WorkspaceSwitcherItem => ({
+                      id: w.id,
+                      name: w.name,
+                      role: w.role,
+                    }),
+                  )}
+                  activeWorkspaceId={activeWorkspaceId}
+                >
+                  <span className="inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05]">
+                    <span className="eyebrow max-md:text-[0.78rem] max-md:tracking-[0.12em]">
+                      Przestrzenie
+                    </span>
+                    <ChevronDown
+                      size={11}
+                      className="text-muted-foreground/60"
+                    />
+                  </span>
+                </WorkspaceSwitcher>
                 <Link
                   href="/workspaces"
                   aria-label="Nowa przestrzeń"
@@ -430,36 +454,47 @@ export function Sidebar({
               </form>
             </div>
 
-            {/* User profile widget — sub-card z glass tint + border (v4 mock). */}
+            {/* User profile widget — sub-card z glass tint + border (v4 mock).
+                F12-K83: click otwiera ProfileDropdown popover (Konto / Powiadomienia /
+                2FA / Sesje / Wyloguj). Bezpośredni /profile link został przeniesiony do
+                pierwszej pozycji dropdownu. */}
             <div className="px-3 pb-3 pt-1 max-md:px-4 max-md:pb-4">
-              <Link
-                href="/profile"
-                className={`flex items-center gap-2.5 rounded-[13px] border border-white/70 bg-white/55 p-2 transition-colors hover:bg-white/70 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/[0.08] ${
-                  collapsed ? "justify-center" : ""
-                } max-md:gap-3.5 max-md:p-3`}
+              <ProfileDropdown
+                user={{
+                  email: user.email,
+                  name: user.name,
+                  avatarUrl: user.avatarUrl,
+                  isSuperAdmin: user.isSuperAdmin,
+                }}
               >
                 <span
-                  style={{ background: "linear-gradient(140deg, #34BEF8, #7C5CFF)" }}
-                  className="relative grid h-[30px] w-[30px] shrink-0 place-items-center overflow-hidden rounded-[9px] font-display text-[0.72rem] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_4px_12px_-4px_rgba(124,92,255,0.45)] max-md:h-11 max-md:w-11 max-md:rounded-[12px] max-md:text-[0.95rem]"
+                  className={`flex items-center gap-2.5 rounded-[13px] border border-white/70 bg-white/55 p-2 transition-colors hover:bg-white/70 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/[0.08] ${
+                    collapsed ? "justify-center" : ""
+                  } max-md:gap-3.5 max-md:p-3`}
                 >
-                  {user.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    initials
+                  <span
+                    style={{ background: "linear-gradient(140deg, #34BEF8, #7C5CFF)" }}
+                    className="relative grid h-[30px] w-[30px] shrink-0 place-items-center overflow-hidden rounded-[9px] font-display text-[0.72rem] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_4px_12px_-4px_rgba(124,92,255,0.45)] max-md:h-11 max-md:w-11 max-md:rounded-[12px] max-md:text-[0.95rem]"
+                  >
+                    {user.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      initials
+                    )}
+                  </span>
+                  {!collapsed && (
+                    <div className="min-w-0 flex-1 leading-tight">
+                      <div className="truncate text-[0.78rem] font-semibold tracking-[-0.005em] text-foreground max-md:text-[1rem]">
+                        {user.name ?? user.email.split("@")[0]}
+                      </div>
+                      <div className="truncate text-[0.68rem] text-muted-foreground max-md:text-[0.78rem]">
+                        {user.isSuperAdmin ? "Owner" : "Member"}
+                      </div>
+                    </div>
                   )}
                 </span>
-                {!collapsed && (
-                  <div className="min-w-0 flex-1 leading-tight">
-                    <div className="truncate text-[0.78rem] font-semibold tracking-[-0.005em] text-foreground max-md:text-[1rem]">
-                      {user.name ?? user.email.split("@")[0]}
-                    </div>
-                    <div className="truncate text-[0.68rem] text-muted-foreground max-md:text-[0.78rem]">
-                      {user.isSuperAdmin ? "Owner" : "Member"}
-                    </div>
-                  </div>
-                )}
-              </Link>
+              </ProfileDropdown>
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useState } from "react";
-import { CheckSquare, Square, Trash2, Plus } from "lucide-react";
+import { CheckSquare, Square, Trash2 } from "lucide-react";
 import {
   createSubtaskAction,
   deleteSubtaskAction,
@@ -34,7 +34,7 @@ export function SubtasksSection({
 
   return (
     <section className="flex flex-col gap-3">
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-baseline justify-between gap-3">
         <div className="flex items-baseline gap-3">
           <span className="eyebrow">Podzadania</span>
           {subtasks.length > 0 && (
@@ -44,6 +44,17 @@ export function SubtasksSection({
             </span>
           )}
         </div>
+        {/* Inline link CTA — spec wymaga `+ Dodaj` zamiast 44px emerald
+            przycisku (audit: zbyt ciężki, lamie hierarchię typografii). */}
+        {canManage && !adding && (
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="font-sans text-[0.78rem] font-semibold text-primary/80 transition-colors hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            + Dodaj
+          </button>
+        )}
       </div>
 
       {subtasks.length > 0 && (
@@ -72,11 +83,13 @@ export function SubtasksSection({
       )}
 
       {subtasks.length > 0 && (
-        <ul className="flex flex-col gap-1 rounded-xl border border-border bg-card p-1">
+        // No outer card border — items sit directly on the drawer surface.
+        // Subtle row hover surface gives the same affordance as the old card.
+        <ul className="flex flex-col gap-1">
           {subtasks.map((s) => (
             <li
               key={s.id}
-              className="group flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-accent/60"
+              className="group flex items-center gap-2 rounded-lg bg-card/40 px-2 py-1.5 transition-colors hover:bg-accent/60"
             >
               <form
                 action={(fd) => startTransition(() => toggleSubtaskAction(fd))}
@@ -172,17 +185,12 @@ export function SubtasksSection({
         </form>
       )}
 
-      {/* Wyraźny kolorowy CTA — klient: subtelny dashed CTA był ledwo widoczny,
-          przez co dodawanie podzadań nie było odkrywane. Hidden while the
-          composer is open. */}
-      {canManage && !adding && (
-        <button
-          type="button"
-          onClick={() => setAdding(true)}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 font-sans text-[0.95rem] font-semibold text-emerald-700 shadow-[0_1px_2px_rgba(16,185,129,0.08)] transition-colors hover:border-emerald-500/50 hover:bg-emerald-500/15 dark:border-emerald-400/40 dark:bg-emerald-400/10 dark:text-emerald-200 dark:hover:bg-emerald-400/15"
-        >
-          <Plus size={16} /> Dodaj podzadanie
-        </button>
+      {/* CTA moved inline into header (`+ Dodaj` link). Empty state
+          gets a soft prompt only when canManage but no subtasks yet. */}
+      {canManage && !adding && subtasks.length === 0 && (
+        <p className="text-[0.86rem] text-muted-foreground/80">
+          Brak podzadań. Użyj <span className="text-primary/90">+ Dodaj</span> aby utworzyć pierwsze.
+        </p>
       )}
 
       {subtasks.length === 0 && !adding && !canManage && (

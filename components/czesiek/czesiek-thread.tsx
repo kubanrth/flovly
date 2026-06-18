@@ -99,12 +99,21 @@ export function CzesiekThread({
 
 function EmptyState({ onPick }: { onPick: (q: string) => void }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-2 text-center">
-      <div className="grid h-12 w-12 place-items-center rounded-full bg-brand-gradient text-white shadow-brand">
-        <Bot size={22} />
+    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-2 text-center">
+      {/* F12-K81 (v4 brand polish) — 72×72 rounded-[22px] bg-brand-gradient
+          z literami "At" w centrum (matches Flovly Components spec P4, linia
+          470). Outside: animated fl-pulse sonar ring jako "żywy" sygnał. */}
+      <div className="relative grid h-[72px] w-[72px] place-items-center rounded-[22px] bg-brand-gradient text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_16px_36px_-10px_rgba(122,51,236,0.7)]">
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -inset-1 rounded-[24px] border-2 border-accent-sky animate-fl-pulse"
+        />
+        <span className="relative font-display text-[1.6rem] font-extrabold leading-none tracking-[-0.03em]">
+          At
+        </span>
       </div>
       <div className="space-y-1">
-        <h3 className="font-display text-[1.1rem] font-bold leading-tight tracking-[-0.02em] text-foreground">
+        <h3 className="font-display text-[1.2rem] font-bold leading-tight tracking-[-0.015em] text-foreground">
           Cześć, jestem Ateron
         </h3>
         <p className="text-[0.82rem] leading-[1.5] text-muted-foreground">

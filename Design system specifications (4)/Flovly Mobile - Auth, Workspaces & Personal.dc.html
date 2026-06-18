@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  @keyframes fl-drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(18px,-22px) scale(1.08); } }
+  .mtabs::-webkit-scrollbar { display: none; }
+</style>
+</helmet>
+
+<div style="--p: {{ primary }}; --p2: {{ primary2 }}; width: max-content; min-width: 100%; min-height: 100vh; box-sizing: border-box; padding: 56px 48px 110px; background: #0B0912; font-family: 'Inter', system-ui, sans-serif; position: relative; overflow: hidden;">
+  <div style="position: absolute; top: -160px; left: -100px; width: 760px; height: 760px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.3), transparent 65%); filter: blur(60px); animation: fl-drift 24s ease-in-out infinite; pointer-events: none;"></div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 44px; width: max-content; margin: 0 auto;">
+
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <div style="width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(140deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 10px 26px -8px rgba(122,51,236,.7);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+      <div><div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">FLOVLY Mobile — Auth · Workspaces · Personal</div><div style="font-size: 14px; color: #8B8398; margin-top: 2px;">390px · B1 · B2 · B5</div></div>
+    </div>
+
+    <!-- B1 AUTH -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">B1 · Auth mobile</div>
+      <div style="display: flex; gap: 24px; align-items: flex-start;">
+
+        <!-- Login -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Login</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column; padding: 0 22px;">
+            <div style="position: absolute; top: -100px; left: 50%; transform: translateX(-50%); width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.4), transparent 64%); filter: blur(40px); pointer-events: none;"></div>
+            <div style="position: relative; display: flex; flex-direction: column; align-items: center; margin-top: 80px;">
+              <div style="width: 56px; height: 56px; border-radius: 17px; background: linear-gradient(140deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 28px -8px rgba(122,51,236,.6), inset 0 1px 0 rgba(255,255,255,.4);"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+              <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #fff; margin-top: 16px;">FLOVLY</div>
+              <div style="font-size: 13.5px; color: #8B8398; margin-top: 4px;">Workflow który płynie</div>
+            </div>
+            <div style="position: relative; margin-top: 40px;">
+              <div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 8px;">Email</div>
+              <div style="padding: 15px; border-radius: 13px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); font-size: 15px; color: #C9C3D4; margin-bottom: 16px;">adam@studio.pl</div>
+              <div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 8px;">Hasło</div>
+              <div style="display: flex; align-items: center; padding: 15px; border-radius: 13px; background: rgba(255,255,255,.05); border: 1.5px solid var(--p,#7A33EC); box-shadow: 0 0 0 4px rgba(122,51,236,.18); margin-bottom: 18px;"><span style="font-size: 17px; letter-spacing: 3px; color: #C9C3D4;">••••••••</span><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2" style="margin-left:auto;"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px;"><span style="display: flex; align-items: center; gap: 8px;"><span style="width: 20px; height: 20px; border-radius: 6px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"></path></svg></span><span style="font-size: 13.5px; color: #C9C3D4;">Pozostań zalogowany</span></span></div>
+              <div style="padding: 15px; border-radius: 13px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 15.5px; font-weight: 600; text-align: center; box-shadow: 0 10px 24px -8px rgba(122,51,236,.6);">Zaloguj się</div>
+              <div style="text-align: center; margin-top: 18px;"><span style="font-size: 13.5px; color: #9B8BE6; font-weight: 500;">Zapomniałem hasła</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invite -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Invite</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 24px; text-align: center;">
+            <div style="position: absolute; top: -80px; right: -40px; width: 280px; height: 280px; border-radius: 50%; background: radial-gradient(circle, rgba(52,190,248,.3), transparent 64%); filter: blur(38px); pointer-events: none;"></div>
+            <div style="position: relative; width: 100%;">
+              <div style="width: 52px; height: 52px; border-radius: 15px; background: linear-gradient(140deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 10px 24px -6px rgba(122,51,236,.5);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+              <div style="font-size: 14px; color: #8B8398;">Zostałeś zaproszony do</div>
+              <div style="font-size: 25px; font-weight: 700; letter-spacing: -0.02em; color: #fff; margin-top: 5px;">Studio Nebula</div>
+              <div style="display: flex; align-items: center; gap: 12px; margin: 26px 0; padding: 15px; border-radius: 15px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); text-align: left;"><div style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(140deg,#7A33EC,#E1318F); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 700;">AD</div><div style="flex: 1;"><div style="font-size: 14px; font-weight: 600; color: #fff;">Adam Dąbrowski</div><div style="font-size: 12px; color: #8B8398;">zaprasza jako</div></div><span style="padding: 4px 11px; border-radius: 999px; background: rgba(122,51,236,.16); border: 1px solid rgba(122,51,236,.3); font-size: 12px; font-weight: 600; color: #C9B6F7;">Member</span></div>
+              <div style="padding: 15px; border-radius: 13px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 15.5px; font-weight: 600; box-shadow: 0 10px 24px -8px rgba(122,51,236,.6); margin-bottom: 10px;">Akceptuj zaproszenie</div>
+              <div style="padding: 14px; border-radius: 13px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); color: #C9C3D4; font-size: 14.5px; font-weight: 600;">Odrzuć</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2FA -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">2FA · digit input</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column; align-items: center; padding: 0 24px; text-align: center;">
+            <div style="position: relative; margin-top: 70px; width: 100%;">
+              <div style="width: 52px; height: 52px; border-radius: 15px; background: rgba(122,51,236,.16); border: 1px solid rgba(122,51,236,.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 18px;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9B6F7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
+              <div style="font-size: 20px; font-weight: 700; color: #fff;">Weryfikacja 2FA</div>
+              <div style="font-size: 13.5px; color: #8B8398; margin-top: 7px; line-height: 1.5;">Wpisz 6-cyfrowy kod z aplikacji uwierzytelniającej.</div>
+              <div style="display: flex; gap: 7px; justify-content: center; margin: 28px 0;">
+                <sc-for list="{{ totp }}" as="d" hint-placeholder-count="6"><div style="width: 40px; height: 52px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1.5px solid {{ d.bd }}; box-shadow: {{ d.glow }}; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: #fff;">{{ d.v }}</div></sc-for>
+              </div>
+              <div style="padding: 15px; border-radius: 13px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 15.5px; font-weight: 600; box-shadow: 0 10px 24px -8px rgba(122,51,236,.6);">Zweryfikuj</div>
+              <div style="margin-top: 18px;"><span style="font-size: 13.5px; color: #9B8BE6; font-weight: 500;">Użyj kodu zapasowego</span></div>
+            </div>
+            <!-- numeric keypad hint -->
+            <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 24px calc(16px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.03); border-top: 1px solid rgba(255,255,255,.07);"><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;"><sc-for list="{{ keypad }}" as="k" hint-placeholder-count="12"><div style="padding: 12px; border-radius: 11px; background: rgba(255,255,255,.05); text-align: center; font-size: 18px; font-weight: 600; color: #C9C3D4;">{{ k }}</div></sc-for></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- B2 WORKSPACES -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">B2 · Workspaces mobile</div>
+      <div style="display: flex; gap: 24px; align-items: flex-start;">
+
+        <!-- Workspaces list -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Lista · single column</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="position: absolute; top: -80px; right: 0; width: 280px; height: 280px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.28), transparent 64%); filter: blur(40px); pointer-events: none;"></div>
+            <div style="position: relative; padding: 22px 18px 14px;"><div style="font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: #fff;">Workspace'y</div><div style="font-size: 13px; color: #8B8398; margin-top: 3px;">Wybierz, aby kontynuować</div></div>
+            <div style="position: relative; flex: 1; overflow: hidden; padding: 0 18px; display: flex; flex-direction: column; gap: 12px;">
+              <sc-for list="{{ workspaces }}" as="w" hint-placeholder-count="3">
+                <div style="position: relative; overflow: hidden; padding: 16px; border-radius: 18px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);">
+                  <div style="position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: {{ w.c }};"></div>
+                  <div style="display: flex; align-items: center; gap: 13px;"><div style="width: 48px; height: 48px; border-radius: 14px; background: {{ w.c }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 17px; font-weight: 700; flex: none;">{{ w.init }}</div><div style="flex: 1; min-width: 0;"><div style="font-size: 16px; font-weight: 700; color: #fff;">{{ w.name }}</div><div style="font-size: 12px; color: #8B8398; margin-top: 3px;">{{ w.tasks }} zadań · {{ w.members }} członków</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B6478" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg></div>
+                </div>
+              </sc-for>
+              <div style="display: flex; align-items: center; gap: 13px; padding: 16px; border-radius: 18px; border: 1.5px dashed rgba(122,51,236,.4); background: rgba(122,51,236,.06);"><div style="width: 44px; height: 44px; border-radius: 13px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></div><span style="font-size: 15px; font-weight: 600; color: #C9B6F7;">Nowy workspace</span></div>
+            </div>
+            <div style="height: env(safe-area-inset-bottom);"></div>
+          </div>
+        </div>
+
+        <!-- Create workspace bottom sheet -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Nowy workspace · bottom sheet</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8);">
+            <div style="position: absolute; inset: 0; background: rgba(0,0,0,.5);"></div>
+            <div style="position: absolute; inset: 0; padding: 40px 18px; opacity: .3;"><div style="font-size: 22px; font-weight: 800; color: #fff;">Workspace'y</div></div>
+            <div style="position: absolute; left: 0; right: 0; bottom: 0; border-radius: 24px 24px 0 0; background: rgba(20,17,30,.96); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border-top: 1px solid rgba(255,255,255,.12); padding: 12px 20px calc(20px + env(safe-area-inset-bottom)); box-shadow: 0 -20px 50px -20px rgba(0,0,0,.7);">
+              <div style="display: flex; justify-content: center; margin-bottom: 16px;"><div style="width: 40px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.18);"></div></div>
+              <div style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 18px;">Nowy workspace</div>
+              <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 18px;"><div style="width: 58px; height: 58px; border-radius: 16px; background: linear-gradient(140deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 19px; font-weight: 700; flex: none;">SN</div><div style="display: flex; align-items: center; gap: 7px; padding: 11px 14px; border-radius: 11px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); font-size: 13.5px; font-weight: 600; color: #C9C3D4;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9B8BE6" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg>Wgraj avatar</div></div>
+              <div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 8px;">Nazwa</div>
+              <div style="padding: 14px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1.5px solid var(--p,#7A33EC); box-shadow: 0 0 0 4px rgba(122,51,236,.18); font-size: 15px; color: #fff; margin-bottom: 14px;">Studio Nebula</div>
+              <div style="display: flex; align-items: center; padding: 13px 14px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); margin-bottom: 18px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #6B6478;">flovly.app/w/</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #C9C3D4;">studio-nebula</span></div>
+              <div style="padding: 15px; border-radius: 13px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 15.5px; font-weight: 600; text-align: center; box-shadow: 0 8px 20px -8px rgba(122,51,236,.6);">Utwórz workspace</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- B5 PERSONAL -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">B5 · Personal layer mobile</div>
+      <div style="display: flex; gap: 24px; align-items: flex-start;">
+
+        <!-- My tasks scrollable tabs -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Moje zadania · scroll tabs</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="padding: 18px 16px 12px; font-size: 19px; font-weight: 700; color: #fff;">Moje zadania</div>
+            <div class="mtabs" style="display: flex; gap: 8px; padding: 0 16px 14px; overflow-x: auto;">
+              <span style="padding: 8px 15px; border-radius: 999px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; flex: none;">Dziś</span>
+              <span style="padding: 8px 15px; border-radius: 999px; background: rgba(255,255,255,.05); font-size: 13px; color: #C9C3D4; white-space: nowrap; flex: none;">Ten tydzień</span>
+              <span style="padding: 8px 15px; border-radius: 999px; background: rgba(255,255,255,.05); font-size: 13px; color: #C9C3D4; white-space: nowrap; flex: none;">Później</span>
+              <span style="padding: 8px 15px; border-radius: 999px; background: rgba(255,255,255,.05); font-size: 13px; color: #FB7185; white-space: nowrap; flex: none;">Przeterminowane</span>
+            </div>
+            <div style="flex: 1; overflow: hidden; padding: 0 16px; display: flex; flex-direction: column; gap: 9px;">
+              <sc-for list="{{ myTasks }}" as="t" hint-placeholder-count="4">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);"><span style="width: 4px; height: 38px; border-radius: 2px; background: {{ t.pc }}; flex: none;"></span><div style="flex: 1; min-width: 0;"><div style="display: flex; align-items: center; gap: 7px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #9B8BE6;">{{ t.id }}</span><span style="font-size: 14px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ t.title }}</span></div><div style="font-size: 11.5px; color: {{ t.duec }}; margin-top: 4px;">{{ t.due }}</div></div><span style="width: 8px; height: 8px; border-radius: 50%; background: {{ t.sc }}; flex: none;"></span></div>
+              </sc-for>
+            </div>
+            <div style="height: env(safe-area-inset-bottom);"></div>
+          </div>
+        </div>
+
+        <!-- TODO -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">TO DO · listy w bottom sheet</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 18px 16px 14px;"><span style="display: flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 11px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); font-size: 14px; font-weight: 600; color: #fff;"><span style="width: 9px; height: 9px; border-radius: 50%; background: var(--p,#7A33EC);"></span>Projekt Redesign<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2"><path d="m6 9 6 6 6-6"></path></svg></span></div>
+            <div style="flex: 1; overflow: hidden; padding: 0 16px; display: flex; flex-direction: column; gap: 7px;">
+              <sc-for list="{{ todos }}" as="td" hint-placeholder-count="5">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 13px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07);"><div style="width: 22px; height: 22px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; background: {{ td.fill }}; border: 2px solid {{ td.ring }};">{{ td.check }}</div><span style="flex: 1; font-size: 14px; color: {{ td.c }}; text-decoration: {{ td.deco }};">{{ td.t }}</span><span style="display:flex; color:{{ td.starc }};"><svg width="17" height="17" viewBox="0 0 24 24" fill="{{ td.starfill }}" stroke="{{ td.starc }}" stroke-width="1.6" stroke-linejoin="round"><path d="m12 2 3 6.5 7 .6-5.3 4.6 1.6 6.8L12 17l-6.2 3.5 1.6-6.8L2 9.1l7-.6Z"></path></svg></span></div>
+              </sc-for>
+            </div>
+            <div style="padding: 14px 16px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(255,255,255,.07);"><div style="display: flex; align-items: center; gap: 9px; padding: 13px; border-radius: 13px; background: rgba(122,51,236,.12); border: 1px dashed rgba(122,51,236,.4); color: #C9B6F7;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9B6F7" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg><span style="font-size: 14px; font-weight: 600;">Nowy TODO</span></div></div>
+          </div>
+        </div>
+
+        <!-- Notes editor with back -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Notatki · editor + back</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 16px; border-bottom: 1px solid rgba(255,255,255,.08);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9C3D4" stroke-width="2" stroke-linecap="round"><path d="m15 18-6-6 6-6"></path></svg><span style="font-size: 14px; color: #8B8398;">Projekt</span><div style="margin-left: auto; display: flex; gap: 12px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#F6B65A" stroke="#F6B65A" stroke-width="1.5"><path d="M12 17v5M9 10.76V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v5.76l2 3.24H7Z"></path></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2"><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg></div></div>
+            <div style="flex: 1; overflow: hidden; padding: 20px 18px;">
+              <h1 style="margin: 0 0 14px; font-size: 23px; font-weight: 800; letter-spacing: -0.02em; color: #fff; line-height: 1.2;">Notatki ze spotkania — Q3</h1>
+              <p style="margin: 0 0 14px; font-size: 14.5px; line-height: 1.7; color: #C9C3D4;">Ustaliliśmy kierunek liquid glass dla całego interfejsu. Priorytety:</p>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; gap: 10px; align-items: flex-start;"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--p,#7A33EC); margin-top: 8px; flex: none;"></span><span style="font-size: 14.5px; line-height: 1.6; color: #C9C3D4;">Sidebar na backdrop-blur z aurą tła</span></div>
+                <div style="display: flex; gap: 10px; align-items: flex-start;"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--p,#7A33EC); margin-top: 8px; flex: none;"></span><span style="font-size: 14.5px; line-height: 1.6; color: #C9C3D4;">Refraction borders zamiast solid</span></div>
+                <div style="display: flex; gap: 10px; align-items: flex-start;"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--p,#7A33EC); margin-top: 8px; flex: none;"></span><span style="font-size: 14.5px; line-height: 1.6; color: #C9C3D4;">Spring easing dla animacji</span></div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 2px; padding: 12px 16px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(255,255,255,.08);"><div style="font-size: 15px; font-weight: 700; color: #C9C3D4; width: 34px; text-align: center;">B</div><div style="font-size: 15px; font-style: italic; color: #9A91AB; width: 34px; text-align: center;">I</div><div style="font-size: 15px; text-decoration: underline; color: #9A91AB; width: 34px; text-align: center;">U</div><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9A91AB" stroke-width="2" stroke-linecap="round" style="margin:0 10px;"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg></div>
+          </div>
+        </div>
+
+        <!-- Inbox single col -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Inbox · single column</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="padding: 18px 16px 12px; display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 19px; font-weight: 700; color: #fff;">Powiadomienia</span><span style="font-size: 12.5px; color: #9B8BE6; font-weight: 600;">Wszystkie</span></div>
+            <div style="display: flex; gap: 6px; padding: 0 16px 14px;"><span style="padding: 7px 14px; border-radius: 999px; background: rgba(255,255,255,.08); font-size: 12.5px; font-weight: 600; color: #fff;">Nieprzeczytane <span style="color:#9B8BE6;">3</span></span><span style="padding: 7px 14px; border-radius: 999px; font-size: 12.5px; color: #8B8398;">Wszystkie</span></div>
+            <div style="flex: 1; overflow: hidden; padding: 0 16px; display: flex; flex-direction: column; gap: 5px;">
+              <sc-for list="{{ inbox }}" as="i" hint-placeholder-count="4">
+                <div style="display: flex; gap: 11px; padding: 13px; border-radius: 13px; background: {{ i.row }};"><div style="width: 34px; height: 34px; border-radius: 10px; flex: none; background: {{ i.av }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700;">{{ i.ini }}</div><div style="flex: 1; min-width: 0;"><div style="font-size: 13px; line-height: 1.45; color: #C9C3D4;"><span style="color: #fff; font-weight: 600;">{{ i.actor }}</span> {{ i.action }}</div><div style="font-size: 11px; color: #6B6478; margin-top: 3px;">{{ i.time }}</div></div>{{ i.dot }}</div>
+              </sc-for>
+            </div>
+            <div style="height: env(safe-area-inset-bottom);"></div>
+          </div>
+        </div>
+
+        <!-- Reminders full-width bottom -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Reminder · full-width na dole</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8);">
+            <div style="position: absolute; inset: 0; padding: 40px 16px; opacity: .35;"><div style="font-size: 19px; font-weight: 700; color: #fff;">Redesign · Kanban</div></div>
+            <div style="position: absolute; left: 14px; right: 14px; bottom: calc(16px + env(safe-area-inset-bottom)); padding: 15px; border-radius: 18px; background: rgba(38,32,54,.95); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,.14); box-shadow: 0 20px 44px -16px rgba(0,0,0,.7);">
+              <div style="display: flex; align-items: flex-start; gap: 12px;"><div style="width: 38px; height: 38px; border-radius: 11px; flex: none; background: linear-gradient(140deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"></path></svg></div><div style="flex: 1; min-width: 0;"><div style="font-size: 15px; font-weight: 700; color: #fff;">Deadline za godzinę</div><div style="font-size: 12.5px; color: #A9A1B8; margin-top: 3px; line-height: 1.4;">#42 Finalizacja glass — 15:00</div></div></div>
+              <div style="display: flex; gap: 9px; margin-top: 14px;"><span style="flex: 1; text-align: center; padding: 11px; border-radius: 11px; background: rgba(255,255,255,.06); font-size: 13.5px; font-weight: 600; color: #C9C3D4;">Odłóż</span><span style="flex: 1.3; text-align: center; padding: 11px; border-radius: 11px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 13.5px; font-weight: 600;">Otwórz</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1600, &quot;height&quot;: 1000}, &quot;primary&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#7A33EC&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;primary2&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#E1318F&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  check() { return React.createElement('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: '#fff', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }, React.createElement('path', { d: 'M20 6 9 17l-5-5' })); }
+  dot() { return React.createElement('span', { style: { width: '8px', height: '8px', borderRadius: '50%', background: this.props.primary || '#7A33EC', flex: 'none', alignSelf: 'center' } }); }
+  renderVals() {
+    const p = this.props || {};
+    const primary = p.primary || '#7A33EC';
+    const primary2 = p.primary2 || '#E1318F';
+    const code = ['4', '8', '2', '', '', ''];
+    return {
+      primary, primary2,
+      totp: code.map((v, i) => ({ v, bd: (i === 3) ? primary : 'rgba(255,255,255,.12)', glow: (i === 3) ? '0 0 0 4px rgba(122,51,236,.18)' : 'none' })),
+      keypad: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'],
+      workspaces: [
+        { name: 'Studio Nebula', init: 'SN', tasks: 186, members: 12, c: 'linear-gradient(140deg,#7A33EC,#E1318F)' },
+        { name: 'Brandflow', init: 'BF', tasks: 92, members: 6, c: 'linear-gradient(140deg,#34BEF8,#0EA5E9)' },
+        { name: 'NovaSoft', init: 'NS', tasks: 47, members: 4, c: 'linear-gradient(140deg,#10B981,#34BEF8)' }
+      ],
+      myTasks: [
+        { id: '#42', title: 'Glass sidebar', due: 'Dziś 15:00', duec: '#FB7185', pc: '#F43F5E', sc: '#F59E0B' },
+        { id: '#37', title: 'Audyt WCAG AA', due: 'Przeterminowane', duec: '#FB7185', pc: '#F43F5E', sc: '#34BEF8' },
+        { id: '#51', title: 'Demo dla DANIELOS', due: 'Dziś 18:00', duec: '#C9C3D4', pc: '#F59E0B', sc: '#3B82F6' },
+        { id: '#48', title: 'Refraction borders', due: 'Dziś', duec: '#C9C3D4', pc: '#3B82F6', sc: '#F59E0B' }
+      ],
+      todos: [
+        { t: 'Zdefiniować blur tokens', c: '#6B6478', deco: 'line-through', fill: primary, ring: primary, check: this.check(), starc: '#4B4359', starfill: 'none' },
+        { t: 'Sidebar glass surface', c: '#fff', deco: 'none', fill: 'transparent', ring: '#4B4359', check: '', starc: '#F6B65A', starfill: '#F6B65A' },
+        { t: 'Audyt kontrastu nav', c: '#fff', deco: 'none', fill: 'transparent', ring: '#4B4359', check: '', starc: '#F6B65A', starfill: '#F6B65A' },
+        { t: 'Spring easing', c: '#fff', deco: 'none', fill: 'transparent', ring: '#4B4359', check: '', starc: '#4B4359', starfill: 'none' },
+        { t: 'Przegląd borders', c: '#fff', deco: 'none', fill: 'transparent', ring: '#4B4359', check: '', starc: '#4B4359', starfill: 'none' }
+      ],
+      inbox: [
+        { actor: 'Kasia M.', action: 'wspomniała Cię w #42', time: '12 min temu', av: 'linear-gradient(140deg,#34BEF8,#10B981)', ini: 'KM', row: 'rgba(122,51,236,.07)', dot: this.dot() },
+        { actor: 'Adam D.', action: 'przypisał Ci #51 Demo', time: '1 godz. temu', av: 'linear-gradient(140deg,#7A33EC,#E1318F)', ini: 'AD', row: 'rgba(122,51,236,.07)', dot: this.dot() },
+        { actor: 'Tomek L.', action: 'skomentował deal Enterprise', time: '3 godz. temu', av: 'linear-gradient(140deg,#F59E0B,#E1318F)', ini: 'TL', row: 'rgba(122,51,236,.07)', dot: this.dot() },
+        { actor: 'System', action: 'tablica Redesign — 60% ukończenia', time: 'wczoraj', av: 'linear-gradient(140deg,#34BEF8,#7A33EC)', ini: 'AT', row: 'transparent', dot: '' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/admin-guard";
-import { RotateCcw, Trash2 } from "lucide-react";
+import { History, RotateCcw, Trash2 } from "lucide-react";
 import {
   forceDeleteWorkspaceAction,
+  requestWorkspaceRestoreAction,
   restoreWorkspaceAction,
 } from "@/app/(admin)/admin/actions";
 
@@ -51,8 +52,36 @@ export default async function AdminWorkspacesPage({
   });
   const taskCountMap = new Map(taskCounts.map((t) => [t.workspaceId, t._count._all]));
 
-  // TODO(F7b): per-workspace storage usage. Aggregating attachment sizes here
-  // requires a JOIN that doesn't belong on first load.
+  // Storage per workspace = SUM(Attachment.sizeBytes) joined via Task.
+  // Attachment FKs to Task (not Workspace directly), so we group by Task.workspaceId
+  // through a raw aggregate using Prisma's groupBy on Task — we fan attachment
+  // sums through their parent Task with one extra round-trip.
+  // (Single $queryRaw is the cheapest path; small workspace count keeps it fine.)
+  const storageRows = await db.$queryRaw<{ workspaceId: string; total: bigint }[]>`
+    SELECT t."workspaceId" AS "workspaceId", COALESCE(SUM(a."sizeBytes"), 0)::bigint AS "total"
+    FROM "Attachment" a
+    JOIN "Task" t ON t."id" = a."taskId"
+    WHERE a."deletedAt" IS NULL AND t."workspaceId" = ANY(${workspaces.map((w) => w.id)})
+    GROUP BY t."workspaceId"
+  `;
+  const storageMap = new Map(
+    storageRows.map((r) => [r.workspaceId, r.total ? Number(r.total) : 0]),
+  );
+
+  // Most-recent backup per workspace — `findMany` w/ Postgres window funcs
+  // would be ideal, but Prisma can't express that; the workspace count here
+  // is small (<200), so a parallel batch is fine. Cap by ordering on dayKey
+  // descending so we only hold one row per workspace in memory.
+  const latestBackups = await db.workspaceBackup.findMany({
+    where: { workspaceId: { in: workspaces.map((w) => w.id) } },
+    orderBy: [{ workspaceId: "asc" }, { dayKey: "desc" }],
+    select: { workspaceId: true, dayKey: true, createdAt: true },
+  });
+  const backupMap = new Map<string, { dayKey: string; createdAt: Date }>();
+  for (const b of latestBackups) {
+    if (!backupMap.has(b.workspaceId))
+      backupMap.set(b.workspaceId, { dayKey: b.dayKey, createdAt: b.createdAt });
+  }
 
   return (
     <main className="flex-1 px-4 py-6 md:px-14 md:py-14">
@@ -83,28 +112,32 @@ export default async function AdminWorkspacesPage({
 
         <div className="overflow-hidden rounded-xl border border-border bg-card">
           <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left">
-            <thead className="border-b border-border bg-muted/50">
-              <tr className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                <th className="px-4 py-2">Przestrzeń</th>
-                <th className="px-4 py-2">Właściciel</th>
-                <th className="px-4 py-2">Członków</th>
-                <th className="px-4 py-2">Tablic</th>
-                <th className="px-4 py-2">Zadań</th>
-                <th className="px-4 py-2">Status</th>
-                <th className="px-4 py-2 text-right">Akcje</th>
-              </tr>
-            </thead>
-            <tbody>
-              {workspaces.map((w) => (
-                <WorkspaceRow
-                  key={w.id}
-                  workspace={w}
-                  taskCount={taskCountMap.get(w.id) ?? 0}
-                />
-              ))}
-            </tbody>
-          </table>
+            <table className="w-full min-w-[860px] text-left">
+              <thead className="border-b border-border bg-muted/50">
+                <tr className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+                  <th className="px-4 py-2">Przestrzeń</th>
+                  <th className="px-4 py-2">Właściciel</th>
+                  <th className="px-4 py-2">Członków</th>
+                  <th className="px-4 py-2">Tablic</th>
+                  <th className="px-4 py-2">Zadań</th>
+                  <th className="px-4 py-2">Storage</th>
+                  <th className="px-4 py-2">Backup</th>
+                  <th className="px-4 py-2">Status</th>
+                  <th className="px-4 py-2 text-right">Akcje</th>
+                </tr>
+              </thead>
+              <tbody>
+                {workspaces.map((w) => (
+                  <WorkspaceRow
+                    key={w.id}
+                    workspace={w}
+                    taskCount={taskCountMap.get(w.id) ?? 0}
+                    storageBytes={storageMap.get(w.id) ?? 0}
+                    latestBackup={backupMap.get(w.id) ?? null}
+                  />
+                ))}
+              </tbody>
+            </table>
           </div>
           {workspaces.length === 0 && (
             <p className="px-4 py-8 text-center text-[0.88rem] text-muted-foreground">
@@ -112,7 +145,6 @@ export default async function AdminWorkspacesPage({
             </p>
           )}
         </div>
-
       </div>
     </main>
   );
@@ -121,11 +153,16 @@ export default async function AdminWorkspacesPage({
 function WorkspaceRow({
   workspace,
   taskCount,
+  storageBytes,
+  latestBackup,
 }: {
   workspace: WorkspaceRow;
   taskCount: number;
+  storageBytes: number;
+  latestBackup: { dayKey: string; createdAt: Date } | null;
 }) {
   const isDeleted = !!workspace.deletedAt;
+  const backupAge = latestBackup ? backupAgeBucket(latestBackup.createdAt) : null;
   return (
     <tr
       data-deleted={isDeleted ? "true" : "false"}
@@ -150,6 +187,23 @@ function WorkspaceRow({
       <td className="px-4 py-3 font-mono text-[0.78rem]">{workspace._count.memberships}</td>
       <td className="px-4 py-3 font-mono text-[0.78rem]">{workspace._count.boards}</td>
       <td className="px-4 py-3 font-mono text-[0.78rem]">{taskCount}</td>
+      <td className="px-4 py-3 font-mono text-[0.78rem] text-muted-foreground">
+        {formatBytes(storageBytes)}
+      </td>
+      <td className="px-4 py-3">
+        {latestBackup ? (
+          <span
+            data-age={backupAge}
+            className="inline-flex items-center gap-1 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground data-[age=fresh]:text-emerald-500 data-[age=stale]:text-amber-500 data-[age=old]:text-destructive"
+          >
+            {formatBackupAgo(latestBackup.createdAt)}
+          </span>
+        ) : (
+          <span className="font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground/60">
+            brak
+          </span>
+        )}
+      </td>
       <td className="px-4 py-3">
         {isDeleted ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-destructive">
@@ -163,6 +217,19 @@ function WorkspaceRow({
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-1">
+          {!isDeleted && latestBackup && (
+            <form action={requestWorkspaceRestoreAction} className="m-0">
+              <input type="hidden" name="id" value={workspace.id} />
+              <button
+                type="submit"
+                className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                aria-label={`Przywróć z backupu ${latestBackup.dayKey}`}
+                title={`Przywróć z backupu ${latestBackup.dayKey}`}
+              >
+                <History size={13} />
+              </button>
+            </form>
+          )}
           {isDeleted && (
             <form action={restoreWorkspaceAction} className="m-0">
               <input type="hidden" name="id" value={workspace.id} />
@@ -191,4 +258,30 @@ function WorkspaceRow({
       </td>
     </tr>
   );
+}
+
+// Bucket backup age so the cell can colour-code itself per design ref:
+// <12h fresh (emerald), <48h stale (amber), older = destructive.
+function backupAgeBucket(createdAt: Date): "fresh" | "stale" | "old" {
+  const ageMs = Date.now() - createdAt.getTime();
+  if (ageMs < 12 * 60 * 60 * 1000) return "fresh";
+  if (ageMs < 48 * 60 * 60 * 1000) return "stale";
+  return "old";
+}
+
+function formatBackupAgo(createdAt: Date): string {
+  const diff = Math.round((Date.now() - createdAt.getTime()) / 1000);
+  if (diff < 60) return "teraz";
+  if (diff < 3600) return `${Math.round(diff / 60)} min`;
+  if (diff < 86400) return `${Math.round(diff / 3600)} godz.`;
+  if (diff < 86400 * 7) return `${Math.round(diff / 86400)} dni`;
+  return createdAt.toLocaleDateString("pl-PL");
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes <= 0) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }

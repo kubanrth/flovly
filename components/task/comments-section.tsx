@@ -86,7 +86,9 @@ function CommentItemView({
   const edited = comment.updatedAt !== comment.createdAt;
 
   return (
-    <article className="flex gap-3 rounded-lg border border-border bg-card p-3">
+    // Borderless row — comments sit directly on drawer surface (spec).
+    // The `group` flag exposes inline "Odpowiedz" link on hover.
+    <article className="group flex gap-3">
       <span
         className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.68rem] font-bold text-white"
         aria-hidden
@@ -130,12 +132,32 @@ function CommentItemView({
             members={members}
           />
         ) : (
-          <RichTextEditor
-            key={`view-${comment.id}-${comment.updatedAt}`}
-            initial={comment.bodyJson}
-            readOnly
-            variant="display"
-          />
+          <>
+            <RichTextEditor
+              key={`view-${comment.id}-${comment.updatedAt}`}
+              initial={comment.bodyJson}
+              readOnly
+              variant="display"
+            />
+            {/* Reactions + reply row (spec). Reactions/replies still TODO
+                backend-side; UI hooks render the affordance only. */}
+            <div className="mt-1 flex items-center gap-1.5">
+              <button
+                type="button"
+                aria-label="Reaguj kciukiem"
+                className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[0.74rem] text-primary/90 transition-colors hover:border-primary/40 hover:bg-primary/15"
+              >
+                <span aria-hidden>👍</span>
+                <span className="font-mono text-[0.66rem] tabular-nums">0</span>
+              </button>
+              <button
+                type="button"
+                className="rounded px-1 py-0.5 text-[0.74rem] text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+              >
+                Odpowiedz
+              </button>
+            </div>
+          </>
         )}
       </div>
     </article>

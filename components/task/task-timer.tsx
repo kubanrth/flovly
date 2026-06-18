@@ -52,91 +52,93 @@ export function TaskTimer({
   };
 
   return (
-    <section className="flex flex-col gap-3">
-      <span className="eyebrow inline-flex items-center gap-1.5">
-        <Timer size={11} />
-        Czas pracy
-      </span>
+    // Inline pill — sits flat in the sticky footer next to action buttons.
+    // No bordered card, no eyebrow. Clock icon + mono time. The pill
+    // surface lets the elapsed time read as an ambient indicator rather
+    // than a heavy "section" block (spec).
+    <div className="flex flex-wrap items-center gap-2">
       <div
-        className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card px-4 py-3"
+        className="inline-flex items-center gap-2 rounded-full border border-border/40 bg-card/60 px-3 py-1.5 backdrop-blur"
         data-running={isRunning ? "true" : "false"}
         data-completed={isCompleted ? "true" : "false"}
       >
-        <div className="flex flex-col gap-0.5">
-          <span
-            className={`font-mono text-[1.6rem] font-semibold tabular-nums leading-none tracking-[-0.02em] ${
-              isCompleted
-                ? "text-muted-foreground"
-                : isRunning
-                  ? "text-primary"
-                  : "text-foreground"
-            }`}
-          >
-            {formatDuration(totalSeconds)}
-          </span>
-          <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-            {isCompleted
-              ? `Zakończono ${formatRelative(completedAt!)}`
+        <Timer
+          size={12}
+          className={
+            isCompleted
+              ? "text-muted-foreground"
               : isRunning
-                ? "Trwa…"
-                : accumulatedSeconds > 0
-                  ? "Zatrzymano"
-                  : "Nie rozpoczęto"}
-          </span>
-        </div>
+                ? "text-primary"
+                : "text-muted-foreground"
+          }
+        />
+        <span
+          className={`font-mono text-[0.86rem] font-semibold tabular-nums tracking-[-0.01em] ${
+            isCompleted
+              ? "text-muted-foreground"
+              : isRunning
+                ? "text-primary"
+                : "text-foreground"
+          }`}
+        >
+          {formatDuration(totalSeconds)}
+        </span>
+        <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
+          {isCompleted
+            ? `· Zakończono ${formatRelative(completedAt!)}`
+            : isRunning
+              ? "· Trwa"
+              : accumulatedSeconds > 0
+                ? "· Zatrzymano"
+                : "· Nie rozpoczęto"}
+        </span>
+      </div>
 
-        {canEdit && !isCompleted && (
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            {!isRunning && (
-              <form
-                action={handleSubmit(startTaskTimerAction)}
-                className="m-0"
+      {canEdit && !isCompleted && (
+        <div className="flex flex-wrap items-center gap-2">
+          {!isRunning && (
+            <form action={handleSubmit(startTaskTimerAction)} className="m-0">
+              <input type="hidden" name="id" value={taskId} />
+              <button
+                type="submit"
+                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-brand-gradient px-4 font-sans text-[0.82rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px]"
               >
+                <Play size={12} fill="currentColor" />
+                Rozpocznij
+              </button>
+            </form>
+          )}
+          {isRunning && (
+            <>
+              <form action={handleSubmit(pauseTaskTimerAction)} className="m-0">
                 <input type="hidden" name="id" value={taskId} />
                 <button
                   type="submit"
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-gradient px-4 font-sans text-[0.86rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px]"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-background px-4 font-sans text-[0.82rem] font-semibold text-foreground transition-colors hover:border-primary/60"
                 >
-                  <Play size={13} fill="currentColor" />
-                  Rozpocznij zadanie
+                  <Pause size={12} />
+                  Zatrzymaj
                 </button>
               </form>
-            )}
-            {isRunning && (
-              <>
-                <form
-                  action={handleSubmit(pauseTaskTimerAction)}
-                  className="m-0"
-                >
-                  <input type="hidden" name="id" value={taskId} />
-                  <button
-                    type="submit"
-                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-4 font-sans text-[0.86rem] font-semibold text-foreground transition-colors hover:border-primary/60"
-                  >
-                    <Pause size={13} />
-                    Zatrzymaj
-                  </button>
-                </form>
-                <button
-                  type="button"
-                  onClick={() => setConfirmingComplete(true)}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 font-sans text-[0.86rem] font-semibold text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
-                >
-                  <CheckCircle2 size={13} />
-                  Zakończ zadanie
-                </button>
-              </>
-            )}
-          </div>
-        )}
+              <button
+                type="button"
+                onClick={() => setConfirmingComplete(true)}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 font-sans text-[0.82rem] font-semibold text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
+              >
+                <CheckCircle2 size={12} />
+                Zakończ
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
-        {isCompleted && (
-          <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-400">
-            <CheckCircle2 size={12} />
-            Zakończone
-          </span>
-        )}
-      </div>
+      {isCompleted && (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 font-mono text-[0.64rem] uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-400">
+          <CheckCircle2 size={11} />
+          Zakończone
+        </span>
+      )}
 
       {/* F12-K40b: brand'owany confirm modal — backdrop blur, top-border
           accent, dwa CTA. Zastępuje natywny window.confirm() (białe okno,
@@ -149,7 +151,7 @@ export function TaskTimer({
           onConfirmStart={() => setConfirmingComplete(false)}
         />
       )}
-    </section>
+    </div>
   );
 }
 

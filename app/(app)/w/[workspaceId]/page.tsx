@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { PencilRuler } from "lucide-react";
+import Image from "next/image";
+import { PencilRuler, Search } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
@@ -15,6 +16,7 @@ import {
   type BoardSectionData,
 } from "@/components/workspaces/sortable-boards";
 import { BoardsLayoutToggle } from "@/components/workspaces/boards-layout-toggle";
+import { CreateBoardDialog } from "@/components/workspaces/create-board-dialog";
 
 export default async function WorkspaceOverviewPage({
   params,
@@ -24,12 +26,23 @@ export default async function WorkspaceOverviewPage({
   const { workspaceId } = await params;
   const ctx = await requireWorkspaceMembership(workspaceId);
 
-  const [workspace, memberCount, boards] = await Promise.all([
+  // Workspace name + memberships (with user avatars) for the v4 hero band.
+  // We cap the membership query at 6 so the avatar stack covers 5 + "+N" chip;
+  // the count() below gives the true total for the overflow label.
+  const [workspace, memberCount, memberships, boards] = await Promise.all([
     db.workspace.findUnique({
       where: { id: workspaceId },
-      select: { enabledViews: true },
+      select: { enabledViews: true, name: true },
     }),
     db.workspaceMembership.count({ where: { workspaceId } }),
+    db.workspaceMembership.findMany({
+      where: { workspaceId },
+      orderBy: { joinedAt: "asc" },
+      take: 6,
+      include: {
+        user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+      },
+    }),
     // ADMIN sees all; MEMBER/VIEWER sees PUBLIC + explicit memberships.
     db.board.findMany({
       where:
@@ -101,23 +114,49 @@ export default async function WorkspaceOverviewPage({
     };
   });
 
+  // Avatar stack: first 5 members; overflow is total - 5 (clamp 0).
+  const avatarMembers = memberships.slice(0, 5).map((m) => ({
+    id: m.user.id,
+    name: m.user.name,
+    email: m.user.email,
+    avatarUrl: m.user.avatarUrl,
+  }));
+  const overflow = Math.max(0, memberCount - avatarMembers.length);
+
+  const canCreateBoard = can(ctx.role, "board.create");
+  // CreateBoardDialog expects the uppercase Prisma view types — map down
+  // from the lowercase ViewName[] set, drop the ones the dialog can't seed.
+  const DIALOG_VIEWS = ["TABLE", "KANBAN", "ROADMAP", "GANTT", "WHITEBOARD"] as const;
+  const dialogEnabledViews = workspaceEnabled
+    .map((v) => v.toUpperCase())
+    .filter((v): v is (typeof DIALOG_VIEWS)[number] =>
+      (DIALOG_VIEWS as readonly string[]).includes(v),
+    );
+
   return (
     <AppShell>
       <div className="flex flex-col gap-6 md:gap-10">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Metric label="Członkowie" value={memberCount} />
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/w/${workspaceId}/canvases`}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-card px-3 font-sans text-[0.82rem] font-medium text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            >
-              <PencilRuler size={14} /> Whiteboard
-            </Link>
-            {firstBoard && canCreateTask && (
-              <CreateTaskButton workspaceId={workspaceId} boardId={firstBoard.id} />
-            )}
-          </div>
-        </div>
+        <WorkspaceHero
+          workspaceId={workspaceId}
+          workspaceName={workspace?.name ?? "Workspace"}
+          members={avatarMembers}
+          overflow={overflow}
+          memberCount={memberCount}
+          canCreateBoard={canCreateBoard}
+          enabledViews={dialogEnabledViews}
+        >
+          {/* Secondary actions stay on the right of the hero — whiteboard link
+              + (optional) quick "+ Zadanie" once a board exists. */}
+          <Link
+            href={`/w/${workspaceId}/canvases`}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/60 bg-white/55 px-3 font-sans text-[0.82rem] font-medium text-foreground/80 backdrop-blur transition-colors hover:bg-white/75 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:border-white/10 dark:bg-white/5 dark:text-foreground/70 dark:hover:bg-white/10 dark:hover:text-foreground"
+          >
+            <PencilRuler size={14} /> Whiteboard
+          </Link>
+          {firstBoard && canCreateTask && (
+            <CreateTaskButton workspaceId={workspaceId} boardId={firstBoard.id} />
+          )}
+        </WorkspaceHero>
 
         <BoardsLayoutToggle
           grid={<SortableBoardsGrid workspaceId={workspaceId} boards={boardSections} />}
@@ -128,13 +167,161 @@ export default async function WorkspaceOverviewPage({
   );
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+// ─────────────────────────────────────────────────────────────────────────
+// F12-K81 (v4 brand polish): workspace hero band.
+// Glass card rounded-[22px] z animated fl-drift radial aura blobs, eyebrow
+// mono "Workspace", workspace name 17px display bold, avatar stack (5 + +N),
+// glass search bar + "+ Tablica" gradient CTA pill po prawej.
+// Layout 1:1 z Flovly Brand & Hero spec (sekcja 05 — Workspace Overview).
+// ─────────────────────────────────────────────────────────────────────────
+function WorkspaceHero({
+  workspaceId,
+  workspaceName,
+  members,
+  overflow,
+  memberCount,
+  canCreateBoard,
+  enabledViews,
+  children,
+}: {
+  workspaceId: string;
+  workspaceName: string;
+  members: Array<{
+    id: string;
+    name: string | null;
+    email: string;
+    avatarUrl: string | null;
+  }>;
+  overflow: number;
+  memberCount: number;
+  canCreateBoard: boolean;
+  enabledViews: Array<"TABLE" | "KANBAN" | "ROADMAP" | "GANTT" | "WHITEBOARD">;
+  children?: React.ReactNode;
+}) {
   return (
-    <div className="flex items-baseline gap-3">
-      <span className="eyebrow">{label}</span>
-      <span className="font-display text-[1.4rem] font-bold leading-none tracking-[-0.02em] md:text-[1.8rem]">
-        {value}
-      </span>
-    </div>
+    <section
+      aria-label="Workspace overview"
+      className="relative overflow-hidden rounded-[22px] border border-white/60 bg-white/55 px-5 py-4 shadow-[0_18px_40px_-24px_rgba(76,29,149,0.26)] backdrop-blur-2xl md:px-6 md:py-5 dark:border-white/10 dark:bg-white/[0.04]"
+    >
+      {/* Animated aura blobs — two radial gradients absolute, blur-3xl,
+          fl-drift slow-loop. Pointer-events none so they don't eat clicks. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-32 -left-24 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(122,51,236,0.32),transparent_65%)] blur-3xl animate-fl-drift"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-28 -right-16 h-[380px] w-[380px] rounded-full bg-[radial-gradient(circle,rgba(225,49,143,0.26),transparent_65%)] blur-3xl animate-fl-drift2"
+      />
+
+      {/* Foreground row: eyebrow + name + avatars (left)  |  search + CTA (right) */}
+      <div className="relative flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-5">
+        {/* Left cluster */}
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-eyebrow">Workspace</span>
+            <span
+              className="truncate font-display text-[17px] font-bold leading-tight tracking-[-0.015em] text-foreground"
+              title={workspaceName}
+            >
+              {workspaceName}
+            </span>
+          </div>
+          {/* Avatar stack — max 5 + overflow chip. Aria-label opisuje pełen count. */}
+          <div
+            className="hidden items-center md:flex"
+            aria-label={`${memberCount} członków workspace`}
+          >
+            {members.map((m, idx) => (
+              <MemberAvatar
+                key={m.id}
+                name={m.name || m.email}
+                avatarUrl={m.avatarUrl}
+                style={{
+                  marginLeft: idx === 0 ? 0 : -8,
+                  zIndex: members.length - idx,
+                }}
+              />
+            ))}
+            {overflow > 0 && (
+              <span
+                className="grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-brand-50 font-mono text-[0.62rem] font-semibold text-brand-700 dark:border-[#15121F] dark:bg-white/10 dark:text-brand-200"
+                style={{ marginLeft: members.length > 0 ? -8 : 0, zIndex: 0 }}
+              >
+                +{overflow}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Right cluster */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Glass search bar — purely visual stub for v4 brand polish; we
+              don't have a global search yet (note in handoff). */}
+          <label
+            htmlFor="ws-hero-search"
+            className="flex h-9 items-center gap-2 rounded-lg border border-white/70 bg-white/65 px-3 font-sans text-[0.82rem] text-muted-foreground backdrop-blur transition-colors focus-within:border-primary/40 focus-within:bg-white/85 dark:border-white/10 dark:bg-white/5 dark:focus-within:bg-white/[0.08]"
+          >
+            <Search size={14} aria-hidden="true" />
+            <input
+              id="ws-hero-search"
+              type="search"
+              placeholder="Szukaj zadań…"
+              className="w-[160px] bg-transparent text-foreground outline-none placeholder:text-muted-foreground/70 md:w-[200px]"
+            />
+          </label>
+
+          {children}
+
+          {canCreateBoard && (
+            <CreateBoardDialog
+              workspaceId={workspaceId}
+              variant="cta"
+              label="Tablica"
+              workspaceEnabledViews={enabledViews}
+            />
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// Member avatar — image with fallback to initials chip in brand gradient.
+// 28×28 with white ring (matches v4 spec line 237-239 avatar stack).
+function MemberAvatar({
+  name,
+  avatarUrl,
+  style,
+}: {
+  name: string;
+  avatarUrl: string | null;
+  style?: React.CSSProperties;
+}) {
+  const initials = name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  return (
+    <span
+      className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-brand-gradient text-[0.62rem] font-bold uppercase text-white shadow-sm dark:border-[#15121F]"
+      style={style}
+      title={name}
+    >
+      {avatarUrl ? (
+        <Image
+          src={avatarUrl}
+          alt={name}
+          width={28}
+          height={28}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        initials || "?"
+      )}
+    </span>
   );
 }

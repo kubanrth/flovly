@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  @keyframes fl-drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(18px,-22px) scale(1.08); } }
+  @keyframes fl-drift2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-20px,16px) scale(1.1); } }
+</style>
+</helmet>
+
+<div style="--p: {{ primary }}; --p2: {{ primary2 }}; width: max-content; min-width: 100%; min-height: 100vh; box-sizing: border-box; padding: 56px 48px 110px; background: #0B0912; font-family: 'Inter', system-ui, sans-serif; position: relative; overflow: hidden;">
+
+  <div style="position: absolute; top: -160px; left: -100px; width: 760px; height: 760px; border-radius: 50%; background: radial-gradient(circle, rgba(124,92,255,.32), transparent 65%); filter: blur(60px); animation: fl-drift 24s ease-in-out infinite; pointer-events: none;"></div>
+  <div style="position: absolute; top: 800px; right: -160px; width: 780px; height: 780px; border-radius: 50%; background: radial-gradient(circle, rgba(210,71,181,.22), transparent 66%); filter: blur(70px); animation: fl-drift2 28s ease-in-out infinite; pointer-events: none;"></div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 46px; width: max-content; margin: 0 auto;">
+
+    <!-- HEADER -->
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <div style="width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(140deg, var(--p,#7C5CFF), var(--p2,#D247B5)); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 10px 26px -8px rgba(124,92,255,.7), inset 0 1px 0 rgba(255,255,255,.4);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+      <div>
+        <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">FLOVLY — Personal · CRM · Share</div>
+        <div style="font-size: 14px; color: #8B8398; margin-top: 2px;">Moje zadania · TO DO · Notatki · Inbox · Kontakty · Deale · Udostępnianie</div>
+      </div>
+    </div>
+
+    <!-- ============ PERSONAL ============ -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Personal layer</div>
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+
+        <!-- MY TASKS -->
+        <div style="flex: none; width: 880px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Moje zadania · /my-tasks</div>
+          <div style="position: relative; overflow: hidden; height: 600px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8);">
+            <div style="position: absolute; top: -100px; right: -60px; width: 340px; height: 340px; border-radius: 50%; background: radial-gradient(circle, rgba(124,92,255,.34), transparent 65%); filter: blur(40px); pointer-events: none;"></div>
+            <div style="position: relative; padding: 22px 24px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
+                <h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Moje zadania</h2>
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 13px; border-radius: 11px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); font-size: 13px; color: #C9C3D4;"><span style="width: 8px; height: 8px; border-radius: 3px; background: linear-gradient(140deg,#7C5CFF,#D247B5);"></span>Wszystkie workspace'y<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"></path></svg></div>
+              </div>
+              <div style="display: flex; gap: 4px; padding: 4px; border-radius: 13px; background: rgba(255,255,255,.04); width: fit-content; margin-bottom: 18px;">
+                <span style="padding: 8px 16px; border-radius: 10px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); font-size: 13px; font-weight: 600; color: #fff;">Dziś</span>
+                <span style="padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; color: #C9C3D4;">Ten tydzień</span>
+                <span style="padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; color: #C9C3D4;">Później</span>
+                <span style="display: flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; color: #FB7185;">Przeterminowane<span style="padding: 1px 7px; border-radius: 999px; background: rgba(244,63,94,.2); font-size: 11px; font-weight: 700;">2</span></span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 9px;">
+                <sc-for list="{{ myTasks }}" as="t" hint-placeholder-count="4">
+                  <div style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);">
+                    <span style="width: 4px; height: 38px; border-radius: 2px; background: {{ t.pc }}; flex: none;"></span>
+                    <div style="flex: 1; min-width: 0;">
+                      <div style="display: flex; align-items: center; gap: 9px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9B8BE6;">{{ t.id }}</span><span style="font-size: 14.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ t.title }}</span></div>
+                      <div style="display: flex; align-items: center; gap: 8px; margin-top: 5px;"><span style="font-size: 11.5px; color: #8B8398;">{{ t.board }}</span><span style="width: 3px; height: 3px; border-radius: 50%; background: #4B4359;"></span><span style="font-size: 11.5px; color: {{ t.duec }};">{{ t.due }}</span></div>
+                    </div>
+                    <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: {{ t.sbg }}; flex: none;"><span style="width: 7px; height: 7px; border-radius: 50%; background: {{ t.sc }};"></span><span style="font-size: 12px; font-weight: 600; color: {{ t.sc }};">{{ t.status }}</span></span>
+                    <div style="display: flex; flex: none;">
+                      <div style="width: 26px; height: 26px; border-radius: 8px; border: 2px solid #0C0A14; background: {{ t.av }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 700;">{{ t.ini }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TO DO -->
+        <div style="flex: none; width: 900px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">TO DO · /my/todo</div>
+          <div style="position: relative; overflow: hidden; height: 600px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex;">
+            <div style="flex: none; width: 240px; padding: 16px 13px; background: rgba(255,255,255,.03); border-right: 1px solid rgba(255,255,255,.08); display: flex; flex-direction: column; gap: 3px;">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: 10px; background: rgba(244,63,94,.12);"><span style="display:flex; color:#FB7185;"><svg width="15" height="15" viewBox="0 0 24 24" fill="#FB7185" stroke="#FB7185" stroke-width="1.5" stroke-linejoin="round"><path d="m12 2 3 6.5 7 .6-5.3 4.6 1.6 6.8L12 17l-6.2 3.5 1.6-6.8L2 9.1l7-.6Z"></path></svg></span><span style="font-size: 13.5px; font-weight: 600; color: #fff;">My Day</span><span style="margin-left: auto; font-size: 11px; color: #8B8398;">3</span></div>
+              <div style="display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: 10px;"><span style="display:flex; color:#F6B65A;"><svg width="15" height="15" viewBox="0 0 24 24" fill="#F6B65A" stroke="#F6B65A" stroke-width="1.5" stroke-linejoin="round"><path d="m12 2 3 6.5 7 .6-5.3 4.6 1.6 6.8L12 17l-6.2 3.5 1.6-6.8L2 9.1l7-.6Z"></path></svg></span><span style="font-size: 13.5px; color: #C9C3D4;">Ważne</span></div>
+              <div style="height: 1px; background: rgba(255,255,255,.06); margin: 8px 4px;"></div>
+              <sc-for list="{{ todoFolders }}" as="f" hint-placeholder-count="2">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 9px; padding: 8px 11px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"></path></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ f.c }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"></path></svg><span style="font-size: 13px; font-weight: 600; color: #E5E1EC;">{{ f.n }}</span></div>
+                  <sc-for list="{{ f.lists }}" as="l" hint-placeholder-count="2">
+                    <div style="display: flex; align-items: center; gap: 9px; padding: 7px 11px 7px 32px; border-radius: 9px; background: {{ l.row }};"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{ l.c }};"></span><span style="font-size: 12.5px; color: {{ l.tc }};">{{ l.n }}</span><span style="margin-left: auto; font-size: 11px; color: #6B6478;">{{ l.count }}</span></div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 22px 14px;">
+                <h2 style="margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Projekt Redesign</h2>
+                <div style="display: flex; gap: 3px; padding: 3px; border-radius: 10px; background: rgba(255,255,255,.05);"><span style="padding: 6px 11px; border-radius: 8px; background: rgba(255,255,255,.1); font-size: 12px; font-weight: 600; color: #fff;">Komfort</span><span style="padding: 6px 11px; border-radius: 8px; font-size: 12px; color: #8B8398;">Kompakt</span></div>
+              </div>
+              <div style="flex: 1; overflow: hidden; padding: 0 22px; display: flex; flex-direction: column; gap: 7px;">
+                <sc-for list="{{ todos }}" as="td" hint-placeholder-count="5">
+                  <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 13px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07);">
+                    <div style="width: 20px; height: 20px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; background: {{ td.fill }}; border: 2px solid {{ td.ring }};">{{ td.check }}</div>
+                    <span style="flex: 1; font-size: 14px; color: {{ td.c }}; text-decoration: {{ td.deco }};">{{ td.t }}</span>
+                    <span style="font-size: 11.5px; color: {{ td.duec }}; padding: 3px 9px; border-radius: 999px; background: {{ td.duebg }};">{{ td.due }}</span>
+                    <span style="display:flex; color:{{ td.dayc }};"><svg width="16" height="16" viewBox="0 0 24 24" fill="{{ td.dayfill }}" stroke="{{ td.dayc }}" stroke-width="1.6"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"></path></svg></span>
+                    <span style="display:flex; color:{{ td.starc }};"><svg width="16" height="16" viewBox="0 0 24 24" fill="{{ td.starfill }}" stroke="{{ td.starc }}" stroke-width="1.6" stroke-linejoin="round"><path d="m12 2 3 6.5 7 .6-5.3 4.6 1.6 6.8L12 17l-6.2 3.5 1.6-6.8L2 9.1l7-.6Z"></path></svg></span>
+                  </div>
+                </sc-for>
+                <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 13px; border: 1px dashed rgba(255,255,255,.14);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg><span style="font-size: 14px; color: #8B8398;">Nowy TODO…</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+        <!-- NOTES -->
+        <div style="flex: none; width: 900px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Notatki · /notes</div>
+          <div style="position: relative; overflow: hidden; height: 540px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex;">
+            <div style="flex: none; width: 250px; padding: 16px 13px; background: rgba(255,255,255,.03); border-right: 1px solid rgba(255,255,255,.08); display: flex; flex-direction: column; gap: 3px;">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 8px 11px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"></path></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9B8BE6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"></path></svg><span style="font-size: 13px; font-weight: 600; color: #E5E1EC;">Projekt</span></div>
+              <sc-for list="{{ notes }}" as="n" hint-placeholder-count="3">
+                <div style="padding: 10px 12px; border-radius: 11px; background: {{ n.row }}; border: 1px solid {{ n.bd }}; margin-left: 18px;">
+                  <div style="display: flex; align-items: center; gap: 6px;">{{ n.pin }}<span style="font-size: 13px; font-weight: 600; color: {{ n.tc }}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ n.title }}</span></div>
+                  <div style="font-size: 11.5px; color: #6B6478; margin-top: 3px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ n.snippet }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+              <div style="display: flex; align-items: center; gap: 8px; padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,.08);">
+                <div style="font-size: 11.5px; color: #6B6478;">Zaktualizowano dziś 16:42</div>
+                <div style="margin-left: auto; display: flex; gap: 6px;">
+                  <div style="display: flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 9px; background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.24);"><svg width="13" height="13" viewBox="0 0 24 24" fill="#F6B65A" stroke="#F6B65A" stroke-width="1.5"><path d="M12 17v5M9 10.76V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v5.76l2 3.24H7Z"></path></svg><span style="font-size: 12px; color: #F6B65A; font-weight: 600;">Przypięta</span></div>
+                  <div style="width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A9A1B8" stroke-width="2" stroke-linecap="round"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"></path></svg></div>
+                  <div style="width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FB7185" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg></div>
+                </div>
+              </div>
+              <div style="padding: 9px 20px; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: 2px;">
+                <div style="font-size: 13px; font-weight: 700; color: #C9C3D4; width: 26px; text-align: center;">B</div>
+                <div style="font-size: 13px; font-style: italic; color: #9A91AB; width: 26px; text-align: center;">I</div>
+                <div style="font-size: 13px; text-decoration: underline; color: #9A91AB; width: 26px; text-align: center;">U</div>
+                <div style="width: 1px; height: 16px; background: rgba(255,255,255,.1); margin: 0 6px;"></div>
+                <div style="font-size: 12px; color: #9A91AB; width: 30px; text-align: center;">H1</div>
+                <div style="font-size: 12px; color: #9A91AB; width: 30px; text-align: center;">H2</div>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A91AB" stroke-width="2" stroke-linecap="round" style="margin:0 8px;"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9A91AB" stroke-width="2" stroke-linecap="round" style="margin:0 8px;"><path d="m7 8-4 4 4 4M17 8l4 4-4 4"></path></svg>
+              </div>
+              <div style="flex: 1; overflow: hidden; padding: 22px 24px;">
+                <h1 style="margin: 0 0 14px; font-size: 26px; font-weight: 800; letter-spacing: -0.025em; color: #fff;">Notatki ze spotkania — Q3</h1>
+                <p style="margin: 0 0 12px; font-size: 14.5px; line-height: 1.7; color: #C9C3D4;">Ustaliliśmy kierunek liquid glass dla całego interfejsu. Priorytety na najbliższy sprint:</p>
+                <div style="display: flex; flex-direction: column; gap: 9px;">
+                  <div style="display: flex; gap: 10px; align-items: flex-start;"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--p,#7C5CFF); margin-top: 8px; flex: none;"></span><span style="font-size: 14.5px; line-height: 1.6; color: #C9C3D4;">Sidebar i headery na backdrop-blur z aurą tła</span></div>
+                  <div style="display: flex; gap: 10px; align-items: flex-start;"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--p,#7C5CFF); margin-top: 8px; flex: none;"></span><span style="font-size: 14.5px; line-height: 1.6; color: #C9C3D4;">Refraction borders na kartach zamiast solid</span></div>
+                  <div style="display: flex; gap: 10px; align-items: flex-start;"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--p,#7C5CFF); margin-top: 8px; flex: none;"></span><span style="font-size: 14.5px; line-height: 1.6; color: #C9C3D4;">Spring easing dla wszystkich micro-animacji</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INBOX + REMINDERS -->
+        <div style="flex: none; display: flex; flex-direction: column; gap: 22px;">
+          <div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Inbox · /inbox</div>
+            <div style="position: relative; overflow: hidden; width: 500px; height: 360px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8);">
+              <div style="position: relative; padding: 18px 20px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                  <h2 style="margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Powiadomienia</h2>
+                  <span style="font-size: 12px; color: #9B8BE6; font-weight: 600;">Oznacz wszystkie</span>
+                </div>
+                <div style="display: flex; gap: 4px; padding: 3px; border-radius: 11px; background: rgba(255,255,255,.04); width: fit-content; margin-bottom: 14px;">
+                  <span style="padding: 6px 13px; border-radius: 8px; background: rgba(255,255,255,.1); font-size: 12.5px; font-weight: 600; color: #fff;">Nieprzeczytane <span style="color:#9B8BE6;">3</span></span>
+                  <span style="padding: 6px 13px; border-radius: 8px; font-size: 12.5px; color: #8B8398;">Wszystkie</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <sc-for list="{{ inbox }}" as="i" hint-placeholder-count="4">
+                    <div style="display: flex; gap: 11px; padding: 11px; border-radius: 12px; background: {{ i.row }};">
+                      <div style="position: relative; width: 32px; height: 32px; border-radius: 9px; flex: none; background: {{ i.av }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700;">{{ i.ini }}<span style="position: absolute; bottom: -2px; right: -2px; width: 16px; height: 16px; border-radius: 6px; background: #0C0A14; display: flex; align-items: center; justify-content: center; color: {{ i.cc }};">{{ i.ctx }}</span></div>
+                      <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 13px; line-height: 1.45; color: #C9C3D4;"><span style="color: #fff; font-weight: 600;">{{ i.actor }}</span> {{ i.action }}</div>
+                        <div style="font-size: 11px; color: #6B6478; margin-top: 2px;">{{ i.time }}</div>
+                      </div>
+                      {{ i.dot }}
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Reminders popup · auto-pop · 320px</div>
+            <div style="width: 500px; height: 220px; border-radius: 20px; background: repeating-linear-gradient(135deg, #16121F, #16121F 10px, #1A1526 10px, #1A1526 20px); border: 1px solid rgba(255,255,255,.08); padding: 18px; display: flex; align-items: flex-start; justify-content: flex-end;">
+              <div style="position: relative; width: 320px;">
+                <div style="position: absolute; top: 14px; left: 10px; right: 10px; height: 60px; border-radius: 15px; background: rgba(28,24,40,.6); border: 1px solid rgba(255,255,255,.08);"></div>
+                <div style="position: absolute; top: 7px; left: 5px; right: 5px; height: 60px; border-radius: 15px; background: rgba(32,27,46,.8); border: 1px solid rgba(255,255,255,.1);"></div>
+                <div style="position: relative; padding: 13px 14px; border-radius: 16px; background: rgba(38,32,54,.92); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,.14); box-shadow: 0 20px 44px -16px rgba(0,0,0,.7);">
+                  <div style="display: flex; align-items: flex-start; gap: 10px;">
+                    <div style="width: 30px; height: 30px; border-radius: 9px; flex: none; background: linear-gradient(140deg, var(--p,#7C5CFF), var(--p2,#D247B5)); display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"></path></svg></div>
+                    <div style="flex: 1; min-width: 0;">
+                      <div style="font-size: 13.5px; font-weight: 700; color: #fff;">Deadline za godzinę</div>
+                      <div style="font-size: 12px; color: #A9A1B8; margin-top: 2px; line-height: 1.4;">#42 Finalizacja liquid glass — termin 15:00</div>
+                    </div>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B6478" stroke-width="2" stroke-linecap="round" style="flex:none;"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+                  </div>
+                  <div style="display: flex; justify-content: flex-end; margin-top: 10px;"><span style="padding: 6px 13px; border-radius: 9px; background: rgba(124,92,255,.18); font-size: 12.5px; font-weight: 600; color: #C9B6F7;">Otwórz</span></div>
+                </div>
+                <div style="text-align: center; font-size: 11px; color: #6B6478; margin-top: 26px;">+2 więcej</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CRM ============ -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">CRM-lite</div>
+
+      <!-- CONTACTS TABLE -->
+      <div style="flex: none; width: 1100px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Kontakty · /contacts</div>
+        <div style="position: relative; overflow: hidden; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8);">
+          <div style="position: absolute; top: -80px; left: 30%; width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(circle, rgba(124,92,255,.26), transparent 65%); filter: blur(50px); pointer-events: none;"></div>
+          <div style="position: relative; padding: 22px 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
+              <h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Kontakty</h2>
+              <div style="display: flex; gap: 8px;">
+                <div style="display: flex; gap: 3px; padding: 3px; border-radius: 10px; background: rgba(255,255,255,.05);"><span style="padding: 6px 10px; border-radius: 8px; background: rgba(255,255,255,.1); display:flex;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 9h18M3 15h18M9 3v18"></path></svg></span><span style="padding: 6px 10px; border-radius: 8px; display:flex;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg></span></div>
+                <div style="display: flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 11px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 6px 16px -6px rgba(124,92,255,.7);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Nowy kontakt</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 7px; margin-bottom: 16px;">
+              <span style="padding: 7px 14px; border-radius: 999px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); font-size: 12.5px; font-weight: 600; color: #fff;">Wszyscy</span>
+              <span style="padding: 7px 14px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); font-size: 12.5px; color: #C9C3D4;">Moi</span>
+              <span style="padding: 7px 14px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); font-size: 12.5px; color: #C9C3D4;">Z firm</span>
+              <span style="padding: 7px 14px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); font-size: 12.5px; color: #C9C3D4;">Bez ownera</span>
+            </div>
+            <div style="border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,.08);">
+              <div style="display: grid; grid-template-columns: 2.2fr 1.6fr 2fr 1.4fr 1.2fr 1.4fr; padding: 11px 16px; background: rgba(255,255,255,.04); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #6B6478;">
+                <span>Osoba</span><span>Firma</span><span>Email</span><span>Telefon</span><span>Owner</span><span>Aktywność</span>
+              </div>
+              <sc-for list="{{ contacts }}" as="c" hint-placeholder-count="5">
+                <div style="display: grid; grid-template-columns: 2.2fr 1.6fr 2fr 1.4fr 1.2fr 1.4fr; align-items: center; padding: 12px 16px; border-top: 1px solid rgba(255,255,255,.05);">
+                  <div style="display: flex; align-items: center; gap: 10px; min-width: 0;"><div style="width: 32px; height: 32px; border-radius: 9px; flex: none; background: {{ c.av }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700;">{{ c.ini }}</div><span style="font-size: 13.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.name }}</span></div>
+                  <span style="font-size: 13px; color: #C9C3D4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.company }}</span>
+                  <span style="font-size: 13px; color: #8B8398; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.email }}</span>
+                  <span style="font-size: 13px; color: #8B8398;">{{ c.phone }}</span>
+                  <div><span style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 999px; background: {{ c.obg }};"><span style="width: 16px; height: 16px; border-radius: 5px; background: {{ c.oav }}; display:flex; align-items:center; justify-content:center; color:#fff; font-size:8px; font-weight:700;">{{ c.oini }}</span><span style="font-size: 11.5px; color: {{ c.oc }};">{{ c.owner }}</span></span></div>
+                  <span style="font-size: 12px; color: #6B6478;">{{ c.activity }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+        <!-- CONTACT CARD -->
+        <div style="flex: none; width: 760px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Karta kontaktu · /contacts/[id]</div>
+          <div style="position: relative; overflow: hidden; height: 560px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="position: relative; padding: 24px; border-bottom: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03);">
+              <div style="position: absolute; top: -60px; right: -40px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(124,92,255,.3), transparent 65%); filter: blur(40px); pointer-events: none;"></div>
+              <div style="position: relative; display: flex; align-items: center; gap: 16px;">
+                <div style="width: 64px; height: 64px; border-radius: 18px; flex: none; background: linear-gradient(140deg, #34BEF8, #7C5CFF); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; font-weight: 700; box-shadow: 0 10px 24px -8px rgba(52,190,248,.5);">MK</div>
+                <div style="flex: 1;">
+                  <div style="font-size: 21px; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Marek Kowalczyk</div>
+                  <div style="font-size: 13.5px; color: #A9A1B8; margin-top: 2px;">Head of Product · <span style="color:#C9C3D4;">DANIELOS Sp. z o.o.</span></div>
+                  <div style="display: flex; gap: 14px; margin-top: 9px;"><span style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #8B8398;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9B8BE6" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m2 7 10 6 10-6"></path></svg>marek@danielos.pl</span><span style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #8B8398;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9B8BE6" stroke-width="2"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"></path></svg>+48 601 234 567</span></div>
+                </div>
+              </div>
+              <div style="position: relative; display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: rgba(255,255,255,.04); width: fit-content; margin-top: 18px;">
+                <span style="padding: 7px 15px; border-radius: 9px; background: rgba(255,255,255,.1); font-size: 13px; font-weight: 600; color: #fff;">Timeline</span>
+                <span style="padding: 7px 15px; border-radius: 9px; font-size: 13px; color: #8B8398;">Zadania</span>
+                <span style="padding: 7px 15px; border-radius: 9px; font-size: 13px; color: #8B8398;">Wiadomości</span>
+              </div>
+            </div>
+            <div style="flex: 1; display: flex; min-height: 0;">
+              <div style="flex: 1; min-width: 0; overflow: hidden; padding: 20px 22px;">
+                <sc-for list="{{ ctTimeline }}" as="e" hint-placeholder-count="4">
+                  <div style="display: flex; gap: 12px;">
+                    <div style="display: flex; flex-direction: column; align-items: center; flex: none;"><div style="width: 30px; height: 30px; border-radius: 9px; background: {{ e.bg }}; display: flex; align-items: center; justify-content: center;">{{ e.icon }}</div><div style="width: 1.5px; flex: 1; background: rgba(255,255,255,.08); margin: 4px 0;"></div></div>
+                    <div style="padding-bottom: 18px;"><div style="font-size: 13.5px; color: #C9C3D4; line-height: 1.45;">{{ e.text }}</div><div style="font-size: 11.5px; color: #6B6478; margin-top: 3px;">{{ e.time }}</div></div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="flex: none; width: 230px; padding: 20px 16px; background: rgba(255,255,255,.03); border-left: 1px solid rgba(255,255,255,.08); display: flex; flex-direction: column; gap: 16px;">
+                <div><div style="font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 7px;">Tagi</div><div style="display: flex; flex-wrap: wrap; gap: 5px;"><span style="padding: 3px 9px; border-radius: 999px; font-size: 12px; color: #6EE7C7; background: rgba(16,185,129,.14);">klient</span><span style="padding: 3px 9px; border-radius: 999px; font-size: 12px; color: #C9B6F7; background: rgba(124,92,255,.14);">enterprise</span></div></div>
+                <div><div style="font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 7px;">Owner</div><div style="display: flex; align-items: center; gap: 8px;"><div style="width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(140deg,#7C5CFF,#D247B5); display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px; font-weight:700;">AD</div><span style="font-size: 13px; color: #C9C3D4;">Adam D.</span></div></div>
+                <div><div style="font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 7px;">Powiązane deale</div><div style="padding: 11px 13px; border-radius: 12px; background: linear-gradient(135deg, rgba(124,92,255,.12), rgba(210,71,181,.1)); border: 1px solid rgba(124,92,255,.2);"><div style="font-size: 13px; font-weight: 600; color: #fff;">Wdrożenie Enterprise</div><div style="display: flex; align-items: center; justify-content: space-between; margin-top: 5px;"><span style="font-family:'JetBrains Mono',monospace; font-size: 13px; font-weight: 700; color: #6EE7C7;">48 000 zł</span><span style="font-size: 11px; color: #9B8BE6;">Negocjacje</span></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DEAL CARD -->
+        <div style="flex: none; width: 480px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Karta deala · /deals/[id]</div>
+          <div style="position: relative; overflow: hidden; height: 560px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="padding: 20px 22px 16px; background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.08);">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;"><span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; background: rgba(124,92,255,.16); border: 1px solid rgba(124,92,255,.3);"><span style="width: 7px; height: 7px; border-radius: 50%; background: #9B8BE6;"></span><span style="font-size: 12px; font-weight: 600; color: #C9B6F7;">Negocjacje</span></span></div>
+              <h2 style="margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Wdrożenie Enterprise — DANIELOS</h2>
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: #6EE7C7; margin-top: 12px;">48 000 zł</div>
+            </div>
+            <div style="flex: 1; overflow: hidden; padding: 18px 22px; display: flex; flex-direction: column; gap: 18px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div><div style="font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 6px;">Zamknięcie</div><div style="font-size: 13.5px; color: #C9C3D4; padding: 8px 11px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);">30 cze 2026</div></div>
+                <div><div style="font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 6px;">Kontakt</div><div style="display: flex; align-items: center; gap: 7px; padding: 7px 11px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);"><div style="width: 22px; height: 22px; border-radius: 7px; background: linear-gradient(140deg,#34BEF8,#7C5CFF); display:flex; align-items:center; justify-content:center; color:#fff; font-size:9px; font-weight:700;">MK</div><span style="font-size: 13px; color: #C9C3D4;">Marek K.</span></div></div>
+              </div>
+              <div>
+                <div style="font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 11px;">Historia</div>
+                <sc-for list="{{ dealTimeline }}" as="e" hint-placeholder-count="3">
+                  <div style="display: flex; gap: 11px;">
+                    <div style="display: flex; flex-direction: column; align-items: center; flex: none;"><div style="width: 8px; height: 8px; border-radius: 50%; background: {{ e.dot }}; margin-top: 4px;"></div><div style="width: 1.5px; flex: 1; background: rgba(255,255,255,.08); margin: 3px 0;"></div></div>
+                    <div style="padding-bottom: 13px;"><div style="font-size: 13px; color: #C9C3D4; line-height: 1.4;">{{ e.text }}</div><div style="font-size: 11px; color: #6B6478; margin-top: 2px;">{{ e.time }}</div></div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="margin-top: auto; display: flex; align-items: center; gap: 9px; padding: 11px 13px; border-radius: 12px; background: rgba(52,190,248,.08); border: 1px solid rgba(52,190,248,.2);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#34BEF8" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path></svg><span style="font-size: 12.5px; color: #C9C3D4;">Przypomnienie: follow-up <span style="color:#fff; font-weight:600;">25 cze</span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEALS PIPELINE -->
+      <div style="flex: none; width: 1100px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Sales pipeline · /deals</div>
+        <div style="position: relative; overflow: hidden; height: 540px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8);">
+          <div style="position: relative; padding: 22px 24px; height: 100%; display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+              <h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Pipeline sprzedaży</h2>
+              <div style="display: flex; gap: 7px;">
+                <span style="padding: 7px 13px; border-radius: 999px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); font-size: 12.5px; font-weight: 600; color: #fff;">Moje</span>
+                <span style="padding: 7px 13px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); font-size: 12.5px; color: #C9C3D4;">Otwarte</span>
+                <span style="padding: 7px 13px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); font-size: 12.5px; color: #6EE7C7;">Wygrane</span>
+                <span style="padding: 7px 13px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); font-size: 12.5px; color: #FB7185;">Stracone</span>
+              </div>
+            </div>
+            <div style="flex: 1; display: flex; gap: 13px; min-height: 0;">
+              <sc-for list="{{ stages }}" as="s" hint-placeholder-count="4">
+                <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; border-radius: 16px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);">
+                  <div style="padding: 13px 14px; border-bottom: 1px solid rgba(255,255,255,.07);">
+                    <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{ s.c }};"></span><span style="font-size: 13px; font-weight: 700; color: #fff;">{{ s.n }}</span><span style="margin-left: auto; font-size: 11px; color: #8B8398;">{{ s.count }}</span></div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: {{ s.c }}; margin-top: 6px;">{{ s.total }}</div>
+                  </div>
+                  <div style="flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 9px;">
+                    <sc-for list="{{ s.deals }}" as="d" hint-placeholder-count="2">
+                      <div style="padding: 12px; border-radius: 13px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 8px 18px -10px rgba(0,0,0,.6);">
+                        <div style="font-size: 13px; font-weight: 600; color: #fff; line-height: 1.35;">{{ d.title }}</div>
+                        <div style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #6EE7C7; margin-top: 7px;">{{ d.value }}</div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px;"><span style="font-size: 11px; color: #6B6478;">{{ d.close }}</span><div style="display: flex; align-items: center; gap: 5px;"><div style="width: 22px; height: 22px; border-radius: 7px; background: {{ d.av }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 9px; font-weight: 700;">{{ d.ini }}</div></div></div>
+                      </div>
+                    </sc-for>
+                    {{ s.addBtn }}
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SHARE ============ -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Share + public viewer</div>
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+
+        <!-- SHARE DIALOG -->
+        <div style="flex: none; width: 520px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Dialog udostępniania · 520px</div>
+          <div style="position: relative; border-radius: 22px; padding: 24px; background: rgba(20,17,30,.72); backdrop-filter: blur(40px) saturate(160%); -webkit-backdrop-filter: blur(40px) saturate(160%); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 1px 0 rgba(255,255,255,.1) inset, 0 30px 70px -24px rgba(0,0,0,.7);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+              <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #fff;">Udostępnij tablicę</h3>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+            </div>
+            <div style="font-size: 13px; color: #8B8398; margin-bottom: 18px;">Linki publiczne są tylko do odczytu.</div>
+            <div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 7px;">Etykieta</div>
+            <div style="display: flex; gap: 9px; margin-bottom: 22px;">
+              <div style="flex: 1; padding: 11px 13px; border-radius: 11px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); font-size: 14px; color: #C9C3D4;">Demo dla klienta</div>
+              <div style="display: flex; align-items: center; gap: 7px; padding: 11px 16px; border-radius: 11px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); color: #fff; font-size: 13.5px; font-weight: 600; box-shadow: 0 8px 20px -8px rgba(124,92,255,.6);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"></path><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7L12 19"></path></svg>Wygeneruj</div>
+            </div>
+            <div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 9px;">Aktywne linki</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <sc-for list="{{ shareLinks }}" as="l" hint-placeholder-count="2">
+                <div style="padding: 12px 14px; border-radius: 13px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);">
+                  <div style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 13.5px; font-weight: 600; color: #fff;">{{ l.label }}</span><span style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: #8B8398;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>{{ l.views }}</span><div style="margin-left: auto; display: flex; gap: 6px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9B8BE6" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2" stroke-linecap="round"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FB7185" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg></div></div>
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #6B6478; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ l.url }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display: flex; align-items: center; gap: 9px; margin-top: 16px; padding: 11px 14px; border-radius: 12px; background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.28);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.4" stroke-linecap="round"><path d="M20 6 9 17l-5-5"></path></svg><span style="font-size: 13px; color: #6EE7C7; font-weight: 500;">Link skopiowany do schowka</span></div>
+          </div>
+        </div>
+
+        <!-- PUBLIC VIEWER -->
+        <div style="flex: none; width: 1000px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Public viewer · /share/[token] · light · clean</div>
+          <div style="position: relative; overflow: hidden; height: 540px; border-radius: 24px; background: #F4F1FA; border: 1px solid rgba(255,255,255,.7); box-shadow: 0 30px 70px -30px rgba(46,19,52,.4); display: flex; flex-direction: column;">
+            <div style="position: absolute; top: -90px; right: 10%; width: 380px; height: 380px; border-radius: 50%; background: radial-gradient(circle, rgba(124,92,255,.16), transparent 65%); filter: blur(50px); pointer-events: none;"></div>
+            <div style="position: relative; display: flex; align-items: center; gap: 13px; padding: 18px 24px; background: rgba(255,255,255,.6); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border-bottom: 1px solid rgba(255,255,255,.7);">
+              <div style="width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(140deg, var(--p,#7C5CFF), var(--p2,#D247B5)); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 6px 16px -5px rgba(124,92,255,.5);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+              <div style="flex: 1;"><div style="font-size: 12px; color: #847B96;">Studio Nebula</div><div style="font-size: 16px; font-weight: 700; letter-spacing: -0.01em; color: #14111B;">Redesign Aplikacji</div></div>
+              <span style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: rgba(124,92,255,.1); border: 1px solid rgba(124,92,255,.24); font-size: 12px; font-weight: 600; color: #6A24DC;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6A24DC" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>Tylko do odczytu</span>
+            </div>
+            <div style="position: relative; flex: 1; overflow: hidden; padding: 20px 24px; display: flex; gap: 14px;">
+              <sc-for list="{{ publicCols }}" as="col" hint-placeholder-count="4">
+                <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+                  <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 11px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{ col.c }};"></span><span style="font-size: 13px; font-weight: 700; color: #221E2A;">{{ col.n }}</span><span style="font-size: 11px; color: #A9A1B8;">{{ col.count }}</span></div>
+                  <div style="display: flex; flex-direction: column; gap: 9px;">
+                    <sc-for list="{{ col.cards }}" as="c" hint-placeholder-count="2">
+                      <div style="padding: 12px; border-radius: 13px; background: #fff; border: 1px solid #E8E2F2; box-shadow: 0 4px 12px -6px rgba(46,19,52,.12);">
+                        <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 7px;"><span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 6px; background: {{ c.pbg }};"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{ c.pc }};"></span><span style="font-size: 10.5px; font-weight: 700; color: {{ c.pc }};">{{ c.prio }}</span></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #A9A1B8;">{{ c.id }}</span></div>
+                        <div style="font-size: 13px; font-weight: 600; color: #14111B; line-height: 1.35;">{{ c.title }}</div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px;"><div style="display: flex;"><div style="width: 22px; height: 22px; border-radius: 7px; border: 2px solid #fff; background: {{ c.av }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 9px; font-weight: 700;">{{ c.ini }}</div></div><span style="font-size: 11px; color: #847B96;">{{ c.due }}</span></div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="position: relative; padding: 13px; text-align: center; border-top: 1px solid rgba(255,255,255,.7); background: rgba(255,255,255,.4);"><span style="font-size: 12px; color: #847B96;">Powered by </span><span style="font-size: 12px; font-weight: 700; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); -webkit-background-clip: text; background-clip: text; color: transparent;">FLOVLY</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ERROR STATES -->
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+        <div style="flex: none; width: 486px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Dostęp cofnięty</div>
+          <div style="height: 300px; border-radius: 24px; background: #F4F1FA; border: 1px solid rgba(255,255,255,.7); box-shadow: 0 24px 60px -28px rgba(46,19,52,.3); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px;">
+            <div style="width: 60px; height: 60px; border-radius: 18px; background: rgba(244,63,94,.1); border: 1px solid rgba(244,63,94,.24); display: flex; align-items: center; justify-content: center;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
+            <div style="font-size: 18px; font-weight: 700; color: #14111B; margin-top: 18px;">Dostęp cofnięty</div>
+            <div style="font-size: 13.5px; color: #655C77; margin-top: 7px; max-width: 320px; line-height: 1.5;">Skontaktuj się z osobą, która udostępniła Ci tę tablicę, aby uzyskać nowy link.</div>
+          </div>
+        </div>
+        <div style="flex: none; width: 486px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Link wygasł</div>
+          <div style="height: 300px; border-radius: 24px; background: #F4F1FA; border: 1px solid rgba(255,255,255,.7); box-shadow: 0 24px 60px -28px rgba(46,19,52,.3); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px;">
+            <div style="width: 60px; height: 60px; border-radius: 18px; background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.26); display: flex; align-items: center; justify-content: center;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 10h18"></path><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="m9 16 2 2 4-4"></path></svg></div>
+            <div style="font-size: 18px; font-weight: 700; color: #14111B; margin-top: 18px;">Link wygasł</div>
+            <div style="font-size: 13.5px; color: #655C77; margin-top: 7px; max-width: 320px; line-height: 1.5;">Ten link do tablicy stracił ważność. Poproś właściciela o wygenerowanie nowego.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1600, &quot;height&quot;: 1000}, &quot;primary&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#7C5CFF&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;primary2&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#D247B5&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  ic(sw, ...ds) {
+    return React.createElement('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw, strokeLinecap: 'round', strokeLinejoin: 'round' }, ds.map((d, i) => React.createElement('path', { key: i, d })));
+  }
+  check() {
+    return React.createElement('svg', { width: 11, height: 11, viewBox: '0 0 24 24', fill: 'none', stroke: '#fff', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }, React.createElement('path', { d: 'M20 6 9 17l-5-5' }));
+  }
+  dot() {
+    return React.createElement('span', { style: { width: '8px', height: '8px', borderRadius: '50%', background: this.props.primary || '#7C5CFF', flex: 'none', alignSelf: 'center' } });
+  }
+  ctxIcon(color, ...ds) {
+    return React.createElement('span', { style: { color, display: 'flex' } }, React.createElement('svg', { width: 9, height: 9, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2.6, strokeLinecap: 'round', strokeLinejoin: 'round' }, ds.map((d, i) => React.createElement('path', { key: i, d }))));
+  }
+  pin() {
+    return React.createElement('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: '#F6B65A', stroke: '#F6B65A', strokeWidth: 1.5, style: { flex: 'none' } }, React.createElement('path', { d: 'M12 17v5M9 10.76V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v5.76l2 3.24H7Z' }));
+  }
+  addBtn() {
+    return React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', borderRadius: '11px', border: '1px dashed rgba(255,255,255,.14)' } },
+      React.createElement('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: '#8B8398', strokeWidth: 2, strokeLinecap: 'round' }, React.createElement('path', { d: 'M12 5v14M5 12h14' })),
+      React.createElement('span', { style: { fontSize: '12.5px', color: '#8B8398' } }, 'Dodaj deal'));
+  }
+  renderVals() {
+    const p = this.props || {};
+    const primary = p.primary || '#7C5CFF';
+    const primary2 = p.primary2 || '#D247B5';
+    const ic = this.ic.bind(this), CM = this.check.bind(this);
+
+    return {
+      primary, primary2,
+      myTasks: [
+        { id: '#42', title: 'Finalizacja liquid glass dla sidebar', board: 'Redesign Aplikacji', due: 'Termin: dziś 15:00', duec: '#FB7185', pc: '#F43F5E', status: 'W toku', sc: '#F6B65A', sbg: 'rgba(245,158,11,.14)', av: 'linear-gradient(140deg,#7C5CFF,#D247B5)', ini: 'AD' },
+        { id: '#37', title: 'Audyt kontrastu WCAG AA', board: 'Redesign Aplikacji', due: 'Przeterminowane · 16 cze', duec: '#FB7185', pc: '#F43F5E', status: 'Review', sc: '#5BCBFA', sbg: 'rgba(52,190,248,.14)', av: 'linear-gradient(140deg,#7C5CFF,#D247B5)', ini: 'AD' },
+        { id: '#51', title: 'Przygotować demo dla DANIELOS', board: 'Onboarding DANIELOS', due: 'Termin: dziś 18:00', duec: '#C9C3D4', pc: '#F59E0B', status: 'To Do', sc: '#93C5FD', sbg: 'rgba(59,130,246,.14)', av: 'linear-gradient(140deg,#7C5CFF,#D247B5)', ini: 'AD' },
+        { id: '#48', title: 'Refraction borders na kartach', board: 'Redesign Aplikacji', due: 'Termin: dziś', duec: '#C9C3D4', pc: '#3B82F6', status: 'W toku', sc: '#F6B65A', sbg: 'rgba(245,158,11,.14)', av: 'linear-gradient(140deg,#7C5CFF,#D247B5)', ini: 'AD' }
+      ],
+      todoFolders: [
+        { n: 'Praca', c: '#9B8BE6', lists: [
+          { n: 'Projekt Redesign', c: primary, count: '5', row: 'rgba(124,92,255,.12)', tc: '#fff' },
+          { n: 'Marketing', c: '#34BEF8', count: '2', row: 'transparent', tc: '#C9C3D4' }
+        ] },
+        { n: 'Osobiste', c: '#F59E0B', lists: [
+          { n: 'Zakupy', c: '#10B981', count: '3', row: 'transparent', tc: '#C9C3D4' }
+        ] }
+      ],
+      todos: [
+        { t: 'Zdefiniować blur tokens dla light mode', c: '#6B6478', deco: 'line-through', fill: primary, ring: primary, check: CM(), due: '', duec: '', duebg: 'transparent', starc: '#4B4359', starfill: 'none', dayc: '#4B4359', dayfill: 'none' },
+        { t: 'Sidebar glass surface + aura przebicie', c: '#fff', deco: 'none', fill: 'transparent', ring: '#4B4359', check: '', due: 'dziś', duec: '#FB7185', duebg: 'rgba(244,63,94,.12)', starc: '#F6B65A', starfill: '#F6B65A', dayc: '#F472B6', dayfill: '#F472B6' },
+        { t: 'Audyt kontrastu nav itemów', c: '#fff', deco: 'none', fill: 'transparent', ring: '#4B4359', check: '', due: 'jutro', duec: '#C9C3D4', duebg: 'rgba(255,255,255,.06)', starc: '#F6B65A', starfill: '#F6B65A', dayc: '#4B4359', dayfill: 'none' },
+        { t: 'Spring easing dla micro-animacji', c: '#fff', deco: 'none', fill: 'transparent', ring: '#4B4359', check: '', due: '20 cze', duec: '#C9C3D4', duebg: 'rgba(255,255,255,.06)', starc: '#4B4359', starfill: 'none', dayc: '#F472B6', dayfill: '#F472B6' },
+        { t: 'Przegląd refraction borders', c: '#fff', deco: 'none', fill: 'transparent', ring: '#4B4359', check: '', due: '', duec: '', duebg: 'transparent', starc: '#4B4359', starfill: 'none', dayc: '#4B4359', dayfill: 'none' }
+      ],
+      notes: [
+        { title: 'Notatki ze spotkania — Q3', snippet: 'Ustaliliśmy kierunek liquid glass dla całego interfejsu. Priorytety na sprint…', row: 'rgba(124,92,255,.12)', bd: 'rgba(124,92,255,.24)', tc: '#fff', pin: this.pin() },
+        { title: 'Pomysły na onboarding', snippet: 'Krok po kroku, max 3 ekrany. Tooltips zamiast modali…', row: 'transparent', bd: 'transparent', tc: '#C9C3D4', pin: '' },
+        { title: 'Research konkurencji', snippet: 'Linear, ClickUp, Height — analiza glass UI i motion…', row: 'transparent', bd: 'transparent', tc: '#C9C3D4', pin: '' }
+      ],
+      inbox: [
+        { actor: 'Kasia M.', action: 'wspomniała Cię w #42 Finalizacja liquid glass', time: '12 min temu', av: 'linear-gradient(140deg,#34BEF8,#10B981)', ini: 'KM', ctx: this.ctxIcon('#9B8BE6', 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z'), cc: '#9B8BE6', row: 'rgba(124,92,255,.07)', dot: this.dot() },
+        { actor: 'Adam D.', action: 'przypisał Ci zadanie #51 Demo dla DANIELOS', time: '1 godz. temu', av: 'linear-gradient(140deg,#7C5CFF,#D247B5)', ini: 'AD', ctx: this.ctxIcon('#34BEF8', 'M9 11l3 3L22 4', 'M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'), cc: '#34BEF8', row: 'rgba(124,92,255,.07)', dot: this.dot() },
+        { actor: 'Tomek L.', action: 'skomentował deal Wdrożenie Enterprise', time: '3 godz. temu', av: 'linear-gradient(140deg,#F59E0B,#D247B5)', ini: 'TL', ctx: this.ctxIcon('#10B981', 'M22 7 13.5 15.5l-5-5L2 17'), cc: '#10B981', row: 'rgba(124,92,255,.07)', dot: this.dot() },
+        { actor: 'System', action: 'tablica Redesign osiągnęła 60% ukończenia', time: 'wczoraj', av: 'linear-gradient(140deg,#34BEF8,#7C5CFF)', ini: 'AT', ctx: this.ctxIcon('#F59E0B', 'M13 2 3 14h9l-1 8 10-12h-9Z'), cc: '#F59E0B', row: 'transparent', dot: '' }
+      ],
+      contacts: [
+        { name: 'Marek Kowalczyk', ini: 'MK', av: 'linear-gradient(140deg,#34BEF8,#7C5CFF)', company: 'DANIELOS', email: 'marek@danielos.pl', phone: '+48 601 234 567', owner: 'Adam D.', oini: 'AD', oav: 'linear-gradient(140deg,#7C5CFF,#D247B5)', obg: 'rgba(124,92,255,.12)', oc: '#C9B6F7', activity: '2 godz. temu' },
+        { name: 'Anna Wiśniewska', ini: 'AW', av: 'linear-gradient(140deg,#10B981,#34BEF8)', company: 'Brandflow', email: 'anna@brandflow.io', phone: '+48 602 887 110', owner: 'Kasia M.', oini: 'KM', oav: 'linear-gradient(140deg,#34BEF8,#10B981)', obg: 'rgba(52,190,248,.12)', oc: '#93D7F5', activity: 'wczoraj' },
+        { name: 'Piotr Zieliński', ini: 'PZ', av: 'linear-gradient(140deg,#F59E0B,#D247B5)', company: 'NovaSoft', email: 'p.zielinski@nova.pl', phone: '+48 603 442 901', owner: 'Adam D.', oini: 'AD', oav: 'linear-gradient(140deg,#7C5CFF,#D247B5)', obg: 'rgba(124,92,255,.12)', oc: '#C9B6F7', activity: '3 dni temu' },
+        { name: 'Magda Lewandowska', ini: 'ML', av: 'linear-gradient(140deg,#A78BFA,#34BEF8)', company: 'Studio Kreska', email: 'magda@kreska.studio', phone: '+48 604 220 558', owner: '—', oini: '?', oav: 'rgba(255,255,255,.1)', obg: 'rgba(255,255,255,.05)', oc: '#8B8398', activity: 'tydzień temu' },
+        { name: 'Jakub Nowicki', ini: 'JN', av: 'linear-gradient(140deg,#F43F5E,#F59E0B)', company: 'DANIELOS', email: 'kuba@danielos.pl', phone: '+48 605 998 312', owner: 'Adam D.', oini: 'AD', oav: 'linear-gradient(140deg,#7C5CFF,#D247B5)', obg: 'rgba(124,92,255,.12)', oc: '#C9B6F7', activity: '5 dni temu' }
+      ],
+      ctTimeline: [
+        { text: 'Wysłano ofertę wdrożenia Enterprise', time: 'dziś 10:20', bg: 'rgba(124,92,255,.16)', icon: React.createElement('span', { style: { color: '#9B8BE6', display: 'flex' } }, ic(2, 'm22 2-7 20-4-9-9-4Z', 'M22 2 11 13')) },
+        { text: 'Rozmowa telefoniczna — 25 min', time: 'wczoraj 14:05', bg: 'rgba(52,190,248,.16)', icon: React.createElement('span', { style: { color: '#34BEF8', display: 'flex' } }, ic(2, 'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.4 2.5 1.2 3.5.5 4.8L8.1 9.9a16 16 0 0 0 6 6l1.4-1a2 2 0 0 1 2.1-.5c.9.3 2.3.9 2.7.7a2 2 0 0 1 1.7 2Z')) },
+        { text: 'Dodano tag „enterprise"', time: '12 cze 09:30', bg: 'rgba(16,185,129,.16)', icon: React.createElement('span', { style: { color: '#10B981', display: 'flex' } }, ic(2, 'M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2', 'M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2', 'M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2')) },
+        { text: 'Kontakt utworzony przez Adam D.', time: '10 cze 16:00', bg: 'rgba(255,255,255,.06)', icon: React.createElement('span', { style: { color: '#8B8398', display: 'flex' } }, ic(2, 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2', 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8')) }
+      ],
+      dealTimeline: [
+        { text: 'Etap zmieniony: Kwalifikacja → Negocjacje', time: 'dziś 11:00', dot: '#9B8BE6' },
+        { text: 'Wartość zaktualizowana: 42 000 → 48 000 zł', time: 'wczoraj 15:30', dot: '#6EE7C7' },
+        { text: 'Deal utworzony', time: '8 cze 10:00', dot: '#8B8398' }
+      ],
+      stages: [
+        { n: 'Kwalifikacja', c: '#94A3B8', count: '3', total: '36 000 zł', deals: [
+          { title: 'Audyt UX — Brandflow', value: '12 000 zł', close: '28 cze', av: 'linear-gradient(140deg,#34BEF8,#10B981)', ini: 'KM' },
+          { title: 'Redesign landing NovaSoft', value: '14 000 zł', close: '2 lip', av: 'linear-gradient(140deg,#F59E0B,#D247B5)', ini: 'AD' }
+        ], addBtn: this.addBtn() },
+        { n: 'Negocjacje', c: '#9B8BE6', count: '2', total: '66 000 zł', deals: [
+          { title: 'Wdrożenie Enterprise — DANIELOS', value: '48 000 zł', close: '30 cze', av: 'linear-gradient(140deg,#7C5CFF,#D247B5)', ini: 'AD' },
+          { title: 'Pakiet brandingowy Kreska', value: '18 000 zł', close: '5 lip', av: 'linear-gradient(140deg,#A78BFA,#34BEF8)', ini: 'AD' }
+        ], addBtn: this.addBtn() },
+        { n: 'Oferta', c: '#34BEF8', count: '1', total: '22 000 zł', deals: [
+          { title: 'Migracja danych — NovaSoft', value: '22 000 zł', close: '10 lip', av: 'linear-gradient(140deg,#F59E0B,#D247B5)', ini: 'AD' }
+        ], addBtn: this.addBtn() },
+        { n: 'Wygrane', c: '#10B981', count: '2', total: '54 000 zł', deals: [
+          { title: 'Onboarding DANIELOS — faza 1', value: '30 000 zł', close: 'Zamknięte', av: 'linear-gradient(140deg,#7C5CFF,#D247B5)', ini: 'AD' },
+          { title: 'Warsztat strategii Brandflow', value: '24 000 zł', close: 'Zamknięte', av: 'linear-gradient(140deg,#34BEF8,#10B981)', ini: 'KM' }
+        ], addBtn: this.addBtn() }
+      ],
+      shareLinks: [
+        { label: 'Demo dla klienta', views: '24 odsłon', url: 'flovly.app/share/8fk2-x9q2-demo' },
+        { label: 'Stakeholderzy Q3', views: '7 odsłon', url: 'flovly.app/share/p4m1-z7ab-q3rev' }
+      ],
+      publicCols: [
+        { n: 'To Do', c: '#3B82F6', count: '2', cards: [
+          { id: '#51', title: 'Przygotować demo dla DANIELOS', prio: 'P1', pc: '#D97706', pbg: 'rgba(245,158,11,.12)', av: 'linear-gradient(140deg,#7C5CFF,#D247B5)', ini: 'AD', due: '18 cze' },
+          { id: '#54', title: 'Eksport tokenów do Tailwind', prio: 'P2', pc: '#2563EB', pbg: 'rgba(59,130,246,.12)', av: 'linear-gradient(140deg,#34BEF8,#10B981)', ini: 'KM', due: '20 cze' }
+        ] },
+        { n: 'W toku', c: '#F59E0B', count: '2', cards: [
+          { id: '#42', title: 'Finalizacja liquid glass sidebar', prio: 'P0', pc: '#E11D48', pbg: 'rgba(244,63,94,.1)', av: 'linear-gradient(140deg,#7C5CFF,#D247B5)', ini: 'AD', due: 'dziś' },
+          { id: '#48', title: 'Refraction borders na kartach', prio: 'P2', pc: '#2563EB', pbg: 'rgba(59,130,246,.12)', av: 'linear-gradient(140deg,#A78BFA,#34BEF8)', ini: 'TL', due: '19 cze' }
+        ] },
+        { n: 'Review', c: '#34BEF8', count: '1', cards: [
+          { id: '#37', title: 'Audyt kontrastu WCAG AA', prio: 'P0', pc: '#E11D48', pbg: 'rgba(244,63,94,.1)', av: 'linear-gradient(140deg,#7C5CFF,#D247B5)', ini: 'AD', due: '16 cze' }
+        ] },
+        { n: 'Gotowe', c: '#10B981', count: '2', cards: [
+          { id: '#29', title: 'Definicja blur tokens', prio: 'P1', pc: '#D97706', pbg: 'rgba(245,158,11,.12)', av: 'linear-gradient(140deg,#34BEF8,#10B981)', ini: 'KM', due: '10 cze' },
+          { id: '#31', title: 'Paleta kolorów v2', prio: 'P3', pc: '#64748B', pbg: 'rgba(148,163,184,.12)', av: 'linear-gradient(140deg,#7C5CFF,#D247B5)', ini: 'AD', due: '11 cze' }
+        ] }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

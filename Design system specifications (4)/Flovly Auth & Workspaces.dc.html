@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  @keyframes fl-drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(18px,-22px) scale(1.08); } }
+  @keyframes fl-drift2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-20px,16px) scale(1.1); } }
+  @keyframes fl-caret { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+</style>
+</helmet>
+
+<div style="--p: {{ primary }}; --p2: {{ primary2 }}; width: max-content; min-width: 100%; min-height: 100vh; box-sizing: border-box; padding: 56px 48px 110px; background: #0B0912; font-family: 'Inter', system-ui, sans-serif; position: relative; overflow: hidden;">
+  <div style="position: absolute; top: -160px; left: -100px; width: 760px; height: 760px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.3), transparent 65%); filter: blur(60px); animation: fl-drift 24s ease-in-out infinite; pointer-events: none;"></div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 44px; width: max-content; margin: 0 auto;">
+
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <div style="width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(140deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 10px 26px -8px rgba(122,51,236,.7);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+      <div><div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">FLOVLY — Auth &amp; Workspaces</div><div style="font-size: 14px; color: #8B8398; margin-top: 2px;">Logowanie · zaproszenie · 2FA · wybór workspace</div></div>
+    </div>
+
+    <!-- AUTH FLOW -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Auth flow · full-page hero z aurą</div>
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+
+        <!-- LOGIN -->
+        <div style="flex: none; width: 560px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Logowanie · /secure-access-portal</div>
+          <div style="position: relative; overflow: hidden; height: 600px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; align-items: center; justify-content: center;">
+            <div style="position: absolute; top: -120px; left: 50%; transform: translateX(-50%); width: 480px; height: 480px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.4), transparent 64%); filter: blur(46px); animation: fl-drift2 26s ease-in-out infinite; pointer-events: none;"></div>
+            <div style="position: absolute; bottom: -120px; right: -40px; width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(circle, rgba(225,49,143,.3), transparent 64%); filter: blur(44px); pointer-events: none;"></div>
+            <div style="position: relative; width: 380px; padding: 32px; border-radius: 22px; background: rgba(20,17,30,.7); backdrop-filter: blur(40px) saturate(160%); -webkit-backdrop-filter: blur(40px) saturate(160%); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 1px 0 rgba(255,255,255,.1) inset, 0 30px 70px -24px rgba(0,0,0,.6);">
+              <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 26px;">
+                <div style="width: 50px; height: 50px; border-radius: 15px; background: linear-gradient(140deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 24px -8px rgba(122,51,236,.6), inset 0 1px 0 rgba(255,255,255,.4);"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+                <div style="font-size: 22px; font-weight: 800; letter-spacing: -0.03em; color: #fff; margin-top: 14px;">FLOVLY</div>
+                <div style="font-size: 13px; color: #8B8398; margin-top: 3px;">Workflow który płynie</div>
+              </div>
+              <div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 7px;">Email</div>
+              <div style="padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); font-size: 14px; color: #C9C3D4; margin-bottom: 14px;">adam@studio.pl</div>
+              <div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 7px;">Hasło</div>
+              <div style="display: flex; align-items: center; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1.5px solid var(--p,#7A33EC); box-shadow: 0 0 0 4px rgba(122,51,236,.18); margin-bottom: 16px;"><span style="font-size: 16px; letter-spacing: 3px; color: #C9C3D4;">••••••••</span><span style="display: inline-block; width: 2px; height: 16px; background: #E1318F; margin-left: 2px; animation: fl-caret 1.1s steps(1) infinite;"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2" style="margin-left:auto;"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                <span style="display: flex; align-items: center; gap: 8px;"><span style="width: 18px; height: 18px; border-radius: 6px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"></path></svg></span><span style="font-size: 13px; color: #C9C3D4;">Pozostań zalogowany</span></span>
+                <span style="font-size: 13px; color: #9B8BE6; font-weight: 500;">Zapomniałem hasła</span>
+              </div>
+              <div style="padding: 13px; border-radius: 12px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 14.5px; font-weight: 600; text-align: center; box-shadow: 0 10px 24px -8px rgba(122,51,236,.6);">Zaloguj się</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INVITE -->
+        <div style="flex: none; width: 480px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Zaproszenie · /invites/[token]</div>
+          <div style="position: relative; overflow: hidden; height: 600px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; align-items: center; justify-content: center;">
+            <div style="position: absolute; top: -100px; right: -40px; width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(circle, rgba(52,190,248,.3), transparent 64%); filter: blur(44px); pointer-events: none;"></div>
+            <div style="position: relative; width: 340px; padding: 30px; border-radius: 22px; background: rgba(20,17,30,.7); backdrop-filter: blur(40px) saturate(160%); -webkit-backdrop-filter: blur(40px) saturate(160%); border: 1px solid rgba(255,255,255,.12); text-align: center; box-shadow: 0 30px 70px -24px rgba(0,0,0,.6);">
+              <div style="width: 44px; height: 44px; border-radius: 13px; background: linear-gradient(140deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; box-shadow: 0 8px 20px -6px rgba(122,51,236,.5);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+              <div style="font-size: 13px; color: #8B8398;">Zostałeś zaproszony do</div>
+              <div style="font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: #fff; margin-top: 4px;">Studio Nebula</div>
+              <div style="display: flex; align-items: center; justify-content: center; gap: 11px; margin: 22px 0; padding: 13px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);">
+                <div style="width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(140deg,#7A33EC,#E1318F); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700;">AD</div>
+                <div style="text-align: left;"><div style="font-size: 13.5px; font-weight: 600; color: #fff;">Adam Dąbrowski</div><div style="font-size: 11.5px; color: #8B8398;">zaprasza Cię jako</div></div>
+                <span style="padding: 4px 11px; border-radius: 999px; background: rgba(122,51,236,.16); border: 1px solid rgba(122,51,236,.3); font-size: 12px; font-weight: 600; color: #C9B6F7;">Member</span>
+              </div>
+              <div style="padding: 13px; border-radius: 12px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 14.5px; font-weight: 600; box-shadow: 0 10px 24px -8px rgba(122,51,236,.6); margin-bottom: 9px;">Akceptuj zaproszenie</div>
+              <div style="padding: 12px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); color: #C9C3D4; font-size: 13.5px; font-weight: 600;">Odrzuć</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2FA -->
+        <div style="flex: none; width: 420px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">2FA · TOTP challenge</div>
+          <div style="position: relative; overflow: hidden; height: 600px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; align-items: center; justify-content: center;">
+            <div style="position: absolute; bottom: -100px; left: 50%; transform: translateX(-50%); width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.3), transparent 64%); filter: blur(44px); pointer-events: none;"></div>
+            <div style="position: relative; width: 340px; padding: 30px; border-radius: 22px; background: rgba(20,17,30,.7); backdrop-filter: blur(40px) saturate(160%); -webkit-backdrop-filter: blur(40px) saturate(160%); border: 1px solid rgba(255,255,255,.12); text-align: center; box-shadow: 0 30px 70px -24px rgba(0,0,0,.6);">
+              <div style="width: 44px; height: 44px; border-radius: 13px; background: rgba(122,51,236,.16); border: 1px solid rgba(122,51,236,.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C9B6F7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
+              <div style="font-size: 18px; font-weight: 700; color: #fff;">Weryfikacja dwuetapowa</div>
+              <div style="font-size: 13px; color: #8B8398; margin-top: 6px; line-height: 1.5;">Wpisz 6-cyfrowy kod z aplikacji uwierzytelniającej.</div>
+              <div style="display: flex; gap: 8px; justify-content: center; margin: 24px 0;">
+                <sc-for list="{{ totp }}" as="d" hint-placeholder-count="6">
+                  <div style="width: 44px; height: 54px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1.5px solid {{ d.bd }}; box-shadow: {{ d.glow }}; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: #fff;">{{ d.v }}</div>
+                </sc-for>
+              </div>
+              <div style="padding: 13px; border-radius: 12px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 14.5px; font-weight: 600; box-shadow: 0 10px 24px -8px rgba(122,51,236,.6); margin-bottom: 16px;">Zweryfikuj</div>
+              <div style="font-size: 13px; color: #9B8BE6; font-weight: 500;">Użyj kodu zapasowego</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WORKSPACE MANAGEMENT -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Workspace management</div>
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+
+        <!-- WORKSPACES LIST -->
+        <div style="flex: none; width: 1000px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Lista workspace'ów · /workspaces</div>
+          <div style="position: relative; overflow: hidden; height: 520px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); padding: 28px 30px;">
+            <div style="position: absolute; top: -100px; right: 10%; width: 380px; height: 380px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.26), transparent 64%); filter: blur(50px); pointer-events: none;"></div>
+            <div style="position: relative;">
+              <div style="font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: #fff;">Twoje workspace'y</div>
+              <div style="font-size: 13.5px; color: #8B8398; margin-top: 4px; margin-bottom: 24px;">Wybierz workspace, aby kontynuować</div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                <sc-for list="{{ workspaces }}" as="w" hint-placeholder-count="3">
+                  <div style="position: relative; overflow: hidden; padding: 18px; border-radius: 18px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 14px 30px -18px rgba(0,0,0,.6);">
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: {{ w.c }};"></div>
+                    <div style="width: 48px; height: 48px; border-radius: 14px; background: {{ w.c }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 17px; font-weight: 700; box-shadow: 0 8px 18px -6px {{ w.c }};">{{ w.init }}</div>
+                    <div style="font-size: 15.5px; font-weight: 700; color: #fff; margin-top: 14px; letter-spacing: -0.01em;">{{ w.name }}</div>
+                    <div style="display: flex; align-items: center; gap: 7px; margin-top: 6px;"><span style="font-size: 12px; color: #8B8398;">{{ w.tasks }} zadań</span><span style="width: 3px; height: 3px; border-radius: 50%; background: #4B4359;"></span><span style="font-size: 12px; color: #8B8398;">{{ w.activity }}</span></div>
+                    <div style="display: flex; align-items: center; margin-top: 14px;">{{ w.members }}<span style="font-size: 11.5px; color: #6B6478; margin-left: 8px;">{{ w.memberCount }} członków</span></div>
+                  </div>
+                </sc-for>
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 11px; padding: 18px; border-radius: 18px; border: 1.5px dashed rgba(122,51,236,.4); background: rgba(122,51,236,.06);">
+                  <div style="width: 44px; height: 44px; border-radius: 13px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px -6px rgba(122,51,236,.6);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></div>
+                  <span style="font-size: 13.5px; font-weight: 600; color: #C9B6F7;">Nowy workspace</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CREATE WORKSPACE -->
+        <div style="flex: none; width: 480px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Nowy workspace · dialog</div>
+          <div style="position: relative; border-radius: 22px; padding: 26px; background: rgba(20,17,30,.72); backdrop-filter: blur(40px) saturate(160%); -webkit-backdrop-filter: blur(40px) saturate(160%); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 30px 70px -24px rgba(0,0,0,.7);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;"><h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #fff;">Nowy workspace</h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></div>
+            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px;">
+              <div style="width: 60px; height: 60px; border-radius: 17px; background: linear-gradient(140deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; font-weight: 700; flex: none; box-shadow: 0 8px 20px -6px rgba(122,51,236,.5);">SN</div>
+              <div style="display: flex; align-items: center; gap: 7px; padding: 9px 14px; border-radius: 11px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); font-size: 13px; font-weight: 600; color: #C9C3D4;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9B8BE6" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg>Wgraj avatar</div>
+            </div>
+            <div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 7px;">Nazwa</div>
+            <div style="padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1.5px solid var(--p,#7A33EC); box-shadow: 0 0 0 4px rgba(122,51,236,.18); font-size: 14px; color: #fff; margin-bottom: 14px;">Studio Nebula</div>
+            <div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 7px;">Slug <span style="color:#5A5468; font-weight:500; text-transform:none; letter-spacing:0;">· auto</span></div>
+            <div style="display: flex; align-items: center; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); margin-bottom: 14px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #6B6478;">flovly.app/w/</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #C9C3D4;">studio-nebula</span></div>
+            <div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 7px;">Opis</div>
+            <div style="padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); font-size: 13.5px; color: #8B8398; line-height: 1.5; margin-bottom: 22px;">Zespół projektowy — design system, board views i CRM.</div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;"><span style="padding: 11px 18px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); font-size: 14px; font-weight: 600; color: #C9C3D4;">Anuluj</span><span style="padding: 11px 20px; border-radius: 12px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 14px; font-weight: 600; box-shadow: 0 8px 20px -8px rgba(122,51,236,.6);">Utwórz workspace</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1600, &quot;height&quot;: 1000}, &quot;primary&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#7A33EC&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;primary2&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#E1318F&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  avatars(list) {
+    return React.createElement('span', { style: { display: 'flex' } }, list.map((a, i) =>
+      React.createElement('span', { key: i, style: { width: '26px', height: '26px', borderRadius: '8px', border: '2px solid #0C0A14', marginLeft: i ? '-7px' : 0, background: a, display: 'flex' } })));
+  }
+  renderVals() {
+    const p = this.props || {};
+    const primary = p.primary || '#7A33EC';
+    const primary2 = p.primary2 || '#E1318F';
+    const AV = this.avatars.bind(this);
+    const g1 = 'linear-gradient(140deg,#7A33EC,#E1318F)', g2 = 'linear-gradient(140deg,#34BEF8,#10B981)', g3 = 'linear-gradient(140deg,#F59E0B,#E1318F)', g4 = 'linear-gradient(140deg,#A78BFA,#34BEF8)';
+    const code = ['4', '8', '2', '', '', ''];
+    return {
+      primary, primary2,
+      totp: code.map((v, i) => ({
+        v, bd: (i === 3) ? primary : 'rgba(255,255,255,.12)',
+        glow: (i === 3) ? '0 0 0 4px rgba(122,51,236,.18)' : 'none'
+      })),
+      workspaces: [
+        { name: 'Studio Nebula', init: 'SN', tasks: 186, activity: '2 min temu', c: 'linear-gradient(140deg,#7A33EC,#E1318F)', memberCount: 12, members: AV([g1, g2, g3]) },
+        { name: 'Brandflow', init: 'BF', tasks: 92, activity: '1 godz. temu', c: 'linear-gradient(140deg,#34BEF8,#0EA5E9)', memberCount: 6, members: AV([g2, g4]) },
+        { name: 'NovaSoft', init: 'NS', tasks: 47, activity: 'wczoraj', c: 'linear-gradient(140deg,#10B981,#34BEF8)', memberCount: 4, members: AV([g3, g1]) }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

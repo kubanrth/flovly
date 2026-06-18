@@ -20,13 +20,19 @@ export type AdminAuditAction =
   | "user.passwordReset"
   | "user.promotedToSuperAdmin"
   | "user.demotedFromSuperAdmin"
+  | "users.bulk.banned"
+  | "users.bulk.unbanned"
+  | "users.bulk.passwordReset"
+  | "users.bulk.roleChanged"
   | "workspace.forceDeleted"
   | "workspace.restored"
   | "workspace.backup.manual"
   | "workspace.backup.bulk"
-  | "workspace.backup.downloaded";
+  | "workspace.backup.downloaded"
+  | "workspace.restore.requested"
+  | "systemFlag.updated";
 
-export type AdminAuditTargetType = "User" | "Workspace";
+export type AdminAuditTargetType = "User" | "Workspace" | "SystemFlag";
 
 export interface WriteAdminAuditInput {
   actorId: string;

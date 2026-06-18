@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  @keyframes fl-drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(18px,-22px) scale(1.08); } }
+</style>
+</helmet>
+
+<div style="--p: {{ primary }}; --p2: {{ primary2 }}; width: max-content; min-width: 100%; min-height: 100vh; box-sizing: border-box; padding: 56px 48px 110px; background: #0B0912; font-family: 'Inter', system-ui, sans-serif; position: relative; overflow: hidden;">
+  <div style="position: absolute; top: -160px; left: -100px; width: 760px; height: 760px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.3), transparent 65%); filter: blur(60px); animation: fl-drift 24s ease-in-out infinite; pointer-events: none;"></div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 44px; width: max-content; margin: 0 auto;">
+
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <div style="width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(140deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 10px 26px -8px rgba(122,51,236,.7);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+      <div><div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">FLOVLY — Admin sub-views &amp; Extras</div><div style="font-size: 14px; color: #8B8398; margin-top: 2px;">Workspaces · Audit · Backups · Flags · Filter drawer · Stage manager · Brief wizard</div></div>
+    </div>
+
+    <!-- WORKSPACES MGMT (full layout) -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Admin · Workspaces management</div>
+      <div style="flex: none; width: 1180px;">
+        <div style="position: relative; overflow: hidden; height: 540px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex;">
+          <aside style="flex: none; width: 200px; padding: 18px 13px; background: rgba(255,255,255,.03); border-right: 1px solid rgba(255,255,255,.08); display: flex; flex-direction: column; gap: 3px;">
+            <div style="padding: 4px 8px 16px;"><span style="display: flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 7px; background: rgba(244,63,94,.16); font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #FB7185; width: fit-content;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FB7185" stroke-width="2.4"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5Z"></path></svg>Super Admin</span></div>
+            <sc-for list="{{ adminNav }}" as="n" hint-placeholder-count="5">
+              <div style="display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 11px; background: {{ n.row }}; color: {{ n.tc }}; font-size: 13px; font-weight: {{ n.fw }};">{{ n.icon }}<span>{{ n.label }}</span></div>
+            </sc-for>
+          </aside>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 18px 22px 14px;"><h2 style="margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Workspaces</h2><span style="font-size: 12px; color: #8B8398;">312 aktywnych</span></div>
+            <div style="flex: 1; overflow: hidden; margin: 0 22px; border-radius: 14px; border: 1px solid rgba(255,255,255,.08);">
+              <div style="display: grid; grid-template-columns: 2fr 1.6fr 0.9fr 1fr 1.2fr 1.3fr; padding: 10px 16px; background: rgba(255,255,255,.04); font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: #6B6478;"><span>Workspace</span><span>Owner</span><span>Człon.</span><span>Storage</span><span>Backup</span><span>Akcje</span></div>
+              <sc-for list="{{ wsRows }}" as="w" hint-placeholder-count="5">
+                <div style="display: grid; grid-template-columns: 2fr 1.6fr 0.9fr 1fr 1.2fr 1.3fr; align-items: center; padding: 11px 16px; border-top: 1px solid rgba(255,255,255,.05);">
+                  <div style="display: flex; align-items: center; gap: 9px; min-width: 0;"><div style="width: 28px; height: 28px; border-radius: 8px; background: {{ w.c }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 700; flex: none;">{{ w.init }}</div><span style="font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ w.name }}</span></div>
+                  <span style="font-size: 12.5px; color: #C9C3D4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ w.owner }}</span>
+                  <span style="font-size: 12.5px; color: #8B8398;">{{ w.members }}</span>
+                  <span style="font-size: 12.5px; color: #8B8398;">{{ w.storage }}</span>
+                  <span style="font-size: 12px; color: {{ w.backupc }};">{{ w.backup }}</span>
+                  <div style="display: flex; gap: 6px;">{{ w.actions }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="padding: 13px 22px;"><span style="font-size: 12px; color: #6B6478;">1–5 z 312</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AUDIT LOGS -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Admin · Audit logs · expand = diff JSON</div>
+      <div style="flex: none; width: 1180px;">
+        <div style="position: relative; overflow: hidden; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); padding: 20px 22px;">
+          <h2 style="margin: 0 0 14px; font-size: 19px; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Audit logs</h2>
+          <div style="border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,.08);">
+            <div style="display: grid; grid-template-columns: 1.2fr 1.4fr 1.4fr 1.2fr 1.4fr 0.5fr; padding: 10px 16px; background: rgba(255,255,255,.04); font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: #6B6478;"><span>Timestamp</span><span>Actor</span><span>Workspace</span><span>Object</span><span>Action</span><span></span></div>
+            <sc-for list="{{ auditRows }}" as="a" hint-placeholder-count="4">
+              <div style="display: grid; grid-template-columns: 1.2fr 1.4fr 1.4fr 1.2fr 1.4fr 0.5fr; align-items: center; padding: 11px 16px; border-top: 1px solid rgba(255,255,255,.05);">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #8B8398;">{{ a.time }}</span>
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;"><div style="width: 24px; height: 24px; border-radius: 7px; background: {{ a.av }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 9px; font-weight: 700; flex: none;">{{ a.ini }}</div><span style="font-size: 12.5px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ a.actor }}</span></div>
+                <span style="font-size: 12.5px; color: #C9C3D4;">{{ a.ws }}</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #9B8BE6;">{{ a.obj }}</span>
+                <span><span style="padding: 3px 9px; border-radius: 7px; background: {{ a.actbg }}; font-size: 11.5px; font-weight: 600; color: {{ a.actc }};">{{ a.action }}</span></span>
+                <span style="display: flex; justify-content: flex-end;">{{ a.caret }}</span>
+              </div>
+              {{ a.diff }}
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BACKUPS + FLAGS -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Admin · Backups · System flags</div>
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+        <div style="flex: none; width: 700px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Backups</div>
+          <div style="position: relative; overflow: hidden; border-radius: 22px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); padding: 20px 22px;">
+            <div style="border-radius: 13px; overflow: hidden; border: 1px solid rgba(255,255,255,.08);">
+              <div style="display: grid; grid-template-columns: 1.1fr 1.4fr 1.3fr 0.8fr 0.8fr; padding: 10px 14px; background: rgba(255,255,255,.04); font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: #6B6478;"><span>Dzień</span><span>Workspace</span><span>Modele</span><span>Rozmiar</span><span></span></div>
+              <sc-for list="{{ backups }}" as="b" hint-placeholder-count="4">
+                <div style="display: grid; grid-template-columns: 1.1fr 1.4fr 1.3fr 0.8fr 0.8fr; align-items: center; padding: 11px 14px; border-top: 1px solid rgba(255,255,255,.05);">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #C9C3D4;">{{ b.day }}</span>
+                  <span style="font-size: 12.5px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ b.ws }}</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #8B8398;">{{ b.counts }}</span>
+                  <span style="font-size: 12px; color: #8B8398;">{{ b.size }}</span>
+                  <span style="display: flex; justify-content: flex-end;"><span style="width: 28px; height: 28px; border-radius: 8px; background: rgba(122,51,236,.16); display: flex; align-items: center; justify-content: center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9B6F7" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg></span></span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="flex: none; width: 452px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">System flags · kill switches</div>
+          <div style="position: relative; overflow: hidden; border-radius: 22px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); padding: 16px;">
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <sc-for list="{{ flags }}" as="fl" hint-placeholder-count="5">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);">
+                  <div style="flex: 1; min-width: 0;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #fff;">{{ fl.key }}</div><div style="font-size: 11px; color: #8B8398; margin-top: 2px;">{{ fl.desc }}</div></div>
+                  <div style="width: 40px; height: 23px; border-radius: 999px; background: {{ fl.track }}; position: relative; flex: none;"><span style="position: absolute; top: 2px; left: {{ fl.knob }}; width: 19px; height: 19px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3);"></span></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXTRAS: FILTER DRAWER + BULK + STAGE MANAGER -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Extras · Filter drawer · Bulk toolbar · Stage manager</div>
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+
+        <!-- FILTER DRAWER -->
+        <div style="flex: none; width: 380px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Filter drawer · AND/OR builder</div>
+          <div style="position: relative; overflow: hidden; height: 460px; border-radius: 22px; background: rgba(14,12,22,.92); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,.1); box-shadow: -24px 0 60px -28px rgba(0,0,0,.8); padding: 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;"><h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #fff;">Filtry</h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></div>
+            <div style="display: flex; flex-direction: column; gap: 9px;">
+              <div style="padding: 12px; border-radius: 13px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);">
+                <div style="display: flex; gap: 7px;"><span style="flex: 1; padding: 7px 10px; border-radius: 9px; background: rgba(255,255,255,.05); font-size: 12px; color: #C9C3D4;">Status</span><span style="padding: 7px 10px; border-radius: 9px; background: rgba(255,255,255,.05); font-size: 12px; color: #8B8398;">=</span><span style="flex: 1; padding: 7px 10px; border-radius: 9px; background: rgba(245,158,11,.14); font-size: 12px; color: #F6B65A;">W toku</span></div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 9px; padding-left: 8px;"><div style="display: flex; padding: 2px; border-radius: 8px; background: rgba(255,255,255,.05);"><span style="padding: 4px 11px; border-radius: 6px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); font-size: 11px; font-weight: 700; color: #fff;">AND</span><span style="padding: 4px 11px; border-radius: 6px; font-size: 11px; font-weight: 600; color: #8B8398;">OR</span></div><div style="flex: 1; height: 1px; background: rgba(255,255,255,.08);"></div></div>
+              <div style="padding: 12px; border-radius: 13px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);">
+                <div style="display: flex; gap: 7px;"><span style="flex: 1; padding: 7px 10px; border-radius: 9px; background: rgba(255,255,255,.05); font-size: 12px; color: #C9C3D4;">Priorytet</span><span style="padding: 7px 10px; border-radius: 9px; background: rgba(255,255,255,.05); font-size: 12px; color: #8B8398;">=</span><span style="flex: 1; padding: 7px 10px; border-radius: 9px; background: rgba(244,63,94,.14); font-size: 12px; color: #FB7185;">P0</span></div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 7px; padding: 11px; border-radius: 12px; border: 1px dashed rgba(122,51,236,.4); color: #9B8BE6;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9B8BE6" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg><span style="font-size: 12.5px;">Dodaj warunek</span></div>
+            </div>
+            <div style="position: absolute; left: 20px; right: 20px; bottom: 20px; display: flex; gap: 9px;"><span style="flex: 1; text-align: center; padding: 10px; border-radius: 11px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); font-size: 13px; font-weight: 600; color: #C9C3D4;">Wyczyść</span><span style="flex: 1.3; text-align: center; padding: 10px; border-radius: 11px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 13px; font-weight: 600;">Zastosuj (8)</span></div>
+          </div>
+        </div>
+
+        <!-- STAGE MANAGER + BULK -->
+        <div style="flex: none; width: 770px; display: flex; flex-direction: column; gap: 22px;">
+          <div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Bulk actions toolbar (board)</div>
+            <div style="height: 130px; border-radius: 20px; background: repeating-linear-gradient(135deg, #16121F, #16121F 10px, #1A1526 10px, #1A1526 20px); border: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; justify-content: center;">
+              <div style="display: flex; align-items: center; gap: 14px; padding: 11px 18px; border-radius: 15px; background: rgba(28,22,42,.95); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,.14); box-shadow: 0 18px 40px -16px rgba(0,0,0,.7);">
+                <span style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 8px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 12px; font-weight: 700;">3</span>
+                <span style="font-size: 13px; font-weight: 600; color: #fff;">zaznaczone</span>
+                <div style="width: 1px; height: 20px; background: rgba(255,255,255,.14);"></div>
+                <span style="display: flex; align-items: center; gap: 7px; font-size: 13px; color: #C9C3D4;"><span style="width:9px;height:9px;border-radius:50%;background:#F59E0B;"></span>Status</span>
+                <span style="display: flex; align-items: center; gap: 7px; font-size: 13px; color: #C9C3D4;"><span style="width:9px;height:9px;border-radius:50%;background:#F43F5E;"></span>Priorytet</span>
+                <span style="display: flex; align-items: center; gap: 7px; font-size: 13px; color: #C9C3D4;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9C3D4" stroke-width="2"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-2a6 6 0 0 1 12 0v2"></path></svg>Osoba</span>
+                <div style="width: 1px; height: 20px; background: rgba(255,255,255,.14);"></div>
+                <span style="display: flex; align-items: center; gap: 7px; font-size: 13px; color: #FB7185;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FB7185" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg>Usuń</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Stage manager (CRM) · rename / color / move / archive</div>
+            <div style="border-radius: 20px; padding: 22px; background: rgba(20,17,30,.72); backdrop-filter: blur(40px) saturate(160%); -webkit-backdrop-filter: blur(40px) saturate(160%); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 24px 56px -24px rgba(0,0,0,.7);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;"><h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #fff;">Zarządzaj etapami</h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></div>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <sc-for list="{{ stages }}" as="s" hint-placeholder-count="4">
+                  <div style="display: flex; align-items: center; gap: 11px; padding: 11px 13px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4B4359" stroke-width="2"><circle cx="9" cy="6" r="1"></circle><circle cx="15" cy="6" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="9" cy="18" r="1"></circle><circle cx="15" cy="18" r="1"></circle></svg>
+                    <span style="width: 16px; height: 16px; border-radius: 5px; background: {{ s.c }}; flex: none;"></span>
+                    <span style="flex: 1; font-size: 13.5px; font-weight: 600; color: #fff;">{{ s.n }}</span>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6EE7C7;">{{ s.total }}</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2" stroke-linecap="round"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"></path></svg>
+                  </div>
+                </sc-for>
+                <div style="display: flex; align-items: center; gap: 7px; padding: 11px; border-radius: 12px; border: 1px dashed rgba(122,51,236,.4); color: #9B8BE6;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9B8BE6" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg><span style="font-size: 12.5px;">Nowy etap</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BRIEF WIZARD -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Brief wizard · 6 kroków</div>
+      <div style="display: flex; gap: 18px; align-items: flex-start;">
+        <sc-for list="{{ wizard }}" as="s" hint-placeholder-count="6">
+          <div style="flex: none; width: 250px; position: relative; overflow: hidden; height: 270px; border-radius: 20px; background: #0C0A14; border: 1px solid {{ s.border }}; box-shadow: 0 24px 56px -28px rgba(0,0,0,.7); padding: 20px; display: flex; flex-direction: column;">
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: {{ s.bar }};"></div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;"><div style="width: 34px; height: 34px; border-radius: 11px; background: {{ s.numBg }}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: {{ s.numC }};">{{ s.num }}</div><div style="font-size: 20px;">{{ s.emoji }}</div></div>
+            <div style="font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.01em;">{{ s.title }}</div>
+            <div style="font-size: 12.5px; color: #8B8398; margin-top: 6px; line-height: 1.5; flex: 1;">{{ s.desc }}</div>
+            <div style="padding: 10px 12px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); font-size: 12px; color: {{ s.fieldC }};">{{ s.field }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1600, &quot;height&quot;: 1000}, &quot;primary&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#7A33EC&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;primary2&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#E1318F&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  ic(...ds) {
+    return React.createElement('svg', { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, ds.map((d, i) => React.createElement('path', { key: i, d })));
+  }
+  pill(label, color, bg) {
+    return React.createElement('span', { style: { padding: '4px 9px', borderRadius: '7px', background: bg, fontSize: '11px', fontWeight: 600, color, whiteSpace: 'nowrap' } }, label);
+  }
+  caretBtn() {
+    return React.createElement('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: '#8B8398', strokeWidth: 2 }, React.createElement('path', { d: 'm6 9 6 6 6-6' }));
+  }
+  diffRow() {
+    return React.createElement('div', { style: { padding: '12px 16px 14px 56px', background: 'rgba(122,51,236,.06)', borderTop: '1px solid rgba(255,255,255,.05)' } },
+      React.createElement('div', { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: '11.5px', lineHeight: 1.6, color: '#C9C3D4', background: 'rgba(0,0,0,.3)', borderRadius: '9px', padding: '11px 13px', border: '1px solid rgba(255,255,255,.06)' } },
+        React.createElement('div', {}, '{'),
+        React.createElement('div', { style: { paddingLeft: '16px', color: '#FB7185' } }, '- "priority": "P1",'),
+        React.createElement('div', { style: { paddingLeft: '16px', color: '#6EE7C7' } }, '+ "priority": "P0",'),
+        React.createElement('div', { style: { paddingLeft: '16px', color: '#8B8398' } }, '  "updatedBy": "adam@studio.pl"'),
+        React.createElement('div', {}, '}')));
+  }
+  renderVals() {
+    const p = this.props || {};
+    const primary = p.primary || '#7A33EC';
+    const primary2 = p.primary2 || '#E1318F';
+    const ic = this.ic.bind(this);
+    const navItem = (label, active, ...ds) => ({
+      label, row: active ? 'linear-gradient(135deg, rgba(122,51,236,.3), rgba(225,49,143,.2))' : 'transparent',
+      tc: active ? '#fff' : '#A9A1B8', fw: active ? 600 : 500,
+      icon: React.createElement('span', { style: { color: active ? '#fff' : '#8B8398', display: 'flex' } }, ic(...ds))
+    });
+    const actionBtn = (stroke, ...ds) => React.createElement('span', { style: { width: '26px', height: '26px', borderRadius: '7px', background: 'rgba(255,255,255,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' } },
+      React.createElement('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }, ds.map((d, i) => React.createElement('path', { key: i, d }))));
+    const wsActions = () => React.createElement('span', { style: { display: 'flex', gap: '6px' } },
+      actionBtn('#F6B65A', 'M10 2v6M5 8a7 7 0 1 0 14 0'),
+      actionBtn('#6EE7C7', 'M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.4 2.6L3 8', 'M3 3v5h5'),
+      actionBtn('#FB7185', 'M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6'));
+
+    return {
+      primary, primary2,
+      adminNav: [
+        navItem('Workspaces', true, 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z'),
+        navItem('Users', false, 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2', 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8'),
+        navItem('Audit logs', false, 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z', 'M14 2v6h6', 'M9 13h6M9 17h6'),
+        navItem('Backups', false, 'M21 8v13H3V8M1 3h22v5H1zM10 12h4'),
+        navItem('System flags', false, 'M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1Z', 'M4 22v-7')
+      ],
+      wsRows: [
+        { name: 'Studio Nebula', init: 'SN', c: 'linear-gradient(140deg,#7A33EC,#E1318F)', owner: 'adam@studio.pl', members: '12', storage: '2.4 GB', backup: '2 godz. temu', backupc: '#6EE7C7', actions: wsActions() },
+        { name: 'Brandflow', init: 'BF', c: 'linear-gradient(140deg,#34BEF8,#0EA5E9)', owner: 'kasia@brandflow.io', members: '6', storage: '840 MB', backup: '5 godz. temu', backupc: '#6EE7C7', actions: wsActions() },
+        { name: 'NovaSoft', init: 'NS', c: 'linear-gradient(140deg,#10B981,#34BEF8)', owner: 'piotr@nova.pl', members: '4', storage: '1.1 GB', backup: '1 dzień temu', backupc: '#F6B65A', actions: wsActions() },
+        { name: 'Studio Kreska', init: 'SK', c: 'linear-gradient(140deg,#A78BFA,#34BEF8)', owner: 'magda@kreska.studio', members: '8', storage: '3.2 GB', backup: '3 dni temu', backupc: '#FB7185', actions: wsActions() },
+        { name: 'DANIELOS', init: 'DA', c: 'linear-gradient(140deg,#F59E0B,#E1318F)', owner: 'marek@danielos.pl', members: '21', storage: '5.8 GB', backup: '2 godz. temu', backupc: '#6EE7C7', actions: wsActions() }
+      ],
+      auditRows: [
+        { time: '14:20:08', actor: 'Adam D.', ini: 'AD', av: 'linear-gradient(140deg,#7A33EC,#E1318F)', ws: 'Studio Nebula', obj: 'task#42', action: 'priority.changed', actbg: 'rgba(245,158,11,.14)', actc: '#F6B65A', caret: this.caretBtn(), diff: this.diffRow() },
+        { time: '13:55:41', actor: 'Kasia M.', ini: 'KM', av: 'linear-gradient(140deg,#34BEF8,#10B981)', ws: 'Brandflow', obj: 'board#7', action: 'view.enabled', actbg: 'rgba(16,185,129,.14)', actc: '#6EE7C7', caret: this.caretBtn(), diff: '' },
+        { time: '11:02:17', actor: 'System', ini: 'AT', av: 'linear-gradient(140deg,#34BEF8,#7A33EC)', ws: 'NovaSoft', obj: 'backup', action: 'backup.created', actbg: 'rgba(59,130,246,.14)', actc: '#93C5FD', caret: this.caretBtn(), diff: '' },
+        { time: '09:30:55', actor: 'Piotr Z.', ini: 'PZ', av: 'linear-gradient(140deg,#F43F5E,#F59E0B)', ws: 'Studio Kreska', obj: 'member#3', action: 'role.removed', actbg: 'rgba(244,63,94,.14)', actc: '#FB7185', caret: this.caretBtn(), diff: '' }
+      ],
+      backups: [
+        { day: '2026-06-18', ws: 'Studio Nebula', counts: '186t · 42c · 9d', size: '2.4 GB' },
+        { day: '2026-06-18', ws: 'DANIELOS', counts: '312t · 88c · 21d', size: '5.8 GB' },
+        { day: '2026-06-17', ws: 'Brandflow', counts: '92t · 18c · 4d', size: '840 MB' },
+        { day: '2026-06-17', ws: 'NovaSoft', counts: '47t · 11c · 2d', size: '1.1 GB' }
+      ],
+      flags: [
+        { key: 'ai_ateron_enabled', desc: 'Asystent AI Ateron', track: primary, knob: '19px' },
+        { key: 'public_share_links', desc: 'Publiczne linki do tablic', track: primary, knob: '19px' },
+        { key: 'whiteboard_beta', desc: 'Whiteboard (beta)', track: 'rgba(255,255,255,.12)', knob: '2px' },
+        { key: 'import_csv_xls', desc: 'Import z CSV/XLS', track: primary, knob: '19px' },
+        { key: 'kill_switch_writes', desc: 'Kill switch — blokada zapisu', track: 'rgba(244,63,94,.5)', knob: '2px' }
+      ],
+      stages: [
+        { n: 'Kwalifikacja', c: '#94A3B8', total: '36 000 zł' },
+        { n: 'Negocjacje', c: '#9B6BF2', total: '66 000 zł' },
+        { n: 'Oferta', c: '#34BEF8', total: '22 000 zł' },
+        { n: 'Wygrane', c: '#10B981', total: '54 000 zł' }
+      ],
+      wizard: [
+        { num: '1', emoji: '🎯', title: 'Goals', desc: 'Cele kampanii i oczekiwane rezultaty biznesowe.', field: 'Wpisz cele…', fieldC: '#8B8398', num: '1', numBg: 'linear-gradient(135deg,#7A33EC,#E1318F)', numC: '#fff', bar: 'linear-gradient(90deg,#7A33EC,#E1318F)', border: 'rgba(122,51,236,.3)' },
+        { num: '2', emoji: '👥', title: 'Target', desc: 'Grupa docelowa, persona, segment rynku.', field: 'Software house\'y…', fieldC: '#C9C3D4', numBg: 'rgba(255,255,255,.06)', numC: '#C9C3D4', bar: 'rgba(255,255,255,.1)', border: 'rgba(255,255,255,.08)' },
+        { num: '3', emoji: '📦', title: 'Deliverables', desc: 'Lista konkretnych produktów do dostarczenia.', field: 'Logo, design system…', fieldC: '#C9C3D4', numBg: 'rgba(255,255,255,.06)', numC: '#C9C3D4', bar: 'rgba(255,255,255,.1)', border: 'rgba(255,255,255,.08)' },
+        { num: '4', emoji: '🎨', title: 'Brand', desc: 'Wytyczne marki, ton, kolory, typografia.', field: 'Liquid glass, violet…', fieldC: '#C9C3D4', numBg: 'rgba(255,255,255,.06)', numC: '#C9C3D4', bar: 'rgba(255,255,255,.1)', border: 'rgba(255,255,255,.08)' },
+        { num: '5', emoji: '🔗', title: 'References', desc: 'Inspiracje, moodboard, linki referencyjne.', field: 'Wklej linki…', fieldC: '#8B8398', numBg: 'rgba(255,255,255,.06)', numC: '#C9C3D4', bar: 'rgba(255,255,255,.1)', border: 'rgba(255,255,255,.08)' },
+        { num: '6', emoji: '📅', title: 'Timeline', desc: 'Harmonogram, kamienie milowe, deadline.', field: '8 tyg · launch 15 wrz', fieldC: '#C9C3D4', numBg: 'rgba(255,255,255,.06)', numC: '#C9C3D4', bar: 'rgba(255,255,255,.1)', border: 'rgba(255,255,255,.08)' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

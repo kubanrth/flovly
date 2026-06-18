@@ -14,6 +14,7 @@ import { usePathname } from "next/navigation";
 import {
   ArrowLeft,
   Database,
+  Flag,
   Gavel,
   Layers,
   Menu,
@@ -42,6 +43,7 @@ const NAV_ITEMS: AdminNavItemDef[] = [
   { href: "/admin/audit", label: "Audyt workspace", icon: ScrollText },
   { href: "/admin/actions", label: "Akcje admina", icon: Gavel },
   { href: "/admin/backups", label: "Backupy", icon: Database },
+  { href: "/admin/flags", label: "Flagi systemowe", icon: Flag },
 ];
 
 export function AdminMobileNav() {

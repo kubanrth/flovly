@@ -4,6 +4,7 @@ import Link from "next/link";
 import { startTransition, useState } from "react";
 import {
   AtSign,
+  BellOff,
   Check,
   CheckCircle2,
   Eye,
@@ -14,6 +15,7 @@ import {
   Vote,
   X,
 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   useAssignHotkey,
   type AssignMember,
@@ -101,11 +103,12 @@ export function InboxHotkeyList({
   if (total === 0) {
     return (
       <>
-        <div className="rounded-[22px] border border-dashed border-white/60 bg-white/40 p-10 text-center backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.02]">
-          <p className="font-display text-[1.1rem] font-semibold">Pusto.</p>
-          <p className="mt-2 text-[0.92rem] text-muted-foreground">
-            Jak ktoś Cię oznaczy w komentarzu albo przypisze do zadania, trafi to tutaj.
-          </p>
+        <div className="rounded-[22px] border border-dashed border-white/60 bg-white/40 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.02]">
+          <EmptyState
+            icon={BellOff}
+            title="Pusto"
+            description="Jak ktoś Cię oznaczy w komentarzu albo przypisze do zadania, trafi to tutaj."
+          />
         </div>
         {assign.menu}
       </>

@@ -98,7 +98,7 @@ export function CreateTaskButton({
         {/* Mobile: full-screen bottom sheet (spec v4 linie 132-152) — Dialog
             renderowany na całą wysokość 100dvh, sticky submit przyklejony
             do dołu z safe-area-inset-bottom. Desktop: bez zmian. */}
-        <DialogContent className="flex max-h-[100dvh] flex-col gap-0 overflow-hidden border-border bg-card shadow-aura max-md:!inset-x-0 max-md:!bottom-0 max-md:!top-auto max-md:!left-0 max-md:h-[100dvh] max-md:w-screen max-md:max-w-none max-md:!translate-x-0 max-md:!translate-y-0 max-md:rounded-t-[24px] max-md:rounded-b-none md:max-h-none md:rounded-2xl md:sm:max-w-[520px]">
+        <DialogContent className="dialog-glass flex max-h-[100dvh] flex-col gap-0 overflow-hidden border-transparent max-md:!inset-x-0 max-md:!bottom-0 max-md:!top-auto max-md:!left-0 max-md:h-[100dvh] max-md:w-screen max-md:max-w-none max-md:!translate-x-0 max-md:!translate-y-0 max-md:rounded-t-[24px] max-md:rounded-b-none md:max-h-none md:rounded-2xl md:sm:max-w-[520px]">
           <DialogHeader className="shrink-0 max-md:px-1 max-md:pt-2">
             {/* Mobile drag handle visual cue */}
             <div className="sheet-drag-handle md:hidden" aria-hidden="true" />
@@ -123,16 +123,18 @@ export function CreateTaskButton({
 
             <label className="flex flex-col gap-2">
               <span className="eyebrow">Tytuł</span>
-              <input
-                name="title"
-                type="text"
-                required
-                autoFocus
-                maxLength={2000}
-                placeholder="np. Zaprojektować logo FLOVLY"
-                aria-invalid={!!fieldError}
-                className="h-10 border-b border-border bg-transparent pb-1 text-[1rem] outline-none focus:border-primary aria-[invalid=true]:border-destructive"
-              />
+              <span className="fl-caret-input block">
+                <input
+                  name="title"
+                  type="text"
+                  required
+                  autoFocus
+                  maxLength={2000}
+                  placeholder="np. Zaprojektować logo FLOVLY"
+                  aria-invalid={!!fieldError}
+                  className="h-10 w-full border-b border-border bg-transparent pb-1 pr-6 text-[1rem] outline-none focus:border-primary aria-[invalid=true]:border-destructive"
+                />
+              </span>
               {fieldError && (
                 <span className="font-mono text-[0.68rem] text-destructive">
                   {fieldError}

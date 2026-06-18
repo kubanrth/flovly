@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, Network, Link as LinkIcon, X } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, Network, Link as LinkIcon, X, Milestone } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   assignTaskToMilestoneAction,
   deleteMilestoneAction,
@@ -508,9 +509,11 @@ function TimelineTrack({
 
       {milestones.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <p className="font-display text-[0.92rem] text-muted-foreground">
-            Brak milestones. Dodaj pierwszy, żeby narysować oś czasu.
-          </p>
+          <EmptyState
+            icon={Milestone}
+            title="Brak milestones"
+            description="Dodaj pierwszy, żeby narysować oś czasu."
+          />
         </div>
       )}
     </div>
@@ -543,10 +546,12 @@ function MarkersTrack({
 
   if (sorted.length === 0) {
     return (
-      <div className="flex h-[200px] items-center justify-center">
-        <p className="font-display text-[0.92rem] text-muted-foreground">
-          Brak milestones. Dodaj pierwszy, żeby zobaczyć wizualizację.
-        </p>
+      <div className="flex h-[260px] items-center justify-center">
+        <EmptyState
+          icon={Milestone}
+          title="Brak milestones"
+          description="Dodaj pierwszy, żeby zobaczyć wizualizację roadmapy."
+        />
       </div>
     );
   }

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  @keyframes fl-drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(18px,-22px) scale(1.08); } }
+</style>
+</helmet>
+
+<div style="--p: {{ primary }}; --p2: {{ primary2 }}; width: max-content; min-width: 100%; min-height: 100vh; box-sizing: border-box; padding: 56px 48px 110px; background: #0B0912; font-family: 'Inter', system-ui, sans-serif; position: relative; overflow: hidden;">
+  <div style="position: absolute; top: -160px; left: -100px; width: 760px; height: 760px; border-radius: 50%; background: radial-gradient(circle, rgba(124,92,255,.3), transparent 65%); filter: blur(60px); animation: fl-drift 24s ease-in-out infinite; pointer-events: none;"></div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 46px; width: max-content; margin: 0 auto;">
+
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <div style="width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(140deg, var(--p,#7C5CFF), var(--p2,#D247B5)); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 10px 26px -8px rgba(124,92,255,.7);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+      <div><div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">FLOVLY — Admin · Docs · Import</div><div style="font-size: 14px; color: #8B8398; margin-top: 2px;">Panel admina · Support · Urlopy · Wiki · Briefy · Import</div></div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Panel admina · /admin · super-admin</div>
+      <div style="flex: none; width: 1100px;">
+        <div style="position: relative; overflow: hidden; height: 580px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex;">
+          <aside style="flex: none; width: 210px; padding: 18px 13px; background: rgba(255,255,255,.03); border-right: 1px solid rgba(255,255,255,.08); display: flex; flex-direction: column; gap: 3px;">
+            <div style="display: flex; align-items: center; gap: 9px; padding: 8px 10px 16px;"><span style="display: flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 7px; background: rgba(244,63,94,.16); font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #FB7185;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#FB7185" stroke-width="2.4"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5Z"></path></svg>Super Admin</span></div>
+            <sc-for list="{{ adminNav }}" as="n" hint-placeholder-count="5">
+              <div style="display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 11px; background: {{ n.row }}; color: {{ n.tc }}; font-size: 13.5px; font-weight: {{ n.fw }};">{{ n.icon }}<span>{{ n.label }}</span></div>
+            </sc-for>
+          </aside>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 18px 22px 14px;">
+              <h2 style="margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Users</h2>
+              <span style="font-size: 12px; color: #8B8398;">1 248 kont</span>
+              <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 10px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); color: #8B8398; font-size: 12.5px; width: 170px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3-3"></path></svg>Szukaj kont…</div>
+                <div style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 10px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); color: #C9C3D4; font-size: 12.5px;">Rola <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2"><path d="m6 9 6 6 6-6"></path></svg></div>
+              </div>
+            </div>
+            <!-- bulk action bar -->
+            <div style="margin: 0 22px 12px; display: flex; align-items: center; gap: 12px; padding: 9px 14px; border-radius: 11px; background: rgba(124,92,255,.12); border: 1px solid rgba(124,92,255,.26);"><span style="font-size: 12.5px; font-weight: 600; color: #C9B6F7;">Zaznaczono 3</span><div style="margin-left: auto; display: flex; gap: 7px;"><span style="padding: 5px 11px; border-radius: 8px; background: rgba(255,255,255,.08); font-size: 12px; color: #C9C3D4;">Zmień rolę</span><span style="padding: 5px 11px; border-radius: 8px; background: rgba(244,63,94,.16); font-size: 12px; color: #FB7185;">Zawieś</span></div></div>
+            <div style="flex: 1; overflow: hidden; margin: 0 22px; border-radius: 14px; border: 1px solid rgba(255,255,255,.08);">
+              <div style="display: grid; grid-template-columns: 28px 2.4fr 2fr 1.2fr 1.2fr 1fr; padding: 10px 16px; background: rgba(255,255,255,.04); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #6B6478;"><span></span><span>Użytkownik</span><span>Email</span><span>Rola</span><span>Status</span><span>Utworzono</span></div>
+              <sc-for list="{{ adminUsers }}" as="u" hint-placeholder-count="6">
+                <div style="display: grid; grid-template-columns: 28px 2.4fr 2fr 1.2fr 1.2fr 1fr; align-items: center; padding: 11px 16px; border-top: 1px solid rgba(255,255,255,.05);">
+                  <div style="width: 16px; height: 16px; border-radius: 5px; background: {{ u.cbBg }}; border: 1.5px solid {{ u.cbBorder }};"></div>
+                  <div style="display: flex; align-items: center; gap: 9px; min-width: 0;"><div style="width: 28px; height: 28px; border-radius: 8px; background: {{ u.av }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 700; flex: none;">{{ u.ini }}</div><span style="font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ u.name }}</span></div>
+                  <span style="font-size: 12.5px; color: #8B8398; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ u.email }}</span>
+                  <span><span style="padding: 3px 9px; border-radius: 7px; background: {{ u.rbg }}; font-size: 11.5px; font-weight: 600; color: {{ u.rc }};">{{ u.role }}</span></span>
+                  <span><span style="display:inline-flex; align-items:center; gap:5px; font-size: 12px; color: {{ u.sc }};"><span style="width:6px;height:6px;border-radius:50%;background:{{ u.sc }};"></span>{{ u.status }}</span></span>
+                  <span style="font-size: 12px; color: #6B6478;">{{ u.created }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="padding: 14px 22px; display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 12px; color: #6B6478;">1–6 z 1 248</span><div style="display: flex; gap: 6px;"><span style="width: 28px; height: 28px; border-radius: 8px; background: rgba(255,255,255,.05); display: flex; align-items: center; justify-content: center; color: #8B8398;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg></span><span style="width: 28px; height: 28px; border-radius: 8px; background: var(--p,#7C5CFF); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 600;">1</span><span style="width: 28px; height: 28px; border-radius: 8px; background: rgba(255,255,255,.05); display: flex; align-items: center; justify-content: center; color: #C9C3D4; font-size: 12px;">2</span><span style="width: 28px; height: 28px; border-radius: 8px; background: rgba(255,255,255,.05); display: flex; align-items: center; justify-content: center; color: #8B8398;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg></span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SUPPORT + VACATIONS -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Support tickets · Urlopy</div>
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+        <!-- support list -->
+        <div style="flex: none; width: 700px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Support · /inbox/support</div>
+          <div style="position: relative; overflow: hidden; height: 500px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); padding: 20px 22px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;"><h2 style="margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Zgłoszenia</h2></div>
+            <div style="display: flex; gap: 6px; margin-bottom: 16px;">
+              <span style="padding: 6px 12px; border-radius: 999px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); font-size: 12px; font-weight: 600; color: #fff;">Open</span>
+              <span style="padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); font-size: 12px; color: #C9C3D4;">In Progress</span>
+              <span style="padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); font-size: 12px; color: #C9C3D4;">Resolved</span>
+              <span style="padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); font-size: 12px; color: #8B8398;">Closed</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <sc-for list="{{ tickets }}" as="t" hint-placeholder-count="4">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 13px 15px; border-radius: 13px; background: {{ t.row }}; border: 1px solid {{ t.bd }};">
+                  <div style="flex: 1; min-width: 0;"><div style="display: flex; align-items: center; gap: 8px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9B8BE6;">{{ t.id }}</span><span style="font-size: 14px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ t.title }}</span></div><div style="font-size: 11.5px; color: #8B8398; margin-top: 4px;">{{ t.meta }}</div></div>
+                  <span style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; background: {{ t.pbg }}; flex: none;"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{ t.pc }};"></span><span style="font-size: 11px; font-weight: 600; color: {{ t.pc }};">{{ t.prio }}</span></span>
+                  <span style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; background: {{ t.sbg }}; flex: none;"><span style="font-size: 11px; font-weight: 600; color: {{ t.sc }};">{{ t.status }}</span></span>
+                  <div style="width: 26px; height: 26px; border-radius: 8px; background: {{ t.av }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 9px; font-weight: 700; flex: none;">{{ t.ini }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <!-- vacations -->
+        <div style="flex: none; width: 700px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Urlopy · /vacations</div>
+          <div style="position: relative; overflow: hidden; height: 500px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); padding: 20px 22px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;"><h2 style="margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Czerwiec 2026</h2><span style="display: flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 10px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); color: #fff; font-size: 12.5px; font-weight: 600;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Nowy wniosek</span></div>
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 16px;">
+              <sc-for list="{{ vacDows }}" as="d" hint-placeholder-count="7"><div style="text-align: center; font-size: 10px; color: #6B6478; padding-bottom: 4px;">{{ d }}</div></sc-for>
+              <sc-for list="{{ vacDays }}" as="day" hint-placeholder-count="28"><div style="aspect-ratio: 1.3; border-radius: 7px; background: {{ day.bg }}; border: 1px solid {{ day.bd }}; display: flex; flex-direction: column; padding: 4px 5px;"><span style="font-size: 10px; color: {{ day.c }};">{{ day.n }}</span>{{ day.bar }}</div></sc-for>
+            </div>
+            <div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Oczekujące wnioski</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <sc-for list="{{ vacPending }}" as="v" hint-placeholder-count="2">
+                <div style="display: flex; align-items: center; gap: 11px; padding: 11px 13px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);">
+                  <div style="width: 28px; height: 28px; border-radius: 8px; background: {{ v.av }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 700;">{{ v.ini }}</div>
+                  <div style="flex: 1; min-width: 0;"><div style="font-size: 13px; font-weight: 600; color: #fff;">{{ v.name }}</div><div style="font-size: 11.5px; color: #8B8398;">{{ v.range }} · {{ v.reason }}</div></div>
+                  <span style="width: 30px; height: 30px; border-radius: 9px; background: rgba(16,185,129,.16); display: flex; align-items: center; justify-content: center; flex: none;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.4" stroke-linecap="round"><path d="M20 6 9 17l-5-5"></path></svg></span>
+                  <span style="width: 30px; height: 30px; border-radius: 9px; background: rgba(244,63,94,.16); display: flex; align-items: center; justify-content: center; flex: none;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FB7185" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WIKI -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Wiki · /wiki</div>
+      <div style="flex: none; width: 1000px;">
+        <div style="position: relative; overflow: hidden; height: 540px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex;">
+          <aside style="flex: none; width: 240px; padding: 22px 16px; background: rgba(255,255,255,.03); border-right: 1px solid rgba(255,255,255,.08);">
+            <div style="font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 14px;">Spis treści</div>
+            <sc-for list="{{ toc }}" as="h" hint-placeholder-count="5">
+              <div style="padding: 7px 10px 7px {{ h.indent }}; border-radius: 8px; background: {{ h.row }}; font-size: 13px; font-weight: {{ h.fw }}; color: {{ h.c }}; border-left: 2px solid {{ h.bar }}; margin-bottom: 2px;">{{ h.t }}</div>
+            </sc-for>
+          </aside>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 18px 24px; border-bottom: 1px solid rgba(255,255,255,.08);">
+              <div><h1 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Onboarding zespołu</h1><div style="font-size: 12px; color: #8B8398; margin-top: 3px;">Ostatnia edycja: Adam D. · dziś 14:20</div></div>
+              <span style="margin-left: auto; display: flex; align-items: center; gap: 7px; padding: 9px 16px; border-radius: 11px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 6px 16px -6px rgba(124,92,255,.6);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>Edytuj</span>
+            </div>
+            <div style="flex: 1; overflow: hidden; padding: 24px;">
+              <h2 style="margin: 0 0 12px; font-size: 19px; font-weight: 700; color: #fff;">Pierwszy tydzień</h2>
+              <p style="margin: 0 0 18px; font-size: 14.5px; line-height: 1.7; color: #C9C3D4;">Witaj w zespole! Ten przewodnik przeprowadzi Cię przez pierwsze dni. Zaczynamy od konfiguracji konta i dostępów do workspace'ów.</p>
+              <h3 style="margin: 0 0 10px; font-size: 16px; font-weight: 600; color: #fff;">Konfiguracja konta</h3>
+              <div style="display: flex; flex-direction: column; gap: 9px; margin-bottom: 18px;">
+                <div style="display: flex; gap: 10px; align-items: flex-start;"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--p,#7C5CFF); margin-top: 8px; flex: none;"></span><span style="font-size: 14.5px; line-height: 1.6; color: #C9C3D4;">Uzupełnij profil i ustaw strefę czasową</span></div>
+                <div style="display: flex; gap: 10px; align-items: flex-start;"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--p,#7C5CFF); margin-top: 8px; flex: none;"></span><span style="font-size: 14.5px; line-height: 1.6; color: #C9C3D4;">Włącz 2FA dla bezpieczeństwa</span></div>
+              </div>
+              <div style="padding: 14px 16px; border-radius: 12px; background: rgba(52,190,248,.08); border-left: 3px solid #34BEF8;"><span style="font-size: 13.5px; color: #C9C3D4;">💡 Wskazówka: poproś team-leada o dodanie do odpowiednich tablic.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BRIEFS + DETAIL -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Creative briefs · /briefs</div>
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+        <!-- briefs list -->
+        <div style="flex: none; width: 540px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Lista briefów</div>
+          <div style="position: relative; overflow: hidden; height: 500px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); padding: 20px 22px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;"><h2 style="margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Briefy</h2><span style="display: flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 10px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); color: #fff; font-size: 12.5px; font-weight: 600;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Nowy brief</span></div>
+            <div style="display: flex; flex-direction: column; gap: 9px;">
+              <sc-for list="{{ briefs }}" as="b" hint-placeholder-count="4">
+                <div style="border-radius: 14px; overflow: hidden; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);">
+                  <div style="height: 5px; background: {{ b.color }};"></div>
+                  <div style="display: flex; align-items: center; gap: 12px; padding: 13px 15px;">
+                    <div style="width: 38px; height: 38px; border-radius: 11px; background: {{ b.bg }}; display: flex; align-items: center; justify-content: center; font-size: 19px; flex: none;">{{ b.emoji }}</div>
+                    <div style="flex: 1; min-width: 0;"><div style="font-size: 14px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ b.title }}</div><div style="font-size: 11.5px; color: #8B8398; margin-top: 2px;">{{ b.meta }}</div></div>
+                    <span style="padding: 4px 10px; border-radius: 999px; background: {{ b.sbg }}; font-size: 11px; font-weight: 600; color: {{ b.sc }}; flex: none;">{{ b.status }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <!-- brief detail -->
+        <div style="flex: none; width: 700px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Karta briefa · /briefs/[id] · wizard: Goals → Target → Deliverables → Brand → References → Timeline</div>
+          <div style="position: relative; overflow: hidden; height: 500px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="height: 6px; background: linear-gradient(90deg, #34BEF8, #7C5CFF);"></div>
+            <div style="padding: 20px 24px 16px; border-bottom: 1px solid rgba(255,255,255,.08);">
+              <div style="display: flex; align-items: center; gap: 12px;"><div style="width: 44px; height: 44px; border-radius: 13px; background: rgba(52,190,248,.16); display: flex; align-items: center; justify-content: center; font-size: 22px;">🎯</div><div style="flex: 1;"><h2 style="margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: #fff;">Rebranding DANIELOS</h2><div style="font-size: 12px; color: #8B8398; margin-top: 2px;">Adam D. · utworzono 10 cze · v3</div></div></div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 14px;">
+                <span style="padding: 7px 14px; border-radius: 999px; background: rgba(255,255,255,.06); font-size: 12.5px; color: #8B8398;">Draft</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4B4359" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                <span style="padding: 7px 14px; border-radius: 999px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); font-size: 12.5px; font-weight: 600; color: #fff;">In Review</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4B4359" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                <span style="padding: 7px 14px; border-radius: 999px; background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.24); font-size: 12.5px; color: #6EE7C7;">Approved</span>
+              </div>
+            </div>
+            <div style="flex: 1; display: flex; min-height: 0;">
+              <div style="flex: 1; min-width: 0; overflow: hidden; padding: 18px 24px; display: flex; flex-direction: column; gap: 16px;">
+                <div><div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #9B8BE6; margin-bottom: 6px;">Goals</div><div style="font-size: 13.5px; line-height: 1.6; color: #C9C3D4;">Odświeżenie marki klienta na rynek enterprise. Spójny system wizualny z liquid glass.</div></div>
+                <div><div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #9B8BE6; margin-bottom: 6px;">Target</div><div style="font-size: 13.5px; line-height: 1.6; color: #C9C3D4;">Software house'y i scale-upy, decydenci 30–45 lat.</div></div>
+                <div><div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #9B8BE6; margin-bottom: 6px;">Deliverables</div><div style="font-size: 13.5px; line-height: 1.6; color: #C9C3D4;">Logo, design system, landing page, deck sprzedażowy.</div></div>
+              </div>
+              <div style="flex: none; width: 200px; padding: 18px 16px; background: rgba(255,255,255,.03); border-left: 1px solid rgba(255,255,255,.08);">
+                <div style="font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 11px;">Historia wersji</div>
+                <sc-for list="{{ versions }}" as="v" hint-placeholder-count="3">
+                  <div style="display: flex; gap: 9px; margin-bottom: 12px;"><div style="width: 7px; height: 7px; border-radius: 50%; background: {{ v.dot }}; margin-top: 4px; flex: none;"></div><div><div style="font-size: 12.5px; font-weight: 600; color: #C9C3D4;">{{ v.v }}</div><div style="font-size: 11px; color: #6B6478;">{{ v.time }}</div></div></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- IMPORT DIALOG -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Import CSV/XLS · Integracje · Eksport</div>
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+        <!-- import dialog -->
+        <div style="flex: none; width: 680px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Import dialog · 680px · mapping</div>
+          <div style="position: relative; border-radius: 22px; padding: 24px; background: rgba(20,17,30,.72); backdrop-filter: blur(40px) saturate(160%); -webkit-backdrop-filter: blur(40px) saturate(160%); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 30px 70px -24px rgba(0,0,0,.7);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;"><h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #fff;">Import zadań</h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg></div>
+            <div style="display: flex; align-items: center; gap: 12px; padding: 16px; border-radius: 14px; background: rgba(124,92,255,.08); border: 1.5px dashed rgba(124,92,255,.4); margin-bottom: 18px;">
+              <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(124,92,255,.16); display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9B8BE6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg></div>
+              <div style="flex: 1;"><div style="font-size: 13.5px; font-weight: 600; color: #fff;">zadania-redesign.csv</div><div style="font-size: 11.5px; color: #8B8398;">38 wierszy · 6 kolumn · 14 KB</div></div>
+              <span style="font-size: 12px; color: #9B8BE6; font-weight: 600;">Zmień</span>
+            </div>
+            <div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Mapowanie kolumn</div>
+            <div style="display: flex; flex-direction: column; gap: 7px; margin-bottom: 20px;">
+              <sc-for list="{{ mapping }}" as="m" hint-placeholder-count="5">
+                <div style="display: grid; grid-template-columns: 1.2fr 24px 1.2fr; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 11px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);">
+                  <div style="min-width: 0;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ m.col }}</div><div style="font-size: 11px; color: #6B6478; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ m.sample }}</div></div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4B4359" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                  <div style="display: flex; align-items: center; justify-content: space-between; padding: 7px 11px; border-radius: 9px; background: {{ m.fbg }}; border: 1px solid {{ m.fbd }};"><span style="font-size: 12.5px; font-weight: 600; color: {{ m.fc }};">{{ m.field }}</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2"><path d="m6 9 6 6 6-6"></path></svg></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;"><span style="padding: 11px 18px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); font-size: 14px; font-weight: 600; color: #C9C3D4;">Anuluj</span><span style="padding: 11px 20px; border-radius: 12px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); color: #fff; font-size: 14px; font-weight: 600; box-shadow: 0 8px 20px -8px rgba(124,92,255,.6);">Importuj 38 zadań</span></div>
+          </div>
+        </div>
+        <!-- success + integrations + export -->
+        <div style="flex: none; width: 520px; display: flex; flex-direction: column; gap: 22px;">
+          <div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Import — success state</div>
+            <div style="border-radius: 20px; padding: 22px; background: rgba(20,17,30,.72); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,.12);">
+              <div style="display: flex; align-items: center; gap: 12px;"><div style="width: 42px; height: 42px; border-radius: 13px; background: rgba(16,185,129,.16); display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.6" stroke-linecap="round"><path d="M20 6 9 17l-5-5"></path></svg></div><div><div style="font-size: 16px; font-weight: 700; color: #fff;">Zaimportowano 36 zadań</div><div style="font-size: 12.5px; color: #8B8398;">2 wiersze pominięto</div></div></div>
+              <div style="margin-top: 14px; padding: 11px 13px; border-radius: 11px; background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.22);"><div style="display: flex; align-items: center; gap: 7px; font-size: 12px; color: #F6B65A;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#F6B65A" stroke-width="2.2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path></svg>Wiersz 12, 28: brak tytułu — pominięto</div></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Workspace · Integracje + Eksport</div>
+            <div style="border-radius: 20px; padding: 20px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08);">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                <sc-for list="{{ integrations }}" as="i" hint-placeholder-count="2">
+                  <div style="padding: 14px; border-radius: 13px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);"><div style="display: flex; align-items: center; gap: 9px;"><div style="width: 30px; height: 30px; border-radius: 9px; background: {{ i.bg }}; display: flex; align-items: center; justify-content: center; font-size: 15px;">{{ i.emoji }}</div><span style="font-size: 13.5px; font-weight: 600; color: #fff;">{{ i.name }}</span></div><div style="margin-top: 9px; font-size: 11px; color: #8B8398; padding: 3px 8px; border-radius: 6px; background: rgba(255,255,255,.05); display: inline-block;">Wkrótce</div></div>
+                </sc-for>
+              </div>
+              <div style="display: flex; align-items: center; gap: 11px; padding: 13px 15px; border-radius: 13px; background: rgba(124,92,255,.08); border: 1px solid rgba(124,92,255,.22);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9B8BE6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg><div style="flex: 1;"><div style="font-size: 13px; font-weight: 600; color: #fff;">Eksport workspace</div><div style="font-size: 11.5px; color: #8B8398;">Pełny backup JSON</div></div><span style="padding: 7px 13px; border-radius: 9px; background: rgba(255,255,255,.08); font-size: 12.5px; font-weight: 600; color: #C9B6F7;">Pobierz</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1600, &quot;height&quot;: 1000}, &quot;primary&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#7C5CFF&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;primary2&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#D247B5&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  ic(...ds) {
+    return React.createElement('svg', { width: 17, height: 17, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }, ds.map((d, i) => React.createElement('path', { key: i, d })));
+  }
+  bar(color) {
+    return React.createElement('div', { style: { marginTop: 'auto', height: '4px', borderRadius: '2px', background: color } });
+  }
+  renderVals() {
+    const p = this.props || {};
+    const primary = p.primary || '#7C5CFF';
+    const primary2 = p.primary2 || '#D247B5';
+    const ic = this.ic.bind(this);
+    const navItem = (label, active, ...ds) => ({
+      label, row: active ? 'linear-gradient(135deg, rgba(124,92,255,.28), rgba(210,71,181,.2))' : 'transparent',
+      tc: active ? '#fff' : '#A9A1B8', fw: active ? 600 : 500,
+      icon: React.createElement('span', { style: { color: active ? '#fff' : '#8B8398', display: 'flex' } }, ic(...ds))
+    });
+    return {
+      primary, primary2,
+      adminNav: [
+        navItem('Workspaces', false, 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z'),
+        navItem('Users', true, 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2', 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8'),
+        navItem('Audit logs', false, 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z', 'M14 2v6h6', 'M9 13h6M9 17h6'),
+        navItem('Backups', false, 'M21 8v13H3V8M1 3h22v5H1zM10 12h4'),
+        navItem('System flags', false, 'M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1Z', 'M4 22v-7')
+      ],
+      adminUsers: [
+        { name: 'Adam Dąbrowski', ini: 'AD', av: 'linear-gradient(140deg,#7C5CFF,#D247B5)', email: 'adam@studio.pl', role: 'Owner', rbg: 'rgba(124,92,255,.16)', rc: '#C9B6F7', status: 'Aktywny', sc: '#10B981', created: '10 cze', cbBg: primary, cbBorder: primary },
+        { name: 'Kasia Mróz', ini: 'KM', av: 'linear-gradient(140deg,#34BEF8,#10B981)', email: 'kasia@studio.pl', role: 'Admin', rbg: 'rgba(52,190,248,.16)', rc: '#93D7F5', status: 'Aktywny', sc: '#10B981', created: '11 cze', cbBg: primary, cbBorder: primary },
+        { name: 'Tomek Lis', ini: 'TL', av: 'linear-gradient(140deg,#F59E0B,#D247B5)', email: 'tomek@studio.pl', role: 'Member', rbg: 'rgba(255,255,255,.06)', rc: '#A9A1B8', status: 'Aktywny', sc: '#10B981', created: '12 cze', cbBg: primary, cbBorder: primary },
+        { name: 'Ola Nowak', ini: 'ON', av: 'linear-gradient(140deg,#A78BFA,#34BEF8)', email: 'ola@brandflow.io', role: 'Member', rbg: 'rgba(255,255,255,.06)', rc: '#A9A1B8', status: 'Zaproszony', sc: '#F59E0B', created: '14 cze', cbBg: 'transparent', cbBorder: '#4B4359' },
+        { name: 'Piotr Zieliński', ini: 'PZ', av: 'linear-gradient(140deg,#F43F5E,#F59E0B)', email: 'piotr@nova.pl', role: 'Viewer', rbg: 'rgba(255,255,255,.06)', rc: '#A9A1B8', status: 'Zawieszony', sc: '#F43F5E', created: '2 cze', cbBg: 'transparent', cbBorder: '#4B4359' },
+        { name: 'Magda Lew', ini: 'ML', av: 'linear-gradient(140deg,#10B981,#34BEF8)', email: 'magda@kreska.studio', role: 'Member', rbg: 'rgba(255,255,255,.06)', rc: '#A9A1B8', status: 'Aktywny', sc: '#10B981', created: '5 cze', cbBg: 'transparent', cbBorder: '#4B4359' }
+      ],
+      tickets: [
+        { id: '#T-218', title: 'Nie mogę zaprosić członka do workspace', meta: 'Studio Nebula · zgłoszono 2 godz. temu', prio: 'Wysoki', pc: '#F6B65A', pbg: 'rgba(245,158,11,.14)', status: 'Open', sc: '#93C5FD', sbg: 'rgba(59,130,246,.14)', av: 'linear-gradient(140deg,#34BEF8,#10B981)', ini: 'KM', row: 'rgba(255,255,255,.04)', bd: 'rgba(255,255,255,.08)' },
+        { id: '#T-217', title: 'Drag-drop w Kanbanie zacina się na Safari', meta: 'Brandflow · zgłoszono 5 godz. temu', prio: 'Krytyczny', pc: '#FB7185', pbg: 'rgba(244,63,94,.14)', status: 'In Progress', sc: '#F6B65A', sbg: 'rgba(245,158,11,.14)', av: 'linear-gradient(140deg,#7C5CFF,#D247B5)', ini: 'AD', row: 'rgba(255,255,255,.04)', bd: 'rgba(255,255,255,.08)' },
+        { id: '#T-215', title: 'Prośba o eksport do PDF', meta: 'NovaSoft · wczoraj', prio: 'Niski', pc: '#CBD5E1', pbg: 'rgba(148,163,184,.14)', status: 'Resolved', sc: '#6EE7C7', sbg: 'rgba(16,185,129,.14)', av: 'linear-gradient(140deg,#F59E0B,#D247B5)', ini: 'TL', row: 'rgba(255,255,255,.02)', bd: 'rgba(255,255,255,.05)' },
+        { id: '#T-211', title: 'Powiadomienia email nie przychodzą', meta: 'Studio Kreska · 3 dni temu', prio: 'Średni', pc: '#93C5FD', pbg: 'rgba(59,130,246,.14)', status: 'Closed', sc: '#8B8398', sbg: 'rgba(255,255,255,.06)', av: 'linear-gradient(140deg,#A78BFA,#34BEF8)', ini: 'ON', row: 'rgba(255,255,255,.02)', bd: 'rgba(255,255,255,.05)' }
+      ],
+      vacDows: ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'],
+      vacDays: Array.from({ length: 28 }, (_, i) => {
+        const n = i + 1;
+        const ranges = { ad: [16, 17, 18, 19, 20], km: [9, 10, 11], tl: [23, 24] };
+        let bar = '', bg = 'rgba(255,255,255,.02)', bd = 'rgba(255,255,255,.05)', c = '#8B8398';
+        if (ranges.ad.includes(n)) { bar = this.bar('#7C5CFF'); bg = 'rgba(124,92,255,.1)'; bd = 'rgba(124,92,255,.2)'; c = '#C9B6F7'; }
+        else if (ranges.km.includes(n)) { bar = this.bar('#34BEF8'); bg = 'rgba(52,190,248,.1)'; bd = 'rgba(52,190,248,.2)'; c = '#93D7F5'; }
+        else if (ranges.tl.includes(n)) { bar = this.bar('#10B981'); bg = 'rgba(16,185,129,.1)'; bd = 'rgba(16,185,129,.2)'; c = '#6EE7C7'; }
+        return { n, bar, bg, bd, c };
+      }),
+      vacPending: [
+        { name: 'Ola Nowak', ini: 'ON', av: 'linear-gradient(140deg,#A78BFA,#34BEF8)', range: '1–5 lip', reason: 'Urlop wypoczynkowy' },
+        { name: 'Piotr Zieliński', ini: 'PZ', av: 'linear-gradient(140deg,#F43F5E,#F59E0B)', range: '8 lip', reason: 'Sprawy osobiste' }
+      ],
+      toc: [
+        { t: 'Pierwszy tydzień', indent: '12px', row: 'rgba(124,92,255,.12)', fw: 600, c: '#fff', bar: '#7C5CFF' },
+        { t: 'Konfiguracja konta', indent: '24px', row: 'transparent', fw: 500, c: '#A9A1B8', bar: 'transparent' },
+        { t: 'Dostępy do tablic', indent: '24px', row: 'transparent', fw: 500, c: '#A9A1B8', bar: 'transparent' },
+        { t: 'Narzędzia zespołu', indent: '12px', row: 'transparent', fw: 600, c: '#C9C3D4', bar: 'transparent' },
+        { t: 'Pierwszy projekt', indent: '12px', row: 'transparent', fw: 600, c: '#C9C3D4', bar: 'transparent' }
+      ],
+      briefs: [
+        { emoji: '🎯', bg: 'rgba(52,190,248,.16)', color: '#34BEF8', title: 'Rebranding DANIELOS', meta: 'Adam D. · 10 cze', status: 'In Review', sbg: 'rgba(124,92,255,.16)', sc: '#C9B6F7' },
+        { emoji: '🚀', bg: 'rgba(124,92,255,.16)', color: '#7C5CFF', title: 'Launch kampanii Q3', meta: 'Kasia M. · 8 cze', status: 'Approved', sbg: 'rgba(16,185,129,.14)', sc: '#6EE7C7' },
+        { emoji: '✏️', bg: 'rgba(245,158,11,.16)', color: '#F59E0B', title: 'Identyfikacja Brandflow', meta: 'Adam D. · 5 cze', status: 'Draft', sbg: 'rgba(255,255,255,.06)', sc: '#A9A1B8' },
+        { emoji: '📦', bg: 'rgba(16,185,129,.16)', color: '#10B981', title: 'Packaging NovaSoft', meta: 'Tomek L. · 1 cze', status: 'Archived', sbg: 'rgba(255,255,255,.05)', sc: '#6B6478' }
+      ],
+      versions: [
+        { v: 'v3 — obecna', time: 'dziś 14:20', dot: '#7C5CFF' },
+        { v: 'v2', time: '12 cze', dot: '#8B8398' },
+        { v: 'v1', time: '10 cze', dot: '#8B8398' }
+      ],
+      mapping: [
+        { col: 'task_name', sample: 'Finalizacja glass…', field: 'Tytuł', fbg: 'rgba(124,92,255,.16)', fbd: 'rgba(124,92,255,.3)', fc: '#C9B6F7' },
+        { col: 'state', sample: 'in_progress', field: 'Status', fbg: 'rgba(255,255,255,.05)', fbd: 'rgba(255,255,255,.1)', fc: '#C9C3D4' },
+        { col: 'prio', sample: 'P0', field: 'Priorytet', fbg: 'rgba(255,255,255,.05)', fbd: 'rgba(255,255,255,.1)', fc: '#C9C3D4' },
+        { col: 'owner', sample: 'adam@studio.pl', field: 'Osoby', fbg: 'rgba(255,255,255,.05)', fbd: 'rgba(255,255,255,.1)', fc: '#C9C3D4' },
+        { col: 'deadline', sample: '2026-06-18', field: 'Deadline', fbg: 'rgba(255,255,255,.05)', fbd: 'rgba(255,255,255,.1)', fc: '#C9C3D4' }
+      ],
+      integrations: [
+        { name: 'FireFlies', emoji: '🔥', bg: 'rgba(245,158,11,.16)' },
+        { name: 'Slack', emoji: '💬', bg: 'rgba(124,92,255,.16)' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -7,7 +7,7 @@
 /* ════════════════════════════════════════════════════════════════════════
  * FLOVLY v4 DESIGN TOKENS — Liquid Glass
  * ────────────────────────────────────────────────────────────────────────
- * Brand: violet #7C5CFF → magenta #D247B5 (140deg)
+ * Brand: violet #7A33EC → magenta #E1318F (140deg)  // v4 Brand & Hero spec
  * Accent: sky #34BEF8 (cool sparkling highlights — badges, focus)
  * Neutral: warm gray 50→950 (cieplejsze niż klasyczny slate)
  * Surfaces: Light canvas #ECE8F4 · Dark canvas #0B0912
@@ -116,18 +116,20 @@
  * Card: #FFFFFF — pure white na lekkim cieple z aury
  * ──────────────────────────────────────────────────────────────────────── */
 :root {
-  /* ─── Brand Primary (violet) — z v4 design system ─── */
-  --brand-50: #F1EEFF;
-  --brand-100: #E5DEFF;
-  --brand-200: #CDC0FF;
-  --brand-300: #B0A0FF;
-  --brand-400: #9580FF;
-  --brand-500: #7C5CFF; /* PRIMARY */
-  --brand-600: #6B45F0;
-  --brand-700: #5A33D6;
-  --brand-800: #4727A8;
-  --brand-900: #36207E;
-  --brand-950: #221356;
+  /* ─── Brand Primary (violet) — z v4 Brand & Hero spec ───
+   * Heavier violet, deeper magenta. Brand-500 = #7A33EC (anchor for
+   * .bg-brand-gradient + accent-brand). Ramp scaled around that anchor. */
+  --brand-50: #F0E9FE;
+  --brand-100: #E1D2FD;
+  --brand-200: #C7AAFB;
+  --brand-300: #AC83F7;
+  --brand-400: #9B6BF2;
+  --brand-500: #7A33EC; /* PRIMARY */
+  --brand-600: #6A24DC;
+  --brand-700: #571CB8;
+  --brand-800: #43168F;
+  --brand-900: #2F1066;
+  --brand-950: #1B0942;
 
   /* ─── Sky accent ─── */
   --sky-50: #E6F7FE;
@@ -155,9 +157,9 @@
   --n-900: #221E2A;
   --n-950: #14111B;
 
-  /* ─── Brand gradient stops (140deg violet → magenta) ─── */
-  --accent-brand: #7C5CFF;
-  --accent-brand-2: #D247B5;
+  /* ─── Brand gradient stops (140deg violet → magenta) — v4 Brand & Hero spec ─── */
+  --accent-brand: #7A33EC;
+  --accent-brand-2: #E1318F;
   --accent-brand-fg: #FFFFFF;
   --accent-sky: #34BEF8;
 
@@ -188,10 +190,10 @@
 
   --border: var(--n-200);
   --input: var(--n-200);
-  --ring: rgba(124, 92, 255, 0.4);
+  --ring: rgba(122, 51, 236, 0.42);
 
   --chart-1: var(--brand-500);
-  --chart-2: #D247B5;
+  --chart-2: #E1318F;
   --chart-3: var(--sky-400);
   --chart-4: #10B981;
   --chart-5: var(--n-400);
@@ -204,7 +206,7 @@
   --sidebar-accent: var(--brand-50);
   --sidebar-accent-foreground: var(--brand-700);
   --sidebar-border: rgba(20, 17, 27, 0.06);
-  --sidebar-ring: rgba(124, 92, 255, 0.4);
+  --sidebar-ring: rgba(122, 51, 236, 0.42);
 
   /* ─── Shadows (brand-tinted, z v4 design system) ─── */
   --shadow-sm: 0 1px 2px rgba(46, 19, 52, 0.08);
@@ -238,25 +240,25 @@
   --popover-foreground: var(--ink);
   --primary: var(--brand-400);
   --primary-foreground: #14111B;
-  --secondary: rgba(124, 92, 255, 0.12);
+  --secondary: rgba(122, 51, 236, 0.12);
   --secondary-foreground: var(--brand-200);
   --muted: rgba(255, 255, 255, 0.05);
   --muted-foreground: var(--n-500);
-  --accent: rgba(124, 92, 255, 0.12);
+  --accent: rgba(122, 51, 236, 0.12);
   --accent-foreground: var(--brand-200);
 
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.12);
-  --ring: rgba(149, 128, 255, 0.55);
+  --ring: rgba(155, 107, 242, 0.58);
 
   --sidebar: rgba(28, 28, 34, 0.55);
   --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--brand-400);
   --sidebar-primary-foreground: #14111B;
-  --sidebar-accent: rgba(124, 92, 255, 0.15);
+  --sidebar-accent: rgba(122, 51, 236, 0.18);
   --sidebar-accent-foreground: var(--brand-200);
   --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: rgba(149, 128, 255, 0.55);
+  --sidebar-ring: rgba(155, 107, 242, 0.58);
 
   /* Shadows głębsze w dark (głębszy violet-black) */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -311,8 +313,8 @@
   .shadow-brand {
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.2) inset,
-      0 10px 28px -10px rgba(124, 92, 255, 0.55),
-      0 4px 12px -4px rgba(210, 71, 181, 0.4);
+      0 10px 28px -10px rgba(122, 51, 236, 0.55),
+      0 4px 12px -4px rgba(225, 49, 143, 0.4);
   }
 
   /* ─── v4 NEW: Aura background ─── */
@@ -320,15 +322,15 @@
      (auth, public viewer, splash). Bardzo subtelny — ~15% opacity. */
   .bg-aura-light {
     background:
-      radial-gradient(ellipse 80% 60% at 12% 10%, rgba(124, 92, 255, 0.16), transparent 55%),
-      radial-gradient(ellipse 70% 50% at 88% 88%, rgba(210, 71, 181, 0.14), transparent 60%),
+      radial-gradient(ellipse 80% 60% at 12% 10%, rgba(122, 51, 236, 0.16), transparent 55%),
+      radial-gradient(ellipse 70% 50% at 88% 88%, rgba(225, 49, 143, 0.14), transparent 60%),
       radial-gradient(ellipse 50% 40% at 90% 10%, rgba(52, 190, 248, 0.10), transparent 60%),
       #ECE8F4;
   }
   .bg-aura-dark {
     background:
-      radial-gradient(ellipse 80% 60% at 12% 10%, rgba(124, 92, 255, 0.20), transparent 55%),
-      radial-gradient(ellipse 70% 50% at 88% 88%, rgba(210, 71, 181, 0.18), transparent 60%),
+      radial-gradient(ellipse 80% 60% at 12% 10%, rgba(122, 51, 236, 0.20), transparent 55%),
+      radial-gradient(ellipse 70% 50% at 88% 88%, rgba(225, 49, 143, 0.18), transparent 60%),
       radial-gradient(ellipse 50% 40% at 90% 10%, rgba(52, 190, 248, 0.10), transparent 60%),
       #0B0912;
   }
@@ -336,16 +338,16 @@
   body.bg-aura,
   .bg-aura {
     background:
-      radial-gradient(ellipse 80% 60% at 12% 10%, rgba(124, 92, 255, 0.16), transparent 55%),
-      radial-gradient(ellipse 70% 50% at 88% 88%, rgba(210, 71, 181, 0.14), transparent 60%),
+      radial-gradient(ellipse 80% 60% at 12% 10%, rgba(122, 51, 236, 0.16), transparent 55%),
+      radial-gradient(ellipse 70% 50% at 88% 88%, rgba(225, 49, 143, 0.14), transparent 60%),
       radial-gradient(ellipse 50% 40% at 90% 10%, rgba(52, 190, 248, 0.10), transparent 60%),
       #ECE8F4;
   }
   .dark body.bg-aura,
   .dark .bg-aura {
     background:
-      radial-gradient(ellipse 80% 60% at 12% 10%, rgba(124, 92, 255, 0.20), transparent 55%),
-      radial-gradient(ellipse 70% 50% at 88% 88%, rgba(210, 71, 181, 0.18), transparent 60%),
+      radial-gradient(ellipse 80% 60% at 12% 10%, rgba(122, 51, 236, 0.20), transparent 55%),
+      radial-gradient(ellipse 70% 50% at 88% 88%, rgba(225, 49, 143, 0.18), transparent 60%),
       radial-gradient(ellipse 50% 40% at 90% 10%, rgba(52, 190, 248, 0.10), transparent 60%),
       #0B0912;
   }
@@ -374,7 +376,35 @@
   .shadow-aura {
     box-shadow:
       0 18px 40px -16px rgba(76, 29, 149, 0.26),
-      0 30px 70px -24px rgba(124, 92, 255, 0.18);
+      0 30px 70px -24px rgba(122, 51, 236, 0.18);
+  }
+
+  /* ─── v4 dialog glass surface ───
+   * Wszystkie modalne dialogi (Create board / Share / Import tasks /
+   * Create view / Create task) używają tej samej szyby: rgba(20,17,30,.72)
+   * + blur(40px) saturate(160%), hairline border, inset top highlight +
+   * brand-tinted aura shadow. 1:1 z v4 spec (linia ~317).
+   *
+   * Light mode: jasna szyba na białym papierze.
+   * Dark mode: ciemna szyba (spec primary case).
+   */
+  .dialog-glass {
+    background: rgba(255, 255, 255, 0.78);
+    -webkit-backdrop-filter: blur(40px) saturate(160%);
+    backdrop-filter: blur(40px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      0 30px 70px -24px rgba(76, 29, 149, 0.34),
+      0 18px 40px -16px rgba(76, 29, 149, 0.26);
+  }
+  .dark .dialog-glass {
+    background: rgba(20, 17, 30, 0.72);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 30px 70px -24px rgba(0, 0, 0, 0.7),
+      0 18px 40px -16px rgba(20, 5, 50, 0.65);
   }
 
   /* ─── v4 floating glass popover card ───
@@ -446,6 +476,167 @@
   .pb-safe-bottom {
     padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   }
+
+  /* ─── v4 Typography ladder ───────────────────────────────────────────
+   * 1:1 z Flovly Brand & Hero spec (sekcja 03 — Typography).
+   * Display tiers use --font-display (Onest), tighter tracking, leading-tight.
+   * Body tiers stay on --font-sans (Inter) z normal leading. */
+  .text-display-xl {
+    font-family: var(--font-display);
+    font-size: 4rem;          /* 64px */
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 0.95;
+  }
+  .text-display-lg {
+    font-family: var(--font-display);
+    font-size: 3rem;          /* 48px */
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.02;
+  }
+  .text-display-md {
+    font-family: var(--font-display);
+    font-size: 2.25rem;       /* 36px */
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.08;
+  }
+  .text-display-sm {
+    font-family: var(--font-display);
+    font-size: 1.75rem;       /* 28px */
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+  .text-h1 {
+    font-family: var(--font-display);
+    font-size: 2.25rem;       /* 36px */
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .text-h2 {
+    font-family: var(--font-display);
+    font-size: 1.75rem;       /* 28px */
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+  }
+  .text-h3 {
+    font-family: var(--font-display);
+    font-size: 1.375rem;      /* 22px */
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+  .text-h4 {
+    font-family: var(--font-display);
+    font-size: 1.125rem;      /* 18px */
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    line-height: 1.35;
+  }
+  .text-h5 {
+    font-family: var(--font-display);
+    font-size: 1rem;          /* 16px */
+    font-weight: 600;
+    letter-spacing: -0.002em;
+    line-height: 1.4;
+  }
+  .text-body-lg {
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;     /* 17px */
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  .text-body-md {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;     /* 15px */
+    font-weight: 400;
+    line-height: 1.55;
+  }
+  .text-body-sm {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;      /* 14px */
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  .text-body-xs {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;     /* 13px */
+    font-weight: 500;
+    letter-spacing: 0.005em;
+    line-height: 1.4;
+  }
+  /* Eyebrow — mono uppercase, 11px @ 0.14em tracking (per v4 spec).
+   * Use anywhere as <span class="text-eyebrow">…</span>. */
+  .text-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;     /* 11px */
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  /* ─── v4 Tracking ladder ─── */
+  .tracking-display { letter-spacing: -0.04em; }
+  .tracking-tight   { letter-spacing: -0.02em; }
+  .tracking-snug    { letter-spacing: -0.01em; }
+  .tracking-eyebrow { letter-spacing: 0.14em; }
+  .tracking-mono    { letter-spacing: 0.02em; }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+ * v4 BRAND MOTION — fl-drift (workspace hero aura) + fl-pulse (Ateron ping)
+ * ──────────────────────────────────────────────────────────────────────── */
+
+/* Subtle translate + scale on radial blobs. 24s loop ensures background
+ * "breathes" without distracting from foreground content. */
+@keyframes fl-drift {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(18px, -22px) scale(1.08);
+  }
+}
+
+/* Mirror direction for second blob — feels like two layers of liquid. */
+@keyframes fl-drift2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-20px, 16px) scale(1.1);
+  }
+}
+
+/* Sonar-style ring pulse outward — Ateron empty state + FAB sonar ring.
+ * 2s loop; opacity fades while scale grows. */
+@keyframes fl-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-fl-drift {
+  animation: fl-drift 24s ease-in-out infinite;
+}
+.animate-fl-drift2 {
+  animation: fl-drift2 26s ease-in-out infinite;
+}
+.animate-fl-pulse {
+  animation: fl-pulse 2s ease-out infinite;
 }
 
 @keyframes pop-in {
@@ -457,6 +648,42 @@
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* ─── v4 Create task: blinking caret pulse na title input ───
+ * Spec: 1.1s steps(1), pulsuje opacity między widoczna/niewidoczna jak
+ * tradycyjny terminal caret. Reused na input::after via .fl-caret-input.
+ * Zostaje wyciszone przez globalny reduced-motion safety net (niżej).
+ */
+@keyframes fl-caret {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+.fl-caret-input {
+  position: relative;
+}
+.fl-caret-input::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 2px;
+  height: 1.05em;
+  background: var(--accent-sky);
+  transform: translateY(-50%);
+  animation: fl-caret 1.1s steps(1) infinite;
+  pointer-events: none;
+  opacity: 0;
+}
+/* Caret tylko gdy input jest focus'em — bez focusu schowane. */
+.fl-caret-input:focus-within::after {
+  opacity: 1;
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -648,7 +875,7 @@
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,1),
     inset 0 0 0 0.5px rgba(255,255,255,0.7),
-    inset 0 -8px 12px -8px rgba(124,92,255,0.35),
+    inset 0 -8px 12px -8px rgba(122,51,236,0.35),
     0 1px 0 rgba(12,13,18,0.06),
     0 6px 18px rgba(12,13,18,0.10),
     0 0 0 0.5px rgba(12,13,18,0.06);
@@ -661,7 +888,7 @@
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.55),
     inset 0 0 0 0.5px rgba(255,255,255,0.30),
-    inset 0 -8px 12px -8px rgba(124,92,255,0.45),
+    inset 0 -8px 12px -8px rgba(122,51,236,0.45),
     0 1px 0 rgba(0,0,0,0.25),
     0 6px 18px rgba(0,0,0,0.45),
     0 0 0 0.5px rgba(255,255,255,0.30);
@@ -685,13 +912,13 @@
   inset: auto 6px -6px 6px;
   height: 12px;
   border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(124,92,255,0.28), transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(122,51,236,0.28), transparent 70%);
   filter: blur(4px);
   pointer-events: none;
   z-index: -1;
 }
 .dark .lg-seg-btn[data-active="true"]::after {
-  background: radial-gradient(ellipse at center, rgba(124,92,255,0.35), transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(122,51,236,0.35), transparent 70%);
 }
 
 /* Sliding indicator (JS-driven) */
@@ -710,7 +937,7 @@
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,1),
     inset 0 0 0 0.5px rgba(255,255,255,0.7),
-    inset 0 -8px 12px -8px rgba(124,92,255,0.35),
+    inset 0 -8px 12px -8px rgba(122,51,236,0.35),
     0 1px 0 rgba(12,13,18,0.06),
     0 6px 18px rgba(12,13,18,0.10),
     0 0 0 0.5px rgba(12,13,18,0.06);
@@ -734,7 +961,7 @@
   inset: auto 6px -6px 6px;
   height: 12px;
   border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(124,92,255,0.28), transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(122,51,236,0.28), transparent 70%);
   filter: blur(4px);
   pointer-events: none;
 }
@@ -745,7 +972,7 @@
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.55),
     inset 0 0 0 0.5px rgba(255,255,255,0.30),
-    inset 0 -8px 12px -8px rgba(124,92,255,0.45),
+    inset 0 -8px 12px -8px rgba(122,51,236,0.45),
     0 1px 0 rgba(0,0,0,0.25),
     0 6px 18px rgba(0,0,0,0.45),
     0 0 0 0.5px rgba(255,255,255,0.30);
@@ -754,7 +981,7 @@
   background: linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0.02) 90%);
 }
 .dark .lg-seg-indicator::after {
-  background: radial-gradient(ellipse at center, rgba(124,92,255,0.35), transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(122,51,236,0.35), transparent 70%);
 }
 @media (prefers-reduced-motion: reduce) {
   .lg-seg-indicator {

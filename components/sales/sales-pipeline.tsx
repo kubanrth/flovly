@@ -27,8 +27,10 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { Inbox } from "lucide-react";
 import { moveDealAction } from "@/app/(app)/w/[workspaceId]/sales/actions";
 import { SalesPipelineMobile } from "@/components/sales/sales-pipeline-mobile";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export interface PipelineStage {
   id: string;
@@ -444,8 +446,16 @@ function StageColumn({
             />
           ))}
           {deals.length === 0 && (
-            <li className="grid h-16 place-items-center rounded-md border border-dashed border-border/60 text-[0.7rem] text-muted-foreground/60">
-              Brak deal&apos;ów
+            // Tight column slot — wrap EmptyState in <li> to keep <ul> valid HTML.
+            // muted tone + compact px-3 py-4 żeby mieścić się w wąskiej kolumnie
+            // kanbana (≈260px). Domyślny 64×64 icon zostaje — daje afordancję.
+            <li className="rounded-md border border-dashed border-border/60">
+              <EmptyState
+                icon={Inbox}
+                title="Brak dealów"
+                tone="muted"
+                className="px-3 py-4"
+              />
             </li>
           )}
         </ul>

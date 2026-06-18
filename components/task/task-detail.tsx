@@ -17,6 +17,7 @@ import {
   Flag,
   Maximize2,
   Pencil,
+  Search,
 } from "lucide-react";
 import type { Role } from "@/lib/generated/prisma/enums";
 import {
@@ -555,11 +556,14 @@ export function TaskDetail({
       </div>
 
       {/* =====================================================================
-          FOOTER — Start timer (lewa) + Save (środek) + Delete (prawa)
+          FOOTER — TaskTimer (pill, lewa) + Autosave status + Delete (prawa).
+          Save button usunięty: zmiany lecą autosave-em (patchTaskAction).
+          `pending` z useActionState dalej żyje na potrzeby wskaźnika
+          "Zapisuję…" obok timera, ale dedykowany Save CTA jest zbędny.
           Sticky liquid-glass bar — backdrop-blur z hairline shadow.
           ===================================================================== */}
       <footer className="sticky bottom-0 z-10 -mx-4 mt-2 flex flex-wrap items-center gap-3 border-t border-border bg-background/80 px-4 py-3 backdrop-blur-md md:-mx-6 md:px-6">
-        {/* Timer (zachowuje pełną logikę startedAt/completedAt + duration display) */}
+        {/* Timer pill (zachowuje pełną logikę startedAt/completedAt + duration display) */}
         <TaskTimer
           taskId={task.id}
           accumulatedSeconds={task.timeTrackedSeconds}
@@ -568,17 +572,17 @@ export function TaskDetail({
           canEdit={canEdit}
         />
 
+        {/* Autosave status — subtle text-only indicator zamiast Save buttona. */}
+        {canEdit && (
+          <span
+            aria-live="polite"
+            className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground/80"
+          >
+            {pending ? "Zapisuję…" : "Autosave"}
+          </span>
+        )}
+
         <div className="ml-auto flex items-center gap-2">
-          {canEdit && (
-            <button
-              type="submit"
-              form="task-update-form"
-              disabled={pending}
-              className="inline-flex h-10 items-center justify-center rounded-xl bg-brand-gradient px-5 font-sans text-[0.86rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
-            >
-              {pending ? "Zapisuję…" : "Zapisz zmiany"}
-            </button>
-          )}
           {canDelete && (
             <form action={deleteTaskAction} className="m-0">
               <input type="hidden" name="id" value={task.id} />
@@ -726,8 +730,18 @@ function AssigneesStack({
   onToggle: (fd: FormData) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const visible = activeAssignees.slice(0, 5);
   const overflow = Math.max(0, activeAssignees.length - 5);
+  // React Compiler memoizes — bezpośredni filter na każdy render OK.
+  const q = query.trim().toLowerCase();
+  const filteredMembers = q
+    ? allMembers.filter((m) => {
+        const name = (m.name ?? "").toLowerCase();
+        const email = m.email.toLowerCase();
+        return name.includes(q) || email.includes(q);
+      })
+    : allMembers;
 
   return (
     <div className="flex flex-col gap-2">
@@ -774,33 +788,51 @@ function AssigneesStack({
 
       {/* Picker — rozwijana lista członków (toggle per user) */}
       {open && canEdit && (
-        <div className="flex flex-col gap-1 rounded-xl border border-border bg-card p-2 shadow-lg">
-          {allMembers.map((m) => {
-            const active = assigneeIds.has(m.id);
-            return (
-              <form key={m.id} action={onToggle} className="m-0">
-                <input type="hidden" name="taskId" value={taskId} />
-                <input type="hidden" name="userId" value={m.id} />
-                <button
-                  type="submit"
-                  data-active={active ? "true" : "false"}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.82rem] transition-colors hover:bg-primary/10 data-[active=true]:bg-primary/12 data-[active=true]:text-foreground"
-                  title={m.email}
-                >
-                  <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-md bg-brand-gradient font-display text-[0.6rem] font-bold text-white">
-                    {m.avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={m.avatarUrl} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      initialsOf(m.name, m.email)
-                    )}
-                  </span>
-                  <span className="truncate">{m.name ?? m.email.split("@")[0]}</span>
-                  {active && <Check size={13} className="ml-auto text-primary" />}
-                </button>
-              </form>
-            );
-          })}
+        <div className="popover-glass popover-enter flex flex-col gap-1 p-2">
+          {/* Search input — filtruje członków po name/email */}
+          <label className="mx-1 mt-1 mb-1 flex items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-2.5 py-1.5">
+            <Search size={13} className="text-muted-foreground" aria-hidden />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Szukaj osoby…"
+              aria-label="Szukaj osoby"
+              className="min-w-0 flex-1 bg-transparent text-[0.78rem] text-foreground placeholder:text-muted-foreground/80 outline-none"
+            />
+          </label>
+          {filteredMembers.length === 0 ? (
+            <p className="px-2 py-3 text-center text-[0.76rem] text-muted-foreground">
+              Brak dopasowań
+            </p>
+          ) : (
+            filteredMembers.map((m) => {
+              const active = assigneeIds.has(m.id);
+              return (
+                <form key={m.id} action={onToggle} className="m-0">
+                  <input type="hidden" name="taskId" value={taskId} />
+                  <input type="hidden" name="userId" value={m.id} />
+                  <button
+                    type="submit"
+                    data-active={active ? "true" : "false"}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.82rem] transition-colors hover:bg-primary/10 data-[active=true]:bg-primary/12 data-[active=true]:text-foreground"
+                    title={m.email}
+                  >
+                    <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-md bg-brand-gradient font-display text-[0.6rem] font-bold text-white">
+                      {m.avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={m.avatarUrl} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        initialsOf(m.name, m.email)
+                      )}
+                    </span>
+                    <span className="truncate">{m.name ?? m.email.split("@")[0]}</span>
+                    {active && <Check size={13} className="ml-auto text-primary" />}
+                  </button>
+                </form>
+              );
+            })
+          )}
         </div>
       )}
     </div>
@@ -955,6 +987,7 @@ function TagsSection({
   const [picking, setPicking] = useState(false);
   const [creating, setCreating] = useState(false);
   const [color, setColor] = useState(TAG_COLORS[0]);
+  const [tagQuery, setTagQuery] = useState("");
 
   // Same belt-and-suspenders pattern as TaskDetail — table re-fetches even if Realtime is silent.
   const toggleTagWithRefresh = async (fd: FormData) => {
@@ -964,6 +997,11 @@ function TagsSection({
 
   const visibleActive = activeTags.slice(0, 5);
   const overflow = Math.max(0, activeTags.length - 5);
+  // React Compiler memoizes — bezpośredni filter na każdy render OK.
+  const tq = tagQuery.trim().toLowerCase();
+  const filteredTags = tq
+    ? allTags.filter((t) => t.name.toLowerCase().includes(tq))
+    : allTags;
 
   return (
     <div className="flex flex-col gap-2">
@@ -1003,10 +1041,26 @@ function TagsSection({
 
       {/* Picker — pełna lista tagów (toggle) + przycisk "Nowy tag" */}
       {picking && canEdit && (
-        <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-2.5 shadow-lg">
-          {allTags.length > 0 ? (
+        <div className="popover-glass popover-enter flex flex-col gap-2 p-2.5">
+          {/* Search input — filtruje tagi po name */}
+          <label className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-2.5 py-1.5">
+            <Search size={13} className="text-muted-foreground" aria-hidden />
+            <input
+              type="text"
+              value={tagQuery}
+              onChange={(e) => setTagQuery(e.target.value)}
+              placeholder="Szukaj tagu…"
+              aria-label="Szukaj tagu"
+              className="min-w-0 flex-1 bg-transparent text-[0.78rem] text-foreground placeholder:text-muted-foreground/80 outline-none"
+            />
+          </label>
+          {allTags.length === 0 ? (
+            <p className="text-[0.78rem] text-muted-foreground">Brak tagów w workspace.</p>
+          ) : filteredTags.length === 0 ? (
+            <p className="px-1 py-2 text-[0.76rem] text-muted-foreground">Brak dopasowań</p>
+          ) : (
             <div className="flex flex-wrap gap-1.5">
-              {allTags.map((t) => {
+              {filteredTags.map((t) => {
                 const active = tagIds.has(t.id);
                 return (
                   <form key={t.id} action={toggleTagWithRefresh} className="m-0">
@@ -1032,8 +1086,6 @@ function TagsSection({
                 );
               })}
             </div>
-          ) : (
-            <p className="text-[0.78rem] text-muted-foreground">Brak tagów w workspace.</p>
           )}
 
           <div className="flex items-center gap-2 pt-1">

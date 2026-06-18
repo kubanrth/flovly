@@ -170,6 +170,26 @@ async function main() {
     },
   });
 
+  // System flags — admin panel /admin/flags shows 5 kill switches. We seed
+  // them with their factory defaults so the table never starts empty (a fresh
+  // DB otherwise renders defaults-only with no `updatedAt` to display).
+  // Catalog source: lib/system-flags.ts. Kept inline (no import) so the seed
+  // file stays self-contained and tsx-friendly.
+  const flagDefaults: { key: string; value: boolean }[] = [
+    { key: "ai_ateron_enabled", value: true },
+    { key: "public_share_links", value: true },
+    { key: "whiteboard_beta", value: false },
+    { key: "import_csv_xls", value: true },
+    { key: "kill_switch_writes", value: false },
+  ];
+  for (const f of flagDefaults) {
+    await db.systemFlag.upsert({
+      where: { key: f.key },
+      update: {},
+      create: { key: f.key, value: f.value, updatedBy: admin.id },
+    });
+  }
+
   console.log("Seed complete:", { admin: admin.email, member: member.email, workspace: workspace.slug });
 }
 

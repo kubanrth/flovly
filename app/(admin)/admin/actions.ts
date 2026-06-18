@@ -244,6 +244,152 @@ export async function toggleSuperAdminAction(formData: FormData) {
   revalidatePath("/admin/actions");
 }
 
+// ── Bulk user actions (F7-tails: panel admin desktop) ─────────────
+// Shared result envelope so the client knows how many rows the server
+// actually touched (self-act, soft-deleted, etc. are filtered out).
+export type BulkActionResult = { ok: boolean; affected: number; error?: string };
+
+export const bulkUserActionResultZero: BulkActionResult = { ok: true, affected: 0 };
+
+// Toggle ban on N users at once. `ban=true` blocks accounts + kills sessions;
+// `ban=false` lifts the ban (sessions stay dead from the original ban).
+export async function bulkToggleBanAction(
+  ids: string[],
+  ban: boolean,
+): Promise<BulkActionResult> {
+  const admin = await requireSuperAdmin();
+  if (!Array.isArray(ids) || ids.length === 0)
+    return { ok: false, affected: 0, error: "Brak zaznaczenia." };
+  if (ids.length > 200)
+    return { ok: false, affected: 0, error: "Maks 200 wierszy naraz." };
+
+  // Filter self out — admin can never ban themselves out of the panel.
+  const safeIds = ids.filter((id) => id !== admin.userId);
+  if (safeIds.length === 0) return { ok: true, affected: 0 };
+
+  const targets = await db.user.findMany({
+    where: { id: { in: safeIds }, deletedAt: null },
+    select: { id: true, email: true, isBanned: true },
+  });
+  // Only operate on users whose current state actually changes.
+  const flipping = targets.filter((u) => u.isBanned !== ban);
+  if (flipping.length === 0) return { ok: true, affected: 0 };
+
+  await db.user.updateMany({
+    where: { id: { in: flipping.map((u) => u.id) } },
+    data: { isBanned: ban },
+  });
+
+  if (ban) {
+    await db.session.deleteMany({ where: { userId: { in: flipping.map((u) => u.id) } } });
+  }
+
+  await writeAdminAudit({
+    actorId: admin.userId,
+    actorEmail: admin.email,
+    action: ban ? "users.bulk.banned" : "users.bulk.unbanned",
+    targetType: "User",
+    // Bulk row in the audit trail — targetId references the batch as a synthetic
+    // "bulk:<n>" id, with the full list of affected users in `diff` for forensics.
+    targetId: `bulk:${flipping.length}`,
+    targetLabel: `${flipping.length} kont`,
+    diff: { ids: flipping.map((u) => u.id), emails: flipping.map((u) => u.email) },
+  });
+
+  revalidatePath("/admin/users");
+  revalidatePath("/admin");
+  revalidatePath("/admin/actions");
+
+  return { ok: true, affected: flipping.length };
+}
+
+// Bulk promote/demote super admin. Self is filtered (admin can't strip
+// themselves of the role this way; deliberate orphan-protection).
+export async function bulkSetSuperAdminAction(
+  ids: string[],
+  isSuperAdmin: boolean,
+): Promise<BulkActionResult> {
+  const admin = await requireSuperAdmin();
+  if (!Array.isArray(ids) || ids.length === 0)
+    return { ok: false, affected: 0, error: "Brak zaznaczenia." };
+  if (ids.length > 200)
+    return { ok: false, affected: 0, error: "Maks 200 wierszy naraz." };
+
+  const safeIds = ids.filter((id) => id !== admin.userId);
+  if (safeIds.length === 0) return { ok: true, affected: 0 };
+
+  const targets = await db.user.findMany({
+    where: { id: { in: safeIds }, deletedAt: null },
+    select: { id: true, email: true, isSuperAdmin: true },
+  });
+  const flipping = targets.filter((u) => u.isSuperAdmin !== isSuperAdmin);
+  if (flipping.length === 0) return { ok: true, affected: 0 };
+
+  await db.user.updateMany({
+    where: { id: { in: flipping.map((u) => u.id) } },
+    data: { isSuperAdmin },
+  });
+
+  await writeAdminAudit({
+    actorId: admin.userId,
+    actorEmail: admin.email,
+    action: "users.bulk.roleChanged",
+    targetType: "User",
+    targetId: `bulk:${flipping.length}`,
+    targetLabel: `${flipping.length} kont`,
+    diff: {
+      ids: flipping.map((u) => u.id),
+      emails: flipping.map((u) => u.email),
+      grantedSuperAdmin: isSuperAdmin,
+    },
+  });
+
+  revalidatePath("/admin/users");
+  revalidatePath("/admin");
+  revalidatePath("/admin/actions");
+
+  return { ok: true, affected: flipping.length };
+}
+
+// ── Workspace restore (point-in-time, soft) ───────────────────────
+// "Restore" here = stage a request for the workspace to be rolled back from
+// its most recent snapshot. The actual data swap is destructive + slow, so
+// this action only logs intent; the cron `/api/cron/workspace-restore`
+// (out of scope here) is what actually rehydrates. UI shows the request
+// state via audit log.
+export async function requestWorkspaceRestoreAction(formData: FormData) {
+  const admin = await requireSuperAdmin();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  const ws = await db.workspace.findUnique({
+    where: { id },
+    select: { name: true, slug: true },
+  });
+  if (!ws) return;
+
+  const latestBackup = await db.workspaceBackup.findFirst({
+    where: { workspaceId: id },
+    orderBy: { dayKey: "desc" },
+    select: { dayKey: true, sizeBytes: true },
+  });
+
+  await writeAdminAudit({
+    actorId: admin.userId,
+    actorEmail: admin.email,
+    action: "workspace.restore.requested",
+    targetType: "Workspace",
+    targetId: id,
+    targetLabel: `${ws.name} (/${ws.slug})`,
+    diff: latestBackup
+      ? { fromBackupDay: latestBackup.dayKey, sizeBytes: latestBackup.sizeBytes }
+      : { fromBackupDay: null },
+  });
+
+  revalidatePath("/admin/workspaces");
+  revalidatePath("/admin/actions");
+}
+
 // ── Workspaces ────────────────────────────────────────────────────
 export async function forceDeleteWorkspaceAction(formData: FormData) {
   const admin = await requireSuperAdmin();

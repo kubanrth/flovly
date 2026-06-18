@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/admin-guard";
+import { AuditExpandRow } from "@/components/admin/audit-expand-row";
 
 // Query params: ?action=task.created&actor=admin@…&days=7
 async function loadAudit(params: { action?: string; actor?: string; days?: string }) {
@@ -111,22 +112,23 @@ export default async function AdminAuditPage({
             with avatar initial, action badge, target mono, timestamp right. */}
         <div className="hidden overflow-hidden rounded-xl border border-border bg-card md:block">
           <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left">
-            <thead className="border-b border-border bg-muted/50">
-              <tr className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                <th className="px-4 py-2">Czas</th>
-                <th className="px-4 py-2">Akcja</th>
-                <th className="px-4 py-2">Obiekt</th>
-                <th className="px-4 py-2">Użytkownik</th>
-                <th className="px-4 py-2">Przestrzeń</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map((e) => (
-                <AuditRowView key={e.id} entry={e} />
-              ))}
-            </tbody>
-          </table>
+            <table className="w-full min-w-[820px] text-left">
+              <thead className="border-b border-border bg-muted/50">
+                <tr className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+                  <th className="px-4 py-2">Czas</th>
+                  <th className="px-4 py-2">Akcja</th>
+                  <th className="px-4 py-2">Obiekt</th>
+                  <th className="px-4 py-2">Użytkownik</th>
+                  <th className="px-4 py-2">Przestrzeń</th>
+                  <th className="w-[40px] px-2 py-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((e) => (
+                  <AuditRowView key={e.id} entry={e} />
+                ))}
+              </tbody>
+            </table>
           </div>
           {entries.length === 0 && (
             <p className="px-4 py-8 text-center text-[0.88rem] text-muted-foreground">
@@ -155,19 +157,14 @@ export default async function AdminAuditPage({
 // Actor + avatar initial top, action badge with target mono code under, timestamp right.
 function AuditCardMobile({ entry }: { entry: AuditRow }) {
   const actorLabel = entry.actor?.name ?? entry.actor?.email ?? "—";
-  const initials = (entry.actor?.name ?? entry.actor?.email ?? "?")
-    .split(/\s+/)
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const initials = makeInitials(entry.actor?.name ?? entry.actor?.email);
+  const tone = actionTone(entry.action);
 
   return (
     <li className="rounded-xl border border-border bg-card p-3">
       <div className="flex items-center gap-2.5">
         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-brand-gradient font-mono text-[0.62rem] font-bold text-white">
-          {initials || "?"}
+          {initials}
         </span>
         <span className="min-w-0 flex-1 truncate text-[0.86rem] font-semibold text-foreground">
           {actorLabel}
@@ -182,9 +179,7 @@ function AuditCardMobile({ entry }: { entry: AuditRow }) {
         </span>
       </div>
       <div className="mt-2.5 flex items-center gap-2">
-        <code className="inline-flex h-6 items-center rounded-md bg-primary/12 px-2 font-mono text-[0.7rem] font-semibold text-primary">
-          {entry.action}
-        </code>
+        <ActionBadge action={entry.action} tone={tone} />
         <span className="truncate font-mono text-[0.72rem] text-muted-foreground">
           {entry.objectType}·{entry.objectId.slice(-6)}
         </span>
@@ -199,6 +194,12 @@ function AuditCardMobile({ entry }: { entry: AuditRow }) {
 }
 
 function AuditRowView({ entry }: { entry: AuditRow }) {
+  const actorLabel = entry.actor?.name ?? entry.actor?.email ?? "—";
+  const initials = makeInitials(entry.actor?.name ?? entry.actor?.email);
+  const tone = actionTone(entry.action);
+  const diffShape = normaliseDiff(entry.diff);
+  const hasDiff = !!(diffShape.old || diffShape.new || diffShape.flat);
+
   return (
     <tr className="border-b border-border last:border-b-0">
       <td className="px-4 py-2 font-mono text-[0.72rem] uppercase tracking-[0.12em] text-muted-foreground">
@@ -210,15 +211,20 @@ function AuditRowView({ entry }: { entry: AuditRow }) {
         })}
       </td>
       <td className="px-4 py-2">
-        <code className="rounded-sm bg-muted px-1.5 py-0.5 font-mono text-[0.72rem]">
-          {entry.action}
-        </code>
+        <ActionBadge action={entry.action} tone={tone} />
       </td>
       <td className="px-4 py-2 font-mono text-[0.74rem] text-muted-foreground">
         {entry.objectType}·{entry.objectId.slice(-6)}
       </td>
-      <td className="px-4 py-2 text-[0.82rem]">
-        {entry.actor?.name ?? entry.actor?.email ?? "—"}
+      <td className="px-4 py-2">
+        <div className="flex items-center gap-2">
+          {/* Brand-gradient avatar matches the design spec: 24×24 rounded-md,
+              initials in mono. Mirrors the mobile card treatment for consistency. */}
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-brand-gradient font-mono text-[0.58rem] font-bold text-white">
+            {initials}
+          </span>
+          <span className="truncate text-[0.82rem]">{actorLabel}</span>
+        </div>
       </td>
       <td className="px-4 py-2">
         {entry.workspace ? (
@@ -229,6 +235,90 @@ function AuditRowView({ entry }: { entry: AuditRow }) {
           <span className="text-muted-foreground">—</span>
         )}
       </td>
+      <td className="relative px-2 py-2 text-right">
+        <AuditExpandRow hasDiff={hasDiff} diff={diffShape} colSpan={6} />
+      </td>
     </tr>
   );
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+
+type ActionTone = "create" | "update" | "delete" | "muted";
+
+function actionTone(action: string): ActionTone {
+  // Conventional action verb is after the last `.` (e.g. `task.updated`,
+  // `board.created`, `member.removed`). We strip trailing tense forms so
+  // create/created/creates all map.
+  const verb = action.split(".").pop()?.toLowerCase() ?? "";
+  if (verb.startsWith("create")) return "create";
+  if (
+    verb.startsWith("delete") ||
+    verb.startsWith("remove") ||
+    verb.startsWith("ban") ||
+    verb === "kicked"
+  )
+    return "delete";
+  if (
+    verb.startsWith("update") ||
+    verb.startsWith("change") ||
+    verb.startsWith("rename") ||
+    verb.startsWith("move") ||
+    verb.startsWith("assign") ||
+    verb.startsWith("set")
+  )
+    return "update";
+  return "muted";
+}
+
+function ActionBadge({ action, tone }: { action: string; tone: ActionTone }) {
+  return (
+    <code
+      data-tone={tone}
+      className="inline-flex h-6 items-center rounded-md bg-muted px-2 font-mono text-[0.7rem] font-semibold text-muted-foreground data-[tone=create]:bg-emerald-500/12 data-[tone=create]:text-emerald-500 data-[tone=delete]:bg-destructive/12 data-[tone=delete]:text-destructive data-[tone=update]:bg-amber-500/12 data-[tone=update]:text-amber-500"
+    >
+      {action}
+    </code>
+  );
+}
+
+function makeInitials(input: string | null | undefined): string {
+  if (!input) return "?";
+  const parts = input.split(/[\s@.]+/).filter(Boolean);
+  const initials = parts
+    .slice(0, 2)
+    .map((p) => p[0])
+    .filter(Boolean)
+    .join("")
+    .toUpperCase();
+  return initials || "?";
+}
+
+// Audit `diff` payloads aren't normalised — historical entries store either
+// {from,to}, {old,new}, or a flat object. Squash into one shape so the
+// expand-row component renders consistently.
+function normaliseDiff(raw: unknown): {
+  old: Record<string, unknown> | null;
+  new: Record<string, unknown> | null;
+  flat: Record<string, unknown> | null;
+} {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw))
+    return { old: null, new: null, flat: null };
+  const obj = raw as Record<string, unknown>;
+
+  if ("old" in obj || "new" in obj) {
+    return {
+      old: (obj.old as Record<string, unknown>) ?? null,
+      new: (obj.new as Record<string, unknown>) ?? null,
+      flat: null,
+    };
+  }
+  if ("from" in obj || "to" in obj) {
+    return {
+      old: { value: obj.from ?? null },
+      new: { value: obj.to ?? null },
+      flat: null,
+    };
+  }
+  return { old: null, new: null, flat: obj };
 }

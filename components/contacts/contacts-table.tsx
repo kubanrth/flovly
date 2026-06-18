@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
-import { Settings2, Check, Trash2 } from "lucide-react";
+import { Settings2, Check, Trash2, Users } from "lucide-react";
 import { deleteContactAction } from "@/app/(app)/w/[workspaceId]/contacts/actions";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export interface ContactsTableRow {
   id: string;
@@ -160,9 +161,11 @@ export function ContactsTable({
         </table>
       </div>
       {rows.length === 0 && (
-        <p className="px-4 py-8 text-center text-[0.88rem] text-muted-foreground">
-          Brak kontaktów. Dodaj pierwszy żeby zacząć.
-        </p>
+        <EmptyState
+          icon={Users}
+          title="Brak kontaktów"
+          description="Dodaj pierwszy kontakt żeby zacząć budować bazę firm i osób."
+        />
       )}
     </div>
   );

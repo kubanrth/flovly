@@ -43,10 +43,14 @@ export function ActivityLog({ entries }: { entries: ActivityEntry[] }) {
           {entries.length}
         </span>
       </div>
-      <ol className="flex flex-col gap-2">
-        {entries.map((e) => (
+      {/* Timeline rail — 1px vertical brand-faint line linking icons. The
+          rail lives inside <ol> via a pseudo-element on each row's icon
+          column (`::before`) so it scales perfectly with content height
+          without absolute-positioned overlays. Last row trims the rail. */}
+      <ol className="flex flex-col">
+        {entries.map((e, i) => (
           <li key={e.id}>
-            <Row entry={e} />
+            <Row entry={e} isLast={i === entries.length - 1} />
           </li>
         ))}
       </ol>
@@ -54,19 +58,37 @@ export function ActivityLog({ entries }: { entries: ActivityEntry[] }) {
   );
 }
 
-function Row({ entry }: { entry: ActivityEntry }) {
+function Row({ entry, isLast }: { entry: ActivityEntry; isLast: boolean }) {
   const { icon: Icon, tone } = iconFor(entry.action);
   const actorName =
     entry.actor?.name ?? entry.actor?.email.split("@")[0] ?? "System";
   const summary = summarize(entry.action, entry.diff);
 
   return (
-    <div className="flex items-start gap-3 rounded-md px-3 py-2 transition-colors hover:bg-accent/40">
-      <span
-        className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${tone}`}
-        aria-hidden
-      >
-        <Icon size={12} />
+    <div className="group relative flex items-start gap-3 rounded-md px-3 py-2 pb-3 transition-colors hover:bg-accent/40">
+      {/* Icon column: 7x7 circle on top, then 1px rail beneath. */}
+      <span className="relative flex shrink-0 flex-col items-center self-stretch">
+        <span
+          className={`grid h-7 w-7 place-items-center rounded-full ${tone}`}
+          aria-hidden
+        >
+          <Icon size={12} />
+        </span>
+        {!isLast && (
+          // Brand-faint vertical connector — 1px line, sits centered under
+          // the 7x7 avatar. The 8x8 dot is layered on the rail to mark the
+          // entry anchor point (spec).
+          <span
+            aria-hidden
+            className="mt-1 w-px flex-1 bg-[color-mix(in_oklch,var(--accent-brand)_22%,transparent)]"
+          />
+        )}
+        {!isLast && (
+          <span
+            aria-hidden
+            className="absolute left-1/2 top-[calc(1.75rem+0.25rem)] h-2 w-2 -translate-x-1/2 rounded-full bg-[color-mix(in_oklch,var(--accent-brand)_55%,transparent)] ring-2 ring-background"
+          />
+        )}
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <p className="text-[0.88rem] leading-tight">

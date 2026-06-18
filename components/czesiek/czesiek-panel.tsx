@@ -194,17 +194,23 @@ export function CzesiekPanel({
         className="fixed inset-0 z-50 flex translate-x-full flex-col border-l border-border bg-background opacity-0 transition-[transform,opacity] duration-300 ease-out data-[open=true]:translate-x-0 data-[open=true]:opacity-100 md:left-auto md:w-[720px] md:shadow-[0_18px_40px_-16px_rgba(76,29,149,0.36),0_30px_70px_-24px_rgba(124,92,255,0.24)]"
         style={{ pointerEvents: open ? "auto" : "none" }}
       >
-        {/* Header */}
+        {/* Header — F12-K81 v4 brand polish:
+            - Avatar: 34×34 rounded-xl bg-brand-gradient ze "At" literami w centrum
+              (1:1 z Flovly Components spec P4, linia 434).
+            - Tytuł: text-brand-gradient żeby brand drift na nazwę produktu. */}
         <header className="flex items-center justify-between border-b border-border bg-card px-3.5 py-2.5">
-          <div className="flex items-center gap-2">
-            <span className="grid h-7 w-7 place-items-center rounded-full bg-brand-gradient text-[0.7rem] font-bold text-white shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <span
+              aria-hidden="true"
+              className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-xl bg-brand-gradient text-[0.82rem] font-bold leading-none text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_6px_16px_-5px_rgba(122,51,236,0.65)]"
+            >
               At
             </span>
             <div className="flex flex-col">
-              <span className="font-display text-[0.95rem] font-bold leading-none text-foreground">
+              <span className="font-display text-[0.95rem] font-bold leading-none text-brand-gradient">
                 Ateron AI
               </span>
-              <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground/70">
+              <span className="mt-1 font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground/70">
                 Twój asystent workspace'u
               </span>
             </div>

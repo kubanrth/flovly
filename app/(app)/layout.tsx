@@ -6,6 +6,9 @@ import type { SidebarWorkspace } from "@/components/layout/sidebar";
 import { parseEnabledViews } from "@/lib/board-views";
 import { ReminderPopups } from "@/components/reminders/reminder-popups";
 import { NotificationToaster } from "@/components/notifications/notification-toaster";
+import { CommandPalette } from "@/components/search/command-palette";
+import type { CommandPaletteData } from "@/components/search/command-palette";
+import { OnboardingTour } from "@/components/onboarding/onboarding-tour";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -15,7 +18,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const [user, memberships, unreadNotifs, openSupportTickets, dueReminders] = await Promise.all([
     db.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, email: true, name: true, avatarUrl: true, isSuperAdmin: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        avatarUrl: true,
+        isSuperAdmin: true,
+        // F12-K83: null = first login → render <OnboardingTour />.
+        onboardingCompletedAt: true,
+      },
     }),
     db.workspaceMembership.findMany({
       where: { userId: session.user.id, workspace: { deletedAt: null } },
@@ -86,6 +97,26 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ]),
   );
 
+  // F12-K83: Top 10 tasków przypisanych do usera dla Cmd+K palette.
+  // Wyciągnięty osobno (po memberships) — TaskAssignee join + workspace info.
+  // Limit 10 żeby payload + render były tanie; głębsze search'e przez /api później.
+  const myAssignedTasks = await db.task.findMany({
+    where: {
+      assignees: { some: { userId: session.user.id } },
+      deletedAt: null,
+      board: { deletedAt: null, workspace: { deletedAt: null } },
+    },
+    orderBy: { updatedAt: "desc" },
+    take: 10,
+    select: {
+      id: true,
+      title: true,
+      boardId: true,
+      workspaceId: true,
+      workspace: { select: { name: true } },
+    },
+  });
+
   const workspaces: SidebarWorkspace[] = memberships.map((m) => {
     // ADMINs see all boards; others see PUBLIC + explicit memberships.
     const visibleBoards = m.workspace.boards.filter((b) => {
@@ -106,6 +137,28 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       openSupportCount: supportCountByWs.get(m.workspace.id) ?? 0,
     };
   });
+
+  // F12-K83: flatten data dla Cmd+K. Workspaces + ich boards (flat lista
+  // z workspaceName na każdej tablicy żeby user wiedział do której workspace
+  // tablica należy) + przypisane do mnie taski.
+  const commandPaletteData: CommandPaletteData = {
+    workspaces: workspaces.map((w) => ({ id: w.id, name: w.name })),
+    boards: workspaces.flatMap((w) =>
+      w.boards.map((b) => ({
+        id: b.id,
+        name: b.name,
+        workspaceId: w.id,
+        workspaceName: w.name,
+      })),
+    ),
+    tasks: myAssignedTasks.map((t) => ({
+      id: t.id,
+      title: t.title,
+      boardId: t.boardId,
+      workspaceId: t.workspaceId,
+      workspaceName: t.workspace.name,
+    })),
+  };
 
   return (
     // Subtle radial gradient gives the sidebar glass something to blur over
@@ -145,6 +198,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {/* Global notification toaster (mention/assign/poll/support). Independent
           from ReminderPopups — different data source (Notification vs PersonalReminder). */}
       <NotificationToaster userId={user.id} />
+
+      {/* F12-K83: globalny Cmd+K palette. Data fetchowany w (app) layoucie
+          żeby paleta otwierała się natychmiast bez API roundtripa. */}
+      <CommandPalette data={commandPaletteData} />
+
+      {/* F12-K83: onboarding tour tylko gdy pierwszy login (flag w User).
+          Modal closeuje się sam i zapisuje flagę przez completeOnboardingAction. */}
+      {user.onboardingCompletedAt === null && <OnboardingTour />}
     </div>
   );
 }

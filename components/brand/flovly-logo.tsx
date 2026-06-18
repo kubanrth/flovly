@@ -3,7 +3,9 @@
 //  - <FlovlyWordmark> — "FLOVLY" tekst (z opcjonalnym gradient na 'V')
 //  - <FlovlySignature> — mark + wordmark obok
 //
-// Wszystko z brand gradient'em #7C5CFF → #D247B5 (140deg).
+// F12-K81 (v4 brand polish): zsynchronizowane z Flovly Brand & Hero spec —
+// #7A33EC → #E1318F (140deg). Match z CSS tokens (--accent-brand /
+// --accent-brand-2) i utility .bg-brand-gradient.
 
 import * as React from "react";
 
@@ -12,9 +14,11 @@ const GRADIENT_ID = "flovly-brand-gradient";
 function GradientDef() {
   return (
     <defs>
+      {/* Match exact stops + direction (140deg ≈ x1/y1 → x2/y2 along
+       * diagonal) z CSS tokens. */}
       <linearGradient id={GRADIENT_ID} x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#7C5CFF" />
-        <stop offset="100%" stopColor="#D247B5" />
+        <stop offset="0%" stopColor="#7A33EC" />
+        <stop offset="100%" stopColor="#E1318F" />
       </linearGradient>
     </defs>
   );

@@ -117,65 +117,69 @@ export function AttachmentsSection({
         </span>
       </div>
 
-      {attachments.length > 0 && (
-        <ul className="grid gap-3 sm:grid-cols-2">
+      {/* Filmstrip — 96x70 tiles in a horizontal scroll. Diagonal-striped
+          placeholders give files a recognizable visual texture (spec). The
+          inline dashed "Dodaj" tile is the upload affordance — replaces the
+          old big dashed dropzone box. Drop-on-strip still works. */}
+      {(attachments.length > 0 || canUpload) && (
+        <div
+          onDragOver={(e) => {
+            if (!canUpload) return;
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            if (!canUpload) return;
+            e.preventDefault();
+            setDragging(false);
+            if (e.dataTransfer.files.length > 0) {
+              void handleFiles(e.dataTransfer.files);
+            }
+          }}
+          data-dragging={dragging ? "true" : "false"}
+          className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 transition-colors data-[dragging=true]:bg-primary/5"
+        >
           {attachments.map((a) => (
-            <li key={a.id}>
-              <AttachmentCard
-                attachment={a}
-                canDelete={a.isUploader || canModerate}
-              />
-            </li>
+            <AttachmentTile
+              key={a.id}
+              attachment={a}
+              canDelete={a.isUploader || canModerate}
+            />
           ))}
-        </ul>
+          {canUpload && (
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              aria-label="Dodaj załącznik"
+              className="flex h-[70px] w-24 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border/70 bg-muted/30 text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/5 hover:text-primary focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              <UploadCloud size={16} />
+              <span className="text-[0.7rem] font-medium">Dodaj</span>
+            </button>
+          )}
+        </div>
       )}
 
       {canUpload && (
-        <>
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragging(true);
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragging(false);
-              if (e.dataTransfer.files.length > 0) {
-                void handleFiles(e.dataTransfer.files);
-              }
-            }}
-            onClick={() => inputRef.current?.click()}
-            data-dragging={dragging ? "true" : "false"}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") inputRef.current?.click();
-            }}
-            className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 px-4 py-8 text-center transition-colors hover:border-primary/60 focus-visible:border-primary data-[dragging=true]:border-primary data-[dragging=true]:bg-primary/5"
-          >
-            <UploadCloud size={18} className="text-muted-foreground" />
-            <p className="text-[0.92rem] text-foreground">
-              Upuść pliki albo{" "}
-              <span className="text-primary underline underline-offset-2">wybierz z dysku</span>
-            </p>
-            <p className="font-mono text-[0.64rem] uppercase tracking-[0.12em] text-muted-foreground">
-              obrazy · video (mp4/webm/mov, max 50 MB) · pdf · word · excel · txt · max 25 MB
-            </p>
-          </div>
-          <input
-            ref={inputRef}
-            type="file"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              if (e.target.files && e.target.files.length > 0) {
-                void handleFiles(e.target.files);
-                e.target.value = "";
-              }
-            }}
-          />
-        </>
+        <input
+          ref={inputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            if (e.target.files && e.target.files.length > 0) {
+              void handleFiles(e.target.files);
+              e.target.value = "";
+            }
+          }}
+        />
+      )}
+
+      {canUpload && (
+        <p className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground/80">
+          obrazy · video (mp4/webm/mov, max 50 MB) · pdf · word · excel · txt · max 25 MB
+        </p>
       )}
 
       {uploading.length > 0 && (
@@ -204,7 +208,10 @@ export function AttachmentsSection({
   );
 }
 
-function AttachmentCard({
+// Filmstrip tile: 96x70 thumbnail with diagonal-striped placeholder when
+// no thumbnail is available. Filename anchored bottom-left in mono micro
+// type. Hover surface reveals Download/Delete affordances.
+function AttachmentTile({
   attachment,
   canDelete,
 }: {
@@ -226,49 +233,58 @@ function AttachmentCard({
     });
   };
 
-  const kb = (attachment.sizeBytes / 1024).toFixed(0);
-  const sizeLabel = attachment.sizeBytes >= 1024 * 1024
-    ? `${(attachment.sizeBytes / 1024 / 1024).toFixed(1)} MB`
-    : `${kb} KB`;
-
   return (
-    <article className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card">
-      {attachment.thumbnailUrl ? (
-        <button
-          type="button"
-          onClick={handleDownload}
-          disabled={isPending}
-          className="relative block aspect-[16/9] overflow-hidden bg-muted"
-          aria-label={`Otwórz ${attachment.filename}`}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+    <article className="group/tile relative h-[70px] w-24 shrink-0 overflow-hidden rounded-xl border border-border/60 bg-card">
+      <button
+        type="button"
+        onClick={handleDownload}
+        disabled={isPending}
+        aria-label={`Otwórz ${attachment.filename}`}
+        className="block h-full w-full"
+      >
+        {attachment.thumbnailUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={attachment.thumbnailUrl}
             alt={attachment.filename}
-            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+            className="h-full w-full object-cover transition-transform duration-200 group-hover/tile:scale-[1.04]"
           />
-        </button>
-      ) : (
-        <div className="flex aspect-[16/9] items-center justify-center bg-muted">
-          <FileIcon size={28} className="text-muted-foreground" />
-        </div>
-      )}
-      <div className="flex items-center gap-2 px-3 py-2">
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-[0.86rem] font-medium">{attachment.filename}</span>
-          <span className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground">
-            {sizeLabel} · {attachment.uploader.name ?? attachment.uploader.email.split("@")[0]}
-          </span>
-        </div>
+        ) : (
+          // Diagonal stripes placeholder (per spec) — pure CSS so no asset.
+          <div
+            aria-hidden
+            className="h-full w-full"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(135deg, color-mix(in oklch, var(--muted) 60%, transparent) 0 7px, color-mix(in oklch, var(--muted) 90%, transparent) 7px 14px)",
+            }}
+          />
+        )}
+      </button>
+
+      {/* Filename overlay — anchored bottom-left, mono micro type. */}
+      <span
+        className="pointer-events-none absolute inset-x-1.5 bottom-1 truncate font-mono text-[0.62rem] text-foreground/80"
+        title={attachment.filename}
+      >
+        {!attachment.thumbnailUrl && (
+          <FileIcon size={9} className="-mt-0.5 mr-1 inline" />
+        )}
+        {attachment.filename}
+      </span>
+
+      {/* Hover actions — top-right cluster, kept compact so they don't
+          overlap the filename track. */}
+      <div className="absolute right-1 top-1 flex gap-0.5 opacity-0 transition-opacity group-hover/tile:opacity-100 focus-within:opacity-100">
         <button
           type="button"
           onClick={handleDownload}
           disabled={isPending}
           aria-label="Pobierz"
           title="Pobierz"
-          className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-60"
+          className="grid h-5 w-5 place-items-center rounded-md bg-background/80 text-muted-foreground backdrop-blur-sm transition-colors hover:text-foreground disabled:opacity-60"
         >
-          <Download size={13} />
+          <Download size={11} />
         </button>
         {canDelete && (
           <form action={deleteAttachmentAction} className="m-0">
@@ -277,9 +293,9 @@ function AttachmentCard({
               type="submit"
               aria-label="Usuń"
               title="Usuń"
-              className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              className="grid h-5 w-5 place-items-center rounded-md bg-background/80 text-muted-foreground backdrop-blur-sm transition-colors hover:text-destructive"
             >
-              <Trash2 size={13} />
+              <Trash2 size={11} />
             </button>
           </form>
         )}

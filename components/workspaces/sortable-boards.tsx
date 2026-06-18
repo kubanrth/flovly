@@ -28,10 +28,12 @@ import {
   GitBranch,
   GripVertical,
   KanbanSquare,
+  LayoutGrid,
   Pencil,
   Table2,
   Workflow,
 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ViewSwitcher } from "@/components/view/view-switcher";
 import { reorderBoardsAction } from "@/app/(app)/w/[workspaceId]/b/actions";
 import { type ViewName } from "@/lib/board-views";
@@ -155,11 +157,13 @@ export function SortableBoardsList({
 
   if (items.length === 0) {
     return (
-      <ul className="overflow-hidden rounded-2xl border border-border bg-card/60 backdrop-blur-xl">
-        <li className="px-5 py-6 text-center text-[0.9rem] text-muted-foreground">
-          Brak tablic — utwórz pierwszą.
-        </li>
-      </ul>
+      <div className="overflow-hidden rounded-2xl border border-border bg-card/60 backdrop-blur-xl">
+        <EmptyState
+          icon={LayoutGrid}
+          title="Brak tablic"
+          description="Utwórz pierwszą tablicę żeby zacząć planować pracę zespołu."
+        />
+      </div>
     );
   }
 

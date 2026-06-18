@@ -38,11 +38,14 @@ const VIEW_PRESETS = [
 export function CreateBoardDialog({
   workspaceId,
   size = "sm",
+  variant = "default",
   label,
   workspaceEnabledViews,
 }: {
   workspaceId: string;
   size?: "sm" | "md";
+  // "cta" = gradient pill, used inside workspace hero band per v4 spec.
+  variant?: "default" | "cta";
   // Optional label — when omitted we render just the "+" glyph (sidebar use).
   label?: string;
   // Parent workspace's enabled views — the new board can only enable a
@@ -77,17 +80,20 @@ export function CreateBoardDialog({
         aria-label="Nowa tablica"
         title="Nowa tablica"
         className={
-          size === "sm"
-            ? "grid h-7 w-7 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
-            : "inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-background px-3 font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
+          variant === "cta"
+            ? // v4 brand polish — gradient pill (workspace hero CTA).
+              "inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-gradient px-3.5 font-sans text-[0.84rem] font-semibold text-white shadow-brand transition-[transform,box-shadow] hover:-translate-y-px hover:shadow-[0_10px_28px_-10px_rgba(122,51,236,0.75),0_4px_12px_-4px_rgba(225,49,143,0.55)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            : size === "sm"
+              ? "grid h-7 w-7 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
+              : "inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-background px-3 font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
         }
       >
-        <Plus size={size === "sm" ? 13 : 14} />
+        <Plus size={size === "sm" ? 13 : 14} strokeWidth={variant === "cta" ? 2.4 : 2} />
         {label && <span>{label}</span>}
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-2xl border-border bg-card shadow-aura sm:max-w-[480px]">
+        <DialogContent className="dialog-glass rounded-2xl border-transparent sm:max-w-[480px]">
           <DialogHeader>
             <span className="eyebrow">Nowa tablica</span>
             <DialogTitle className="font-display text-[1.5rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">

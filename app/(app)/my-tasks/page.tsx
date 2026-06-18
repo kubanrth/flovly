@@ -1,4 +1,5 @@
 import type { Prisma } from "@/lib/generated/prisma/client";
+import { CheckSquare, Filter } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { taskPl } from "@/lib/pluralize";
@@ -9,6 +10,7 @@ import {
   type TaskListRow,
   type TaskListSection,
 } from "@/components/my-tasks/hotkey-task-list";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface MyTasksSearchParams {
   search?: string;
@@ -308,17 +310,21 @@ export default async function MyTasksPage({
           members={allMembers}
           sections={sections}
           emptyState={
-            <div className="rounded-xl border border-dashed border-border p-10 text-center">
-              <p className="font-display text-[1.1rem] font-semibold">
-                {filters.search || filters.boardIds.length > 0
-                  ? "Nic nie pasuje do filtrów."
-                  : "Nikt Cię nie przypisał."}
-              </p>
-              <p className="mt-2 text-[0.92rem] text-muted-foreground">
-                {filters.search || filters.boardIds.length > 0
-                  ? "Spróbuj wyczyścić filtry."
-                  : "Jak ktoś przypisze Cię do zadania, pojawi się tutaj."}
-              </p>
+            <div className="rounded-xl border border-dashed border-border">
+              {filters.search || filters.boardIds.length > 0 ? (
+                <EmptyState
+                  icon={Filter}
+                  title="Nic nie pasuje do filtrów"
+                  description="Spróbuj wyczyścić filtry albo zmienić wyszukiwane słowo."
+                  tone="muted"
+                />
+              ) : (
+                <EmptyState
+                  icon={CheckSquare}
+                  title="Nikt Cię nie przypisał"
+                  description="Jak ktoś przypisze Cię do zadania, pojawi się tutaj."
+                />
+              )}
             </div>
           }
         />

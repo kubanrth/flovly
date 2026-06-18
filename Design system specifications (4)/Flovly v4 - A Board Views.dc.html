@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  @keyframes fl-drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(18px,-22px) scale(1.08); } }
+  .nob::-webkit-scrollbar { height: 5px; } .nob::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 3px; }
+</style>
+</helmet>
+
+<div style="--b5: #7C5CFF; --b7: #6A24DC; --a2: #D247B5; --grad: linear-gradient(140deg, #7A33EC, #E1318F); width: max-content; min-width: 100%; min-height: 100vh; box-sizing: border-box; padding: 56px 48px 110px; background: #0B0912; font-family: 'Inter', system-ui, sans-serif; position: relative; overflow: hidden;">
+  <div style="position: absolute; top: -160px; left: -100px; width: 760px; height: 760px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.3), transparent 65%); filter: blur(60px); animation: fl-drift 24s ease-in-out infinite; pointer-events: none;"></div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 40px; width: max-content; margin: 0 auto;">
+
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <div style="width: 46px; height: 46px; border-radius: 14px; background: var(--grad); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 10px 26px -8px rgba(122,51,236,.7);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+      <div><div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">Flovly v4 — A · Board Views</div><div style="font-size: 14px; color: #8B8398; margin-top: 2px;">Każda karta dark + light · 1080px · bez BoardHeadera</div></div>
+    </div>
+
+    <!-- ===== TABELA ===== -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">1 · Tabela</div>
+      <div style="display: flex; gap: 26px; align-items: flex-start;">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="flex: none; width: 1080px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 9px;">{{ f.label }}</div>
+            <div style="position: relative; overflow: hidden; border-radius: 22px; background: {{ f.bg }}; border: 1px solid {{ f.border }}; box-shadow: 0 30px 70px -30px rgba(122,51,236,.4); display: flex; flex-direction: column;">
+              <div style="display: grid; grid-template-columns: 30px 1.1fr 1fr 2.3fr 1.1fr 1.3fr 0.8fr 0.8fr 28px; align-items: center; padding: 11px 18px; background: {{ f.glass }}; backdrop-filter: blur(30px) saturate(160%); -webkit-backdrop-filter: blur(30px) saturate(160%); border-bottom: 1px solid {{ f.border }}; font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: {{ f.faint }};">
+                <span></span><span>Status</span><span>Priorytet</span><span style="display:flex; align-items:center; gap:4px; color: var(--b5);">Tytuł <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7C5CFF" stroke-width="2.4"><path d="m18 15-6-6-6 6"></path></svg></span><span>Osoby</span><span>Tagi</span><span>Start</span><span>Koniec</span><span style="display:flex; justify-content:center; color:{{ f.faint }};"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+              </div>
+              <sc-for list="{{ f.tableGroups }}" as="g" hint-placeholder-count="3">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 9px; padding: 9px 18px; background: {{ g.headerBg }};"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="{{ f.muted }}" stroke-width="2.4">{{ g.chevron }}</svg><span style="width: 9px; height: 9px; border-radius: 50%; background: {{ g.dot }};"></span><span style="font-size: 12.5px; font-weight: 700; color: {{ f.fg }};">{{ g.name }}</span><span style="font-size: 11px; color: {{ f.muted }}; padding: 1px 7px; border-radius: 999px; background: {{ f.chip }};">{{ g.count }}</span></div>
+                  <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="2">
+                    <div style="display: grid; grid-template-columns: 30px 1.1fr 1fr 2.3fr 1.1fr 1.3fr 0.8fr 0.8fr 28px; align-items: center; padding: 10px 18px; border-bottom: 1px solid {{ f.line }};">
+                      <div style="width: 16px; height: 16px; border-radius: 5px; background: {{ r.cbBg }}; border: 1.5px solid {{ r.cbBd }};">{{ r.cbCheck }}</div>
+                      <span><span style="display:inline-flex; align-items:center; gap:5px; padding: 3px 9px; border-radius: 999px; background: {{ g.pillBg }};"><span style="width:6px;height:6px;border-radius:50%;background:{{ g.dot }};"></span><span style="font-size: 11.5px; font-weight: 600; color: {{ g.pillC }};">{{ g.name }}</span></span></span>
+                      <span><span style="display:inline-flex; align-items:center; gap:5px; padding: 3px 9px; border-radius: 7px; background: {{ r.pBg }};"><span style="width:6px;height:6px;border-radius:50%;background:{{ r.pDot }};"></span><span style="font-size: 11.5px; font-weight: 700; color: {{ r.pC }};">{{ r.prio }}</span></span></span>
+                      <span style="display: flex; align-items: center; gap: 8px; min-width: 0;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--b5);">{{ r.id }}</span><span style="font-size: 13.5px; color: {{ f.fg }}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ r.title }}</span></span>
+                      <span style="display: flex;">{{ r.avatars }}</span>
+                      <span style="display: flex; gap: 4px;">{{ r.tags }}</span>
+                      <span style="font-size: 12px; color: {{ f.muted }};">{{ r.start }}</span>
+                      <span style="font-size: 12px; color: {{ r.endC }};">{{ r.end }}</span>
+                      <span></span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+              <div style="position: relative; padding: 14px;">
+                <div style="margin: 0 auto; width: fit-content; display: flex; align-items: center; gap: 12px; padding: 9px 15px; border-radius: 14px; background: {{ f.toolbar }}; backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid {{ f.glassBd }}; box-shadow: 0 16px 36px -16px rgba(0,0,0,.6);">
+                  <span style="display:flex; align-items:center; justify-content:center; width: 22px; height: 22px; border-radius: 7px; background: var(--grad); color: #fff; font-size: 11px; font-weight: 700;">2</span><span style="font-size: 12.5px; font-weight: 600; color: {{ f.fg }};">zaznaczone</span>
+                  <span style="width: 1px; height: 16px; background: {{ f.glassBd }};"></span>
+                  <span style="display:flex; align-items:center; gap:6px; font-size: 12.5px; color: {{ f.muted2 }};"><span style="width:8px;height:8px;border-radius:50%;background:#F59E0B;"></span>Status</span>
+                  <span style="display:flex; align-items:center; gap:6px; font-size: 12.5px; color: {{ f.muted2 }};"><span style="width:8px;height:8px;border-radius:50%;background:#F43F5E;"></span>Priorytet</span>
+                  <span style="display:flex; align-items:center; gap:6px; font-size: 12.5px; color: {{ f.muted2 }};"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-2a6 6 0 0 1 12 0v2"></path></svg>Osoba</span>
+                  <span style="display:flex; align-items:center; gap:6px; font-size: 12.5px; color: #F43F5E;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg>Usuń</span>
+                </div>
+              </div>
+              <div style="padding: 10px 18px; border-top: 1px solid {{ f.border }}; background: {{ f.footBg }};"><span style="font-size: 11.5px; color: {{ f.hintc }};">Hint · najedź na zadanie i wciśnij <span style="font-family:'JetBrains Mono',monospace; padding: 1px 6px; border-radius: 5px; background: {{ f.chip }}; color: {{ f.muted2 }};">M</span> aby przypisać</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ===== KANBAN ===== -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">2 · Kanban</div>
+      <div style="display: flex; gap: 26px; align-items: flex-start;">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="flex: none; width: 1080px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 9px;">{{ f.label }}</div>
+            <div style="position: relative; overflow: hidden; height: 520px; border-radius: 22px; background: {{ f.bg }}; border: 1px solid {{ f.border }}; box-shadow: 0 30px 70px -30px rgba(122,51,236,.4); display: flex; flex-direction: column;">
+              <div style="flex: 1; overflow: hidden; padding: 16px; display: flex; gap: 13px;">
+                <sc-for list="{{ f.kanban }}" as="col" hint-placeholder-count="4">
+                  <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; border-radius: 15px; background: {{ f.glass }}; backdrop-filter: blur(30px) saturate(160%); -webkit-backdrop-filter: blur(30px) saturate(160%); border: 1px solid {{ f.glassBd }};">
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 12px 13px; border-bottom: 1px solid {{ f.line }};"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{ f.faint }}" stroke-width="2"><circle cx="9" cy="6" r="1"></circle><circle cx="15" cy="6" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="9" cy="18" r="1"></circle><circle cx="15" cy="18" r="1"></circle></svg><span style="width: 8px; height: 8px; border-radius: 50%; background: {{ col.dot }};"></span><span style="font-size: 13px; font-weight: 700; color: {{ f.fg }};">{{ col.name }}</span><span style="font-size: 11px; color: {{ f.muted }};">{{ col.count }}</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{ f.faint }}" stroke-width="2" style="margin-left:auto;"><path d="m6 9 6 6 6-6"></path></svg></div>
+                    <div style="flex: 1; overflow: hidden; padding: 10px; display: flex; flex-direction: column; gap: 9px;">
+                      <sc-for list="{{ col.cards }}" as="c" hint-placeholder-count="2">
+                        <div style="padding: 12px; border-radius: 13px; background: {{ f.card }}; border: 1px solid {{ f.glassBd }}; box-shadow: 0 8px 18px -10px rgba(0,0,0,.5);">
+                          <div style="display: flex; gap: 4px; margin-bottom: 8px;">{{ c.tags }}</div>
+                          <div style="display: flex; align-items: flex-start; gap: 7px;"><span style="width: 7px; height: 7px; border-radius: 50%; background: {{ c.pDot }}; margin-top: 5px; flex: none;"></span><div style="font-size: 13px; font-weight: 600; color: {{ f.fg }}; line-height: 1.35;">{{ c.title }}</div></div>
+                          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 11px;"><div style="display: flex;">{{ c.avatars }}</div><span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: {{ c.dueBg }}; font-size: 11px; font-weight: 600; color: {{ c.dueC }};">{{ c.due }}</span></div>
+                        </div>
+                      </sc-for>
+                      <div style="display: flex; align-items: center; gap: 7px; padding: 9px 11px; border-radius: 11px; color: {{ f.muted }};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg><span style="font-size: 12.5px;">Nowe zadanie</span></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="padding: 10px 18px; border-top: 1px solid {{ f.border }}; background: {{ f.footBg }};"><span style="font-size: 11.5px; color: {{ f.hintc }};">Hint · przeciągnij kartę między kolumnami aby zmienić status</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ===== ROADMAPA ===== -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">3 · Roadmapa · swimlanes per status</div>
+      <div style="display: flex; gap: 26px; align-items: flex-start;">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="flex: none; width: 1080px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 9px;">{{ f.label }}</div>
+            <div style="position: relative; overflow: hidden; border-radius: 22px; background: {{ f.bg }}; border: 1px solid {{ f.border }}; box-shadow: 0 30px 70px -30px rgba(122,51,236,.4); display: flex; flex-direction: column;">
+              <div style="display: flex; padding: 12px 18px 10px 150px; border-bottom: 1px solid {{ f.border }}; background: {{ f.glass }};">
+                <sc-for list="{{ months }}" as="m" hint-placeholder-count="4"><div style="flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{ f.muted }};">{{ m }}</div></sc-for>
+              </div>
+              <div style="position: relative;">
+                <div style="position: absolute; top: 0; bottom: 0; left: 46%; width: 0; border-left: 2px dashed var(--b5); z-index: 3;"><span style="position: absolute; top: 6px; left: -18px; font-family:'JetBrains Mono',monospace; font-size: 9px; color: var(--b5); background: {{ f.bg }}; padding: 1px 4px;">dziś</span></div>
+                <sc-for list="{{ f.swimlanes }}" as="s" hint-placeholder-count="3">
+                  <div style="display: flex; align-items: center; border-bottom: 1px solid {{ f.line }}; height: 58px;">
+                    <div style="flex: none; width: 150px; padding: 0 18px; display: flex; align-items: center; gap: 8px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{ s.dot }};"></span><span style="font-size: 12.5px; font-weight: 600; color: {{ f.fg }};">{{ s.name }}</span></div>
+                    <div style="flex: 1; position: relative; height: 100%;">
+                      <sc-for list="{{ s.bars }}" as="b" hint-placeholder-count="2">
+                        <div style="position: absolute; top: 14px; left: {{ b.left }}; width: {{ b.width }}; height: 30px; border-radius: 10px; background: {{ b.grad }}; box-shadow: 0 6px 16px -6px {{ b.shadow }}, inset 0 1px 0 rgba(255,255,255,.3); display: flex; align-items: center; padding: 0 11px;"><span style="font-size: 11.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ b.name }}</span></div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="padding: 10px 18px; border-top: 1px solid {{ f.border }}; background: {{ f.footBg }};"><span style="font-size: 11.5px; color: {{ f.hintc }};">Hint · najedź na pasek aby zobaczyć podgląd postępu</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ===== GANTT ===== -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">4 · Gantt · lista + timeline · milestones</div>
+      <div style="display: flex; gap: 26px; align-items: flex-start;">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="flex: none; width: 1080px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 9px;">{{ f.label }}</div>
+            <div style="position: relative; overflow: hidden; border-radius: 22px; background: {{ f.bg }}; border: 1px solid {{ f.border }}; box-shadow: 0 30px 70px -30px rgba(122,51,236,.4); display: flex; flex-direction: column;">
+              <div style="display: flex;">
+                <div style="flex: none; width: 260px; border-right: 1px solid {{ f.border }};">
+                  <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid {{ f.line }}; background: {{ f.glass }};"><span style="font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: {{ f.faint }};">Zadanie</span><div style="display: flex; gap: 3px; padding: 2px; border-radius: 8px; background: {{ f.chip }};"><span style="padding: 3px 8px; border-radius: 6px; background: var(--grad); font-size: 10px; font-weight: 600; color: #fff;">Tydz.</span><span style="padding: 3px 8px; border-radius: 6px; font-size: 10px; color: {{ f.muted }};">Mies.</span></div></div>
+                  <sc-for list="{{ f.ganttRows }}" as="r" hint-placeholder-count="6"><div style="display: flex; align-items: center; gap: 8px; padding: 0 16px 0 {{ r.indent }}; height: 40px; border-bottom: 1px solid {{ f.line }};">{{ r.caret }}<span style="width: 7px; height: 7px; border-radius: 50%; background: {{ r.dot }}; flex: none;"></span><span style="font-size: 12.5px; font-weight: {{ r.fw }}; color: {{ r.nameC }}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ r.name }}</span></div></sc-for>
+                </div>
+                <div style="flex: 1; min-width: 0; position: relative; overflow: hidden;">
+                  <div style="display: flex; border-bottom: 1px solid {{ f.line }}; background: {{ f.glass }};"><sc-for list="{{ ganttWeeks }}" as="w" hint-placeholder-count="6"><div style="flex: 1; padding: 10px 0 10px 8px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: {{ f.muted }}; border-left: 1px solid {{ f.line }};">{{ w }}</div></sc-for></div>
+                  <div style="position: absolute; top: 36px; bottom: 0; left: 46%; width: 2px; background: var(--a2); z-index: 3;"></div>
+                  <sc-for list="{{ f.ganttRows }}" as="r" hint-placeholder-count="6"><div style="position: relative; height: 40px; border-bottom: 1px solid {{ f.line }};">{{ r.bar }}</div></sc-for>
+                </div>
+              </div>
+              <div style="padding: 10px 18px; border-top: 1px solid {{ f.border }}; background: {{ f.footBg }};"><span style="font-size: 11.5px; color: {{ f.hintc }};">Hint · przeciągnij pasek aby zmienić daty · romb = milestone</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ===== KALENDARZ ===== -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">5 · Kalendarz · month/week/day · event pille</div>
+      <div style="display: flex; gap: 26px; align-items: flex-start;">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="flex: none; width: 1080px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 9px;">{{ f.label }}</div>
+            <div style="position: relative; overflow: hidden; border-radius: 22px; background: {{ f.bg }}; border: 1px solid {{ f.border }}; box-shadow: 0 30px 70px -30px rgba(122,51,236,.4); display: flex; flex-direction: column;">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid {{ f.border }}; background: {{ f.glass }};">
+                <span style="font-size: 16px; font-weight: 700; color: {{ f.fg }};">Czerwiec 2026</span>
+                <div style="display: flex; gap: 3px; padding: 3px; border-radius: 10px; background: {{ f.chip }};"><span style="padding: 6px 12px; border-radius: 7px; font-size: 12px; color: {{ f.muted }};">Dzień</span><span style="padding: 6px 12px; border-radius: 7px; font-size: 12px; color: {{ f.muted }};">Tydzień</span><span style="padding: 6px 12px; border-radius: 7px; background: var(--grad); font-size: 12px; font-weight: 600; color: #fff;">Miesiąc</span></div>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid {{ f.line }};"><sc-for list="{{ calDows }}" as="d" hint-placeholder-count="7"><div style="padding: 8px 0; text-align: center; font-size: 11px; font-weight: 600; color: {{ f.muted }};">{{ d }}</div></sc-for></div>
+              <div style="display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(5, 88px);">
+                <sc-for list="{{ f.calCells }}" as="c" hint-placeholder-count="35"><div style="border-right: 1px solid {{ f.line }}; border-bottom: 1px solid {{ f.line }}; padding: 6px 7px; background: {{ c.weekend }}; display: flex; flex-direction: column; gap: 3px; overflow: hidden; min-width: 0;"><span style="font-size: 11.5px; font-weight: {{ c.fw }}; color: {{ c.numC }}; align-self: flex-start;">{{ c.numEl }}</span>{{ c.events }}</div></sc-for>
+              </div>
+              <div style="padding: 10px 18px; border-top: 1px solid {{ f.border }}; background: {{ f.footBg }};"><span style="font-size: 11.5px; color: {{ f.hintc }};">Hint · przeciągnij event na inny dzień aby zmienić termin</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ===== WHITEBOARD ===== -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">6 · Whiteboard · canvas + shape dock + zoom</div>
+      <div style="display: flex; gap: 26px; align-items: flex-start;">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="flex: none; width: 1080px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 9px;">{{ f.label }}</div>
+            <div style="position: relative; overflow: hidden; height: 460px; border-radius: 22px; background: {{ f.bg }}; border: 1px solid {{ f.border }}; box-shadow: 0 30px 70px -30px rgba(122,51,236,.4);">
+              <div style="position: absolute; inset: 0; bottom: 42px; background-image: radial-gradient({{ f.dot2 }} 1.4px, transparent 1.4px); background-size: 26px 26px;"></div>
+              <div style="position: absolute; top: 50%; left: 16px; transform: translateY(-50%); display: flex; flex-direction: column; gap: 4px; padding: 7px; border-radius: 16px; background: {{ f.glass2 }}; backdrop-filter: blur(30px) saturate(160%); -webkit-backdrop-filter: blur(30px) saturate(160%); border: 1px solid {{ f.glassBd }}; box-shadow: 0 16px 36px -16px rgba(0,0,0,.5); z-index: 3;"><sc-for list="{{ f.tools }}" as="t" hint-placeholder-count="6"><div style="width: 36px; height: 36px; border-radius: 11px; display: flex; align-items: center; justify-content: center; background: {{ t.bg }}; color: {{ t.c }};">{{ t.icon }}</div></sc-for></div>
+              <svg style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;"><path d="M 360 180 C 440 180, 440 230, 520 230" fill="none" stroke="{{ f.conn }}" stroke-width="2" stroke-dasharray="2 5" stroke-linecap="round"></path><path d="M 520 230 l -9 -5 v 10 z" fill="{{ f.conn }}"></path></svg>
+              <div style="position: absolute; top: 90px; left: 170px; width: 190px; border-radius: 14px; background: {{ f.card }}; border: 1px solid {{ f.glassBd }}; box-shadow: 0 14px 30px -14px rgba(0,0,0,.5); padding: 13px; z-index: 2;"><div style="display: flex; gap: 6px; margin-bottom: 7px;"><span style="padding: 2px 7px; border-radius: 6px; background: rgba(244,63,94,.16); font-size: 10px; font-weight: 700; color: #FB7185;">P0</span></div><div style="font-size: 13px; font-weight: 600; color: {{ f.fg }};">Wdrożenie design tokens</div></div>
+              <div style="position: absolute; top: 200px; left: 520px; width: 165px; height: 100px; border-radius: 12px; background: #FCE38A; box-shadow: 0 10px 24px -10px rgba(0,0,0,.4); padding: 13px; z-index: 2; transform: rotate(-2deg);"><div style="font-size: 12px; color: #4A3B12; line-height: 1.4; font-weight: 500;">Sprawdzić blur na Safari 🧪</div></div>
+              <div style="position: absolute; bottom: 54px; right: 16px; display: flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 13px; background: {{ f.glass2 }}; backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid {{ f.glassBd }}; z-index: 3;"><span style="width: 28px; height: 28px; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: {{ f.muted2 }};"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"></path></svg></span><span style="font-family:'JetBrains Mono',monospace; font-size: 12px; font-weight: 600; color: {{ f.fg }};">100%</span><span style="width: 28px; height: 28px; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: {{ f.muted2 }};"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg></span></div>
+              <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 18px; border-top: 1px solid {{ f.border }}; background: {{ f.footBg }};"><span style="font-size: 11.5px; color: {{ f.hintc }};">Hint · przewiń aby zoomować · spacja + drag aby przesunąć canvas</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ===== TASKLINE ===== -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">7 · TaskLine · sidebar 320 + canvas</div>
+      <div style="display: flex; gap: 26px; align-items: flex-start;">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="flex: none; width: 1080px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 9px;">{{ f.label }}</div>
+            <div style="position: relative; overflow: hidden; height: 480px; border-radius: 22px; background: {{ f.bg }}; border: 1px solid {{ f.border }}; box-shadow: 0 30px 70px -30px rgba(122,51,236,.4); display: flex; flex-direction: column;">
+              <div style="flex: 1; display: flex; min-height: 0;">
+                <div style="flex: none; width: 320px; border-right: 1px solid {{ f.border }}; background: {{ f.glass }}; display: flex; flex-direction: column;">
+                  <div style="padding: 14px 16px 10px;"><div style="font-size: 14px; font-weight: 700; color: {{ f.fg }}; margin-bottom: 10px;">Pula zadań</div><div style="display: flex; align-items: center; gap: 7px; padding: 9px 11px; border-radius: 10px; background: {{ f.card }}; border: 1px solid {{ f.glassBd }}; color: {{ f.muted }}; font-size: 12.5px; margin-bottom: 8px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3-3"></path></svg>Szukaj zadań…</div><div style="display: flex; align-items: center; gap: 6px;"><span style="padding: 5px 11px; border-radius: 999px; background: var(--grad); font-size: 11px; font-weight: 600; color: #fff;">Wszyscy</span><span style="padding: 5px 11px; border-radius: 999px; background: {{ f.chip }}; font-size: 11px; color: {{ f.muted2 }};">Adam D.</span></div></div>
+                  <div style="flex: 1; overflow: hidden; padding: 0 12px; display: flex; flex-direction: column; gap: 7px;">
+                    <sc-for list="{{ f.pool }}" as="t" hint-placeholder-count="4"><div style="display: flex; align-items: center; gap: 9px; padding: 11px 12px; border-radius: 12px; background: {{ f.card }}; border: 1px solid {{ f.glassBd }};"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{ f.faint }}" stroke-width="2"><circle cx="9" cy="6" r="1"></circle><circle cx="15" cy="6" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="9" cy="18" r="1"></circle><circle cx="15" cy="18" r="1"></circle></svg><span style="width: 7px; height: 7px; border-radius: 50%; background: {{ t.c }}; flex: none;"></span><span style="font-size: 12.5px; color: {{ f.fg }}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ t.title }}</span></div></sc-for>
+                  </div>
+                </div>
+                <div style="flex: 1; min-width: 0; position: relative; padding: 22px;">
+                  <div style="display: flex; align-items: center; gap: 12px;"><span style="padding: 7px 13px; border-radius: 999px; background: linear-gradient(135deg,#10B981,#34BEF8); color: #fff; font-size: 12px; font-weight: 700;">START</span><div style="flex: 1; height: 2px; background: {{ f.conn }};"></div></div>
+                  <div style="display: grid; grid-template-columns: 1fr 24px 1fr 24px 1fr; align-items: center; gap: 8px; margin-top: 16px;">{{ f.lineRow }}</div>
+                  <div style="display: flex; align-items: center; gap: 12px; margin-top: 22px;"><div style="flex: 1; height: 2px; background: {{ f.conn }};"></div><span style="padding: 7px 13px; border-radius: 999px; background: var(--grad); color: #fff; font-size: 12px; font-weight: 700;">KONIEC</span></div>
+                </div>
+              </div>
+              <div style="padding: 10px 18px; border-top: 1px solid {{ f.border }}; background: {{ f.footBg }};"><span style="font-size: 11.5px; color: {{ f.hintc }};">Hint · przeciągnij zadanie z puli na linię</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+  </div>
+</div>
+<template id="__bundler_thumbnail" data-bg-color="#0B0912">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#0B0912"/>
+    <circle cx="380" cy="300" r="320" fill="#7A33EC" opacity="0.28"/>
+    <circle cx="820" cy="520" r="300" fill="#E1318F" opacity="0.22"/>
+    <rect x="360" y="300" width="480" height="200" rx="34" fill="#14101F" stroke="#ffffff" stroke-opacity="0.1"/>
+    <path d="M520 360 L600 470 L680 360" fill="none" stroke="url(#g)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7A33EC"/><stop offset="1" stop-color="#E1318F"/></linearGradient></defs>
+  </svg>
+</template></x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1600, &quot;height&quot;: 1000}}">
+class Component extends DCLogic {
+  ic(sz, sw, ...ds) { return React.createElement('svg', { width: sz, height: sz, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw, strokeLinecap: 'round', strokeLinejoin: 'round' }, ds.map((d, i) => React.createElement('path', { key: i, d }))); }
+  check(show) { return show ? React.createElement('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: '#fff', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round', style: { display: 'block', margin: '1px' } }, React.createElement('path', { d: 'M20 6 9 17l-5-5' })) : ''; }
+  caret(stroke, show) { return show ? React.createElement('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke, strokeWidth: 2.4, style: { flex: 'none' } }, React.createElement('path', { d: 'm6 9 6 6 6-6' })) : React.createElement('span', { style: { width: '12px', flex: 'none' } }); }
+  avatars(list, ring) { return React.createElement('span', { style: { display: 'flex' } }, list.map((a, i) => React.createElement('span', { key: i, style: { width: '24px', height: '24px', borderRadius: '7px', border: `2px solid ${ring}`, marginLeft: i ? '-7px' : 0, background: a.g, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '9px', fontWeight: 700 } }, a.t))); }
+  tags(list, dark) { return React.createElement('span', { style: { display: 'flex', gap: '4px' } }, list.map((t, i) => React.createElement('span', { key: i, style: { padding: '2px 7px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 500, color: dark ? t.cD : t.cL, background: dark ? t.bgD : t.bgL } }, t.n))); }
+  numEl(n, today) { if (!n) return ''; if (!today) return String(n); return React.createElement('span', { style: { border: '2px solid #7C5CFF', color: '#fff', background: 'rgba(124,92,255,.3)', width: '22px', height: '22px', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11.5px', fontWeight: 700 } }, n); }
+  events(items, dark, more) { if (!items) return ''; const els = items.map((e, i) => React.createElement('div', { key: i, style: { padding: '2px 6px', borderRadius: '5px', background: e.grad, overflow: 'hidden' } }, React.createElement('span', { style: { fontSize: '10px', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' } }, e.t))); if (more) els.push(React.createElement('span', { key: 'm', style: { fontSize: '9.5px', color: dark ? '#8B8398' : '#847B96', paddingLeft: '4px' } }, `+${more} więcej`)); return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '2px' } }, els); }
+  ganttBar(left, width, grad, label) { return React.createElement('div', { style: { position: 'absolute', top: '10px', left, width, height: '20px', borderRadius: '7px', background: grad, boxShadow: '0 4px 10px -4px rgba(122,51,236,.5)', display: 'flex', alignItems: 'center', padding: '0 8px' } }, React.createElement('span', { style: { fontSize: '10.5px', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, label)); }
+  diamond(left, color) { return React.createElement('div', { style: { position: 'absolute', top: '12px', left, width: '16px', height: '16px', background: color, transform: 'rotate(45deg)', borderRadius: '3px', boxShadow: `0 4px 10px -3px ${color}` } }); }
+  flowCard(theme, id, title, prio, pc, ini, av, withArrow) {
+    const card = React.createElement('div', { style: { padding: '12px', borderRadius: '13px', background: theme.card, border: `1px solid ${theme.glassBd}`, boxShadow: '0 8px 18px -10px rgba(0,0,0,.5)' } },
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '7px' } }, React.createElement('span', { style: { padding: '2px 7px', borderRadius: '6px', background: `${pc}28`, fontSize: '10px', fontWeight: 700, color: pc } }, prio), React.createElement('span', { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: '#7C5CFF' } }, id)),
+      React.createElement('div', { style: { fontSize: '12.5px', fontWeight: 600, color: theme.fg, lineHeight: 1.35 } }, title),
+      React.createElement('div', { style: { display: 'flex', marginTop: '9px' } }, React.createElement('div', { style: { width: '22px', height: '22px', borderRadius: '7px', border: `2px solid ${theme.card}`, background: av, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '9px', fontWeight: 700 } }, ini)));
+    const arrow = React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.muted, fontSize: '16px', fontWeight: 700 } }, '→');
+    return withArrow ? [card, arrow] : [card];
+  }
+  renderVals() {
+    const ic = this.ic.bind(this), AV = this.avatars.bind(this), TG = this.tags.bind(this);
+    const GR = this.ganttBar.bind(this), DM = this.diamond.bind(this);
+    const AD = { g: 'linear-gradient(140deg,#7A33EC,#E1318F)', t: 'AD' }, KM = { g: 'linear-gradient(140deg,#34BEF8,#10B981)', t: 'KM' }, TL = { g: 'linear-gradient(140deg,#F59E0B,#E1318F)', t: 'TL' };
+    const tTokens = { n: 'tokeny', cD: '#C9B6F7', cL: '#6A24DC', bgD: 'rgba(124,92,255,.16)', bgL: 'rgba(124,92,255,.1)' };
+    const tGlass = { n: 'glass', cD: '#6EE7C7', cL: '#047857', bgD: 'rgba(16,185,129,.16)', bgL: 'rgba(16,185,129,.1)' };
+    const tA11y = { n: 'a11y', cD: '#FBBF77', cL: '#B45309', bgD: 'rgba(245,158,11,.16)', bgL: 'rgba(245,158,11,.1)' };
+
+    const mk = (dark) => {
+      const t = dark
+        ? { label: 'Dark', dark: true, bg: '#0C0A14', border: 'rgba(255,255,255,.08)', glass: 'rgba(255,255,255,.04)', glass2: 'rgba(20,17,30,.82)', glassBd: 'rgba(255,255,255,.1)', card: 'rgba(255,255,255,.06)', fg: '#fff', muted: '#8B8398', muted2: '#C9C3D4', faint: '#6B6478', line: 'rgba(255,255,255,.05)', chip: 'rgba(255,255,255,.06)', toolbar: 'rgba(28,22,42,.92)', footBg: 'rgba(255,255,255,.02)', hintc: '#6B6478', dot2: 'rgba(255,255,255,.07)', conn: 'rgba(255,255,255,.2)' }
+        : { label: 'Light', dark: false, bg: '#ECE8F4', border: 'rgba(255,255,255,.7)', glass: 'rgba(255,255,255,.55)', glass2: 'rgba(255,255,255,.8)', glassBd: 'rgba(255,255,255,.85)', card: '#fff', fg: '#14111B', muted: '#847B96', muted2: '#4B4359', faint: '#A9A1B8', line: 'rgba(20,17,27,.06)', chip: 'rgba(122,51,236,.07)', toolbar: 'rgba(255,255,255,.92)', footBg: 'rgba(255,255,255,.4)', hintc: '#847B96', dot2: 'rgba(20,17,27,.1)', conn: 'rgba(20,17,27,.18)' };
+      const ring = dark ? '#0C0A14' : '#ECE8F4', cardRing = dark ? 'rgba(255,255,255,.06)' : '#fff';
+      const row = (id, title, prio, pDot, avs, tags, start, end, overdue, checked) => ({ id, title, prio, pDot, pC: dark ? this._pcD(prio) : this._pcL(prio), pBg: `${pDot}22`, avatars: AV(avs, ring), tags: TG(tags, dark), start, end, endC: overdue ? (dark ? '#FB7185' : '#E11D48') : t.muted, cbBg: checked ? '#7C5CFF' : 'transparent', cbBd: checked ? '#7C5CFF' : (dark ? '#4B4359' : '#C9C3D4'), cbCheck: this.check(checked) });
+      t.tableGroups = [
+        { name: 'W toku', dot: '#F59E0B', count: '2', headerBg: dark ? 'rgba(245,158,11,.07)' : 'rgba(245,158,11,.08)', pillBg: dark ? 'rgba(245,158,11,.16)' : 'rgba(245,158,11,.14)', pillC: dark ? '#F6B65A' : '#B45309', chevron: React.createElement('path', { d: 'm6 9 6 6 6-6' }), rows: [
+          row('#42', 'Wdrożenie design tokens', 'P0', '#F43F5E', [AD, KM], [tTokens, tGlass], '12 cze', '18 cze', true, true),
+          row('#48', 'Refraction borders na kartach', 'P2', '#3B82F6', [TL], [tTokens], '14 cze', '19 cze', false, true)
+        ] },
+        { name: 'Backlog', dot: '#94A3B8', count: '1', headerBg: dark ? 'rgba(148,163,184,.06)' : 'rgba(148,163,184,.08)', pillBg: dark ? 'rgba(148,163,184,.16)' : 'rgba(148,163,184,.14)', pillC: dark ? '#CBD5E1' : '#64748B', chevron: React.createElement('path', { d: 'm6 9 6 6 6-6' }), rows: [
+          row('#51', 'Audyt kontrastu WCAG AA', 'P1', '#F59E0B', [AD], [tA11y], '16 cze', '22 cze', false, false)
+        ] },
+        { name: 'Done', dot: '#10B981', count: '1', headerBg: dark ? 'rgba(16,185,129,.06)' : 'rgba(16,185,129,.08)', pillBg: dark ? 'rgba(16,185,129,.16)' : 'rgba(16,185,129,.14)', pillC: dark ? '#6EE7C7' : '#047857', chevron: React.createElement('path', { d: 'm9 18 6-6-6-6' }), rows: [] }
+      ];
+      const kc = (title, pDot, tags, avs, due, dueOverdue) => ({ title, pDot, tags: TG(tags, dark), avatars: AV(avs, cardRing), due, dueBg: dueOverdue ? (dark ? 'rgba(244,63,94,.16)' : 'rgba(244,63,94,.12)') : t.chip, dueC: dueOverdue ? (dark ? '#FB7185' : '#E11D48') : t.muted2 });
+      t.kanban = [
+        { name: 'To Do', dot: '#3B82F6', count: '2', cards: [ kc('Demo dla DANIELOS', '#F59E0B', [tTokens], [AD], '18 cze', false), kc('Eksport tokenów do Tailwind', '#3B82F6', [tGlass], [KM], '20 cze', false) ] },
+        { name: 'W toku', dot: '#F59E0B', count: '2', cards: [ kc('Wdrożenie design tokens', '#F43F5E', [tTokens, tGlass], [AD, KM], 'dziś', true), kc('Refraction borders', '#3B82F6', [tTokens], [TL], '19 cze', false) ] },
+        { name: 'Review', dot: '#34BEF8', count: '1', cards: [ kc('Audyt kontrastu WCAG', '#F43F5E', [tA11y], [AD], '16 cze', true) ] },
+        { name: 'Done', dot: '#10B981', count: '0', cards: [] }
+      ];
+      t.swimlanes = [
+        { name: 'W toku', dot: '#F59E0B', bars: [ { name: 'Design tokens', left: '4%', width: '32%', grad: 'linear-gradient(135deg,#7A33EC,#E1318F)', shadow: 'rgba(122,51,236,.6)' } ] },
+        { name: 'Planowane', dot: '#3B82F6', bars: [ { name: 'Board Views', left: '30%', width: '40%', grad: 'linear-gradient(135deg,#34BEF8,#7A33EC)', shadow: 'rgba(52,190,248,.5)' } ] },
+        { name: 'Backlog', dot: '#94A3B8', bars: [ { name: 'CRM & Deals', left: '58%', width: '34%', grad: 'linear-gradient(135deg,#10B981,#34BEF8)', shadow: 'rgba(16,185,129,.5)' } ] }
+      ];
+      const gr = (name, group, indent, dot, barLeft, barW, barGrad, label, isMile, mileLeft, mileColor) => ({ name, indent, fw: group ? 700 : 500, nameC: group ? t.fg : t.muted2, dot, caret: this.caret(t.muted, !!group), bar: isMile ? DM(mileLeft, mileColor) : GR(barLeft, barW, barGrad, label) });
+      t.ganttRows = [
+        gr('Design System', true, '16px', '#7A33EC', '2%', '30%', 'linear-gradient(90deg,#7A33EC,#9B6BF2)', 'Epik'),
+        gr('Paleta + tokeny', false, '34px', '#10B981', '2%', '14%', '#10B981', 'Gotowe'),
+        gr('Komponenty', false, '34px', '#F59E0B', '17%', '20%', '#F59E0B', 'W toku'),
+        gr('Milestone v4', false, '34px', '#E1318F', null, null, null, null, true, '38%', '#E1318F'),
+        gr('Board Views', true, '16px', '#34BEF8', '40%', '36%', 'linear-gradient(90deg,#34BEF8,#7A33EC)', 'Epik'),
+        gr('Tabela + Kanban', false, '34px', '#F59E0B', '40%', '18%', '#F59E0B', 'W toku')
+      ];
+      t.calCells = Array.from({ length: 35 }, (_, i) => {
+        const dayNum = i - 0 + 1; const inMonth = dayNum >= 1 && dayNum <= 30; const dow = i % 7; const weekend = (dow === 5 || dow === 6); const today = dayNum === 18;
+        const evMap = { 12: { items: [{ t: 'Glass sidebar', grad: 'linear-gradient(135deg,#7A33EC,#E1318F)' }] }, 16: { items: [{ t: 'Audyt WCAG', grad: 'linear-gradient(135deg,#F43F5E,#F59E0B)' }] }, 18: { items: [{ t: 'Demo', grad: 'linear-gradient(135deg,#34BEF8,#7A33EC)' }, { t: 'Tokeny', grad: 'linear-gradient(135deg,#7A33EC,#E1318F)' }], more: 1 }, 23: { items: [{ t: 'Review', grad: 'linear-gradient(135deg,#10B981,#34BEF8)' }] } };
+        const ev = inMonth ? evMap[dayNum] : null;
+        return { numEl: this.numEl(inMonth ? dayNum : '', today), fw: today ? 700 : 500, numC: inMonth ? (dark ? '#C9C3D4' : '#221E2A') : 'transparent', weekend: (weekend && inMonth) ? (dark ? 'rgba(122,51,236,.05)' : 'rgba(122,51,236,.04)') : 'transparent', events: ev ? this.events(ev.items, dark, ev.more) : '' };
+      });
+      t.tools = [
+        { active: true, ds: ['m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z'] }, { ds: ['M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z'] },
+        { ds: ['M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11l5-5V5a2 2 0 0 0-2-2Z'] }, { ds: ['M12 19l7-7 3 3-7 7-3-3z', 'M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z'] },
+        { ds: ['M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z', 'm21 15-5-5L5 21'] }, { ds: ['M4 7V4h16v3', 'M9 20h6', 'M12 4v16'] }
+      ].map(d => ({ bg: d.active ? 'var(--grad)' : 'transparent', c: d.active ? '#fff' : t.muted, icon: React.createElement('span', { style: { color: d.active ? '#fff' : t.muted, display: 'flex' } }, ic(18, 1.9, ...d.ds)) }));
+      t.pool = [ { title: 'Spring easing dla animacji', c: '#3B82F6' }, { title: 'Filter drawer builder', c: '#F59E0B' }, { title: 'Collab cursors', c: '#A78BFA' }, { title: 'Eksport PPTX', c: '#10B981' } ];
+      const r1 = [ { id: '#29', title: 'Definicja tokenów', prio: 'P1', pc: '#F59E0B', ini: 'KM', av: KM.g }, { id: '#42', title: 'Wdrożenie tokenów', prio: 'P0', pc: '#F43F5E', ini: 'AD', av: AD.g }, { id: '#48', title: 'Refraction borders', prio: 'P2', pc: '#3B82F6', ini: 'TL', av: TL.g } ];
+      const out = [];
+      r1.forEach((d, i) => this.flowCard(t, d.id, d.title, d.prio, d.pc, d.ini, d.av, i < r1.length - 1).forEach(el => out.push(el)));
+      t.lineRow = React.createElement(React.Fragment, {}, out.map((el, i) => React.cloneElement(el, { key: i })));
+      return t;
+    };
+
+    return {
+      frames: [mk(true), mk(false)],
+      months: ['Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień'],
+      ganttWeeks: ['T24', 'T25', 'T26', 'T27', 'T28', 'T29'],
+      calDows: ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nd']
+    };
+  }
+  _pcD(p) { return { P0: '#FB7185', P1: '#FBBF77', P2: '#93C5FD', P3: '#CBD5E1' }[p] || '#CBD5E1'; }
+  _pcL(p) { return { P0: '#E11D48', P1: '#B45309', P2: '#2563EB', P3: '#64748B' }[p] || '#64748B'; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  @keyframes fl-drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(18px,-22px) scale(1.08); } }
+</style>
+</helmet>
+
+<div style="--b5: #7C5CFF; --b7: #6A24DC; --a2: #D247B5; --grad: linear-gradient(140deg, #7A33EC, #E1318F); width: max-content; min-width: 100%; min-height: 100vh; box-sizing: border-box; padding: 56px 48px 110px; background: #0B0912; font-family: 'Inter', system-ui, sans-serif; position: relative; overflow: hidden;">
+  <div style="position: absolute; top: -160px; left: -100px; width: 760px; height: 760px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.3), transparent 65%); filter: blur(60px); animation: fl-drift 24s ease-in-out infinite; pointer-events: none;"></div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 36px; width: max-content; margin: 0 auto;">
+
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <div style="width: 46px; height: 46px; border-radius: 14px; background: var(--grad); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 10px 26px -8px rgba(122,51,236,.7);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+      <div><div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">Flovly v4 — C · Popovery</div><div style="font-size: 14px; color: #8B8398; margin-top: 2px;">Floating glass · rounded-12 · blur 24px · dark + light · anchored</div></div>
+    </div>
+
+    <!-- ===== STATUS ===== -->
+    <section style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">12 · Status picker</div>
+      <div style="display: flex; gap: 40px; padding: 26px 30px; border-radius: 22px; background: repeating-linear-gradient(135deg, #14111E, #14111E 11px, #181425 11px, #181425 22px); border: 1px solid rgba(255,255,255,.06);">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 9px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478;">{{ f.label }}</div>
+            <span style="display:inline-flex; align-items:center; gap:7px; padding: 6px 12px; border-radius: 999px; background: {{ f.trigger }}; border: 1px solid {{ f.triggerBd }};"><span style="width:8px;height:8px;border-radius:50%;background:#F59E0B;"></span><span style="font-size: 12.5px; font-weight: 600; color: {{ f.triggerC }};">W toku</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="{{ f.muted }}" stroke-width="2"><path d="m6 9 6 6 6-6"></path></svg></span>
+            <div style="width: 246px; border-radius: 12px; padding: 7px; background: {{ f.pop }}; backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); border: 1px solid {{ f.popBd }}; box-shadow: 0 24px 50px -20px rgba(122,51,236,.45);">
+              <sc-for list="{{ f.statuses }}" as="s" hint-placeholder-count="5"><div style="display: flex; align-items: center; gap: 10px; padding: 8px 9px; border-radius: 9px; background: {{ s.row }};"><span style="width: 9px; height: 9px; border-radius: 50%; background: {{ s.c }};"></span><span style="font-size: 13px; font-weight: 500; color: {{ f.fg }};">{{ s.n }}</span><span style="margin-left: auto; font-size: 11px; color: {{ f.faint }};">{{ s.count }}</span>{{ s.tick }}</div></sc-for>
+              <div style="height: 1px; background: {{ f.line }}; margin: 5px 6px;"></div>
+              <div style="display: flex; align-items: center; gap: 9px; padding: 8px 9px; border-radius: 9px; color: {{ f.muted }};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg><span style="font-size: 12.5px;">Dodaj status</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ===== PRIORITY ===== -->
+    <section style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">13 · Priority picker</div>
+      <div style="display: flex; gap: 40px; padding: 26px 30px; border-radius: 22px; background: repeating-linear-gradient(135deg, #14111E, #14111E 11px, #181425 11px, #181425 22px); border: 1px solid rgba(255,255,255,.06);">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 9px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478;">{{ f.label }}</div>
+            <span style="display:inline-flex; align-items:center; gap:7px; padding: 6px 12px; border-radius: 7px; background: {{ f.trigger }}; border: 1px solid {{ f.triggerBd }};"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FB7185" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4M12 16h.01"></path></svg><span style="font-size: 12.5px; font-weight: 600; color: {{ f.triggerC }};">P0 · Urgent</span></span>
+            <div style="width: 246px; border-radius: 12px; padding: 7px; background: {{ f.pop }}; backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); border: 1px solid {{ f.popBd }}; box-shadow: 0 24px 50px -20px rgba(122,51,236,.45);">
+              <sc-for list="{{ f.priorities }}" as="pr" hint-placeholder-count="5"><div style="display: flex; align-items: center; gap: 10px; padding: 8px 9px; border-radius: 9px; background: {{ pr.row }};"><span style="width: 20px; height: 20px; border-radius: 6px; flex: none; display: flex; align-items: center; justify-content: center; background: {{ pr.iconBg }};">{{ pr.icon }}</span><span style="font-size: 13px; font-weight: 600; color: {{ pr.c }};">{{ pr.label }}</span><span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: {{ f.faint }}; padding: 1px 6px; border-radius: 5px; background: {{ f.chip }};">{{ pr.key }}</span></div></sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ===== ASSIGNEE ===== -->
+    <section style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">14 · Assignee picker</div>
+      <div style="display: flex; gap: 40px; padding: 26px 30px; border-radius: 22px; background: repeating-linear-gradient(135deg, #14111E, #14111E 11px, #181425 11px, #181425 22px); border: 1px solid rgba(255,255,255,.06);">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 9px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478;">{{ f.label }}</div>
+            <div style="display: flex; align-items: center;"><div style="width: 28px; height: 28px; border-radius: 8px; border: 2px solid {{ f.bg }}; background: linear-gradient(140deg,#7A33EC,#E1318F); display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px; font-weight:700;">AD</div><div style="width: 28px; height: 28px; border-radius: 8px; border: 2px solid {{ f.bg }}; margin-left: -7px; background: rgba(124,92,255,.2); display: flex; align-items: center; justify-content: center; color: {{ f.muted }};"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"></path></svg></div></div>
+            <div style="width: 264px; border-radius: 12px; padding: 8px; background: {{ f.pop }}; backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); border: 1px solid {{ f.popBd }}; box-shadow: 0 24px 50px -20px rgba(122,51,236,.45);">
+              <div style="display: flex; align-items: center; gap: 7px; padding: 8px 10px; border-radius: 9px; background: {{ f.card }}; border: 1px solid {{ f.popBd }}; margin-bottom: 6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{ f.muted }}" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3-3"></path></svg><span style="font-size: 12.5px; color: {{ f.faint }};">Szukaj osoby…</span></div>
+              <sc-for list="{{ f.members }}" as="m" hint-placeholder-count="3"><div style="display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 9px; background: {{ m.row }};"><div style="width: 28px; height: 28px; border-radius: 8px; background: {{ m.av }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 700; flex: none;">{{ m.ini }}</div><div style="min-width: 0;"><div style="font-size: 12.5px; font-weight: 600; color: {{ f.fg }};">{{ m.name }}</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{ f.faint }};">{{ m.handle }}</div></div>{{ m.tick }}</div></sc-for>
+              <div style="height: 1px; background: {{ f.line }}; margin: 5px 6px;"></div>
+              <div style="padding: 7px 8px;"><span style="font-size: 12px; color: #FB7185; font-weight: 500;">Zdejmij przypisanie</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ===== DATE ===== -->
+    <section style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">15 · Date picker</div>
+      <div style="display: flex; gap: 40px; padding: 26px 30px; border-radius: 22px; background: repeating-linear-gradient(135deg, #14111E, #14111E 11px, #181425 11px, #181425 22px); border: 1px solid rgba(255,255,255,.06);">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 9px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478;">{{ f.label }}</div>
+            <span style="display:inline-flex; align-items:center; gap:7px; padding: 6px 12px; border-radius: 9px; background: {{ f.trigger }}; border: 1px solid {{ f.triggerBd }};"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{ f.muted }}" stroke-width="2"><path d="M8 2v4M16 2v4M3 10h18"></path><rect x="3" y="4" width="18" height="18" rx="2"></rect></svg><span style="font-size: 12.5px; font-weight: 600; color: {{ f.triggerC }};">18 cze 2026</span></span>
+            <div style="width: 264px; border-radius: 12px; padding: 13px; background: {{ f.pop }}; backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); border: 1px solid {{ f.popBd }}; box-shadow: 0 24px 50px -20px rgba(122,51,236,.45);">
+              <div style="display: flex; gap: 5px; margin-bottom: 11px;"><span style="padding: 5px 10px; border-radius: 999px; background: {{ f.chip }}; font-size: 11px; color: {{ f.muted2 }};">Dzisiaj</span><span style="padding: 5px 10px; border-radius: 999px; background: {{ f.chip }}; font-size: 11px; color: {{ f.muted2 }};">Jutro</span><span style="padding: 5px 10px; border-radius: 999px; background: {{ f.chip }}; font-size: 11px; color: {{ f.muted2 }};">W tygodniu</span></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ f.muted }}" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg><span style="font-size: 13px; font-weight: 600; color: {{ f.fg }};">Czerwiec 2026</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ f.muted }}" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg></div>
+              <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;"><sc-for list="{{ dows }}" as="d" hint-placeholder-count="7"><div style="text-align: center; font-size: 9.5px; color: {{ f.faint }}; padding-bottom: 3px;">{{ d }}</div></sc-for><sc-for list="{{ f.days }}" as="day" hint-placeholder-count="30"><div style="aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 7px; font-size: 11px; font-weight: {{ day.fw }}; background: {{ day.bg }}; color: {{ day.c }};">{{ day.n }}</div></sc-for></div>
+              <div style="margin-top: 11px;"><div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;"><span style="font-size: 11px; color: {{ f.muted }};">Godzina</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: var(--b5);">14:00</span></div><div style="height: 5px; border-radius: 3px; background: {{ f.chip }}; position: relative;"><div style="width: 58%; height: 100%; border-radius: 3px; background: var(--grad);"></div><span style="position: absolute; top: -4px; left: 56%; width: 13px; height: 13px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.4);"></span></div></div>
+              <div style="display: flex; justify-content: flex-end; margin-top: 11px;"><span style="font-size: 12px; color: #FB7185; font-weight: 500;">Wyczyść</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ===== TAG ===== -->
+    <section style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">16 · Tag picker</div>
+      <div style="display: flex; gap: 40px; padding: 26px 30px; border-radius: 22px; background: repeating-linear-gradient(135deg, #14111E, #14111E 11px, #181425 11px, #181425 22px); border: 1px solid rgba(255,255,255,.06);">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 9px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478;">{{ f.label }}</div>
+            <div style="display: flex; gap: 5px;"><span style="padding: 3px 9px; border-radius: 999px; background: rgba(124,92,255,.16); font-size: 11px; font-weight: 500; color: #C9B6F7;">tokeny</span><span style="padding: 3px 9px; border-radius: 999px; background: {{ f.chip }}; font-size: 11px; color: {{ f.muted }};">+ tag</span></div>
+            <div style="width: 246px; border-radius: 12px; padding: 8px; background: {{ f.pop }}; backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); border: 1px solid {{ f.popBd }}; box-shadow: 0 24px 50px -20px rgba(122,51,236,.45);">
+              <div style="display: flex; align-items: center; gap: 7px; padding: 8px 10px; border-radius: 9px; background: {{ f.card }}; border: 1px solid {{ f.popBd }}; margin-bottom: 8px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{ f.muted }}" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3-3"></path></svg><span style="font-size: 12.5px; color: {{ f.faint }};">Szukaj tagu…</span></div>
+              <sc-for list="{{ f.tagList }}" as="t" hint-placeholder-count="4"><div style="display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: 9px; background: {{ t.row }};"><span style="width: 10px; height: 10px; border-radius: 50%; background: {{ t.c }};"></span><span style="font-size: 12.5px; color: {{ f.fg }};">{{ t.n }}</span>{{ t.tick }}</div></sc-for>
+              <div style="height: 1px; background: {{ f.line }}; margin: 6px 6px;"></div>
+              <div style="display: flex; align-items: center; gap: 9px; padding: 8px 9px; border-radius: 9px; border: 1px dashed rgba(124,92,255,.4); color: var(--b5);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg><span style="font-size: 12.5px;">Stwórz „mobile"</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ===== REMINDER ===== -->
+    <section style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">17 · Reminder picker</div>
+      <div style="display: flex; gap: 40px; padding: 26px 30px; border-radius: 22px; background: repeating-linear-gradient(135deg, #14111E, #14111E 11px, #181425 11px, #181425 22px); border: 1px solid rgba(255,255,255,.06);">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 9px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478;">{{ f.label }}</div>
+            <span style="display:inline-flex; align-items:center; gap:7px; padding: 6px 12px; border-radius: 9px; background: {{ f.trigger }}; border: 1px solid {{ f.triggerBd }};"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5BCBFA" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"></path></svg><span style="font-size: 12.5px; font-weight: 600; color: {{ f.triggerC }};">1 godz. przed</span></span>
+            <div style="width: 246px; border-radius: 12px; padding: 7px; background: {{ f.pop }}; backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); border: 1px solid {{ f.popBd }}; box-shadow: 0 24px 50px -20px rgba(122,51,236,.45);">
+              <sc-for list="{{ f.reminders }}" as="r" hint-placeholder-count="4"><div style="display: flex; align-items: center; gap: 10px; padding: 8px 9px; border-radius: 9px; background: {{ r.row }};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ r.ic }}" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path></svg><span style="font-size: 13px; color: {{ r.tc }};">{{ r.n }}</span>{{ r.tick }}</div></sc-for>
+              <div style="height: 1px; background: {{ f.line }}; margin: 5px 6px;"></div>
+              <div style="display: flex; align-items: center; gap: 9px; padding: 8px 9px; border-radius: 9px; background: {{ f.card }}; border: 1px solid {{ f.popBd }};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ f.muted }}" stroke-width="2"><path d="M8 2v4M16 2v4M3 10h18"></path><rect x="3" y="4" width="18" height="18" rx="2"></rect></svg><span style="font-size: 12.5px; color: {{ f.muted2 }};">17 cze, 13:00</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ===== RECURRENCE ===== -->
+    <section style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">18 · Recurrence picker · RRULE builder</div>
+      <div style="display: flex; gap: 40px; padding: 26px 30px; border-radius: 22px; background: repeating-linear-gradient(135deg, #14111E, #14111E 11px, #181425 11px, #181425 22px); border: 1px solid rgba(255,255,255,.06);">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 9px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478;">{{ f.label }}</div>
+            <span style="display:inline-flex; align-items:center; gap:7px; padding: 6px 12px; border-radius: 9px; background: {{ f.trigger }}; border: 1px solid {{ f.triggerBd }};"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{ f.muted }}" stroke-width="2" stroke-linecap="round"><path d="M17 2l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14M7 22l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg><span style="font-size: 12.5px; font-weight: 600; color: {{ f.triggerC }};">Co tydzień</span></span>
+            <div style="width: 264px; border-radius: 12px; padding: 8px; background: {{ f.pop }}; backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); border: 1px solid {{ f.popBd }}; box-shadow: 0 24px 50px -20px rgba(122,51,236,.45);">
+              <sc-for list="{{ f.recur }}" as="r" hint-placeholder-count="4"><div style="display: flex; align-items: center; gap: 10px; padding: 8px 9px; border-radius: 9px; background: {{ r.row }};"><span style="width: 15px; height: 15px; border-radius: 50%; border: {{ r.ring }};"></span><span style="font-size: 13px; font-weight: {{ r.fw }}; color: {{ r.tc }};">{{ r.n }}</span></div></sc-for>
+              <div style="display: flex; gap: 4px; padding: 9px 9px 5px;"><sc-for list="{{ f.weekdays }}" as="w" hint-placeholder-count="7"><span style="width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; background: {{ w.bg }}; color: {{ w.c }};">{{ w.l }}</span></sc-for></div>
+              <div style="padding: 6px 9px 4px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{ f.faint }};">RRULE:FREQ=WEEKLY;BYDAY=MO,WE</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1600, &quot;height&quot;: 1000}}">
+class Component extends DCLogic {
+  tick(show, color) { return show ? React.createElement('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: color || '#7C5CFF', strokeWidth: 2.6, strokeLinecap: 'round', strokeLinejoin: 'round', style: { marginLeft: 'auto', flex: 'none' } }, React.createElement('path', { d: 'M20 6 9 17l-5-5' })) : ''; }
+  pIcon(kind, color) {
+    const map = {
+      none: ['M5 12h14'], low: ['m6 9 6 6 6-6'], med: ['M5 12h14'], high: ['M12 19V5', 'M5 12l7-7 7 7'], urgent: ['M12 8v4', 'M12 16h.01', 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z']
+    };
+    return React.createElement('span', { style: { color, display: 'flex' } }, React.createElement('svg', { width: 13, height: 13, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }, (map[kind] || map.med).map((d, i) => React.createElement('path', { key: i, d }))));
+  }
+  renderVals() {
+    const mk = (dark) => {
+      const t = dark
+        ? { label: 'Dark', dark: true, bg: '#0C0A14', fg: '#E5E1EC', muted: '#8B8398', muted2: '#C9C3D4', faint: '#6B6478', pop: 'rgba(20,17,30,.82)', popBd: 'rgba(255,255,255,.12)', card: 'rgba(255,255,255,.05)', line: 'rgba(255,255,255,.08)', chip: 'rgba(255,255,255,.06)', trigger: 'rgba(255,255,255,.05)', triggerBd: 'rgba(255,255,255,.1)', triggerC: '#fff' }
+        : { label: 'Light', dark: false, bg: '#ECE8F4', fg: '#221E2A', muted: '#847B96', muted2: '#4B4359', faint: '#A9A1B8', pop: 'rgba(255,255,255,.92)', popBd: 'rgba(255,255,255,.9)', card: 'rgba(255,255,255,.7)', line: 'rgba(20,17,27,.08)', chip: 'rgba(122,51,236,.07)', trigger: '#fff', triggerBd: '#E4DEF0', triggerC: '#14111B' };
+      const T = this.tick.bind(this);
+      const sel = dark ? 'rgba(124,92,255,.14)' : 'rgba(124,92,255,.1)';
+      t.statuses = [
+        { n: 'Backlog', c: '#94A3B8', count: '4', row: 'transparent', tick: '' },
+        { n: 'To Do', c: '#3B82F6', count: '6', row: 'transparent', tick: '' },
+        { n: 'W toku', c: '#F59E0B', count: '3', row: sel, tick: T(true, '#7C5CFF') },
+        { n: 'Review', c: '#34BEF8', count: '2', row: 'transparent', tick: '' },
+        { n: 'Done', c: '#10B981', count: '12', row: 'transparent', tick: '' }
+      ];
+      const pc = dark ? { urgent: '#FB7185', high: '#FBBF77', med: '#93C5FD', low: '#CBD5E1', none: '#8B8398' } : { urgent: '#E11D48', high: '#B45309', med: '#2563EB', low: '#64748B', none: '#847B96' };
+      const pBase = { urgent: '#F43F5E', high: '#F59E0B', med: '#3B82F6', low: '#94A3B8', none: '#94A3B8' };
+      t.priorities = [
+        { label: 'Urgent', key: '1', kind: 'urgent', c: pc.urgent, row: sel },
+        { label: 'High', key: '2', kind: 'high', c: pc.high, row: 'transparent' },
+        { label: 'Medium', key: '3', kind: 'med', c: pc.med, row: 'transparent' },
+        { label: 'Low', key: '4', kind: 'low', c: pc.low, row: 'transparent' },
+        { label: 'None', key: '0', kind: 'none', c: pc.none, row: 'transparent' }
+      ].map(p => ({ ...p, iconBg: `${pBase[p.kind]}22`, icon: this.pIcon(p.kind, pBase[p.kind]) }));
+      t.members = [
+        { name: 'Adam Dąbrowski', handle: '@adam', ini: 'AD', av: 'linear-gradient(140deg,#7A33EC,#E1318F)', row: sel, tick: T(true, '#7C5CFF') },
+        { name: 'Kasia Mróz', handle: '@kasia', ini: 'KM', av: 'linear-gradient(140deg,#34BEF8,#10B981)', row: 'transparent', tick: '' },
+        { name: 'Tomek Lis', handle: '@tomek', ini: 'TL', av: 'linear-gradient(140deg,#F59E0B,#E1318F)', row: 'transparent', tick: '' }
+      ];
+      t.days = Array.from({ length: 30 }, (_, i) => { const n = i + 1; const s = n === 18; const today = n === 12; return { n, fw: s ? 700 : 500, bg: s ? 'var(--grad)' : (today ? sel : 'transparent'), c: s ? '#fff' : (today ? (dark ? '#C9B6F7' : '#6A24DC') : t.muted2) }; });
+      t.tagList = [
+        { n: 'tokeny', c: '#7A33EC', row: sel, tick: T(true, '#7C5CFF') },
+        { n: 'glass', c: '#10B981', row: 'transparent', tick: '' },
+        { n: 'a11y', c: '#F59E0B', row: 'transparent', tick: '' },
+        { n: 'backend', c: '#3B82F6', row: 'transparent', tick: '' }
+      ];
+      t.reminders = [
+        { n: '15 minut przed', ic: t.muted, tc: t.muted2, row: 'transparent', tick: '' },
+        { n: '1 godzinę przed', ic: '#5BCBFA', tc: t.fg, row: sel, tick: T(true, '#7C5CFF') },
+        { n: '1 dzień przed', ic: t.muted, tc: t.muted2, row: 'transparent', tick: '' },
+        { n: 'Własne…', ic: t.muted, tc: t.muted2, row: 'transparent', tick: '' }
+      ];
+      const rr = (n, on) => ({ n, fw: on ? 700 : 500, tc: on ? t.fg : t.muted2, row: on ? sel : 'transparent', ring: on ? '4.5px solid #7C5CFF' : `1.5px solid ${dark ? '#4B4359' : '#C9C3D4'}` });
+      t.recur = [ rr('Brak', false), rr('Codziennie', false), rr('Co tydzień', true), rr('Co miesiąc', false) ];
+      t.weekdays = [
+        { l: 'P', on: true }, { l: 'W', on: false }, { l: 'Ś', on: true }, { l: 'C', on: false }, { l: 'P', on: false }, { l: 'S', on: false }, { l: 'N', on: false }
+      ].map(w => ({ l: w.l, bg: w.on ? 'var(--grad)' : t.chip, c: w.on ? '#fff' : t.muted }));
+      return t;
+    };
+    return { frames: [mk(true), mk(false)], dows: ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'] };
+  }
+}
+</script>
+</body>
+</html>
