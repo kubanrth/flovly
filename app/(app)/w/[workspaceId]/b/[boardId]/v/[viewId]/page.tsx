@@ -52,8 +52,11 @@ export default async function CustomBoardViewPage({
   const canCustomize = can(ctx.role, "background.customize");
 
   const actions =
-    // F12-K73: TASKLINE jak WHITEBOARD — canvas-based, brak BackgroundCustomizer'a.
-    view.type === "WHITEBOARD" || view.type === "TASKLINE" ? null : (
+    // F12-K73/78: TASKLINE i CALENDAR jak WHITEBOARD — bez BackgroundCustomizer'a
+    // (kanwa lub gęsta siatka, customization niczego nie wnosi).
+    view.type === "WHITEBOARD" ||
+    view.type === "TASKLINE" ||
+    view.type === "CALENDAR" ? null : (
       <>
         {canCustomize && (
           <BackgroundCustomizer

@@ -22,6 +22,7 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   ArrowRight,
   BarChart3,
+  Calendar,
   ChevronDown,
   ChevronRight,
   GitBranch,
@@ -48,6 +49,7 @@ const VIEW_META: Record<
   kanban: { label: "Kanban", Icon: KanbanSquare, accent: "text-amber-500" },
   roadmap: { label: "Roadmapa", Icon: GitBranch, accent: "text-sky-500" },
   gantt: { label: "Gantt", Icon: BarChart3, accent: "text-rose-500" },
+  calendar: { label: "Kalendarz", Icon: Calendar, accent: "text-indigo-500" },
   whiteboard: { label: "Whiteboard", Icon: Pencil, accent: "text-emerald-500" },
   taskline: { label: "Linia zadań", Icon: Workflow, accent: "text-fuchsia-500" },
 };

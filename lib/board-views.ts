@@ -10,13 +10,16 @@ export type ViewName =
   | "gantt"
   | "whiteboard"
   // F12-K73: Task Line — workflow zadań po prawej + sidebar po lewej.
-  | "taskline";
+  | "taskline"
+  // F12-K78: Calendar — miesięczny widok zadań po startAt/stopAt.
+  | "calendar";
 
 export const ALL_VIEWS: ViewName[] = [
   "table",
   "kanban",
   "roadmap",
   "gantt",
+  "calendar",
   "whiteboard",
   "taskline",
 ];
@@ -37,6 +40,8 @@ export function viewTypeToName(type: string): ViewName | null {
       return "whiteboard";
     case "TASKLINE":
       return "taskline";
+    case "CALENDAR":
+      return "calendar";
     default:
       return null;
   }

@@ -14,6 +14,7 @@ import {
   KanbanSquare,
   GitBranch,
   BarChart3,
+  Calendar,
   Pencil,
   FileText,
   Workflow,
@@ -60,6 +61,7 @@ const DEFAULT_ICONS: Record<ViewName, React.ReactNode> = {
   kanban: <KanbanSquare size={14} />,
   roadmap: <GitBranch size={14} />,
   gantt: <BarChart3 size={14} />,
+  calendar: <Calendar size={14} />,
   whiteboard: <Pencil size={14} />,
   taskline: <Workflow size={14} />,
 };
@@ -68,6 +70,7 @@ const DEFAULT_LABELS: Record<ViewName, string> = {
   kanban: "Kanban",
   roadmap: "Roadmapa",
   gantt: "Gantt",
+  calendar: "Kalendarz",
   whiteboard: "Whiteboard",
   taskline: "Linia zadań",
 };
@@ -120,6 +123,12 @@ export function ViewSwitcher({
       label: "Gantt",
       icon: DEFAULT_ICONS.gantt,
       path: `/w/${workspaceId}/b/${boardId}/gantt`,
+    },
+    {
+      name: "calendar",
+      label: "Kalendarz",
+      icon: DEFAULT_ICONS.calendar,
+      path: `/w/${workspaceId}/b/${boardId}/calendar`,
     },
     {
       name: "whiteboard",

@@ -7,6 +7,7 @@ import {
   KanbanSquare,
   GitBranch,
   BarChart3,
+  Calendar,
   Pencil,
   Plus,
   Workflow,
@@ -25,7 +26,14 @@ import {
 import type { ViewName } from "@/components/view/view-switcher";
 
 const TYPE_OPTIONS: {
-  value: "TABLE" | "KANBAN" | "ROADMAP" | "GANTT" | "WHITEBOARD" | "TASKLINE";
+  value:
+    | "TABLE"
+    | "KANBAN"
+    | "ROADMAP"
+    | "GANTT"
+    | "CALENDAR"
+    | "WHITEBOARD"
+    | "TASKLINE";
   name: ViewName;
   label: string;
   icon: typeof Table2;
@@ -34,6 +42,7 @@ const TYPE_OPTIONS: {
   { value: "KANBAN", name: "kanban", label: "Kanban", icon: KanbanSquare },
   { value: "ROADMAP", name: "roadmap", label: "Roadmapa", icon: GitBranch },
   { value: "GANTT", name: "gantt", label: "Gantt", icon: BarChart3 },
+  { value: "CALENDAR", name: "calendar", label: "Kalendarz", icon: Calendar },
   { value: "WHITEBOARD", name: "whiteboard", label: "Whiteboard", icon: Pencil },
   { value: "TASKLINE", name: "taskline", label: "Linia zadań", icon: Workflow },
 ];

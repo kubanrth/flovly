@@ -266,6 +266,9 @@ enum ViewType {
   // F12-K73: Task Line — task workflow visualization (sidebar list +
   // dedicated ProcessCanvas with kind='taskline').
   TASKLINE
+  // F12-K78: Calendar — miesieczny widok zadan z startAt/stopAt.
+  // Drag-drop event'u przesuwa daty (klik = otwarcie modal).
+  CALENDAR
 }
 
 // F12-K8: per-board visibility. PUBLIC = open to everyone in the workspace

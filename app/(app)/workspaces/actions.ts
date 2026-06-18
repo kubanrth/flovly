@@ -37,6 +37,7 @@ const ALL_VIEW_TYPES: ViewType[] = [
   ViewType.KANBAN,
   ViewType.ROADMAP,
   ViewType.GANTT,
+  ViewType.CALENDAR,
   ViewType.WHITEBOARD,
   ViewType.TASKLINE,
 ];
