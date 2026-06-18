@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LoginForm } from "./login-form";
+import { FlovlySignature } from "@/components/brand/flovly-logo";
 
 export const metadata: Metadata = {
   title: "Wejście · FLOVLY",
@@ -13,26 +14,9 @@ export default async function SecureAccessPortalPage({
   const { redirect } = await searchParams;
 
   return (
-    <div className="relative flex min-h-dvh flex-col bg-background">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          backgroundImage:
-            "radial-gradient(60% 45% at 85% 10%, color-mix(in oklch, var(--accent-brand) 14%, transparent) 0%, transparent 55%)," +
-            "radial-gradient(40% 35% at 5% 95%, color-mix(in oklch, var(--accent-brand-2) 10%, transparent) 0%, transparent 55%)",
-        }}
-      />
-
+    <div className="relative flex min-h-dvh flex-col bg-aura">
       <header className="flex items-center justify-between px-8 pt-8 md:px-14 md:pt-10">
-        <div className="flex items-center gap-2">
-          <span className="grid h-7 w-7 place-items-center rounded-md bg-brand-gradient text-white font-display text-[0.82rem] font-bold">
-            F
-          </span>
-          <span className="font-display text-[1rem] font-semibold tracking-[-0.01em]">
-            FLOVLY
-          </span>
-        </div>
+        <FlovlySignature size="md" />
         <span className="eyebrow hidden md:inline">secure access portal</span>
       </header>
 

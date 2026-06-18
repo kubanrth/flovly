@@ -6,6 +6,7 @@ import {
   PRIORITY_META,
   type TaskPriorityValue,
 } from "@/lib/task-priority";
+import { FlovlyMark } from "@/components/brand/flovly-logo";
 
 // F12-K79: PUBLIC route — bez auth. Token w URL → fetchujemy tablicę read-only.
 // Sprawdzamy: token istnieje, !revoked, !expired.
@@ -100,9 +101,7 @@ export default async function ShareViewerPage({ params }: { params: Params }) {
       <header className="border-b border-border bg-card/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
           <div className="flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-gradient font-display text-[0.85rem] font-bold text-white shadow-brand">
-              F
-            </span>
+            <FlovlyMark size={36} className="shadow-brand rounded-[10px]" />
             <div className="flex flex-col">
               <span className="eyebrow">{board.workspace.name}</span>
               <h1 className="font-display text-[1.15rem] font-bold leading-none tracking-[-0.02em] text-foreground">

@@ -14,7 +14,7 @@ const createSchema = z.object({
   startAt: z.string().min(1),
   endAt: z.string().min(1),
   allDay: z.string().optional(),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default("#7B68EE"),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default("#7C5CFF"),
 });
 
 export async function createWorkspaceEventAction(formData: FormData) {
@@ -25,7 +25,7 @@ export async function createWorkspaceEventAction(formData: FormData) {
     startAt: formData.get("startAt"),
     endAt: formData.get("endAt"),
     allDay: formData.get("allDay") ?? undefined,
-    color: formData.get("color") ?? "#7B68EE",
+    color: formData.get("color") ?? "#7C5CFF",
   });
   if (!parsed.success) return;
 

@@ -223,8 +223,8 @@ export function Sidebar({
           className="flex min-w-0 items-center gap-2.5 rounded-sm px-1.5 py-1 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] focus-visible:bg-white/[0.07] focus-visible:outline-none max-md:gap-3.5 max-md:rounded-md max-md:px-2 max-md:py-2"
         >
           <span
-            style={{ background: "linear-gradient(135deg, #c084fc, #f472b6)" }}
-            className="relative grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full font-display text-[0.72rem] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_1px_2px_rgba(0,0,0,0.3)] max-md:h-11 max-md:w-11 max-md:text-[0.95rem]"
+            style={{ background: "linear-gradient(140deg, #7C5CFF, #D247B5)" }}
+            className="relative grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full font-display text-[0.72rem] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_4px_12px_-4px_rgba(124,92,255,0.45)] max-md:h-11 max-md:w-11 max-md:text-[0.95rem]"
           >
             {user.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element

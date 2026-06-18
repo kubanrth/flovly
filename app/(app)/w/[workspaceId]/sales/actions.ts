@@ -541,7 +541,7 @@ function parseStageFormData(fd: FormData) {
   };
   return {
     name: get("name") ?? "",
-    colorHex: get("colorHex") ?? "#7B68EE",
+    colorHex: get("colorHex") ?? "#7C5CFF",
     closedKind: get("closedKind") ?? "",
   };
 }

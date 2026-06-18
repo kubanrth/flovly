@@ -63,7 +63,7 @@ function renderTaskHtml(task: {
       ${rows.map(([k, v]) => `<tr><td style="padding:10px 24px;font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#64748B;width:110px">${escape(k)}</td><td style="padding:10px 24px 10px 0">${escape(v)}</td></tr>`).join("")}
     </table>
     ${task.description ? `<div style="padding:16px 24px;border-top:1px solid #E2E8F0"><div style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#64748B;margin-bottom:8px">Opis</div><div style="line-height:1.6">${task.description}</div></div>` : ""}
-    ${task.attachmentLinks.length > 0 ? `<div style="padding:16px 24px;border-top:1px solid #E2E8F0"><div style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#64748B;margin-bottom:8px">Za duże do załącznika</div>${task.attachmentLinks.map((a) => `<div style="margin:4px 0"><a href="${a.url}" style="color:#7B68EE">${escape(a.filename)}</a></div>`).join("")}</div>` : ""}
+    ${task.attachmentLinks.length > 0 ? `<div style="padding:16px 24px;border-top:1px solid #E2E8F0"><div style="font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#64748B;margin-bottom:8px">Za duże do załącznika</div>${task.attachmentLinks.map((a) => `<div style="margin:4px 0"><a href="${a.url}" style="color:#7C5CFF">${escape(a.filename)}</a></div>`).join("")}</div>` : ""}
   </div>
 </body></html>`;
 }

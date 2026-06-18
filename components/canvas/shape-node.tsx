@@ -914,7 +914,7 @@ function accentFor(hex: string): string {
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   const y = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-  if (y > 0.92) return "#7B68EE";
+  if (y > 0.92) return "#7C5CFF";
   const darken = (n: number) => Math.max(0, Math.round(n * 0.75));
   const hx = (n: number) => darken(n).toString(16).padStart(2, "0");
   return `#${hx(r)}${hx(g)}${hx(b)}`;

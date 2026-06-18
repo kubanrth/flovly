@@ -67,7 +67,7 @@ export default async function CreativeBriefsListPage({
               >
                 <div
                   className="h-1 w-full rounded-full"
-                  style={{ background: b.headerColor ?? "#7B68EE" }}
+                  style={{ background: b.headerColor ?? "#7C5CFF" }}
                   aria-hidden
                 />
                 <div className="flex items-center gap-2">

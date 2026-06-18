@@ -27,7 +27,7 @@ const PRESET_COLORS = [
 ];
 
 const PRESET_GRADIENTS: { from: string; to: string; angle: number }[] = [
-  { from: "#7B68EE", to: "#FF02F0", angle: 135 }, // brand
+  { from: "#7C5CFF", to: "#D247B5", angle: 135 }, // brand
   { from: "#60A5FA", to: "#C084FC", angle: 135 },
   { from: "#34D399", to: "#0EA5E9", angle: 135 },
   { from: "#FCD34D", to: "#FB923C", angle: 135 },

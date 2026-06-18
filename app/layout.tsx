@@ -51,7 +51,7 @@ export default function RootLayout({
         {/* F11-19: set `dark` class before paint to avoid FOUC. */}
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="min-h-full flex flex-col text-foreground bg-aura">
         {children}
       </body>
     </html>

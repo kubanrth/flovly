@@ -362,7 +362,7 @@ function CanvasEditorInner({
   const providerRef = useRef<CanvasProviderHandle | null>(null);
   // Lazy init keeps Math.random() out of render path (React Compiler flags impure calls during render).
   const [myCursorIdentity] = useState(() => {
-    const palette = ["#7B68EE", "#10B981", "#F59E0B", "#EF4444", "#3B82F6", "#EC4899"];
+    const palette = ["#7C5CFF", "#10B981", "#F59E0B", "#EF4444", "#3B82F6", "#EC4899"];
     const idx = Math.floor(Math.random() * palette.length);
     return {
       color: palette[idx],
@@ -1985,7 +1985,7 @@ function AlignmentGuides({ vx, hy }: { vx: number[]; hy: number[] }) {
             y1={-100000}
             x2={vxi}
             y2={100000}
-            stroke="#7B68EE"
+            stroke="#7C5CFF"
             strokeWidth={1 / zoom}
             strokeDasharray={`${4 / zoom} ${3 / zoom}`}
           />
@@ -1997,7 +1997,7 @@ function AlignmentGuides({ vx, hy }: { vx: number[]; hy: number[] }) {
             y1={hyi}
             x2={100000}
             y2={hyi}
-            stroke="#7B68EE"
+            stroke="#7C5CFF"
             strokeWidth={1 / zoom}
             strokeDasharray={`${4 / zoom} ${3 / zoom}`}
           />
