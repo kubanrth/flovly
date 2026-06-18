@@ -131,76 +131,81 @@ function SortableWorkspaceCard({ workspace: w }: { workspace: WorkspaceRow }) {
       style={style}
       className={`group relative ${isDragging ? "cursor-grabbing" : ""}`}
     >
-      <Link
-        href={`/w/${w.id}`}
-        // Mobile v4: full-width card z accent strip + init badge; klikalna całość.
-        // Desktop: oryginalny layout z pl-12 (miejsce pod drag handle).
-        className="relative flex min-h-[120px] flex-col gap-3 overflow-hidden rounded-xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(46,19,52,0.08)] transition-all hover:-translate-y-[2px] hover:border-primary/30 hover:shadow-[0_12px_32px_-16px_rgba(123,104,238,0.35)] focus-visible:-translate-y-[2px] focus-visible:border-primary focus-visible:outline-none md:min-h-[180px] md:gap-4 md:p-6 md:pl-12"
-      >
-        {/* 3px top accent strip — mobile-only sygnatura workspace color identity */}
+      {/* Karta v4 — ten sam pattern co board card w sortable-boards.tsx:
+          liquid-glass + 3px top accent strip + 38px init badge + spring hover. */}
+      <div className="relative flex h-full flex-col gap-3.5 overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-5 pl-12 backdrop-blur-xl shadow-[0_1px_0_rgba(255,255,255,.6)_inset,0_14px_30px_-18px_rgba(76,29,149,.30)] transition-[transform,box-shadow,border-color] duration-300 [transition-timing-function:cubic-bezier(.34,1.56,.64,1)] group-hover:-translate-y-[3px] group-hover:border-primary/30 group-hover:shadow-[0_1px_0_rgba(255,255,255,.7)_inset,0_22px_44px_-18px_rgba(76,29,149,.45),0_30px_70px_-24px_rgba(225,49,143,.20)] max-md:min-h-[200px] md:h-[200px]">
+        {/* 3px top accent strip — workspace color identity (ZAWSZE, nie tylko mobile) */}
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-[3px] md:hidden"
+          className="pointer-events-none absolute inset-x-0 top-0 h-[3px]"
           style={{ background: swatch.color }}
         />
 
-        {/* Mobile row: init badge 38x38 + name + meta + chevron. Desktop: ten row
-            jest ukryty, layout idzie do oryginalnego pionowego stosu poniżej. */}
-        <div className="flex items-center gap-3 md:hidden">
-          <span
-            aria-hidden
-            className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-xl font-display text-[0.82rem] font-bold text-white"
-            style={{
-              background: swatch.color,
-              boxShadow: `0 6px 14px -5px ${swatch.shadow}`,
-            }}
-          >
-            {initials}
-          </span>
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="truncate text-[16px] font-bold leading-tight tracking-[-0.01em] text-foreground">
-              {w.name}
+        <Link
+          href={`/w/${w.id}`}
+          className="flex min-w-0 flex-col gap-2.5 focus-visible:outline-none"
+        >
+          {/* HEAD: init badge + eyebrow/nazwa/meta + counter pill */}
+          <div className="flex items-start gap-3">
+            <span
+              aria-hidden
+              className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-xl font-display text-[0.82rem] font-bold text-white"
+              style={{
+                background: swatch.color,
+                boxShadow: `0 6px 14px -5px ${swatch.shadow}`,
+              }}
+            >
+              {initials}
             </span>
-            <span className="truncate font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
-              {w.boardCount} {boardPl(w.boardCount)} · {w.role.toLowerCase()}
+            <div className="min-w-0 flex-1">
+              <span className="eyebrow">Przestrzeń</span>
+              <h2 className="mt-1 truncate font-display text-[1.05rem] font-bold leading-tight tracking-[-0.015em] text-foreground transition-colors group-hover:text-primary">
+                {w.name}
+              </h2>
+              <p className="mt-0.5 truncate font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
+                {w.boardCount} {boardPl(w.boardCount)} · {w.role.toLowerCase()}
+              </p>
+            </div>
+            {/* Boards counter — brand-tinted pill (matches board card) */}
+            <span className="shrink-0 rounded-lg bg-primary/10 px-2 py-1 font-mono text-[0.66rem] font-semibold text-primary">
+              {w.boardCount}
             </span>
           </div>
-          <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
-        </div>
 
-        {/* Desktop-only original head — eyebrow + slug, h2 nazwy, opcjonalny opis */}
-        <div className="hidden items-center justify-between md:flex">
-          <span className="eyebrow">{w.role.toLowerCase()}</span>
-          <span className="font-mono text-[0.68rem] text-muted-foreground">/{w.slug}</span>
-        </div>
-        <h2 className="hidden font-display text-[1.5rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground md:block">
-          {w.name}
-        </h2>
-        {w.description && (
-          <p className="line-clamp-2 text-[0.9rem] leading-[1.55] text-muted-foreground max-md:hidden">
-            {w.description}
-          </p>
-        )}
-        <div className="mt-auto hidden items-center justify-between pt-4 md:flex">
-          <span className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">
-            {w.boardCount} {boardPl(w.boardCount)}
+          {/* Opis (opcjonalnie) — mt-auto żeby kafelki miały równą wysokość */}
+          {w.description && (
+            <p className="line-clamp-2 text-[0.85rem] leading-[1.5] text-muted-foreground">
+              {w.description}
+            </p>
+          )}
+        </Link>
+
+        {/* Footer row — slug pill po lewej + "wejdź" arrow po prawej (mt-auto) */}
+        <div className="-mx-1 mt-auto flex flex-wrap items-center gap-1.5 px-1 pb-0.5">
+          <span className="inline-flex h-7 items-center rounded-lg border border-border/60 bg-background/70 px-2 font-mono text-[0.62rem] font-medium uppercase tracking-[0.12em] text-muted-foreground backdrop-blur-sm">
+            /{w.slug}
           </span>
-          <span className="inline-flex items-center gap-1 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors group-hover:text-primary">
+          <span className="ml-auto inline-flex items-center gap-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground transition-colors group-hover:text-primary">
             wejdź <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
           </span>
         </div>
-      </Link>
 
-      {/* Drag handle — przesunięty na lewą krawędź karty. Mobile: chowamy
-          (na touch device reorder via long-press na grip pogarsza UX —
-          klient woli swap przez "edit mode" w przyszłej iteracji). */}
+        {/* Mobile-only chevron jako sygnał "klikalne" — desktop ma "wejdź" arrow */}
+        <ChevronRight
+          size={18}
+          className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 md:hidden"
+        />
+      </div>
+
+      {/* Drag handle po lewej krawędzi karty — wyciszony, ujawnia się na hover.
+          Mobile: chowamy (touch reorder via long-press, mniej intuicyjne UX). */}
       <button
         type="button"
         {...attributes}
         {...listeners}
-        aria-label="Przeciągnij aby zmienić kolejność"
+        aria-label="Przeciągnij przestrzeń"
         title="Przeciągnij aby zmienić kolejność"
-        className="absolute left-3 top-1/2 hidden h-8 w-8 -translate-y-1/2 cursor-grab place-items-center rounded-md text-muted-foreground/50 transition-colors hover:bg-accent hover:text-foreground active:cursor-grabbing md:grid"
+        className="absolute left-3 top-[18px] hidden h-8 w-8 cursor-grab place-items-center rounded-md text-muted-foreground/40 transition-colors hover:bg-accent hover:text-foreground active:cursor-grabbing md:grid"
       >
         <GripVertical size={16} />
       </button>
