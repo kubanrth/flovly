@@ -59,10 +59,13 @@ export const TOOL_DEFS: ChatTool[] = [
   {
     name: "list_tasks",
     description:
-      "Zwraca zadania w workspace. Możesz filtrować po nazwie tablicy, imieniu osoby przypisanej, " +
-      "statusie lub stanie ukończenia. Domyślnie EXCLUDE ukończonych (z timerCompletedAt). " +
-      "Zwraca max 30 zadań. " +
-      "Użyj gdy user pyta 'pokaż zadania X', 'co robi Y', 'zadania w tablicy Z', 'co ma do zrobienia X', 'co mam do zrobienia'.",
+      "Zwraca SZCZEGÓŁOWĄ listę zadań (max 30 najnowszych). Filtruje po tablicy/osobie/statusie. " +
+      "Domyślnie EXCLUDE ukończonych. " +
+      "UŻYJ TYLKO gdy user chce zobaczyć TYTUŁY/DETALE zadań ('pokaż zadania', 'co robi Y', " +
+      "'co mam do zrobienia w X'). " +
+      "Gdy odpowiedź zawiera 'truncated: true' — TO ZNACZY że jest WIĘCEJ zadań niż pokazane. " +
+      "DO LICZENIA ('ile zadań', 'ile mam do zrobienia') używaj count_tasks_by_status — daje " +
+      "PEŁNE liczby bez obcinania.",
     parameters: {
       type: "object",
       properties: {
@@ -93,6 +96,35 @@ export const TOOL_DEFS: ChatTool[] = [
         limit: {
           type: "number",
           description: "Max ile zadań zwrócić (default 30, max 50).",
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "count_tasks_by_status",
+    description:
+      "Zwraca DOKŁADNE liczby zadań pogrupowane po statusie (Do zrobienia: 3, Testy: 15, Done: 21 itd). " +
+      "Bez obcinania, bez próbek — agregacja po stronie bazy. " +
+      "UŻYJ ZAWSZE gdy user pyta 'ILE zadań', 'ile mam do zrobienia', 'ile w trakcie', " +
+      "'ile zostało', 'ile w testach'. NIE używaj list_tasks do liczenia — zwraca tylko 30 próbek.",
+    parameters: {
+      type: "object",
+      properties: {
+        board: {
+          type: "string",
+          description:
+            "Opcjonalna nazwa tablicy ALBO board id. Fuzzy match. Bez tego = wszystkie tablice usera.",
+        },
+        assignee: {
+          type: "string",
+          description:
+            "Opcjonalne — imię/email/id osoby. 'ME' = zalogowany user. " +
+            "Gdy podane, liczymy tylko zadania przypisane do tej osoby.",
+        },
+        includeCompleted: {
+          type: "boolean",
+          description: "Default false — pomijamy ukończone (timerCompletedAt set).",
         },
       },
       required: [],
@@ -175,6 +207,8 @@ export async function executeChatTool(
         return { ok: true, data: await toolListBoards(ctx) };
       case "find_user":
         return { ok: true, data: await toolFindUser(ctx, args) };
+      case "count_tasks_by_status":
+        return { ok: true, data: await toolCountTasksByStatus(ctx, args) };
       case "list_tasks":
         return { ok: true, data: await toolListTasks(ctx, args) };
       case "list_overdue_tasks":
@@ -400,6 +434,111 @@ async function toolFindUser(ctx: ToolContext, args: Record<string, unknown>) {
   };
 }
 
+// ─────────── Tool: count_tasks_by_status ──────────────────────────────────
+// Exact COUNT(*) per status — bez próbkowania. Używamy gdy LLM pyta "ile zadań".
+// Reusable helper resolveBoardId + resolveUserId tu nie spodleja — agregat
+// idzie przez raw groupBy Prismy.
+
+async function toolCountTasksByStatus(
+  ctx: ToolContext,
+  args: Record<string, unknown>,
+) {
+  const boardQuery = typeof args.board === "string" ? args.board.trim() : undefined;
+  const assigneeQuery =
+    typeof args.assignee === "string" ? args.assignee.trim() : undefined;
+  const includeCompleted = args.includeCompleted === true;
+
+  const accessibleBoards = await getAccessibleBoardIds(ctx);
+  if (accessibleBoards.length === 0) {
+    return { totalCount: 0, byStatus: [] };
+  }
+
+  let boardId: string | undefined;
+  let boardName: string | undefined;
+  if (boardQuery) {
+    const resolved = await resolveBoardId(ctx, boardQuery);
+    if (!resolved.found) {
+      return {
+        totalCount: 0,
+        byStatus: [],
+        note: `Nie znalazłem tablicy "${boardQuery}".`,
+        candidates: resolved.candidates,
+      };
+    }
+    boardId = resolved.boardId;
+    boardName = resolved.name;
+  }
+
+  let assigneeUserId: string | undefined;
+  let assigneeName: string | undefined;
+  if (assigneeQuery) {
+    const resolved = await resolveUserId(ctx, assigneeQuery);
+    if (!resolved.found) {
+      return {
+        totalCount: 0,
+        byStatus: [],
+        note: `Nie znalazłem użytkownika "${assigneeQuery}".`,
+        candidates: resolved.candidates,
+      };
+    }
+    assigneeUserId = resolved.userId;
+    assigneeName = resolved.name;
+  }
+
+  // groupBy(statusColumnId) → liczy task'i per status w jednym query.
+  const grouped = await db.task.groupBy({
+    by: ["statusColumnId"],
+    where: {
+      workspaceId: ctx.workspaceId,
+      deletedAt: null,
+      boardId: boardId ?? { in: accessibleBoards },
+      ...(includeCompleted ? {} : { timerCompletedAt: null }),
+      ...(assigneeUserId
+        ? { assignees: { some: { userId: assigneeUserId } } }
+        : {}),
+    },
+    _count: { _all: true },
+  });
+
+  // Pobierz nazwy statusów (1 dodatkowy query).
+  const statusIds = grouped
+    .map((g) => g.statusColumnId)
+    .filter((id): id is string => id !== null);
+  const statuses =
+    statusIds.length > 0
+      ? await db.statusColumn.findMany({
+          where: { id: { in: statusIds } },
+          select: { id: true, name: true, colorHex: true, order: true },
+        })
+      : [];
+  const statusById = new Map(statuses.map((s) => [s.id, s]));
+
+  // Build byStatus z null'ami ("Bez statusu") na końcu.
+  const byStatus = grouped
+    .map((g) => {
+      const s = g.statusColumnId ? statusById.get(g.statusColumnId) : null;
+      return {
+        statusName: s?.name ?? "Bez statusu",
+        statusOrder: s?.order ?? 9999,
+        count: g._count._all,
+      };
+    })
+    .sort((a, b) => a.statusOrder - b.statusOrder)
+    .map((s) => ({ name: s.statusName, count: s.count }));
+
+  const totalCount = byStatus.reduce((sum, s) => sum + s.count, 0);
+
+  return {
+    totalCount,
+    filters: {
+      board: boardName ?? null,
+      assignee: assigneeName ?? null,
+      includeCompleted,
+    },
+    byStatus,
+  };
+}
+
 // ─────────── Tool: list_tasks ──────────────────────────────────────────────
 
 async function toolListTasks(ctx: ToolContext, args: Record<string, unknown>) {
@@ -451,35 +590,43 @@ async function toolListTasks(ctx: ToolContext, args: Record<string, unknown>) {
     assigneeName = resolved.name;
   }
 
-  const tasks = await db.task.findMany({
-    where: {
-      workspaceId: ctx.workspaceId,
-      deletedAt: null,
-      boardId: boardId ?? { in: accessibleBoards },
-      ...(includeCompleted ? {} : { timerCompletedAt: null }),
-      ...(assigneeUserId
-        ? { assignees: { some: { userId: assigneeUserId } } }
-        : {}),
-    },
-    select: {
-      id: true,
-      displayId: true,
-      title: true,
-      startAt: true,
-      stopAt: true,
-      timerCompletedAt: true,
-      updatedAt: true,
-      board: { select: { id: true, name: true } },
-      statusColumn: { select: { id: true, name: true, colorHex: true } },
-      assignees: {
-        select: {
-          user: { select: { id: true, name: true, email: true } },
+  // Wspólny WHERE clause — używamy też do count'a żeby wiedzieć czy
+  // obcięliśmy listę.
+  const whereClause = {
+    workspaceId: ctx.workspaceId,
+    deletedAt: null,
+    boardId: boardId ?? { in: accessibleBoards },
+    ...(includeCompleted ? {} : { timerCompletedAt: null }),
+    ...(assigneeUserId
+      ? { assignees: { some: { userId: assigneeUserId } } }
+      : {}),
+  };
+
+  // Total count (bez limita) + slice 30 najnowszych — równolegle.
+  const [totalAvailable, tasks] = await Promise.all([
+    db.task.count({ where: whereClause }),
+    db.task.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        displayId: true,
+        title: true,
+        startAt: true,
+        stopAt: true,
+        timerCompletedAt: true,
+        updatedAt: true,
+        board: { select: { id: true, name: true } },
+        statusColumn: { select: { id: true, name: true, colorHex: true } },
+        assignees: {
+          select: {
+            user: { select: { id: true, name: true, email: true } },
+          },
         },
       },
-    },
-    orderBy: { updatedAt: "desc" },
-    take: limit,
-  });
+      orderBy: { updatedAt: "desc" },
+      take: limit,
+    }),
+  ]);
 
   const filtered = statusFilter
     ? tasks.filter((t) =>
@@ -487,8 +634,15 @@ async function toolListTasks(ctx: ToolContext, args: Record<string, unknown>) {
       )
     : tasks;
 
+  const truncated = totalAvailable > filtered.length;
+
   return {
     count: filtered.length,
+    totalAvailable,
+    truncated,
+    note: truncated
+      ? `Pokazuję ${filtered.length} najnowszych z ${totalAvailable} pasujących. Do DOKŁADNYCH liczb użyj count_tasks_by_status.`
+      : null,
     filters: {
       board: boardName ?? null,
       assignee: assigneeName ?? null,
