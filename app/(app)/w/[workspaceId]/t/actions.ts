@@ -490,6 +490,78 @@ export async function bulkUpdateStatusAction(formData: FormData) {
   await broadcastWorkspaceChange(workspaceId, { type: "task.changed" });
 }
 
+// F12-K75: bulk set priority (z BulkActionsBar). 1 updateMany zamiast N pojedynczych.
+export async function bulkSetPriorityAction(formData: FormData) {
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const idsRaw = String(formData.get("ids") ?? "");
+  const priorityRaw = String(formData.get("priority") ?? "");
+  const ids = idsRaw.split(",").filter(Boolean);
+  if (!workspaceId || ids.length === 0) return;
+  // Walidacja priority — server odrzuca cudaki.
+  const parsed = z
+    .enum(["NONE", "LOW", "MEDIUM", "HIGH", "URGENT"])
+    .safeParse(priorityRaw);
+  if (!parsed.success) return;
+  const ctx = await requireWorkspaceAction(workspaceId, "task.update");
+
+  await db.task.updateMany({
+    where: { id: { in: ids }, workspaceId },
+    data: { priority: parsed.data },
+  });
+  await writeAudit({
+    workspaceId,
+    objectType: "Task",
+    objectId: ids[0],
+    actorId: ctx.userId,
+    action: "task.bulkPriority",
+    diff: { count: ids.length, priority: parsed.data },
+  });
+  revalidatePath(`/w/${workspaceId}`);
+  await broadcastWorkspaceChange(workspaceId, { type: "task.changed" });
+}
+
+// F12-K76: bulk assign osoby do N task'ów. Mode='add' tworzy TaskAssignee
+// dla tych co jeszcze nie mają; mode='remove' kasuje powiązanie.
+export async function bulkAssignAction(formData: FormData) {
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const idsRaw = String(formData.get("ids") ?? "");
+  const userId = String(formData.get("userId") ?? "");
+  const mode = String(formData.get("mode") ?? "add"); // "add" | "remove"
+  const ids = idsRaw.split(",").filter(Boolean);
+  if (!workspaceId || ids.length === 0 || !userId) return;
+  const ctx = await requireWorkspaceAction(workspaceId, "task.update");
+
+  // Walidacja: user istnieje w workspace'ie?
+  const member = await db.workspaceMembership.findUnique({
+    where: { workspaceId_userId: { workspaceId, userId } },
+    select: { userId: true },
+  });
+  if (!member) return;
+
+  if (mode === "remove") {
+    await db.taskAssignee.deleteMany({
+      where: { taskId: { in: ids }, userId },
+    });
+  } else {
+    // createMany + skipDuplicates: na taskach gdzie user już jest, no-op.
+    await db.taskAssignee.createMany({
+      data: ids.map((taskId) => ({ taskId, userId })),
+      skipDuplicates: true,
+    });
+  }
+
+  await writeAudit({
+    workspaceId,
+    objectType: "Task",
+    objectId: ids[0],
+    actorId: ctx.userId,
+    action: mode === "remove" ? "task.bulkUnassign" : "task.bulkAssign",
+    diff: { count: ids.length, userId },
+  });
+  revalidatePath(`/w/${workspaceId}`);
+  await broadcastWorkspaceChange(workspaceId, { type: "task.changed" });
+}
+
 // Dedicated description save — lets the task detail UI flip back to view mode
 // after save without round-tripping other fields.
 const updateDescriptionSchema = z.object({

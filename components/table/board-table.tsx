@@ -18,14 +18,21 @@ import {
 } from "@tanstack/react-table";
 import { Plus, Search, X } from "lucide-react";
 import { TaskActivityHints } from "@/components/task/task-activity-hints";
-import { PRIORITY_WEIGHT, type TaskPriorityValue } from "@/lib/task-priority";
+import {
+  PRIORITY_META,
+  PRIORITY_VALUES,
+  PRIORITY_WEIGHT,
+  type TaskPriorityValue,
+} from "@/lib/task-priority";
 import { PriorityPickerCell } from "@/components/table/priority-picker-cell";
 import {
   createTableColumnAction,
   saveTableColumnPrefsAction,
 } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
 import {
+  bulkAssignAction,
   bulkDeleteTasksAction,
+  bulkSetPriorityAction,
   bulkUpdateStatusAction,
   createTaskAction,
 } from "@/app/(app)/w/[workspaceId]/t/actions";
@@ -824,7 +831,12 @@ export function BoardTable({
                 <tr key={hg.id} className="border-b border-border bg-card">
                   {canEdit && (
                     // Sticky pinning disabled on mobile (max-md:!static) — couldn't scroll past pinned columns.
-                    <th className="sticky left-0 top-0 z-30 h-10 w-10 bg-card px-2 shadow-[1px_0_0_0_var(--border)] max-md:!static max-md:!shadow-none">
+                    <th
+                      className="sticky left-0 top-0 z-30 h-10 w-10 bg-card px-2 shadow-[1px_0_0_0_var(--border)] max-md:!static max-md:!shadow-none"
+                      // F12-K76: hint o shift+click range select — najczęstszy
+                      // bulk-action UX, ale wymaga discovery.
+                      title="Klik = zaznacz wszystkie. Klik + Shift na innym wierszu = zakres."
+                    >
                       {(() => {
                         const allChecked =
                           table.getRowModel().rows.length > 0 &&
@@ -834,7 +846,7 @@ export function BoardTable({
                           .rows.some((r) => rowSelection[r.id]);
                         return (
                           <Checkbox
-                            ariaLabel="Zaznacz wszystkie wiersze"
+                            ariaLabel="Zaznacz wszystkie wiersze (shift+click na innym = zakres)"
                             checked={allChecked}
                             indeterminate={!allChecked && someChecked}
                             onChange={(e) => {
@@ -1027,9 +1039,10 @@ export function BoardTable({
                               style={{
                                 background: isSelected ? "rgba(var(--primary-rgb,0,0,0),0.05)" : undefined,
                               }}
+                              title="Klik = pojedyncze. Shift + klik = zakres od ostatnio zaznaczonego."
                             >
                               <Checkbox
-                                ariaLabel={`Zaznacz wiersz ${row.original.title}`}
+                                ariaLabel={`Zaznacz wiersz ${row.original.title} (shift+click dla zakresu)`}
                                 checked={isSelected}
                                 onClick={(e) => {
                                   if (e.shiftKey && lastClickedRowRef.current) {
@@ -1128,6 +1141,7 @@ export function BoardTable({
         workspaceId={workspaceId}
         selectedIds={selectedTaskIds}
         statusColumns={statusColumns}
+        members={members}
         onClear={() => setRowSelection({})}
       />
     )}
@@ -1139,14 +1153,18 @@ function BulkActionsBar({
   workspaceId,
   selectedIds,
   statusColumns,
+  members,
   onClear,
 }: {
   workspaceId: string;
   selectedIds: string[];
   statusColumns: BoardTableColumn[];
+  members: AssignMember[];
   onClear: () => void;
 }) {
-  const [statusMenu, setStatusMenu] = useState(false);
+  type MenuKind = "status" | "priority" | "assign" | null;
+  const [activeMenu, setActiveMenu] = useState<MenuKind>(null);
+
   const submitDelete = () => {
     if (!confirm(`Usunąć ${selectedIds.length} zadań? Tego nie da się cofnąć z UI.`)) return;
     const fd = new FormData();
@@ -1164,31 +1182,56 @@ function BulkActionsBar({
     fd.set("statusColumnId", statusColumnId);
     startTransition(async () => {
       await bulkUpdateStatusAction(fd);
-      setStatusMenu(false);
+      setActiveMenu(null);
       onClear();
     });
   };
-  // Portal pod document.body — wrapper z animate-in ViewTransition zostawia
-  // transform na ancestor'ze, co zamienia `position: fixed` na "fixed wzgl.
-  // wrappera" zamiast viewport'u. Bar wtedy lądował na dole TABELI, nie
-  // viewportu, i przy długich tabelach trzeba było skrolować żeby go znaleźć.
+  // F12-K75: bulk set priority.
+  const setBulkPriority = (priority: TaskPriorityValue) => {
+    const fd = new FormData();
+    fd.set("workspaceId", workspaceId);
+    fd.set("ids", selectedIds.join(","));
+    fd.set("priority", priority);
+    startTransition(async () => {
+      await bulkSetPriorityAction(fd);
+      setActiveMenu(null);
+      onClear();
+    });
+  };
+  // F12-K76: bulk assign (mode add/remove). Po wyborze osoby z listy
+  // domyślnie dodajemy — w submenu przycisk "−" robi remove.
+  const setBulkAssignee = (userId: string, mode: "add" | "remove") => {
+    const fd = new FormData();
+    fd.set("workspaceId", workspaceId);
+    fd.set("ids", selectedIds.join(","));
+    fd.set("userId", userId);
+    fd.set("mode", mode);
+    startTransition(async () => {
+      await bulkAssignAction(fd);
+      setActiveMenu(null);
+      onClear();
+    });
+  };
+
   if (typeof document === "undefined") return null;
   return createPortal(
-    <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-popover px-4 py-2 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]">
+    <div className="fixed bottom-6 left-1/2 z-50 flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-popover px-4 py-2 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]">
       <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
         Zaznaczone: <strong className="text-foreground">{selectedIds.length}</strong>
       </span>
       <span className="h-4 w-px bg-border" />
+
+      {/* Zmień status */}
       <div className="relative">
         <button
           type="button"
-          onClick={() => setStatusMenu((m) => !m)}
+          onClick={() => setActiveMenu((m) => (m === "status" ? null : "status"))}
           className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[0.78rem] font-medium text-foreground transition-colors hover:bg-accent"
         >
-          Zmień status
+          Status
         </button>
-        {statusMenu && (
-          <div className="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 rounded-lg border border-border bg-popover p-1 shadow-md">
+        {activeMenu === "status" && (
+          <div className="absolute bottom-[calc(100%+6px)] left-1/2 max-h-[280px] -translate-x-1/2 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-md">
             <button
               type="button"
               onClick={() => setStatus("")}
@@ -1210,6 +1253,95 @@ function BulkActionsBar({
           </div>
         )}
       </div>
+
+      {/* F12-K75: Zmień priorytet */}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setActiveMenu((m) => (m === "priority" ? null : "priority"))}
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[0.78rem] font-medium text-foreground transition-colors hover:bg-accent"
+        >
+          Priorytet
+        </button>
+        {activeMenu === "priority" && (
+          <div className="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 rounded-lg border border-border bg-popover p-1 shadow-md">
+            {PRIORITY_VALUES.map((value) => {
+              const meta = PRIORITY_META[value];
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setBulkPriority(value)}
+                  className="flex w-full items-center justify-between gap-3 whitespace-nowrap rounded-md px-2 py-1 text-left text-[0.78rem] transition-colors hover:bg-accent"
+                >
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{
+                        background:
+                          value === "NONE" ? "transparent" : meta.dotColor,
+                        border:
+                          value === "NONE"
+                            ? "1px dashed currentColor"
+                            : undefined,
+                      }}
+                    />
+                    <span className={value === "NONE" ? "text-muted-foreground" : ""}>
+                      {meta.label}
+                    </span>
+                  </span>
+                  <span className="font-mono text-[0.6rem] uppercase tracking-[0.1em] text-muted-foreground/60">
+                    {meta.shortCode}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* F12-K76: Przypisz osobę */}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setActiveMenu((m) => (m === "assign" ? null : "assign"))}
+          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[0.78rem] font-medium text-foreground transition-colors hover:bg-accent"
+        >
+          Osoba
+        </button>
+        {activeMenu === "assign" && members.length > 0 && (
+          <div className="absolute bottom-[calc(100%+6px)] left-1/2 max-h-[280px] -translate-x-1/2 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-md">
+            {members.map((m) => (
+              <div
+                key={m.id}
+                className="flex items-center gap-2 whitespace-nowrap rounded-md px-2 py-1"
+              >
+                <button
+                  type="button"
+                  onClick={() => setBulkAssignee(m.id, "add")}
+                  className="flex flex-1 items-center gap-2 text-left text-[0.78rem] transition-colors hover:text-primary"
+                  title="Przypisz do zaznaczonych"
+                >
+                  <span className="grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient text-[0.55rem] font-bold text-white">
+                    {(m.name ?? m.email).slice(0, 2).toUpperCase()}
+                  </span>
+                  <span>{m.name ?? m.email.split("@")[0]}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBulkAssignee(m.id, "remove")}
+                  className="grid h-5 w-5 place-items-center rounded-md text-muted-foreground/60 transition-colors hover:bg-rose-500/10 hover:text-rose-500"
+                  title="Usuń przypisanie"
+                >
+                  −
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <span className="h-4 w-px bg-border" />
       <button
         type="button"
         onClick={submitDelete}
