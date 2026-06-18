@@ -194,7 +194,7 @@ export function SupportWorkspace({
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(10,10,40,0.04)]">
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(46,19,52,0.08)]">
           <div className="overflow-x-auto">
             <table className="text-[0.88rem]" style={{ tableLayout: "fixed", width: "max-content", minWidth: "100%" }}>
               <thead>

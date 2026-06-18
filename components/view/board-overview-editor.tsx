@@ -48,7 +48,7 @@ export function BoardOverviewEditor({
   }, [doc, initial, workspaceId, boardId, canEdit]);
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(10,10,40,0.04)]">
+    <section className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(46,19,52,0.08)]">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <FileText size={16} className="text-muted-foreground" />

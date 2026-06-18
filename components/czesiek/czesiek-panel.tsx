@@ -191,7 +191,7 @@ export function CzesiekPanel({
         role="dialog"
         aria-modal="true"
         aria-label="Ateron AI"
-        className="fixed inset-0 z-50 flex translate-x-full flex-col border-l border-border bg-background opacity-0 transition-[transform,opacity] duration-300 ease-out data-[open=true]:translate-x-0 data-[open=true]:opacity-100 md:left-auto md:w-[720px] md:shadow-2xl"
+        className="fixed inset-0 z-50 flex translate-x-full flex-col border-l border-border bg-background opacity-0 transition-[transform,opacity] duration-300 ease-out data-[open=true]:translate-x-0 data-[open=true]:opacity-100 md:left-auto md:w-[720px] md:shadow-[0_18px_40px_-16px_rgba(76,29,149,0.36),0_30px_70px_-24px_rgba(124,92,255,0.24)]"
         style={{ pointerEvents: open ? "auto" : "none" }}
       >
         {/* Header */}

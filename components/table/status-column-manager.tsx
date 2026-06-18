@@ -32,7 +32,7 @@ export function StatusColumnManager({
   columns: Column[];
 }) {
   return (
-    <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(10,10,40,0.04)]">
+    <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(46,19,52,0.08)]">
       <div className="flex flex-col gap-1.5">
         <span className="eyebrow">Ustawienia tablicy</span>
         <h3 className="font-display text-[1.1rem] font-bold leading-[1.2] tracking-[-0.02em]">

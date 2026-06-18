@@ -529,7 +529,7 @@ function SortableBoardCard({
       {/* Desktop: h-[180px] żeby wszystkie kafelki w grid'zie były równe.
           Mobile: min-h żeby wrap'nięte pills (Roadmapa/Whiteboard) mogły
           przelać się na drugą linię bez ucinania. */}
-      <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 pl-12 shadow-[0_1px_2px_rgba(10,10,40,0.04)] transition-all group-hover:-translate-y-[2px] group-hover:border-primary/30 group-hover:shadow-[0_12px_32px_-16px_rgba(123,104,238,0.35)] max-md:min-h-[180px] md:h-[180px]">
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 pl-12 shadow-[0_4px_12px_-4px_rgba(46,19,52,0.10),0_18px_40px_-16px_rgba(76,29,149,0.14)] transition-all group-hover:-translate-y-[2px] group-hover:border-primary/40 group-hover:shadow-[0_18px_40px_-16px_rgba(124,92,255,0.30),0_30px_70px_-24px_rgba(210,71,181,0.20)] max-md:min-h-[180px] md:h-[180px]">
         <Link
           href={`/w/${workspaceId}/b/${board.id}/table`}
           className="flex min-w-0 flex-col gap-2 focus-visible:outline-none"

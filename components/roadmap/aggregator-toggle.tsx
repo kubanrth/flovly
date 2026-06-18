@@ -83,7 +83,7 @@ export function AggregatorToggle({
       >
         <span
           aria-hidden
-          className={`grid h-5 w-5 place-items-center rounded-full bg-background shadow-[0_1px_2px_rgba(10,10,40,0.15)] transition-transform ${
+          className={`grid h-5 w-5 place-items-center rounded-full bg-background shadow-[0_1px_2px_rgba(46,19,52,0.20)] transition-transform ${
             on ? "translate-x-6" : "translate-x-0.5"
           }`}
         >

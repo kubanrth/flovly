@@ -60,7 +60,7 @@ export function InviteForm({
   return (
     <form
       action={(fd) => startTransition(() => formAction(fd))}
-      className="flex flex-col gap-5 rounded-xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(10,10,40,0.04)]"
+      className="flex flex-col gap-5 rounded-xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(46,19,52,0.08)]"
     >
       <input type="hidden" name="workspaceId" value={workspaceId} />
       {/* Empty boardId = workspace scope; set value = board scope. The

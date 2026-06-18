@@ -92,7 +92,7 @@ function SortableWorkspaceCard({ workspace: w }: { workspace: WorkspaceRow }) {
     >
       <Link
         href={`/w/${w.id}`}
-        className="flex min-h-[180px] flex-col gap-4 rounded-xl border border-border bg-card p-6 pl-12 shadow-[0_1px_2px_rgba(10,10,40,0.04)] transition-all hover:-translate-y-[2px] hover:border-primary/30 hover:shadow-[0_12px_32px_-16px_rgba(123,104,238,0.35)] focus-visible:-translate-y-[2px] focus-visible:border-primary focus-visible:outline-none"
+        className="flex min-h-[180px] flex-col gap-4 rounded-xl border border-border bg-card p-6 pl-12 shadow-[0_1px_2px_rgba(46,19,52,0.08)] transition-all hover:-translate-y-[2px] hover:border-primary/30 hover:shadow-[0_12px_32px_-16px_rgba(123,104,238,0.35)] focus-visible:-translate-y-[2px] focus-visible:border-primary focus-visible:outline-none"
       >
         <div className="flex items-center justify-between">
           <span className="eyebrow">{w.role.toLowerCase()}</span>

@@ -781,7 +781,7 @@ function QuickAddItem({
       ? "flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-2.5 transition-colors focus-within:border-primary/60 focus-within:shadow-[0_2px_8px_-2px_rgba(10,10,40,0.08)]"
       : variant === "panel"
         ? "flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 transition-colors focus-within:border-primary/60"
-        : "flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-3 shadow-[0_1px_2px_rgba(10,10,40,0.04)]";
+        : "flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-3 shadow-[0_1px_2px_rgba(46,19,52,0.08)]";
 
   const iconSize = variant === "panel" ? 13 : variant === "bottom" ? 16 : 15;
 
