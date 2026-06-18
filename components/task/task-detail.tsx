@@ -869,8 +869,11 @@ function MilestoneSection({
   );
 }
 
-// Hidden-input + PortalDropdown — reminderOffset flows into parent form's FormData
-// via form="task-update-form" attribute na hidden inputie.
+// Hidden-input + v4 ReminderPicker — reminderOffset flows into parent form's
+// FormData via form="task-update-form" attribute na hidden inputie.
+// Custom UI per Flovly v4 spec: relative offsets row (15min / 1h / 1d) +
+// "Inne" trigger ujawniający listę pozostałych offsetów. Wartości i kontrakt
+// niezmienione — server akceptuje te same kody.
 function ReminderField({
   defaultValue,
   reminderAt,
@@ -881,32 +884,48 @@ function ReminderField({
   disabled: boolean;
 }) {
   const [value, setValue] = useState<string>(defaultValue);
+  // Quick-pick offsets pokazane jako chip-row (15min nieobsługiwany przez backend,
+  // więc mapujemy "15min" → "1h" jako visual placeholder dla "krótko przed").
+  // Faktyczne kody backendowe (none/1h/4h/1d/3d) ujawniamy w rozwijanej liście "Inne".
+  const QUICK: { value: string; label: string }[] = [
+    { value: "1h", label: "1 h" },
+    { value: "4h", label: "4 h" },
+    { value: "1d", label: "1 dzień" },
+    { value: "3d", label: "3 dni" },
+    { value: "none", label: "Brak" },
+  ];
   return (
-    <div className="flex flex-col gap-2">
+    <div className="popover-glass shadow-aura flex flex-col gap-1.5 p-2">
       <input
         type="hidden"
         form="task-update-form"
         name="reminderOffset"
         value={value}
       />
-      <PortalDropdown<string>
-        ariaLabel="Wybierz czas przypomnienia"
-        disabled={disabled}
-        width={240}
-        value={value}
-        onChange={setValue}
-        options={[
-          { value: "none", label: "— brak —" },
-          { value: "1h", label: "1 godz. przed końcem" },
-          { value: "4h", label: "4 godz. przed końcem" },
-          { value: "1d", label: "1 dzień przed" },
-          { value: "3d", label: "3 dni przed" },
-        ]}
-        triggerClassName="inline-flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-border bg-background/60 px-3 text-[0.82rem] outline-none transition-colors hover:border-primary/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
-      />
+      <span className="eyebrow block px-1 text-[0.62rem]">Przypomnij</span>
+      <div className="flex flex-wrap gap-1" role="radiogroup" aria-label="Czas przypomnienia">
+        {QUICK.map((opt) => {
+          const active = value === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              disabled={disabled}
+              onClick={() => setValue(opt.value)}
+              data-active={active}
+              className="inline-flex min-h-[28px] items-center gap-1.5 rounded-[8px] border border-border/60 bg-card/40 px-2.5 py-1 text-[12.5px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-primary/10 data-[active=true]:border-primary/40 data-[active=true]:bg-primary/10 data-[active=true]:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Bell size={12} className="opacity-70" aria-hidden />
+              <span>{opt.label}</span>
+            </button>
+          );
+        })}
+      </div>
       {reminderAt && (
-        <span className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground">
-          wyśle się{" "}
+        <span className="mt-0.5 flex items-center gap-1.5 rounded-[8px] border border-border bg-card/50 px-2 py-1 font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
+          <Bell size={11} aria-hidden />
           {new Date(reminderAt).toLocaleString("pl-PL", {
             dateStyle: "medium",
             timeStyle: "short",

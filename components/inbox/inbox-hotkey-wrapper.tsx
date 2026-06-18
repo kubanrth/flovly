@@ -58,6 +58,33 @@ export interface InboxNotification {
   assigneeIds: string[] | null;
 }
 
+// v4: feed chronologiczny grupowany Dziś / Wczoraj / Wcześniej. Wewnątrz każdej
+// grupy unread przed read (zachowujemy distinction przez brand dot per row).
+function groupChronologically(
+  items: InboxNotification[],
+): Array<{ key: "today" | "yesterday" | "earlier"; label: string; items: InboxNotification[] }> {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const yesterdayStart = todayStart - 24 * 60 * 60 * 1000;
+
+  const groups: Record<"today" | "yesterday" | "earlier", InboxNotification[]> = {
+    today: [],
+    yesterday: [],
+    earlier: [],
+  };
+  for (const n of items) {
+    const t = new Date(n.createdAt).getTime();
+    if (t >= todayStart) groups.today.push(n);
+    else if (t >= yesterdayStart) groups.yesterday.push(n);
+    else groups.earlier.push(n);
+  }
+  return [
+    { key: "today", label: "Dziś", items: groups.today },
+    { key: "yesterday", label: "Wczoraj", items: groups.yesterday },
+    { key: "earlier", label: "Wcześniej", items: groups.earlier },
+  ].filter((g) => g.items.length > 0) as Array<{ key: "today" | "yesterday" | "earlier"; label: string; items: InboxNotification[] }>;
+}
+
 export function InboxHotkeyList({
   members,
   unread,
@@ -74,7 +101,7 @@ export function InboxHotkeyList({
   if (total === 0) {
     return (
       <>
-        <div className="rounded-xl border border-dashed border-border p-10 text-center">
+        <div className="rounded-[22px] border border-dashed border-white/60 bg-white/40 p-10 text-center backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.02]">
           <p className="font-display text-[1.1rem] font-semibold">Pusto.</p>
           <p className="mt-2 text-[0.92rem] text-muted-foreground">
             Jak ktoś Cię oznaczy w komentarzu albo przypisze do zadania, trafi to tutaj.
@@ -85,77 +112,88 @@ export function InboxHotkeyList({
     );
   }
 
+  // Merge wszystko do jednego chronological feedu — distinction unread/read przez brand dot per row.
+  const allItems = [...unread, ...read].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+  const groups = groupChronologically(allItems);
+
   return (
     <>
-      {unread.length > 0 && (
-        <>
-          <div className="flex items-end justify-between gap-4">
-            <h2 className="eyebrow text-primary">Nieprzeczytane</h2>
+      {/* v4: jedna karta rounded-[22px] glass surface z brand-tinted shadow. */}
+      <div className="relative overflow-hidden rounded-[22px] border border-white/60 bg-white/55 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-white/[0.03]">
+        <div className="flex flex-col gap-3 px-4 py-4 md:px-5 md:py-5">
+          {groups.map((group, idx) => (
+            <section key={group.key} className={idx === 0 ? "" : "mt-2"}>
+              <div className="mb-1.5 flex items-center gap-2.5 px-2">
+                <span
+                  aria-hidden
+                  className="h-4 w-[3px] rounded-[2px] bg-brand-gradient"
+                />
+                <h2 className="text-[0.78rem] font-bold tracking-[-0.01em] text-foreground">
+                  {group.label}
+                </h2>
+                <span className="rounded-full bg-white/40 px-2 py-0.5 font-mono text-[0.66rem] text-muted-foreground dark:bg-white/[0.06]">
+                  {group.items.length}
+                </span>
+              </div>
+              <ul className="flex flex-col gap-1">
+                {group.items.map((n) => (
+                  <li key={n.id}>
+                    <NotificationRow notification={n} assign={assign} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+
+        {/* v4 footer: bulk akcja "Oznacz wszystkie jako przeczytane" + bulk delete. */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/50 bg-white/30 px-5 py-3 dark:border-white/[0.06] dark:bg-white/[0.02]">
+          <span className="font-mono text-[0.68rem] text-muted-foreground/80">
+            {unread.length > 0
+              ? `${unread.length} nieprzeczytan${unread.length === 1 ? "a" : "ych"} · ${read.length} przeczytan${read.length === 1 ? "a" : "ych"}`
+              : `${read.length} przeczytan${read.length === 1 ? "a" : "ych"}`}
+          </span>
+          <div className="flex items-center gap-2">
             {unread.length > 0 && (
-              <form action={markAllNotificationsReadAction}>
+              <form action={markAllNotificationsReadAction} className="m-0">
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
+                  className="inline-flex items-center gap-1.5 rounded-[10px] border border-white/60 bg-white/60 px-3 py-1.5 font-mono text-[0.66rem] font-medium uppercase tracking-[0.12em] text-foreground transition-colors hover:border-primary/60 hover:text-primary dark:border-white/10 dark:bg-white/[0.04]"
                 >
-                  <Check size={12} /> Oznacz wszystkie jako przeczytane
+                  <Check size={11} /> Oznacz wszystkie jako przeczytane
                 </button>
               </form>
             )}
+            {read.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    !confirm(
+                      `Usunąć ${read.length} przeczytan${
+                        read.length === 1 ? "ą notyfikację" : "ych notyfikacji"
+                      }? Tej operacji nie można cofnąć.`,
+                    )
+                  ) {
+                    return;
+                  }
+                  startTransition(() => {
+                    void deleteAllReadNotificationsAction();
+                  });
+                }}
+                className="inline-flex items-center gap-1.5 rounded-[10px] border border-white/60 bg-white/60 px-3 py-1.5 font-mono text-[0.66rem] font-medium uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:border-destructive/60 hover:text-destructive dark:border-white/10 dark:bg-white/[0.04]"
+              >
+                <Trash2 size={11} /> Usuń przeczytane
+              </button>
+            )}
           </div>
-          <Bucket items={unread} assign={assign} />
-        </>
-      )}
-
-      {read.length > 0 && (
-        <>
-          <div className="flex items-end justify-between gap-4">
-            <h2 className="eyebrow text-muted-foreground">Przeczytane</h2>
-            {/* F12-K35: bulk-delete przeczytanych. */}
-            <button
-              type="button"
-              onClick={() => {
-                if (
-                  !confirm(
-                    `Usunąć ${read.length} przeczytan${
-                      read.length === 1 ? "ą notyfikację" : "ych notyfikacji"
-                    }? Tej operacji nie można cofnąć.`,
-                  )
-                ) {
-                  return;
-                }
-                startTransition(() => {
-                  void deleteAllReadNotificationsAction();
-                });
-              }}
-              className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
-            >
-              <Trash2 size={12} /> Usuń przeczytane
-            </button>
-          </div>
-          <Bucket items={read} assign={assign} />
-        </>
-      )}
+        </div>
+      </div>
 
       {assign.menu}
     </>
-  );
-}
-
-function Bucket({
-  items,
-  assign,
-}: {
-  items: InboxNotification[];
-  assign: ReturnType<typeof useAssignHotkey>;
-}) {
-  return (
-    <ul className="flex flex-col rounded-2xl border border-border bg-card overflow-hidden shadow-[0_4px_12px_-4px_rgba(46,19,52,0.10),0_18px_40px_-16px_rgba(76,29,149,0.14)]">
-      {items.map((n) => (
-        <li key={n.id} className="border-b border-border last:border-b-0">
-          <NotificationRow notification={n} assign={assign} />
-        </li>
-      ))}
-    </ul>
   );
 }
 
@@ -328,43 +366,45 @@ function NotificationRow({
     <div
       data-unread={unread ? "true" : "false"}
       {...(hotkeyProps ?? {})}
-      className="group flex items-start gap-3 px-4 py-3 transition-colors data-[unread=true]:bg-primary/[0.04] hover:bg-accent/60"
+      className="group flex items-start gap-3 rounded-[13px] border border-transparent px-3.5 py-3 transition-all hover:border-white/60 hover:bg-white/60 data-[unread=true]:bg-primary/[0.06] dark:hover:border-white/[0.08] dark:hover:bg-white/[0.04]"
     >
       <span
-        className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${
+        className={`relative grid h-9 w-9 shrink-0 place-items-center rounded-[10px] text-white ${
           isPoll
-            ? "bg-amber-500/10 text-amber-500"
+            ? "bg-gradient-to-br from-amber-400 to-rose-500"
             : isAssigned || isSupportResolved
-              ? "bg-emerald-500/10 text-emerald-500"
+              ? "bg-gradient-to-br from-emerald-400 to-sky-500"
               : isSupportAssigned
-                ? "bg-blue-500/10 text-blue-500"
+                ? "bg-gradient-to-br from-sky-400 to-brand-500"
                 : isSupportCreated
-                  ? "bg-rose-500/10 text-rose-500"
-                  : "bg-primary/10 text-primary"
+                  ? "bg-gradient-to-br from-rose-400 to-brand-500"
+                  : "bg-brand-gradient"
         }`}
         aria-hidden
       >
         {isPoll ? (
-          <Vote size={14} />
+          <Vote size={15} />
         ) : isAssigned || isSupportAssigned ? (
-          <UserPlus size={14} />
+          <UserPlus size={15} />
         ) : isSupportResolved ? (
-          <CheckCircle2 size={14} />
+          <CheckCircle2 size={15} />
         ) : isSupportCreated ? (
-          <CheckCircle2 size={14} />
+          <CheckCircle2 size={15} />
         ) : (
-          <AtSign size={14} />
+          <AtSign size={15} />
         )}
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <Link href={href} className="flex flex-col gap-0.5 focus-visible:outline-none">
-          <span className="truncate text-[0.92rem] leading-tight text-muted-foreground group-hover:text-foreground">
+        <Link href={href} className="flex flex-col gap-1 focus-visible:outline-none">
+          {/* v4 snippet/content: 14px (text-[0.875rem]) */}
+          <span className="text-[0.875rem] leading-snug text-muted-foreground group-hover:text-foreground">
             {body}
           </span>
           {snippet && (
             <span className="truncate text-[0.86rem] italic text-muted-foreground/90">„{snippet}"</span>
           )}
-          <span className="font-mono text-[0.64rem] uppercase tracking-[0.12em] text-muted-foreground/80">
+          {/* v4 relative time: mono */}
+          <span className="font-mono text-[0.7rem] text-muted-foreground/70">
             {formatRelative(notification.createdAt)}
           </span>
         </Link>
@@ -467,6 +507,14 @@ function NotificationRow({
           </button>
         </form>
       </div>
+
+      {/* v4: status indicator — brand dot dla unread, ukryta dla read. Always visible (nie hover-gated). */}
+      {unread && (
+        <span
+          aria-hidden
+          className="mt-2 h-2 w-2 shrink-0 self-start rounded-full bg-brand-gradient shadow-[0_0_10px_rgba(124,92,255,0.5)]"
+        />
+      )}
     </div>
   );
 }

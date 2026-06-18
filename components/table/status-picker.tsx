@@ -182,14 +182,25 @@ export function StatusPicker({
         ref={triggerRef}
         type="button"
         onClick={() => (open ? close() : openPicker())}
-        className="inline-flex h-7 max-w-full items-center rounded-full px-2.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.12em] outline-none transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
+        // v4 spec (linia 49): pill rounded-full + dot 6x6 + label 11.5/600.
+        // Trigger nadal funkcjonalnie identyczny — tylko zmiana wizualna.
+        className="inline-flex h-7 max-w-full items-center gap-[5px] rounded-full px-[9px] py-[3px] outline-none transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
         style={{
           color: current ? current.colorHex : "var(--muted-foreground)",
           background: current ? `${current.colorHex}22` : "transparent",
           border: current ? "none" : "1px dashed var(--border)",
         }}
       >
-        <span className="truncate">{current ? current.name : "— brak —"}</span>
+        {current && (
+          <span
+            className="h-[6px] w-[6px] shrink-0 rounded-full"
+            style={{ background: current.colorHex }}
+            aria-hidden="true"
+          />
+        )}
+        <span className="truncate text-[11.5px] font-semibold leading-none">
+          {current ? current.name : "— brak —"}
+        </span>
       </button>
 
       {open && coords && typeof document !== "undefined" &&
@@ -205,17 +216,20 @@ export function StatusPicker({
               width: 280,
               maxHeight: coords.maxHeight,
             }}
-            className="z-[60] flex flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+            className="popover-glass popover-enter shadow-aura z-[60] flex flex-col overflow-hidden p-[7px]"
           >
-            <div className="shrink-0 border-b border-border px-2.5 py-2">
-              <div className="flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1">
-                <Search size={11} className="text-muted-foreground" />
+            <div className="mb-1.5 shrink-0">
+              <span className="eyebrow mb-1.5 block px-1.5 text-[0.66rem]">
+                Status
+              </span>
+              <div className="flex items-center gap-1.5 rounded-[8px] border border-border bg-card/60 px-2 py-1.5">
+                <Search size={12} className="text-muted-foreground" />
                 <input
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Szukaj statusu…"
-                  className="flex-1 bg-transparent text-[0.82rem] outline-none placeholder:text-muted-foreground/60"
+                  className="flex-1 bg-transparent text-[0.8125rem] outline-none placeholder:text-muted-foreground/60"
                 />
               </div>
             </div>
@@ -235,7 +249,7 @@ export function StatusPicker({
             />
 
             {canManageBoard && (
-              <div className="shrink-0 border-t border-border bg-popover">
+              <div className="mt-1 shrink-0 border-t border-border/60 pt-1">
                 {adding ? (
                   <AddRow
                     workspaceId={workspaceId}
@@ -246,9 +260,10 @@ export function StatusPicker({
                   <button
                     type="button"
                     onClick={() => setAdding(true)}
-                    className="flex w-full items-center gap-1.5 px-3 py-2 text-left font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    className="flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[0.8125rem] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-primary/10"
                   >
-                    <Plus size={11} /> Dodaj status
+                    <Plus size={14} strokeWidth={2} />
+                    <span>Dodaj status</span>
                   </button>
                 )}
               </div>
@@ -307,7 +322,8 @@ function Row({
     <div
       ref={setNodeRef}
       style={style}
-      className="group flex items-center gap-1.5 rounded-md px-1 py-0.5 hover:bg-accent"
+      data-active={isCurrent}
+      className="group flex items-center gap-1 rounded-[8px] px-1 py-0.5 transition-colors hover:bg-muted active:bg-primary/10 data-[active=true]:bg-primary/10"
     >
       {canReorder && (
         <button
@@ -316,7 +332,7 @@ function Row({
           {...listeners}
           aria-label={`Przeciągnij ${option.name}`}
           title="Przeciągnij aby zmienić kolejność"
-          className="grid h-5 w-4 shrink-0 cursor-grab place-items-center rounded-sm text-muted-foreground/60 transition-colors hover:text-foreground active:cursor-grabbing"
+          className="grid h-6 w-4 shrink-0 cursor-grab place-items-center rounded-sm text-muted-foreground/60 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 active:cursor-grabbing"
         >
           <GripVertical size={11} />
         </button>
@@ -324,30 +340,31 @@ function Row({
       <button
         type="button"
         onClick={onPick}
-        className="flex flex-1 items-center gap-2 rounded-md py-1 pl-1.5 text-left"
+        className="flex flex-1 items-center gap-2.5 rounded-[8px] py-1 pl-1.5 pr-1 text-left"
       >
         <span
-          className="grid h-3.5 w-3.5 shrink-0 place-items-center rounded-sm border"
-          style={{
-            borderColor: isCurrent ? option.colorHex : "var(--border)",
-            background: isCurrent ? option.colorHex : "transparent",
-          }}
-        >
-          {isCurrent && <Check size={9} className="text-white" strokeWidth={3} />}
-        </span>
-        <span
-          className="inline-flex flex-1 items-center truncate rounded-full px-2 py-0.5 text-[0.74rem] font-semibold"
-          style={{ color: option.colorHex, background: `${option.colorHex}22` }}
-        >
+          className="h-2 w-2 shrink-0 rounded-full"
+          style={{ background: option.colorHex }}
+          aria-hidden="true"
+        />
+        <span className="flex-1 truncate text-[13px] font-medium text-foreground">
           {option.name}
         </span>
+        {isCurrent && (
+          <Check
+            size={13}
+            className="shrink-0 text-primary"
+            strokeWidth={2.6}
+            aria-hidden="true"
+          />
+        )}
       </button>
       {canManage && (
         <button
           type="button"
           onClick={onEdit}
           aria-label={`Edytuj ${option.name}`}
-          className="grid h-6 w-6 shrink-0 place-items-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100"
+          className="grid h-6 w-6 shrink-0 place-items-center rounded-[6px] text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
         >
           <Pencil size={11} />
         </button>
@@ -357,7 +374,7 @@ function Row({
           type="button"
           onClick={onDelete}
           aria-label={`Usuń ${option.name}`}
-          className="grid h-6 w-6 shrink-0 place-items-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+          className="grid h-6 w-6 shrink-0 place-items-center rounded-[6px] text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
         >
           <X size={11} />
         </button>
@@ -587,7 +604,7 @@ function ReorderableList({
       })();
 
   return (
-    <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1">
+    <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain">
       {visible.length === 0 && !adding && (
         <li className="px-2 py-3 text-center font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground/70">
           brak statusów

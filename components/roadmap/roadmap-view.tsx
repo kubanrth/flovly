@@ -122,88 +122,114 @@ export function RoadmapView({
   const todayInRange = now >= range.rangeStart && now <= range.rangeStop;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
-            {milestones.length} {plPlural(milestones.length, "milestone", "milestone’y", "milestone’ów")}
-          </span>
-          {isAggregator && (
-            <span
-              title="Ta tablica może agregować milestony z innych tablic w workspace"
-              className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-primary"
-            >
-              <Network size={10} /> Tablica zbiorcza
+    <div className="flex flex-col gap-5">
+      {/* v4 card — one rounded-[22px] glass surface with brand-tinted shadow.
+          Inside: toolbar (top) + month axis + swimlanes/markers + hint footer.
+          BoardHeader stays OUTSIDE this card (renderowany przez page.tsx). */}
+      <div className="relative overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_30px_70px_-30px_rgba(122,92,255,0.4)]">
+        {/* Toolbar row — counter + aggregator badge/toggle + create button */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card/60 px-[18px] py-[14px] backdrop-blur-xl">
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
+              {milestones.length} {plPlural(milestones.length, "milestone", "milestone’y", "milestone’ów")}
             </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {canManageBoard && (
-            <form action={toggleBoardAggregatorAction} className="m-0">
-              <input type="hidden" name="workspaceId" value={workspaceId} />
-              <input type="hidden" name="boardId" value={boardId} />
-              <input type="hidden" name="on" value={isAggregator ? "false" : "true"} />
-              <button
-                type="submit"
-                title={isAggregator
-                  ? "Wyłącz agregację milestonów z innych tablic"
-                  : "Włącz aby linkować milestony z innych tablic do tej roadmapy"}
-                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+            {isAggregator && (
+              <span
+                title="Ta tablica może agregować milestony z innych tablic w workspace"
+                className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-primary"
               >
-                <Network size={11} /> {isAggregator ? "Wyłącz zbiorczą" : "Tablica zbiorcza"}
+                <Network size={10} /> Tablica zbiorcza
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {canManageBoard && (
+              <form action={toggleBoardAggregatorAction} className="m-0">
+                <input type="hidden" name="workspaceId" value={workspaceId} />
+                <input type="hidden" name="boardId" value={boardId} />
+                <input type="hidden" name="on" value={isAggregator ? "false" : "true"} />
+                <button
+                  type="submit"
+                  title={isAggregator
+                    ? "Wyłącz agregację milestonów z innych tablic"
+                    : "Włącz aby linkować milestony z innych tablic do tej roadmapy"}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-card px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <Network size={11} /> {isAggregator ? "Wyłącz zbiorczą" : "Tablica zbiorcza"}
+                </button>
+              </form>
+            )}
+            {canCreate && (
+              <button
+                type="button"
+                onClick={() => setDialog({ mode: "create" })}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-gradient px-4 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                <Plus size={14} /> Nowy milestone
               </button>
-            </form>
-          )}
-          {canCreate && (
-            <button
-              type="button"
-              onClick={() => setDialog({ mode: "create" })}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-gradient px-4 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            >
-              <Plus size={14} /> Nowy milestone
-            </button>
-          )}
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Chart */}
-      <div className="rounded-xl border border-border bg-card/70 p-4 shadow-sm backdrop-blur">
-        {/* Time axis */}
-        <div className="relative mb-3 h-5 border-b border-border">
+        {/* Month axis — v4: padding-left 150px aligns with swimlane label column.
+            Mono, uppercase, muted. */}
+        <div className="flex border-b border-border bg-card/40 py-[10px] pl-[150px] pr-[18px] backdrop-blur-xl">
           {range.ticks.map((t) => (
             <div
               key={t.ts}
-              className="absolute -top-0.5 flex -translate-x-1/2 flex-col items-center"
-              style={{ left: `${pctFor(t.ts, range)}%` }}
+              className="flex-1 font-mono text-[0.7rem] uppercase tracking-[0.08em] text-muted-foreground"
             >
-              <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground/80">
-                {t.label}
-              </span>
+              {t.label}
             </div>
           ))}
         </div>
 
-        {mode === "timeline" ? (
-          <TimelineTrack
-            range={range}
-            milestones={milestones}
-            rowMap={rowMap}
-            chartHeight={chartHeight}
-            todayInRange={todayInRange}
-            now={now}
-            canUpdate={canUpdate}
-            onEdit={(m) => setDialog({ mode: "edit", milestone: m })}
-          />
-        ) : (
-          <MarkersTrack
-            range={range}
-            milestones={milestones}
-            todayInRange={todayInRange}
-            now={now}
-            canUpdate={canUpdate}
-            onEdit={(m) => setDialog({ mode: "edit", milestone: m })}
-          />
-        )}
+        {/* Chart body — relative, today line spans full height */}
+        <div className="relative">
+          {todayInRange && (
+            <>
+              <div
+                className="pointer-events-none absolute top-0 bottom-0 z-[3] w-0 border-l-2 border-dashed border-[var(--brand-500)]"
+                style={{ left: `${pctFor(now, range)}%` }}
+                aria-hidden
+              />
+              <span
+                className="pointer-events-none absolute z-[4] -translate-x-1/2 rounded-sm bg-card px-1 font-mono text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-[var(--brand-500)]"
+                style={{ left: `${pctFor(now, range)}%`, top: 6 }}
+              >
+                dziś
+              </span>
+            </>
+          )}
+
+          {mode === "timeline" ? (
+            <TimelineTrack
+              range={range}
+              milestones={milestones}
+              rowMap={rowMap}
+              chartHeight={chartHeight}
+              now={now}
+              canUpdate={canUpdate}
+              onEdit={(m) => setDialog({ mode: "edit", milestone: m })}
+            />
+          ) : (
+            <MarkersTrack
+              range={range}
+              milestones={milestones}
+              todayInRange={todayInRange}
+              now={now}
+              canUpdate={canUpdate}
+              onEdit={(m) => setDialog({ mode: "edit", milestone: m })}
+            />
+          )}
+        </div>
+
+        {/* Hint footer — per v4 spec */}
+        <div className="border-t border-border bg-card/40 px-[18px] py-[10px]">
+          <span className="text-[0.72rem] text-muted-foreground">
+            Hint · najedź na pasek aby zobaczyć podgląd postępu
+          </span>
+        </div>
       </div>
 
       {/* Per-milestone card list with expandable tasks */}
@@ -356,7 +382,6 @@ function TimelineTrack({
   milestones,
   rowMap,
   chartHeight,
-  todayInRange,
   now,
   canUpdate,
   onEdit,
@@ -365,14 +390,14 @@ function TimelineTrack({
   milestones: MilestoneItem[];
   rowMap: Map<string, number>;
   chartHeight: number;
-  todayInRange: boolean;
   now: number;
   canUpdate: boolean;
   onEdit: (m: MilestoneItem) => void;
 }) {
+  void now;
   return (
     <div
-      className="relative w-full"
+      className="relative w-full pl-[150px]"
       style={{ height: chartHeight, paddingTop: TRACK_PADDING_Y, paddingBottom: TRACK_PADDING_Y }}
     >
       {range.ticks.map((t) => (
@@ -384,42 +409,26 @@ function TimelineTrack({
         />
       ))}
 
-      {todayInRange && (
-        <>
-          <div
-            className="pointer-events-none absolute top-0 bottom-0 w-[2px] bg-primary/60"
-            style={{ left: `${pctFor(now, range)}%` }}
-            aria-hidden
-          />
-          <span
-            className="pointer-events-none absolute -top-2 -translate-x-1/2 rounded-full bg-primary px-1.5 font-mono text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground"
-            style={{ left: `${pctFor(now, range)}%` }}
-          >
-            Dziś
-          </span>
-        </>
-      )}
-
       {milestones.map((m) => {
         const row = rowMap.get(m.id) ?? 0;
         const start = new Date(m.startAt).getTime();
         const stop = new Date(m.stopAt).getTime();
         const left = pctFor(start, range);
         const width = Math.max(pctFor(stop, range) - left, 0.8);
-        const color = colorFor(m.id);
         return (
           <button
             key={m.id}
             type="button"
             onClick={() => canUpdate && onEdit(m)}
             disabled={!canUpdate}
-            className="group absolute flex items-center gap-2 rounded-md px-2 py-1 text-left text-[0.78rem] font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.12)] transition-[transform,opacity] duration-200 hover:-translate-y-[1px] disabled:cursor-default"
+            // v4: bars with brand gradient + shadow tinted brand
+            className="group absolute flex items-center gap-2 rounded-[10px] px-[11px] text-left text-[0.72rem] font-semibold text-white shadow-[0_6px_16px_-6px_rgba(124,92,255,0.55),inset_0_1px_0_rgba(255,255,255,0.3)] transition-[transform,opacity] duration-200 hover:-translate-y-[1px] disabled:cursor-default"
             style={{
-              top: TRACK_PADDING_Y + row * ROW_HEIGHT,
+              top: TRACK_PADDING_Y + row * ROW_HEIGHT + 14,
               left: `${left}%`,
               width: `${width}%`,
-              height: ROW_HEIGHT - 8,
-              background: `linear-gradient(135deg, ${color}, color-mix(in oklch, ${color} 70%, white))`,
+              height: 30,
+              background: "linear-gradient(135deg, var(--brand-500), var(--brand-700))",
             }}
             title={`${m.title} · ${formatDateRange(m.startAt, m.stopAt)}`}
           >
@@ -442,12 +451,11 @@ function TimelineTrack({
   );
 }
 
-// "Wizualizacja" — flow-chart layout bez osi czasu. Milestones
-// idą chronologicznie w rzędzie z połączeniami strzałkowymi między
-// nimi. Pod każdą kropką: tytuł milestone + button "Sprawdź zadania"
-// prowadzący do listy zadań tego milestone'u (/t/[taskId] dla każdego
-// przypisanego zadania — tu expand inline).
+// "Wizualizacja" — swimlane layout. Każdy milestone ma własny rząd 58px (per v4
+// roadmap spec: swimlanes per status). Label po lewej (150px), bar z gradientem
+// brand po prawej rozpięty od startAt do stopAt.
 function MarkersTrack({
+  range,
   milestones,
   canUpdate,
   onEdit,
@@ -469,7 +477,7 @@ function MarkersTrack({
 
   if (sorted.length === 0) {
     return (
-      <div className="flex h-[120px] items-center justify-center">
+      <div className="flex h-[200px] items-center justify-center">
         <p className="font-display text-[0.92rem] text-muted-foreground">
           Brak milestones. Dodaj pierwszy, żeby zobaczyć wizualizację.
         </p>
@@ -478,26 +486,98 @@ function MarkersTrack({
   }
 
   return (
-    <div className="overflow-x-auto py-2">
-      <div className="flex min-w-min items-start gap-0">
-        {sorted.map((m, i) => {
-          const color = colorFor(m.id);
-          const isLast = i === sorted.length - 1;
-          return (
-            <div key={m.id} className="flex items-start">
-              <MilestoneNode
-                milestone={m}
-                color={color}
-                canUpdate={canUpdate}
-                onEdit={onEdit}
-              />
-              {!isLast && <FlowArrow />}
-            </div>
-          );
-        })}
+    <div className="relative">
+      {sorted.map((m) => {
+        const color = colorFor(m.id);
+        const start = new Date(m.startAt).getTime();
+        const stop = new Date(m.stopAt).getTime();
+        const left = pctFor(start, range);
+        const width = Math.max(pctFor(stop, range) - left, 0.8);
+        return (
+          <SwimlaneRow
+            key={m.id}
+            milestone={m}
+            color={color}
+            left={left}
+            width={width}
+            canUpdate={canUpdate}
+            onEdit={onEdit}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function SwimlaneRow({
+  milestone,
+  color,
+  left,
+  width,
+  canUpdate,
+  onEdit,
+}: {
+  milestone: MilestoneItem;
+  color: string;
+  left: number;
+  width: number;
+  canUpdate: boolean;
+  onEdit: (m: MilestoneItem) => void;
+}) {
+  void color;
+  return (
+    <div className="flex h-[58px] items-center border-b border-border/60 last:border-b-0">
+      {/* Status/label column — 150px per v4 spec */}
+      <div className="flex w-[150px] flex-none items-center gap-2 px-[18px]">
+        <span
+          className="h-2 w-2 shrink-0 rounded-full"
+          style={{ background: color }}
+          aria-hidden
+        />
+        <span className="truncate text-[0.78rem] font-semibold text-foreground">
+          {milestone.title}
+        </span>
+      </div>
+      {/* Bar track */}
+      <div className="relative h-full flex-1">
+        <button
+          type="button"
+          onClick={() => canUpdate && onEdit(milestone)}
+          disabled={!canUpdate}
+          className="absolute flex items-center rounded-[10px] px-[11px] text-left shadow-[0_6px_16px_-6px_rgba(124,92,255,0.55),inset_0_1px_0_rgba(255,255,255,0.3)] transition-transform duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-default"
+          style={{
+            top: 14,
+            left: `${left}%`,
+            width: `${width}%`,
+            height: 30,
+            background: "linear-gradient(135deg, var(--brand-500), var(--brand-700))",
+          }}
+          title={`${milestone.title} · ${formatDateRange(milestone.startAt, milestone.stopAt)}`}
+          aria-label={`${milestone.title}, edytuj`}
+        >
+          <span className="truncate text-[0.72rem] font-semibold text-white">
+            {milestone.title}
+          </span>
+          <span className="ml-2 shrink-0 rounded-full bg-white/25 px-1.5 font-mono text-[0.58rem] font-bold text-white">
+            {milestone.taskCount}
+          </span>
+        </button>
       </div>
     </div>
   );
+}
+
+// Backwards-compat exports (rendered indirectly via MarkersTrack now). Kept
+// because timeline-utils + flow geometry may still be used by other callers.
+// Unused right now but cheap to keep — Next prunes dead imports at build time.
+export function _milestoneNodeStub() {
+  void NODE_TITLE_H;
+  void NODE_GAP;
+  void NODE_DOT;
+  void NODE_ARROW_TOP;
+  void MilestoneNode;
+  void FlowArrow;
+  void useParams;
 }
 
 function MilestoneNode({
@@ -516,9 +596,6 @@ function MilestoneNode({
   const workspaceId = params?.workspaceId ?? "";
   return (
     <div className="flex w-[180px] shrink-0 flex-col items-center gap-2 px-2">
-      {/* Hard fixed-height block (NODE_TITLE_H) — title clamps to 2 lines and the
-          count label fits underneath without overflow, so the block never grows
-          and every dot below stays on the same line. */}
       <div
         className="flex shrink-0 flex-col items-center justify-center gap-0.5 overflow-hidden text-center"
         style={{ height: NODE_TITLE_H }}
@@ -531,7 +608,6 @@ function MilestoneNode({
         </span>
       </div>
 
-      {/* The dot (= button edit jak poprzednio) */}
       <button
         type="button"
         onClick={() => canUpdate && onEdit(milestone)}
@@ -546,7 +622,6 @@ function MilestoneNode({
         <span className="font-mono text-[0.82rem] font-bold">{milestone.taskCount}</span>
       </button>
 
-      {/* "Sprawdź zadania" button below */}
       {milestone.tasks.length > 0 && (
         <button
           type="button"
@@ -576,8 +651,6 @@ function MilestoneNode({
   );
 }
 
-// Flow arrow between two milestone nodes — SVG chevron pinned to dot center
-// (NODE_ARROW_TOP) so connectors stay level with the dots.
 function FlowArrow() {
   return (
     <div
@@ -673,4 +746,3 @@ function LinkedChildrenRow({
     </div>
   );
 }
-

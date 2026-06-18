@@ -437,21 +437,31 @@ export function BoardTable({
         minSize: 120,
         cell: (info) => {
           const row = info.row.original;
+          // v4 spec (linia 51): mono shortId 11px brand-light + title 13.5px
+          // white, gap 8, truncate. Brak displayId w schemacie — używamy
+          // ostatnich 4 znaków cuid jako wizualnego "tagu" wiersza (czysta
+          // dekoracja, żeby pasowało do v4 mockupu).
+          const shortId = row.id.slice(-4).toUpperCase();
           return (
             <div className="flex flex-col gap-1">
-              <Link
-                href={`/w/${workspaceId}/t/${row.id}`}
-                lang="pl"
-                // break-normal + hyphens-auto: zamiast łamać słowo w środku znaku
-                // (browser czasem chował "w" z "opisów" gdy cell był na granicy
-                // szerokości), wyraz wraps w całości albo dostaje miękki łącznik
-                // — co w pl wymaga lang="pl". text-pretty + pr-0.5 dorzucają
-                // budżet na ostatni glif (negatywne tracking + sub-pixel
-                // rounding obcinały ogonek 'ą' / 'ę' / 'ó').
-                className="block whitespace-normal break-normal hyphens-auto text-pretty pr-0.5 font-display text-[0.94rem] font-semibold leading-snug tracking-[-0.005em] transition-colors hover:text-primary"
-              >
-                {info.getValue()}
-              </Link>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-mono text-[11px] leading-none text-brand-300 dark:text-brand-300 shrink-0">
+                  {shortId}
+                </span>
+                <Link
+                  href={`/w/${workspaceId}/t/${row.id}`}
+                  lang="pl"
+                  // break-normal + hyphens-auto: zamiast łamać słowo w środku znaku
+                  // (browser czasem chował "w" z "opisów" gdy cell był na granicy
+                  // szerokości), wyraz wraps w całości albo dostaje miękki łącznik
+                  // — co w pl wymaga lang="pl". text-pretty + pr-0.5 dorzucają
+                  // budżet na ostatni glif (negatywne tracking + sub-pixel
+                  // rounding obcinały ogonek 'ą' / 'ę' / 'ó').
+                  className="block min-w-0 truncate whitespace-nowrap pr-0.5 font-display text-[13.5px] font-semibold leading-snug tracking-[-0.005em] text-foreground transition-colors hover:text-primary"
+                >
+                  {info.getValue()}
+                </Link>
+              </div>
               <TaskActivityHints
                 hasDescription={row.hasDescription}
                 commentCount={row.commentCount}
@@ -763,8 +773,10 @@ export function BoardTable({
         )}
       </div>
 
-      {/* v4 .tbl-wrap — kontener tabeli z brand-tinted cieniem, rounded-[22px] = 2xl+. */}
-      <div className="relative overflow-hidden rounded-[22px] border border-border/80 bg-card shadow-[0_4px_12px_-4px_rgba(122,51,236,0.08),0_24px_56px_-24px_rgba(122,51,236,0.22)]">
+      {/* v4 spec (linie 39): rounded-22px, glass surface bg, brand-tinted shadow
+          `0 30px 70px -30px rgba(122,51,236,.4)` + delikatny inset highlight.
+          Border: rgba(255,255,255,.06) w dark, n-200 w light. */}
+      <div className="relative overflow-hidden rounded-[22px] border border-border/60 bg-card/95 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4),inset_0_1px_0_rgba(255,255,255,0.04)] dark:bg-white/[0.02] dark:backdrop-blur-xl">
         <div className="overflow-x-auto">
           <table
             ref={tableRef}
@@ -832,11 +844,14 @@ export function BoardTable({
                 );
                 const checkboxOffset = canEdit ? 44 : 0;
                 return (
-                  <tr key={hg.id} className="border-b border-border/70 bg-muted/30">
+                  // v4 spec (linia 40): glass bg + backdrop-blur(30px) saturate(160%),
+                  // border-bottom hairline. Higher saturate niż reszta sticky elementów
+                  // — header ma się czuć jak osobna warstwa "frosted glass".
+                  <tr key={hg.id} className="border-b border-border/60 bg-white/[0.03] backdrop-blur-[30px] backdrop-saturate-[160%] dark:bg-white/[0.04]">
                     {canEdit && (
                       // Sticky pinning disabled on mobile (max-md:!static) — couldn't scroll past pinned columns.
                       <th
-                        className="sticky left-0 top-0 z-30 h-11 w-11 bg-muted/95 px-3 shadow-[1px_0_0_0_var(--border)] backdrop-blur-sm max-md:!static max-md:!shadow-none max-md:!backdrop-blur-none"
+                        className="sticky left-0 top-0 z-30 h-11 w-11 bg-white/[0.04] px-3 shadow-[1px_0_0_0_var(--border)] backdrop-blur-[30px] backdrop-saturate-[160%] dark:bg-white/[0.05] max-md:!static max-md:!shadow-none max-md:!backdrop-blur-none"
                         // F12-K76: hint o shift+click range select — najczęstszy
                         // bulk-action UX, ale wymaga discovery.
                         title="Klik = zaznacz wszystkie. Klik + Shift na innym wierszu = zakres."
@@ -891,10 +906,18 @@ export function BoardTable({
                       return (
                         <th
                           key={header.id}
-                          className={`group/th relative sticky top-0 h-11 px-4 text-left font-mono text-[0.66rem] font-bold uppercase tracking-[0.08em] text-muted-foreground/90 ${
+                          // v4 spec (linia 40): font-size 11px, font-weight 700,
+                          // tracking 0.03em, uppercase, color faint.
+                          // Active sort column → brand-light tint + arrow (handled
+                          // w TableHeaderCell, ten div tylko hostuje).
+                          className={`group/th relative sticky top-0 h-11 px-[18px] text-left font-mono text-[0.69rem] font-bold uppercase tracking-[0.03em] ${
+                            sortDir
+                              ? "text-brand-300 dark:text-brand-300"
+                              : "text-muted-foreground/80"
+                          } ${
                             isPinned
-                              ? "z-20 bg-muted/95 shadow-[1px_0_0_0_var(--border)] backdrop-blur-sm max-md:!static max-md:!bg-transparent max-md:!shadow-none max-md:!backdrop-blur-none"
-                              : "bg-muted/30 backdrop-blur-sm"
+                              ? "z-20 bg-white/[0.04] shadow-[1px_0_0_0_var(--border)] backdrop-blur-[30px] backdrop-saturate-[160%] dark:bg-white/[0.05] max-md:!static max-md:!bg-transparent max-md:!shadow-none max-md:!backdrop-blur-none"
+                              : "bg-transparent"
                           }`}
                           style={{
                             width: header.getSize(),
@@ -984,7 +1007,7 @@ export function BoardTable({
                       );
                     })}
                     {canManagePrefs && (
-                      <th className="sticky top-0 h-11 w-12 bg-muted/30 px-2 text-left font-mono text-[0.66rem] font-bold uppercase tracking-[0.08em] text-muted-foreground/90 backdrop-blur-sm">
+                      <th className="sticky top-0 h-11 w-12 bg-transparent px-2 text-left font-mono text-[0.69rem] font-bold uppercase tracking-[0.03em] text-muted-foreground/80">
                         <AddColumnButton workspaceId={workspaceId} boardId={boardId} />
                       </th>
                     )}
@@ -1099,7 +1122,9 @@ export function BoardTable({
                                     data-col={cIdx}
                                     tabIndex={0}
                                     onFocus={() => setActiveCell({ row: visibleRowIdx, col: cIdx })}
-                                    className={`px-4 py-3 align-middle outline-none transition-colors ${
+                                    // v4 spec (linia 47): padding 10/18 + border-bottom hairline.
+                                    // Border line jest na <tr>, tu mamy padding + sticky bg dla pinned.
+                                    className={`px-[18px] py-[10px] align-middle outline-none transition-colors ${
                                       isPinned
                                         ? "sticky z-10 bg-card shadow-[1px_0_0_0_var(--border)] max-md:!static max-md:!bg-transparent max-md:!shadow-none"
                                         : ""
@@ -1135,18 +1160,19 @@ export function BoardTable({
             </tbody>
           </table>
         </div>
-        {/* v4 .tbl-foot — licznik z lewej, hint z <kbd> z prawej. */}
-        <div className="flex items-center justify-between border-t border-border/70 bg-muted/20 px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.1em] text-muted-foreground">
-          <span>
+        {/* v4 .tbl-foot (linia 71): padding 10/18, border-top hairline, glass tło.
+            Hint copy 11.5px, kolor hintc (faint). <kbd> w mono z chip background. */}
+        <div className="flex items-center justify-between gap-3 border-t border-border/50 bg-white/[0.02] px-[18px] py-[10px] dark:bg-white/[0.015]">
+          <span className="font-mono text-[0.66rem] uppercase tracking-[0.1em] text-muted-foreground">
             <strong className="font-semibold text-foreground/80">{tasks.length}</strong>{" "}
             {taskPl(tasks.length)}
           </span>
-          <span className="max-md:hidden normal-case tracking-normal text-[0.72rem] font-sans">
-            Najedź na zadanie i wciśnij{" "}
-            <kbd className="ml-0.5 inline-flex items-center rounded-md border border-border/80 bg-muted px-1.5 py-0.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.05em] text-foreground/80 shadow-[0_1px_0_0_var(--border)]">
+          <span className="text-[11.5px] text-muted-foreground/80 max-md:hidden">
+            Hint · najedź na zadanie i wciśnij{" "}
+            <kbd className="mx-0.5 inline-flex items-center rounded-[5px] bg-white/[0.06] px-1.5 py-[1px] font-mono text-[11px] font-semibold text-foreground/80">
               M
             </kbd>{" "}
-            aby przypisać osobę
+            aby przypisać
           </span>
         </div>
       </div>
@@ -1231,12 +1257,15 @@ function BulkActionsBar({
 
   if (typeof document === "undefined") return null;
   return createPortal(
-    // v4 bulk toolbar — floating pill na dole, mocny cień + backdrop-blur.
-    <div className="fixed bottom-6 left-1/2 z-50 flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-3 rounded-2xl border border-border/70 bg-popover/95 px-4 py-2.5 shadow-[0_18px_50px_-12px_rgba(122,51,236,0.35)] backdrop-blur-md">
-      <span className="font-mono text-[0.66rem] uppercase tracking-[0.1em] text-muted-foreground">
-        Zaznaczone: <strong className="font-bold text-foreground">{selectedIds.length}</strong>
+    // v4 bulk toolbar (linia 62): rounded-[14px], padding 9/15, gap 12, glass
+    // backdrop-blur(30px) + brand-tinted shadow `0 16px 36px -16px rgba(0,0,0,.6)`.
+    // Counter badge to mała kwadratowa pill 22x22 z brand-gradient.
+    <div className="fixed bottom-6 left-1/2 z-50 flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-3 rounded-[14px] border border-white/10 bg-popover/85 px-[15px] py-[9px] shadow-[0_16px_36px_-16px_rgba(0,0,0,0.6),0_30px_70px_-30px_rgba(122,51,236,0.4)] backdrop-blur-[30px] backdrop-saturate-[160%]">
+      <span className="inline-flex h-[22px] w-[22px] items-center justify-center rounded-[7px] bg-brand-gradient text-[11px] font-bold text-white">
+        {selectedIds.length}
       </span>
-      <span className="h-4 w-px bg-border" />
+      <span className="text-[12.5px] font-semibold text-foreground">zaznaczone</span>
+      <span className="h-4 w-px bg-white/15" />
 
       {/* Zmień status */}
       <div className="relative">
@@ -1377,7 +1406,7 @@ function BulkActionsBar({
         )}
       </div>
 
-      <span className="h-4 w-px bg-border" />
+      <span className="h-4 w-px bg-white/15" />
       <button
         type="button"
         onClick={submitDelete}
@@ -1396,7 +1425,7 @@ function BulkActionsBar({
         </svg>
         Usuń
       </button>
-      <span className="h-4 w-px bg-border" />
+      <span className="h-4 w-px bg-white/15" />
       <button
         type="button"
         onClick={onClear}
@@ -1515,16 +1544,18 @@ function GroupBucket({
   const accent = color ?? "var(--muted-foreground)";
   return (
     <>
-      {/* v4 group header — caret + color dot + label + count badge */}
-      <tr className="bg-muted/40">
-        <td colSpan={columnCount} className="px-4 py-2.5">
+      {/* v4 group header (linia 45): padding 9/18, ChevronDown 12px, dot 9x9,
+          name 12.5/700, count pill bg rgba(255,255,255,.06) radius 999.
+          Sub-row sticky-ish vibe: lekkie tło dla rozróżnienia bucketów. */}
+      <tr className="bg-white/[0.03] dark:bg-white/[0.025]">
+        <td colSpan={columnCount} className="px-[18px] py-[9px]">
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
-            className="inline-flex items-center gap-2.5 text-left transition-opacity hover:opacity-80"
+            className="inline-flex items-center gap-[9px] text-left transition-opacity hover:opacity-80"
           >
             <span
-              className="grid h-4 w-4 place-items-center text-muted-foreground transition-transform"
+              className="grid h-3 w-3 place-items-center text-muted-foreground transition-transform"
               style={{ transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}
               aria-hidden="true"
             >
@@ -1533,13 +1564,13 @@ function GroupBucket({
               </svg>
             </span>
             <span
-              className="h-2.5 w-2.5 rounded-full shadow-[0_0_0_2px_var(--card)]"
+              className="h-[9px] w-[9px] rounded-full"
               style={{ background: accent }}
             />
-            <span className="font-display text-[0.86rem] font-bold tracking-[-0.005em] text-foreground">
+            <span className="text-[12.5px] font-bold leading-none text-foreground">
               {label || "—"}
             </span>
-            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+            <span className="inline-flex items-center rounded-full bg-white/[0.06] px-[7px] py-[1px] text-[11px] font-medium text-muted-foreground">
               {count}
             </span>
           </button>

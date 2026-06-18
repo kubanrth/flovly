@@ -1,9 +1,24 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ChevronsUpDown, GripVertical, Plus } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown,
+  Columns3,
+  GripVertical,
+  Plus,
+} from "lucide-react";
 import { createTaskAction } from "@/app/(app)/w/[workspaceId]/t/actions";
 import {
   createStatusColumnAction,
@@ -11,6 +26,7 @@ import {
 } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
 import { PRESET_COLORS } from "@/components/table/status-column-manager";
 import { TaskActivityHints } from "@/components/task/task-activity-hints";
+import { PRIORITY_META } from "@/lib/task-priority";
 import {
   DndContext,
   DragOverlay,
@@ -40,7 +56,6 @@ import {
   useAssignHotkey,
   type AssignMember,
 } from "@/components/task/assign-hotkey";
-import { PriorityBadge } from "@/components/task/priority-badge";
 import type { TaskPriorityValue } from "@/lib/task-priority";
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -283,6 +298,31 @@ export function KanbanBoard({
     renderColumns.push({ id: NO_STATUS, column: null });
   }
 
+  // v4 internal header — "+ Zadanie" gradient button triggers the first
+  // column's inline-add. Each InlineAddTask registers its opener via this
+  // ref-of-callbacks map, keyed by column id. "Kolumny" ghost button scrolls
+  // the column rail to the end so the AddKanbanColumnButton trigger is in view.
+  const railRef = useRef<HTMLDivElement>(null);
+  const openersRef = useRef<Map<string, () => void>>(new Map());
+  const registerOpener = useCallback(
+    (colId: string, opener: (() => void) | null) => {
+      if (opener) openersRef.current.set(colId, opener);
+      else openersRef.current.delete(colId);
+    },
+    [],
+  );
+  const firstAddableColId = renderColumns.find((rc) => rc.id !== NO_STATUS)?.id ?? null;
+  const handleHeaderAddTask = () => {
+    if (!firstAddableColId) return;
+    const opener = openersRef.current.get(firstAddableColId);
+    opener?.();
+  };
+  const handleHeaderColumns = () => {
+    const rail = railRef.current;
+    if (!rail) return;
+    rail.scrollTo({ left: rail.scrollWidth, behavior: "smooth" });
+  };
+
   return (
     <DndContext
       sensors={sensors}
@@ -295,40 +335,93 @@ export function KanbanBoard({
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
     >
-      {/* v4: horizontal flex z scroll-snap na mobile dla swipe między kolumnami.
-          gap-3 mobile / gap-3.5 desktop trzyma się referencji (13px gap). */}
-      <div
-        className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:snap-none md:gap-3.5 md:px-0"
-      >
-        {renderColumns.map(({ id, column }) => {
-          const colTasks = columns.get(id) ?? [];
-          // NO_STATUS is virtual (not in DB) — exclude from reorder.
-          const realColumns = renderColumns.filter((rc) => rc.id !== NO_STATUS);
-          const realIdx = realColumns.findIndex((rc) => rc.id === id);
-          return (
-            <Column
-              key={id}
-              id={id}
-              column={column}
-              tasks={colTasks}
-              workspaceId={workspaceId}
-              boardId={boardId}
-              canReorder={canManageBoard && id !== NO_STATUS}
-              isFirstReal={realIdx === 0}
-              isLastReal={realIdx === realColumns.length - 1}
-              realColumnIds={realColumns.map((rc) => rc.id)}
-              getHotkeyProps={(t) =>
-                assign.rowProps(
-                  t.id,
-                  t.assignees.map((a) => a.id),
-                )
-              }
+      {/* v4: Kontener kanbanu = jedna karta glass rounded-[22px] z brand-tinted
+          shadow. Wewnątrz: internal header + rail kolumn.
+          BoardHeader pozostaje NA ZEWNĄTRZ tej karty — to jest osobny element. */}
+      <div className="relative overflow-hidden rounded-[22px] border border-border/60 bg-card/60 shadow-aura backdrop-blur-md dark:border-white/[0.07] dark:bg-white/[0.04]">
+        {/* INTERNAL HEADER — v4 calendar-style row: title eyebrow left,
+            actions right ("Kolumny" ghost + "+ Zadanie" gradient). */}
+        <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-white/[0.02] px-4 py-3 dark:border-white/[0.06] dark:bg-white/[0.02]">
+          <div className="flex items-center gap-2 min-w-0">
+            <span
+              className="h-2 w-2 shrink-0 rounded-full bg-brand-gradient"
+              aria-hidden
             />
-          );
-        })}
-        {canManageBoard && (
-          <AddKanbanColumnButton workspaceId={workspaceId} boardId={boardId} />
-        )}
+            <span className="truncate font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">
+              Workspace · Kanban
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {canManageBoard && (
+              <button
+                type="button"
+                onClick={handleHeaderColumns}
+                className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border/60 bg-transparent px-2.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/40 hover:bg-white/[0.04] hover:text-foreground dark:border-white/[0.10] dark:hover:bg-white/[0.04]"
+                aria-label="Przewiń do zarządzania kolumnami"
+              >
+                <Columns3 size={12} strokeWidth={2} />
+                <span>Kolumny</span>
+              </button>
+            )}
+            {firstAddableColId && (
+              <button
+                type="button"
+                onClick={handleHeaderAddTask}
+                className="inline-flex h-7 items-center gap-1.5 rounded-md bg-brand-gradient px-2.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-white shadow-brand transition-opacity hover:opacity-95"
+                aria-label="Dodaj zadanie do pierwszej kolumny"
+              >
+                <Plus size={12} strokeWidth={2.4} />
+                <span>Zadanie</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* RAIL — horizontal flex z scroll-snap na mobile dla swipe między
+            kolumnami. gap-3 mobile / gap-3.5 desktop trzyma się referencji
+            (13px gap). Padding wewnątrz karty (16px = p-4). */}
+        <div
+          ref={railRef}
+          className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 pt-4 md:snap-none md:gap-3.5"
+        >
+          {renderColumns.map(({ id, column }) => {
+            const colTasks = columns.get(id) ?? [];
+            // NO_STATUS is virtual (not in DB) — exclude from reorder.
+            const realColumns = renderColumns.filter((rc) => rc.id !== NO_STATUS);
+            const realIdx = realColumns.findIndex((rc) => rc.id === id);
+            return (
+              <Column
+                key={id}
+                id={id}
+                column={column}
+                tasks={colTasks}
+                workspaceId={workspaceId}
+                boardId={boardId}
+                canReorder={canManageBoard && id !== NO_STATUS}
+                isFirstReal={realIdx === 0}
+                isLastReal={realIdx === realColumns.length - 1}
+                realColumnIds={realColumns.map((rc) => rc.id)}
+                registerOpener={registerOpener}
+                getHotkeyProps={(t) =>
+                  assign.rowProps(
+                    t.id,
+                    t.assignees.map((a) => a.id),
+                  )
+                }
+              />
+            );
+          })}
+          {canManageBoard && (
+            <AddKanbanColumnButton workspaceId={workspaceId} boardId={boardId} />
+          )}
+        </div>
+
+        {/* FOOTER hint — jak w v4 referencji każda board-view karta ma hint. */}
+        <div className="border-t border-border/60 bg-white/[0.02] px-4 py-2.5 dark:border-white/[0.06] dark:bg-white/[0.02]">
+          <span className="font-mono text-[0.66rem] text-muted-foreground/70">
+            Hint · przeciągnij kartę między kolumnami aby zmienić status
+          </span>
+        </div>
       </div>
       {/* Portal DragOverlay pod document.body: DragOverlay używa position: fixed
           + transform translate3d() do śledzenia kursora, ale `position: fixed`
@@ -365,6 +458,7 @@ function Column({
   isFirstReal,
   isLastReal,
   realColumnIds,
+  registerOpener,
   getHotkeyProps,
 }: {
   id: string;
@@ -376,6 +470,7 @@ function Column({
   isFirstReal?: boolean;
   isLastReal?: boolean;
   realColumnIds?: string[];
+  registerOpener?: (colId: string, opener: (() => void) | null) => void;
   getHotkeyProps?: (task: KanbanTask) => {
     onMouseEnter: () => void;
     onMouseLeave: () => void;
@@ -415,15 +510,10 @@ function Column({
   return (
     <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
       {/* v4: kolumna = glass surface, rounded-[15px] (z designu), border subtle.
-          flex-col z body który scrolluje samodzielnie (header sticky). */}
+          flex-col z body który scrolluje samodzielnie (header sticky).
+          Spec: bg-white/3 + border-white/7 + backdrop-blur. */}
       <div
-        className={`group/col flex ${COLUMN_W_BASE} ${COLUMN_W_MD} shrink-0 snap-start flex-col overflow-hidden rounded-[15px] border border-white/[0.08] bg-white/[0.03] backdrop-blur-md md:snap-none dark:border-white/[0.07] dark:bg-white/[0.03]`}
-        style={{
-          // Light mode override — w light surface jest jaśniejszy (rgba(255,255,255,.45))
-          // używamy CSS-only via :not(.dark) nie zadziała w Tailwind v4, więc inline custom
-          // property + selector dla utility .glass-surface. Tu używamy bezpośrednio
-          // klas — light bg/border ustawiamy w className wyżej przez dark: prefix wariant.
-        }}
+        className={`group/col flex ${COLUMN_W_BASE} ${COLUMN_W_MD} shrink-0 snap-start flex-col overflow-hidden rounded-[15px] border border-border/50 bg-white/[0.03] backdrop-blur-md md:snap-none dark:border-white/[0.07] dark:bg-white/[0.03]`}
       >
         {/* HEADER — sticky w obrębie kolumny.
             Layout: grip-icon (drag/reorder visual cue) + color-dot + nazwa (bold) +
@@ -501,12 +591,19 @@ function Column({
                 Upuść tutaj
               </div>
             )}
-            {/* INLINE ADD TASK — render po liście, na końcu body. */}
+            {/* INLINE ADD TASK — render po liście, na końcu body.
+                Pierwsza kolumna rejestruje swój opener pod registerOpener —
+                header "+ Zadanie" wywoła go aby otworzyć editor. */}
             {canAddInline && (
               <InlineAddTask
                 workspaceId={workspaceId}
                 boardId={boardId}
                 statusColumnId={id}
+                registerOpener={
+                  isFirstReal && registerOpener
+                    ? (open) => registerOpener(id, open)
+                    : undefined
+                }
               />
             )}
           </div>
@@ -544,13 +641,22 @@ function InlineAddTask({
   workspaceId,
   boardId,
   statusColumnId,
+  registerOpener,
 }: {
   workspaceId: string;
   boardId: string;
   statusColumnId: string;
+  registerOpener?: (open: (() => void) | null) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState("");
+  // Pierwsza kolumna rejestruje swój opener — header "+ Zadanie" wywoła go.
+  useEffect(() => {
+    if (!registerOpener) return;
+    const open = () => setEditing(true);
+    registerOpener(open);
+    return () => registerOpener(null);
+  }, [registerOpener]);
   const submit = () => {
     const trimmed = title.trim();
     if (!trimmed) {
@@ -569,13 +675,13 @@ function InlineAddTask({
     });
   };
   if (!editing) {
-    // v4: ghost button, padding 9px 11px, rounded-xl (11px),
-    // muted text, hover -> foreground + subtle bg tint.
+    // v4: "+ Nowe zadanie" ghost row na dnie kolumny.
+    // gap-2 px-3 py-2 muted, hover brand-light (primary tint).
     return (
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className="mt-1 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-left text-[0.78rem] font-medium text-muted-foreground transition-colors hover:bg-white/[0.04] hover:text-foreground dark:hover:bg-white/[0.04]"
+        className="mt-1 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-left text-[0.78rem] font-medium text-muted-foreground transition-colors hover:bg-primary/[0.08] hover:text-primary dark:hover:bg-primary/[0.10]"
       >
         <Plus size={14} strokeWidth={2} />
         <span>Nowe zadanie</span>
@@ -687,14 +793,20 @@ function CardShell({
     onMouseLeave: () => void;
   };
 }) {
-  // Sprawdź czy zadanie jest po deadline (stopAt < dziś) — kolor pill date.
-  const isOverdue = useMemo(() => {
-    if (!task.stopAt) return false;
+  // v4: due pill ma 3 stany — overdue/today/future. Każdy własna paleta.
+  const dueState = useMemo<"overdue" | "today" | "future" | null>(() => {
+    if (!task.stopAt) return null;
     const stop = new Date(task.stopAt);
+    stop.setHours(0, 0, 0, 0);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return stop < today;
+    if (stop.getTime() < today.getTime()) return "overdue";
+    if (stop.getTime() === today.getTime()) return "today";
+    return "future";
   }, [task.stopAt]);
+
+  // v4: priorytet → 7x7 kropka kolorowa obok tytułu. Reuse PRIORITY_META.dotColor.
+  const priorityDot = task.priority !== "NONE" ? PRIORITY_META[task.priority].dotColor : null;
 
   const extraAssignees = Math.max(0, task.assignees.length - 3);
 
@@ -702,10 +814,12 @@ function CardShell({
     <article
       {...(hotkeyProps ?? {})}
       className={[
-        // v4: rounded-xl (13px), border subtle, bg-card, p-3.
+        // v4: rounded-[13px], glass surface (bg-white/5, border-white/10),
+        // p-3. Light mode override przez non-dark fallback z bg-card.
         "group/card flex cursor-grab flex-col gap-2 rounded-[13px] border border-border/60 bg-card p-3",
-        // v4: shadow 8px 18px -10px (low-opacity drop shadow, jak w referencji).
-        "shadow-[0_8px_18px_-10px_rgba(46,19,52,0.12)] dark:shadow-[0_8px_18px_-10px_rgba(0,0,0,0.6)] dark:border-white/[0.10] dark:bg-white/[0.05]",
+        "dark:border-white/[0.10] dark:bg-white/[0.05]",
+        // v4: shadow 0 8px 18px -10px black (low-opacity drop shadow, jak w referencji).
+        "shadow-[0_8px_18px_-10px_rgba(46,19,52,0.12)] dark:shadow-[0_8px_18px_-10px_rgba(0,0,0,0.5)]",
         // Hover: translate-y i glow (tylko transform + box-shadow — żadnego transition-all).
         "transition-[transform,box-shadow,border-color] duration-200 ease-out",
         "hover:-translate-y-px hover:border-primary/30 hover:shadow-[0_12px_26px_-10px_rgba(124,92,255,0.28)] dark:hover:border-primary/40",
@@ -736,26 +850,28 @@ function CardShell({
         </div>
       )}
 
-      {/* ROW 2 — PRIORITY BADGE (jeśli != NONE).
-          F12-K75: PriorityBadge to reusable komponent — ZACHOWANY. */}
-      {task.priority !== "NONE" && (
-        <div className="flex items-center">
-          <PriorityBadge priority={task.priority} size="xs" />
-        </div>
-      )}
-
-      {/* ROW 3 — TITLE.
+      {/* ROW 2 — TITLE z inline priority dot 7x7 z LEWEJ (v4 mid row).
           line-clamp-3 z designu (3 linie max, potem ellipsis).
           hyphens-auto + lang="pl" → soft hyphen na polskich wyrazach przed
           break-words. hover:text-primary jak link standard. */}
-      <Link
-        href={`/w/${workspaceId}/t/${task.id}`}
-        onPointerDown={(e) => e.stopPropagation()}
-        lang="pl"
-        className="font-display text-[0.86rem] font-semibold leading-snug tracking-[-0.005em] text-pretty break-words hyphens-auto text-foreground transition-colors hover:text-primary line-clamp-3 pr-0.5"
-      >
-        {task.title}
-      </Link>
+      <div className="flex items-start gap-2">
+        {priorityDot ? (
+          <span
+            className="mt-[5px] h-[7px] w-[7px] shrink-0 rounded-full"
+            style={{ background: priorityDot }}
+            aria-label={PRIORITY_META[task.priority].label}
+            title={PRIORITY_META[task.priority].label}
+          />
+        ) : null}
+        <Link
+          href={`/w/${workspaceId}/t/${task.id}`}
+          onPointerDown={(e) => e.stopPropagation()}
+          lang="pl"
+          className="font-display text-[0.81rem] font-semibold leading-snug tracking-[-0.005em] text-pretty break-words hyphens-auto text-foreground transition-colors hover:text-primary line-clamp-3 pr-0.5"
+        >
+          {task.title}
+        </Link>
+      </div>
 
       {/* ROW 4 — ACTIVITY HINTS (description, comments, subtasks, linked).
           ZACHOWANY komponent TaskActivityHints. */}
@@ -767,9 +883,10 @@ function CardShell({
         linkedCount={task.linkedCount}
       />
 
-      {/* ROW 5 — META row: avatars left, stopAt pill right. mt-auto żeby się
-          przyklejał do dołu karty (gdy treść różnej wysokości). */}
-      <div className="mt-auto flex items-center justify-between gap-2 pt-0.5">
+      {/* ROW 5 — META row: avatars left, stopAt pill right.
+          v4: margin-top 11px (mt-[11px]). mt-auto utrzymuje pin do dołu
+          gdy karty mają różną wysokość — łączymy oba. */}
+      <div className="mt-auto flex items-center justify-between gap-2 pt-[3px]">
         {task.assignees.length > 0 ? (
           <div className="flex items-center -space-x-1.5">
             {task.assignees.slice(0, 3).map((a) => (
@@ -798,13 +915,16 @@ function CardShell({
         ) : (
           <span />
         )}
-        {task.stopAt && (
+        {task.stopAt && dueState && (
           <span
             className={[
+              // v4: rounded-full px-2 py-0.5, 3-state palette.
               "inline-flex items-center rounded-full px-2 py-0.5 font-mono text-[0.65rem] font-semibold uppercase tabular-nums tracking-[0.04em]",
-              isOverdue
+              dueState === "overdue"
                 ? "bg-rose-500/15 text-rose-500 dark:bg-rose-400/15 dark:text-rose-300"
-                : "bg-white/[0.06] text-muted-foreground dark:bg-white/[0.06]",
+                : dueState === "today"
+                  ? "bg-amber-500/15 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300"
+                  : "bg-primary/[0.10] text-primary dark:bg-primary/[0.14]",
             ].join(" ")}
           >
             {new Date(task.stopAt).toLocaleDateString("pl-PL", {

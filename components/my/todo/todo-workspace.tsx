@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Circle,
   Folder,
+  GripVertical,
   List as ListIcon,
   Plus,
   Star,
@@ -542,19 +543,23 @@ function ItemsList({
   onSelect: (id: string | null) => void;
   showListChip: boolean;
 }) {
+  // v4 single card — rounded-[22px] glass surface, brand-tinted shadow.
+  // Items in środku jako rounded-[10px] surfaces z hover bg-white/3.
   return (
-    <ul className="flex flex-col rounded-2xl border border-border bg-card overflow-hidden shadow-[0_4px_12px_-4px_rgba(46,19,52,0.10),0_18px_40px_-16px_rgba(76,29,149,0.14)]">
-      {items.map((item) => (
-        <li key={item.id} className="border-b border-border last:border-b-0">
-          <ItemRow
-            item={item}
-            selected={item.id === selectedItemId}
-            onSelect={() => onSelect(item.id === selectedItemId ? null : item.id)}
-            showListChip={showListChip}
-          />
-        </li>
-      ))}
-    </ul>
+    <div className="rounded-[22px] border border-white/60 bg-white/55 p-2 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-white/[0.03]">
+      <ul className="flex flex-col gap-1">
+        {items.map((item) => (
+          <li key={item.id}>
+            <ItemRow
+              item={item}
+              selected={item.id === selectedItemId}
+              onSelect={() => onSelect(item.id === selectedItemId ? null : item.id)}
+              showListChip={showListChip}
+            />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -612,8 +617,15 @@ function ItemRow({
   return (
     <div
       data-selected={selected ? "true" : "false"}
-      className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-accent/40 data-[selected=true]:bg-primary/5"
+      className="group flex items-center gap-3 rounded-[10px] border border-transparent px-3 py-2.5 transition-colors hover:bg-white/60 hover:border-white/60 data-[selected=true]:bg-primary/10 data-[selected=true]:border-primary/30 dark:hover:bg-white/[0.04] dark:hover:border-white/[0.08]"
     >
+      {/* v4 drag handle — visual cue (drag-reorder funkcja zachowana w istniejącym dnd). */}
+      <span
+        aria-hidden
+        className="grid h-5 w-3 shrink-0 cursor-grab place-items-center text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100"
+      >
+        <GripVertical size={12} />
+      </span>
       <form
         action={(fd) => startTransition(() => toggleTodoItemAction(fd))}
         className="m-0 flex shrink-0"
@@ -776,9 +788,10 @@ function QuickAddItem({
     });
   };
 
+  // v4: bottom variant ma brand-light focus ring (4px rgba primary).
   const cls =
     variant === "bottom"
-      ? "flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-2.5 transition-colors focus-within:border-primary/60 focus-within:shadow-[0_2px_8px_-2px_rgba(10,10,40,0.08)]"
+      ? "flex items-center gap-3 rounded-[10px] border border-white/60 bg-white/70 px-4 py-2.5 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_4px_rgba(124,92,255,0.15)] dark:border-white/10 dark:bg-white/[0.04]"
       : variant === "panel"
         ? "flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 transition-colors focus-within:border-primary/60"
         : "flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-3 shadow-[0_1px_2px_rgba(46,19,52,0.08)]";

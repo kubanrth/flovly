@@ -960,17 +960,24 @@ function TaskRefShape({
   workspaceId: string | null;
   selected: boolean;
 }) {
+  // v4 spec: ring-2 emerald/rose dla flowMark + corner badge START/KONIEC.
   const ringColor =
     flowMark === "start"
-      ? "rgba(16, 185, 129, 0.85)" // emerald-500
+      ? "rgb(16, 185, 129)" // emerald-500
       : flowMark === "end"
-        ? "rgba(244, 63, 94, 0.85)" // rose-500
+        ? "rgb(244, 63, 94)" // rose-500
         : null;
   const selectedRing = selected
     ? "0 0 0 2px color-mix(in oklch, var(--primary) 50%, transparent)"
     : "none";
-  const flowRing = ringColor ? `0 0 0 3px ${ringColor}` : "none";
-  const boxShadow = [selectedRing, flowRing].filter((s) => s !== "none").join(", ") || "none";
+  const flowRing = ringColor ? `0 0 0 2px ${ringColor}` : "none";
+  // Glass card: subtle white tint w light, lekko cieniowane.
+  const glassShadow =
+    "0 1px 0 rgba(255,255,255,0.55) inset, 0 8px 18px -10px rgba(10,10,40,0.18), 0 1px 2px rgba(10,10,40,0.06)";
+  const boxShadow =
+    [selectedRing, flowRing, glassShadow]
+      .filter((s) => s !== "none")
+      .join(", ") || "none";
 
   const fillColor = statusColor ?? "#94A3B8";
   return (
@@ -987,16 +994,17 @@ function TaskRefShape({
         style={{
           width,
           height,
-          borderRadius: 12,
+          // v4 spec: rounded-[13px]
+          borderRadius: 13,
           background: colorHex || "#FFFFFF",
-          border: "1px solid rgba(15, 23, 42, 0.12)",
+          border: "1px solid rgba(255, 255, 255, 0.7)",
           boxShadow,
-          padding: 10,
+          padding: 12,
           position: "relative",
           display: "flex",
           flexDirection: "column",
           gap: 6,
-          overflow: "hidden",
+          overflow: "visible",
           cursor: workspaceId && taskId ? "pointer" : "default",
         }}
         onDoubleClick={() => {
@@ -1005,60 +1013,61 @@ function TaskRefShape({
           }
         }}
       >
-        {/* Status row: dot + status name + (auto spacer) + flow mark badge.
-            Badge inline w wierszu, nie floating poza kartą (klient: "to co
-            sie oznacza jest jakby off widok"). */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        {/* v4 corner badge dla flowMark — zamiast inline w status row.
+            Umieszczony top-right z translacją żeby częściowo wystawał poza
+            kartę (jak w Design Canvas v4 spec). */}
+        {flowMark && (
           <span
             style={{
-              width: 8,
-              height: 8,
+              position: "absolute",
+              top: -8,
+              right: -8,
+              padding: "3px 8px",
               borderRadius: 999,
-              background: fillColor,
-              flexShrink: 0,
-            }}
-          />
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 600,
-              letterSpacing: "0.1em",
+              fontSize: 9,
+              fontWeight: 800,
+              letterSpacing: "0.12em",
               textTransform: "uppercase",
-              color: "#64748B",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              flex: 1,
+              color: "#fff",
+              background: flowMark === "start" ? "#10B981" : "#F43F5E",
+              boxShadow:
+                flowMark === "start"
+                  ? "0 4px 10px -2px rgba(16,185,129,0.5)"
+                  : "0 4px 10px -2px rgba(244,63,94,0.5)",
+              zIndex: 2,
             }}
           >
-            {statusName ?? "Bez statusu"}
+            {flowMark === "start" ? "Start" : "Koniec"}
           </span>
-          {flowMark && (
-            <span
-              style={{
-                padding: "2px 7px",
-                borderRadius: 999,
-                fontSize: 9,
-                fontWeight: 700,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "#fff",
-                background: flowMark === "start" ? "#10B981" : "#F43F5E",
-                flexShrink: 0,
-              }}
-            >
-              {flowMark === "start" ? "Start" : "Koniec"}
-            </span>
-          )}
-        </div>
+        )}
 
-        {/* Title */}
+        {/* Eyebrow mono brand-light — v4 spec font-mono 11px brand-500.
+            Slot wizualnie zarezerwowany na displayId; bez tego propa
+            pokazujemy nazwę statusu w stylu eyebrow. */}
+        {statusName && (
+          <span
+            style={{
+              fontFamily:
+                "var(--font-mono, 'JetBrains Mono'), ui-monospace, monospace",
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "var(--brand-500)",
+              lineHeight: 1,
+            }}
+          >
+            {statusName}
+          </span>
+        )}
+
+        {/* Title — v4 spec: 13px font-semibold */}
         <div
           style={{
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: 600,
             color: "#0F172A",
-            lineHeight: 1.3,
+            lineHeight: 1.35,
             overflow: "hidden",
             display: "-webkit-box",
             WebkitLineClamp: 2,
@@ -1066,6 +1075,42 @@ function TaskRefShape({
           }}
         >
           {taskTitle ?? "(zadanie usunięte)"}
+        </div>
+
+        {/* Status dot — v4 spec line 1011-1035, sam dot bez powtarzania
+            nazwy statusu (eyebrow ją już pokazuje). */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            marginTop: "auto",
+          }}
+        >
+          <span
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: 999,
+              background: fillColor,
+              flexShrink: 0,
+            }}
+            aria-label={statusName ?? "Bez statusu"}
+            title={statusName ?? "Bez statusu"}
+          />
+          {!statusName && (
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "#64748B",
+              }}
+            >
+              Bez statusu
+            </span>
+          )}
         </div>
       </div>
     </>

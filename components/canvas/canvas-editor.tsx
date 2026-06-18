@@ -6,6 +6,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
   Background,
+  BackgroundVariant,
   ConnectionMode,
   MarkerType,
   MiniMap,
@@ -1238,8 +1239,12 @@ function CanvasEditorInner({
   /* eslint-enable react-hooks/preserve-manual-memoization */
 
   return (
+    // v4 spec WHITEBOARD: outer = glass card rounded-[22px], wewnątrz dotted
+    // grid background (radial dots, brand 5% opacity), shape dock floating left,
+    // zoom pill bottom-right, hint footer na dole. Outer ramka NIE wciąga
+    // BoardHeader'a (zostaje OSOBNO jak wymaga reguła).
     <div
-      className="relative h-full w-full"
+      className="glass-surface relative h-full w-full overflow-hidden rounded-[22px] shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)]"
       ref={flowWrapperRef}
       // F12-K73 Task Line drop handler — zewnętrzne taski dropowane z
       // TaskLineSidebar. dataTransfer key dedykowany (nie kolizja z text/plain).
@@ -1395,7 +1400,14 @@ function CanvasEditorInner({
         onNodeDragStop={() => setGuides({ vx: [], hy: [] })}
         onPaneClick={() => setContextMenu(null)}
       >
-        <Background gap={24} size={1} />
+        {/* v4 WHITEBOARD spec line 198: dotted radial dots, brand 5-12% opacity,
+            spacing 26px. Pan/zoom along z viewportem (built-in RF behavior). */}
+        <Background
+          gap={26}
+          size={1.4}
+          variant={BackgroundVariant.Dots}
+          color="color-mix(in oklch, var(--brand-500) 14%, transparent)"
+        />
         {/* Custom controls — native <Controls/> has no dark-mode parity. */}
         <CanvasZoomControls />
         <MiniMap pannable zoomable className="!bg-card" />
@@ -1443,11 +1455,15 @@ function CanvasEditorInner({
         />
       )}
 
-      {/* Top toolbar tylko na desktop (md:flex) — na mobile używamy vertical
-          left toolbar'a (Mural-style) renderowanego poniżej. */}
+      {/* v4 WHITEBOARD spec line 199: shape palette dock floating LEFT,
+          rounded-[14px] glass, vertical icons. Toolbar zachowuje wszystkie
+          istniejące narzędzia + pickery (color/font/edge); flex-wrap pozwala
+          mu się rozłożyć w 2-kolumnowy layout dla większego zestawu, bez
+          rozsadzania viewport'u. Klient — funkcjonalność BEZ zmian; tylko
+          styling (vertical glass dock zamiast horizontal pill na górze). */}
       {canEdit && (
-        <div className="pointer-events-none absolute left-1/2 top-3 hidden -translate-x-1/2 flex-col items-center gap-2 md:flex">
-          <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-border bg-card/95 p-1 shadow-lg backdrop-blur">
+        <div className="pointer-events-none absolute left-3 top-1/2 hidden max-h-[calc(100%-24px)] -translate-y-1/2 flex-col items-stretch gap-2 md:flex">
+          <div className="glass-surface pointer-events-auto flex max-w-[88px] flex-row flex-wrap items-center justify-center gap-1 overflow-y-auto rounded-[14px] p-1.5 shadow-[0_16px_36px_-16px_rgba(0,0,0,0.5)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <ToolButton
               label="Wskaźnik (V)"
               active={toolMode === "select"}
@@ -1659,14 +1675,22 @@ function CanvasEditorInner({
         </div>
       )}
 
-      <div className="pointer-events-none absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full border border-border bg-card/95 px-2 py-1 shadow-sm backdrop-blur">
-        <span
-          className={`inline-block h-1.5 w-1.5 rounded-full ${
-            isConnected ? "bg-primary" : "bg-muted-foreground/50"
-          }`}
-          aria-hidden
-        />
-        <span className="font-mono text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground">
+      {/* v4 spec line 204: hint footer na dole — full-width strip z border-top.
+          Trzyma w sobie connection indicator po prawej. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 border-t border-[color-mix(in_oklch,var(--foreground)_8%,transparent)] bg-[color-mix(in_oklch,var(--card)_70%,transparent)] px-4 py-2 backdrop-blur"
+        data-canvas-hint=""
+      >
+        <span className="truncate text-[0.72rem] text-muted-foreground">
+          Hint · podwójny klik aby dodać shape, drag aby przesunąć
+        </span>
+        <span className="inline-flex items-center gap-1.5 font-mono text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground">
+          <span
+            className={`inline-block h-1.5 w-1.5 rounded-full ${
+              isConnected ? "bg-primary" : "bg-muted-foreground/50"
+            }`}
+            aria-hidden
+          />
           {isConnected ? "live" : "offline"}
         </span>
       </div>
@@ -2492,21 +2516,30 @@ function CtxItem({
   );
 }
 
-// Native <Controls/> from react-flow has no dark-mode parity; we use semantic vars instead.
+// v4 WHITEBOARD spec line 203: zoom controls bottom-right, rounded-[12px]
+// glass pill (horizontal), z reszty zachowane (zoom in/out + fit view).
 function CanvasZoomControls() {
   const rf = useReactFlow();
+  const { zoom } = useViewport();
   return (
     <div
-      className="absolute bottom-4 left-4 z-[5] flex flex-col gap-1 rounded-lg border border-border bg-card/95 p-1 shadow-lg backdrop-blur"
+      className="glass-surface absolute bottom-12 right-3 z-[5] flex items-center gap-1 rounded-[13px] px-2 py-1.5 shadow-[0_16px_36px_-16px_rgba(0,0,0,0.4)]"
       data-canvas-controls=""
     >
-      <ControlButton label="Powiększ" onClick={() => rf.zoomIn()}>
-        <PlusIcon size={14} />
-      </ControlButton>
       <ControlButton label="Pomniejsz" onClick={() => rf.zoomOut()}>
-        <MinusIcon size={14} />
+        <MinusIcon size={15} />
       </ControlButton>
-      <ControlButton label="Dopasuj" onClick={() => rf.fitView({ padding: 0.2, duration: 200 })}>
+      <span className="px-1 font-mono text-[0.72rem] font-semibold tabular-nums text-foreground">
+        {Math.round(zoom * 100)}%
+      </span>
+      <ControlButton label="Powiększ" onClick={() => rf.zoomIn()}>
+        <PlusIcon size={15} />
+      </ControlButton>
+      <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+      <ControlButton
+        label="Dopasuj widok"
+        onClick={() => rf.fitView({ padding: 0.2, duration: 200 })}
+      >
         <Maximize2 size={14} />
       </ControlButton>
     </div>
@@ -2528,7 +2561,7 @@ function ControlButton({
       onClick={onClick}
       title={label}
       aria-label={label}
-      className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+      className="grid h-7 w-7 place-items-center rounded-[9px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
     >
       {children}
     </button>

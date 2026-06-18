@@ -151,8 +151,29 @@ export function FiltersBar({
     return n;
   }, [search, selectedBoards.size, sort]);
 
+  // v4 segmented pill control — Dziś (active = brand gradient) / Tydzień / Zaległe / Wszystkie.
+  // Filtry te są wizualne (chipy w v4 są ozdobne — nie zmieniamy props/funkcji),
+  // więc używamy ich jako visual section divider nad search/sort/boards.
+  const pillRow = (
+    <div className="flex items-center gap-1.5 rounded-[14px] border border-white/60 bg-white/55 p-1 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
+      <span className="rounded-[11px] bg-brand-gradient px-3 py-1.5 text-[0.75rem] font-semibold text-white shadow-brand">
+        Dziś
+      </span>
+      <span className="rounded-[11px] border border-white/60 bg-white/40 px-3 py-1.5 text-[0.75rem] font-medium text-muted-foreground dark:border-white/10 dark:bg-white/[0.05]">
+        Tydzień
+      </span>
+      <span className="rounded-[11px] border border-white/60 bg-white/40 px-3 py-1.5 text-[0.75rem] font-medium text-rose-500 dark:border-white/10 dark:bg-white/[0.05]">
+        Zaległe
+      </span>
+      <span className="rounded-[11px] border border-white/60 bg-white/40 px-3 py-1.5 text-[0.75rem] font-medium text-muted-foreground dark:border-white/10 dark:bg-white/[0.05]">
+        Wszystkie
+      </span>
+    </div>
+  );
+
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3">
+    <div className="flex flex-col gap-3">
+      {pillRow}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[220px]">
           <Search
@@ -164,7 +185,7 @@ export function FiltersBar({
             onChange={(e) => setSearch(e.target.value)}
             type="search"
             placeholder="Szukaj po tytule…"
-            className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-3 text-[0.9rem] outline-none placeholder:text-muted-foreground/60 focus:border-primary"
+            className="h-9 w-full rounded-[11px] border border-white/60 bg-white/60 pl-8 pr-3 text-[0.9rem] outline-none backdrop-blur-xl placeholder:text-muted-foreground/60 focus:border-primary/60 dark:border-white/10 dark:bg-white/[0.04]"
           />
         </div>
 
@@ -174,7 +195,7 @@ export function FiltersBar({
           <button
             type="button"
             onClick={clearAll}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-destructive/60 hover:text-destructive"
+            className="inline-flex h-9 items-center gap-1.5 rounded-[11px] border border-white/60 bg-white/60 px-3 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground backdrop-blur-xl transition-colors hover:border-destructive/60 hover:text-destructive dark:border-white/10 dark:bg-white/[0.04]"
           >
             <X size={12} /> wyczyść ({activeCount})
           </button>
@@ -194,7 +215,7 @@ export function FiltersBar({
                 type="button"
                 onClick={() => toggleBoard(b.id)}
                 data-on={on ? "true" : "false"}
-                className="inline-flex h-7 items-center gap-1 rounded-full border border-border px-3 font-mono text-[0.68rem] uppercase tracking-[0.1em] text-muted-foreground transition-colors data-[on=true]:border-primary data-[on=true]:bg-primary/10 data-[on=true]:text-foreground hover:border-primary/40"
+                className="inline-flex h-7 items-center gap-1 rounded-full border border-white/60 px-3 font-mono text-[0.68rem] uppercase tracking-[0.1em] text-muted-foreground transition-colors data-[on=true]:border-primary data-[on=true]:bg-primary/10 data-[on=true]:text-foreground hover:border-primary/40 dark:border-white/10"
               >
                 <span className="truncate max-w-[140px]">{b.name}</span>
                 <span className="text-muted-foreground/60 normal-case tracking-normal">

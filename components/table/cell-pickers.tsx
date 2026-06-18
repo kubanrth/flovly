@@ -190,13 +190,16 @@ export function AssigneePickerCell({
               position: "fixed",
               top: coords.top,
               left: coords.left,
-              width: 280,
+              width: 300,
               maxHeight: coords.maxHeight,
             }}
-            className="z-[80] flex flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+            className="popover-glass popover-enter shadow-aura z-[80] flex flex-col overflow-hidden p-2"
           >
-            <div className="shrink-0 border-b border-border p-2">
-              <div className="flex items-center gap-2 rounded-md bg-muted/40 px-2 py-1.5">
+            <div className="mb-1.5 shrink-0">
+              <span className="eyebrow mb-1.5 block px-1.5 text-[0.66rem]">
+                Przypisz
+              </span>
+              <div className="flex items-center gap-2 rounded-[8px] border border-border bg-card/60 px-2 py-1.5">
                 <Search size={12} className="text-muted-foreground" />
                 <input
                   ref={inputRef}
@@ -204,11 +207,11 @@ export function AssigneePickerCell({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Szukaj osoby…"
-                  className="flex-1 bg-transparent text-[0.82rem] outline-none placeholder:text-muted-foreground/60"
+                  className="flex-1 bg-transparent text-[0.8125rem] outline-none placeholder:text-muted-foreground/60"
                 />
               </div>
             </div>
-            <ul className="min-h-0 flex-1 overflow-y-auto p-1">
+            <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">
               {filtered.length === 0 && (
                 <li className="px-2 py-3 text-center font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
                   Brak dopasowań
@@ -222,9 +225,9 @@ export function AssigneePickerCell({
                       type="button"
                       onClick={() => toggle(m.id)}
                       data-active={active}
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent data-[active=true]:bg-primary/10"
+                      className="flex w-full items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition-colors hover:bg-muted active:bg-primary/10 data-[active=true]:bg-primary/10"
                     >
-                      <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.6rem] font-bold text-white">
+                      <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-[6px] bg-brand-gradient font-display text-[10px] font-bold text-white">
                         {m.avatarUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={m.avatarUrl} alt="" className="h-full w-full object-cover" />
@@ -232,17 +235,52 @@ export function AssigneePickerCell({
                           (m.name ?? m.email).slice(0, 2).toUpperCase()
                         )}
                       </span>
-                      <span className="min-w-0 flex-1 truncate text-[0.84rem]">
-                        {m.name ?? m.email.split("@")[0]}
+                      <span className="flex min-w-0 flex-1 flex-col leading-tight">
+                        <span className="truncate text-[13px] font-medium text-foreground">
+                          {m.name ?? m.email.split("@")[0]}
+                        </span>
+                        <span className="truncate font-mono text-[10px] text-muted-foreground/80">
+                          @{m.email.split("@")[0]}
+                        </span>
                       </span>
                       {active && (
-                        <span className="font-mono text-[0.6rem] text-primary">✓</span>
+                        <span
+                          className="grid h-4 w-4 shrink-0 place-items-center text-primary"
+                          aria-hidden="true"
+                        >
+                          <svg
+                            width="13"
+                            height="13"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.6"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M20 6 9 17l-5-5" />
+                          </svg>
+                        </span>
                       )}
                     </button>
                   </li>
                 );
               })}
             </ul>
+            {current.length > 0 && (
+              <div className="mt-1 shrink-0 border-t border-border/60 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Toggle off każdego current — ten sam server action, raz na osobę.
+                    current.forEach((m) => toggle(m.id));
+                  }}
+                  className="flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[13px] font-medium text-destructive transition-colors hover:bg-destructive/10 active:bg-destructive/15"
+                >
+                  Zdejmij przypisanie
+                </button>
+              </div>
+            )}
           </div>,
           document.body,
         )}
@@ -377,10 +415,13 @@ export function TagPickerCell({
               width: 280,
               maxHeight: coords.maxHeight,
             }}
-            className="z-[80] flex flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+            className="popover-glass popover-enter shadow-aura z-[80] flex flex-col overflow-hidden p-2"
           >
-            <div className="shrink-0 border-b border-border p-2">
-              <div className="flex items-center gap-2 rounded-md bg-muted/40 px-2 py-1.5">
+            <div className="mb-1.5 shrink-0">
+              <span className="eyebrow mb-1.5 block px-1.5 text-[0.66rem]">
+                Tagi
+              </span>
+              <div className="flex items-center gap-2 rounded-[8px] border border-border bg-card/60 px-2 py-1.5">
                 <Search size={12} className="text-muted-foreground" />
                 <input
                   ref={inputRef}
@@ -388,11 +429,11 @@ export function TagPickerCell({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Szukaj tagu…"
-                  className="flex-1 bg-transparent text-[0.82rem] outline-none placeholder:text-muted-foreground/60"
+                  className="flex-1 bg-transparent text-[0.8125rem] outline-none placeholder:text-muted-foreground/60"
                 />
               </div>
             </div>
-            <ul className="min-h-0 flex-1 overflow-y-auto p-1">
+            <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">
               {filtered.length === 0 && (
                 <li className="px-2 py-3 text-center font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
                   {allTags.length === 0
@@ -408,21 +449,65 @@ export function TagPickerCell({
                       type="button"
                       onClick={() => toggle(t.id)}
                       data-active={active}
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent data-[active=true]:bg-primary/10"
+                      className="flex w-full items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition-colors hover:bg-muted active:bg-primary/10 data-[active=true]:bg-primary/10"
                     >
                       <span
                         className="h-2.5 w-2.5 shrink-0 rounded-full"
                         style={{ background: t.colorHex }}
+                        aria-hidden="true"
                       />
-                      <span className="min-w-0 flex-1 truncate text-[0.84rem]">{t.name}</span>
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">
+                        {t.name}
+                      </span>
                       {active && (
-                        <span className="font-mono text-[0.6rem] text-primary">✓</span>
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="shrink-0 text-primary"
+                          aria-hidden="true"
+                        >
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
                       )}
                     </button>
                   </li>
                 );
               })}
             </ul>
+            {query.trim() &&
+              allTags.length > 0 &&
+              !allTags.some(
+                (t) => t.name.toLowerCase() === query.trim().toLowerCase(),
+              ) && (
+                <div className="mt-1 shrink-0 border-t border-border/60 pt-1">
+                  <div
+                    className="flex w-full items-center gap-2 rounded-[8px] border border-dashed border-primary/40 px-2 py-1.5 text-[13px] text-primary"
+                    aria-hidden="true"
+                    title="Stwórz tag przez modal zadania"
+                  >
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                    >
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    <span className="truncate">
+                      Stwórz &bdquo;{query.trim()}&rdquo;
+                    </span>
+                  </div>
+                </div>
+              )}
           </div>,
           document.body,
         )}

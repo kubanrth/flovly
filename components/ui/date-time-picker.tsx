@@ -263,9 +263,45 @@ export function DateTimePicker({
             onPointerDownCapture={(e) => e.stopPropagation()}
             onMouseDownCapture={(e) => e.stopPropagation()}
             style={{ position: "fixed", top: coords.top, left: coords.left, width: 320 }}
-            className="z-[80] flex flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.35)]"
+            className="popover-glass popover-enter shadow-aura z-[80] flex flex-col overflow-hidden"
           >
-            <div className="rdp-host px-3 pt-3">
+            {/* Presets row — Dziś / Jutro / W tygodniu — v4 spec */}
+            <div className="flex shrink-0 items-center gap-1.5 px-3 pt-3">
+              <button
+                type="button"
+                onClick={setToday}
+                className="rounded-full bg-muted/50 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary active:bg-primary/15"
+              >
+                Dzisiaj
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const t = new Date();
+                  t.setDate(t.getDate() + 1);
+                  if (dateOnly) t.setHours(0, 0, 0, 0);
+                  else t.setHours(9, 0, 0, 0);
+                  setDate(t);
+                }}
+                className="rounded-full bg-muted/50 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary active:bg-primary/15"
+              >
+                Jutro
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const t = new Date();
+                  t.setDate(t.getDate() + 7);
+                  if (dateOnly) t.setHours(0, 0, 0, 0);
+                  else t.setHours(9, 0, 0, 0);
+                  setDate(t);
+                }}
+                className="rounded-full bg-muted/50 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary active:bg-primary/15"
+              >
+                W tygodniu
+              </button>
+            </div>
+            <div className="rdp-host px-3 pt-2">
               <DayPicker
                 mode="single"
                 selected={date ?? undefined}
@@ -277,10 +313,8 @@ export function DateTimePicker({
               />
             </div>
             {!dateOnly && (
-              <div className="flex items-center gap-3 border-t border-border bg-muted/40 px-3 py-3">
-                <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                  Godzina
-                </span>
+              <div className="flex items-center gap-3 border-t border-border/60 bg-muted/30 px-3 py-3">
+                <span className="eyebrow text-[0.62rem]">Godzina</span>
                 <div className="ml-auto flex items-stretch gap-2">
                   <TimeStepper
                     value={date?.getHours() ?? 9}
@@ -303,30 +337,21 @@ export function DateTimePicker({
                 </div>
               </div>
             )}
-            <div className="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
+            <div className="flex items-center justify-end gap-2 border-t border-border/60 px-3 py-2">
               <button
                 type="button"
-                onClick={setToday}
-                className="rounded-md px-2 py-1 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                onClick={clear}
+                className="rounded-[6px] px-2 py-1 text-[12px] font-medium text-destructive transition-colors hover:bg-destructive/10"
               >
-                Dziś
+                Wyczyść
               </button>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={clear}
-                  className="rounded-md px-2 py-1 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                >
-                  Wyczyść
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="rounded-md bg-primary px-3 py-1 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90"
-                >
-                  Gotowe
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-[6px] bg-primary px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-primary-foreground transition-opacity hover:opacity-90"
+              >
+                Gotowe
+              </button>
             </div>
           </div>,
           document.body,

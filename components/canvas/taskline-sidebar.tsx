@@ -48,30 +48,38 @@ export function TaskLineSidebar({
   };
 
   return (
-    <aside className="flex w-full shrink-0 flex-col gap-3 overflow-hidden rounded-xl border border-border bg-card md:w-[320px]">
-      {/* Search */}
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
-        <Search size={13} className="shrink-0 text-muted-foreground" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Szukaj zadań…"
-          className="flex-1 bg-transparent text-[0.88rem] outline-none placeholder:text-muted-foreground/60"
-        />
-        {query && (
-          <button
-            type="button"
-            onClick={() => setQuery("")}
-            aria-label="Wyczyść"
-            className="grid h-5 w-5 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-          >
-            <X size={11} />
-          </button>
-        )}
+    // v4 TASKLINE spec line 220-225: sidebar 320px po lewej, rounded-[22px]
+    // glass — search input + filtr pills + lista draggable task cards.
+    <aside className="glass-surface flex w-full shrink-0 flex-col gap-3 overflow-hidden rounded-[22px] shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] md:w-[320px]">
+      {/* Header eyebrow — "Pula zadań" jak w v4 spec */}
+      <div className="border-b border-[color-mix(in_oklch,var(--foreground)_8%,transparent)] px-4 pb-3 pt-4">
+        <div className="mb-2.5 text-[0.88rem] font-semibold text-foreground">
+          Pula zadań
+        </div>
+        {/* Search input — v4 spec line 221: rounded-[10px] z subtle bg */}
+        <div className="flex items-center gap-2 rounded-[10px] border border-[color-mix(in_oklch,var(--foreground)_8%,transparent)] bg-[color-mix(in_oklch,var(--card)_60%,transparent)] px-2.5 py-2">
+          <Search size={13} className="shrink-0 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Szukaj zadań…"
+            className="flex-1 bg-transparent text-[0.88rem] outline-none placeholder:text-muted-foreground/60"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Wyczyść"
+              className="grid h-5 w-5 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              <X size={11} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Assignee filter pills */}
-      <div className="flex flex-col gap-1.5 px-3">
+      <div className="flex flex-col gap-1.5 px-4">
         <div className="flex items-center gap-1.5 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
           <Filter size={10} />
           <span>Filtr po opiekunach</span>
@@ -124,13 +132,13 @@ export function TaskLineSidebar({
       </div>
 
       {/* Counter */}
-      <div className="px-3 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground/80">
+      <div className="px-4 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground/80">
         {filteredTasks.length} z {tasks.length}{" "}
         {tasks.length === 1 ? "zadania" : "zadań"}
       </div>
 
       {/* Task cards list — przeciągalna */}
-      <ul className="flex-1 overflow-y-auto px-3 pb-3">
+      <ul className="flex-1 overflow-y-auto px-3 pb-3 [scrollbar-width:thin]">
         {filteredTasks.length === 0 ? (
           <li className="rounded-md border border-dashed border-border px-3 py-6 text-center text-[0.82rem] text-muted-foreground">
             {tasks.length === 0
@@ -158,7 +166,10 @@ function TaskLineCard({ task }: { task: TaskLineTask }) {
         e.dataTransfer.setData("application/x-flovly-task-id", task.id);
         e.dataTransfer.effectAllowed = "copy";
       }}
-      className="group mb-1.5 flex cursor-grab flex-col gap-1.5 rounded-md border border-border bg-background p-2.5 transition-all hover:border-primary/40 hover:shadow-sm active:cursor-grabbing"
+      // v4 spec line 223: rounded-[12px] glass-ish card z border 1px, hover
+      // ring-primary/40. displayId font-mono brand-light, title 13px, status
+      // pill po prawej.
+      className="group mb-1.5 flex cursor-grab flex-col gap-1.5 rounded-[12px] border border-[color-mix(in_oklch,var(--foreground)_8%,transparent)] bg-[color-mix(in_oklch,var(--card)_70%,transparent)] p-3 transition-all hover:-translate-y-px hover:border-primary/40 hover:shadow-[0_8px_18px_-10px_rgba(124,92,255,0.35)] active:cursor-grabbing"
     >
       <div className="flex items-center gap-2">
         {task.statusColor && (
@@ -167,12 +178,12 @@ function TaskLineCard({ task }: { task: TaskLineTask }) {
             style={{ background: task.statusColor }}
           />
         )}
-        <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground">
+        <span className="font-mono text-[0.66rem] font-semibold tracking-[0.08em] text-[color:var(--brand-500)]">
           #{task.displayId}
         </span>
         {task.statusName && (
           <span
-            className="ml-auto inline-flex items-center rounded-full px-1.5 font-mono text-[0.56rem] uppercase tracking-[0.1em]"
+            className="ml-auto inline-flex items-center rounded-full px-2 py-0.5 font-mono text-[0.56rem] uppercase tracking-[0.1em]"
             style={{
               color: task.statusColor ?? "#94A3B8",
               background: `${task.statusColor ?? "#94A3B8"}1A`,
@@ -182,7 +193,7 @@ function TaskLineCard({ task }: { task: TaskLineTask }) {
           </span>
         )}
       </div>
-      <div className="line-clamp-2 text-[0.82rem] font-medium leading-tight text-foreground transition-colors group-hover:text-primary">
+      <div className="line-clamp-2 text-[0.82rem] font-medium leading-snug text-foreground transition-colors group-hover:text-primary">
         {task.title}
       </div>
       {primaryAssignee && (

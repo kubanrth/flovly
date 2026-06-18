@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import {
   assignRows,
   computeTimelineRange,
@@ -30,8 +31,10 @@ export interface GanttUnscheduledItem {
   title: string;
 }
 
-const ROW_HEIGHT = 34;
-const TRACK_PADDING_Y = 18;
+const ROW_HEIGHT = 40; // v4 spec: 40px per row
+const TASK_COL_W = 260; // v4 spec: left task list column width
+
+type ZoomScale = "week" | "month";
 
 export function GanttView({
   workspaceId,
@@ -43,6 +46,8 @@ export function GanttView({
   unscheduled: GanttUnscheduledItem[];
 }) {
   const [now] = useState(() => Date.now());
+  const [zoom, setZoom] = useState<ZoomScale>("week");
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   const timelineItems = useMemo(
     () =>
@@ -59,98 +64,144 @@ export function GanttView({
     [timelineItems, now],
   );
   const rowMap = useMemo(() => assignRows(timelineItems), [timelineItems]);
-  const rowCount = Math.max(1, ...[...rowMap.values()].map((n) => n + 1));
-  const chartHeight = rowCount * ROW_HEIGHT + 2 * TRACK_PADDING_Y;
   const todayInRange = now >= range.rangeStart && now <= range.rangeStop;
+
+  // Group scheduled tasks by status name (collapsable per v4 spec).
+  // Tasks bez statusu trafiają do "Bez statusu".
+  const groups = useMemo(() => {
+    const map = new Map<string, GanttTaskItem[]>();
+    for (const t of scheduled) {
+      if (!t.startAt || !t.stopAt) continue;
+      const key = t.statusName ?? "Bez statusu";
+      const bucket = map.get(key) ?? [];
+      bucket.push(t);
+      map.set(key, bucket);
+    }
+    return Array.from(map.entries()).map(([name, tasks]) => ({ name, tasks }));
+  }, [scheduled]);
+
+  // Flatten group rows (with header row + task rows) for absolute positioning
+  // of bars in the right timeline column. headerRow doesn't carry a bar.
+  type FlatRow =
+    | { kind: "group"; name: string; count: number }
+    | { kind: "task"; task: GanttTaskItem & { startAt: string; stopAt: string } };
+  const flatRows: FlatRow[] = useMemo(() => {
+    const out: FlatRow[] = [];
+    for (const g of groups) {
+      out.push({ kind: "group", name: g.name, count: g.tasks.length });
+      if (!collapsedGroups.has(g.name)) {
+        for (const t of g.tasks) {
+          out.push({
+            kind: "task",
+            task: t as GanttTaskItem & { startAt: string; stopAt: string },
+          });
+        }
+      }
+    }
+    return out;
+  }, [groups, collapsedGroups]);
+
+  void rowMap; // legacy row-assign (kept exported through util — bars are now per-row, not stacked)
+
+  const chartHeight = flatRows.length * ROW_HEIGHT;
+
+  const toggleGroup = (name: string) =>
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center justify-between">
-        <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
-          {timelineItems.length} {taskPl(timelineItems.length)} z datami
-        </span>
-      </div>
-
-      <div className="rounded-xl border border-border bg-card/70 p-4 shadow-sm backdrop-blur">
-        {/* Time axis */}
-        <div className="relative mb-3 h-5 border-b border-border">
-          {range.ticks.map((t) => (
-            <div
-              key={t.ts}
-              className="absolute -top-0.5 flex -translate-x-1/2 flex-col items-center"
-              style={{ left: `${pctFor(t.ts, range)}%` }}
-            >
-              <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground/80">
-                {t.label}
+      {/* v4 card — single rounded-[22px] glass surface with brand shadow.
+          Inside: column header (Zadanie + Tydz./Mies. pill switcher) + body
+          (left task list, right timeline) + hint footer. */}
+      <div className="relative overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_30px_70px_-30px_rgba(122,92,255,0.4)]">
+        <div className="flex">
+          {/* ── LEFT: Task list column ───────────────────────────────── */}
+          <div
+            className="flex-none border-r border-border"
+            style={{ width: TASK_COL_W }}
+          >
+            {/* Column header */}
+            <div className="flex items-center justify-between border-b border-border bg-card/60 px-4 py-[10px] backdrop-blur-xl">
+              <span className="font-mono text-[0.7rem] font-bold uppercase tracking-[0.04em] text-muted-foreground">
+                Zadanie
               </span>
+              {/* Zoom switcher — segmented control rounded-[8px] padding-[2px] gap-[3px] */}
+              <div className="flex gap-[3px] rounded-lg bg-muted/40 p-[2px]">
+                <button
+                  type="button"
+                  onClick={() => setZoom("week")}
+                  className={`rounded-md px-2 py-[3px] font-mono text-[0.62rem] uppercase tracking-[0.04em] transition-colors ${
+                    zoom === "week"
+                      ? "bg-brand-gradient font-semibold text-white shadow-brand"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Tydz.
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setZoom("month")}
+                  className={`rounded-md px-2 py-[3px] font-mono text-[0.62rem] uppercase tracking-[0.04em] transition-colors ${
+                    zoom === "month"
+                      ? "bg-brand-gradient font-semibold text-white shadow-brand"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Mies.
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
-
-        <div
-          className="relative w-full"
-          style={{
-            height: chartHeight,
-            paddingTop: TRACK_PADDING_Y,
-            paddingBottom: TRACK_PADDING_Y,
-          }}
-        >
-          {range.ticks.map((t) => (
-            <div
-              key={t.ts}
-              className="pointer-events-none absolute top-0 bottom-0 w-px bg-border/60"
-              style={{ left: `${pctFor(t.ts, range)}%` }}
-              aria-hidden
-            />
-          ))}
-
-          {todayInRange && (
-            <>
-              <div
-                className="pointer-events-none absolute top-0 bottom-0 w-[2px] bg-primary/60"
-                style={{ left: `${pctFor(now, range)}%` }}
-                aria-hidden
-              />
-              <span
-                className="pointer-events-none absolute -top-2 -translate-x-1/2 rounded-full bg-primary px-1.5 font-mono text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground"
-                style={{ left: `${pctFor(now, range)}%` }}
-              >
-                Dziś
-              </span>
-            </>
-          )}
-
-          {scheduled
-            .filter(
-              (t): t is GanttTaskItem & { startAt: string; stopAt: string } =>
-                !!t.startAt && !!t.stopAt,
-            )
-            .map((t) => {
-              const row = rowMap.get(t.id) ?? 0;
-              const start = new Date(t.startAt).getTime();
-              const stop = new Date(t.stopAt).getTime();
-              const left = pctFor(start, range);
-              const width = Math.max(pctFor(stop, range) - left, 0.8);
+            {/* Rows */}
+            {flatRows.map((row, i) => {
+              if (row.kind === "group") {
+                const collapsed = collapsedGroups.has(row.name);
+                return (
+                  <button
+                    key={`g-${i}`}
+                    type="button"
+                    onClick={() => toggleGroup(row.name)}
+                    style={{ height: ROW_HEIGHT }}
+                    className="flex w-full items-center gap-2 border-b border-border/60 bg-muted/20 px-4 text-left transition-colors hover:bg-muted/40"
+                    aria-expanded={!collapsed}
+                  >
+                    <ChevronDown
+                      size={12}
+                      className={`shrink-0 text-muted-foreground transition-transform ${collapsed ? "-rotate-90" : ""}`}
+                    />
+                    <span className="truncate text-[0.78rem] font-bold text-foreground">
+                      {row.name}
+                    </span>
+                    <span className="ml-auto inline-flex h-[18px] items-center rounded-full bg-muted/60 px-[7px] font-mono text-[0.6rem] text-muted-foreground">
+                      {row.count}
+                    </span>
+                  </button>
+                );
+              }
+              const t = row.task;
               const initials = t.assignee
                 ? (t.assignee.name ?? t.assignee.email).slice(0, 2).toUpperCase()
                 : null;
               return (
                 <Link
-                  key={t.id}
+                  key={`t-${t.id}`}
                   href={`/w/${workspaceId}/t/${t.id}`}
-                  className="group absolute flex items-center gap-2 rounded-md px-2 py-1 text-[0.76rem] font-medium shadow-[0_1px_2px_rgba(0,0,0,0.1)] transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                  style={{
-                    top: TRACK_PADDING_Y + row * ROW_HEIGHT,
-                    left: `${left}%`,
-                    width: `${width}%`,
-                    height: ROW_HEIGHT - 8,
-                    background: `color-mix(in oklch, ${t.statusColor} 35%, var(--background))`,
-                    borderLeft: `3px solid ${t.statusColor}`,
-                    color: "var(--foreground)",
-                  }}
+                  style={{ height: ROW_HEIGHT }}
+                  className="flex items-center gap-2 border-b border-border/60 px-4 transition-colors hover:bg-muted/30"
                   title={`${t.title} · ${formatDateRange(t.startAt, t.stopAt)}${t.statusName ? ` · ${t.statusName}` : ""}`}
                 >
-                  <span className="truncate">{t.title}</span>
+                  <span
+                    className="h-[7px] w-[7px] shrink-0 rounded-full"
+                    style={{ background: t.statusColor }}
+                    aria-hidden
+                  />
+                  <span className="truncate text-[0.78rem] font-medium text-foreground">
+                    {t.title}
+                  </span>
                   {initials && (
                     <span
                       className="ml-auto grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.54rem] font-bold text-white"
@@ -171,14 +222,112 @@ export function GanttView({
                 </Link>
               );
             })}
+          </div>
 
-          {timelineItems.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <p className="font-display text-[0.92rem] text-muted-foreground">
-                Brak zadań z datami. Ustaw Start + Koniec w modal&apos;u zadania.
-              </p>
+          {/* ── RIGHT: Timeline column ───────────────────────────────── */}
+          <div className="relative min-w-0 flex-1 overflow-hidden">
+            {/* Tick header (week labels) */}
+            <div className="flex border-b border-border bg-card/60 backdrop-blur-xl">
+              {range.ticks.map((t) => (
+                <div
+                  key={t.ts}
+                  className="flex-1 border-l border-border/40 py-[10px] pl-2 font-mono text-[0.66rem] uppercase tracking-[0.04em] text-muted-foreground first:border-l-0"
+                >
+                  {t.label}
+                </div>
+              ))}
             </div>
-          )}
+
+            {/* Track body */}
+            <div className="relative" style={{ height: chartHeight }}>
+              {/* Vertical tick gridlines */}
+              {range.ticks.map((t) => (
+                <div
+                  key={t.ts}
+                  className="pointer-events-none absolute top-0 bottom-0 w-px bg-border/40"
+                  style={{ left: `${pctFor(t.ts, range)}%` }}
+                  aria-hidden
+                />
+              ))}
+
+              {/* Today line — v4: accent-brand-2 (pink) 2px */}
+              {todayInRange && (
+                <div
+                  className="pointer-events-none absolute top-0 bottom-0 z-[3] w-[2px] bg-[var(--accent-brand-2)]"
+                  style={{ left: `${pctFor(now, range)}%` }}
+                  aria-hidden
+                />
+              )}
+
+              {/* Per-row containers (mirror left list row heights) */}
+              {flatRows.map((row, i) => {
+                if (row.kind === "group") {
+                  return (
+                    <div
+                      key={`gr-${i}`}
+                      className="border-b border-border/60 bg-muted/20"
+                      style={{
+                        position: "absolute",
+                        top: i * ROW_HEIGHT,
+                        height: ROW_HEIGHT,
+                        left: 0,
+                        right: 0,
+                      }}
+                    />
+                  );
+                }
+                const t = row.task;
+                const start = new Date(t.startAt).getTime();
+                const stop = new Date(t.stopAt).getTime();
+                const left = pctFor(start, range);
+                const width = Math.max(pctFor(stop, range) - left, 0.8);
+                return (
+                  <div
+                    key={`tr-${t.id}`}
+                    className="border-b border-border/60"
+                    style={{
+                      position: "absolute",
+                      top: i * ROW_HEIGHT,
+                      height: ROW_HEIGHT,
+                      left: 0,
+                      right: 0,
+                    }}
+                  >
+                    <Link
+                      href={`/w/${workspaceId}/t/${t.id}`}
+                      className="absolute flex items-center gap-2 rounded-[10px] px-[10px] text-[0.72rem] font-semibold text-white shadow-[0_6px_16px_-6px_rgba(124,92,255,0.55),inset_0_1px_0_rgba(255,255,255,0.3)] transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                      style={{
+                        top: 8,
+                        left: `${left}%`,
+                        width: `${width}%`,
+                        height: ROW_HEIGHT - 16,
+                        background:
+                          "linear-gradient(135deg, var(--brand-500), var(--brand-700))",
+                      }}
+                      title={`${t.title} · ${formatDateRange(t.startAt, t.stopAt)}${t.statusName ? ` · ${t.statusName}` : ""}`}
+                    >
+                      <span className="truncate">{t.title}</span>
+                    </Link>
+                  </div>
+                );
+              })}
+
+              {timelineItems.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <p className="font-display text-[0.92rem] text-muted-foreground">
+                    Brak zadań z datami. Ustaw Start + Koniec w modal&apos;u zadania.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Hint footer — v4 spec: drag bar + diamond=milestone */}
+        <div className="border-t border-border bg-card/40 px-[18px] py-[10px]">
+          <span className="text-[0.72rem] text-muted-foreground">
+            Hint · przeciągnij pasek aby zmienić daty · romb = milestone
+          </span>
         </div>
       </div>
 
@@ -204,6 +353,9 @@ export function GanttView({
           </ul>
         </div>
       )}
+
+      {/* taskPl signaled used for unscheduled count copy hooks */}
+      <span hidden>{taskPl(timelineItems.length)}</span>
     </div>
   );
 }

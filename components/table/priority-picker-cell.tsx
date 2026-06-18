@@ -7,7 +7,6 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { ChevronDown } from "lucide-react";
-import { PriorityBadge } from "@/components/task/priority-badge";
 import {
   PRIORITY_META,
   PRIORITY_VALUES,
@@ -62,6 +61,11 @@ export function PriorityPickerCell({
     });
   };
 
+  // v4 spec (linia 50): pill rounded-[7px] (NIE full!) + dot 6x6 + label 11.5/700.
+  // Bg = dotColor @ ~14% (1F hex), color = dotColor. Bez ikony — v4 zostawia
+  // tylko kropkę żeby gęsto i kompaktowo wyglądało w wierszu.
+  const meta = optimistic !== "NONE" ? PRIORITY_META[optimistic] : null;
+
   return (
     <div ref={wrapperRef} className="relative">
       <button
@@ -69,14 +73,29 @@ export function PriorityPickerCell({
         onClick={() => canEdit && setOpen((v) => !v)}
         disabled={!canEdit}
         title={canEdit ? "Zmień priorytet" : "Brak uprawnień"}
-        className="inline-flex h-7 items-center gap-1 rounded-md px-1.5 transition-colors hover:bg-accent disabled:cursor-not-allowed"
+        className="inline-flex h-7 items-center gap-1 rounded-md px-1 transition-colors hover:bg-accent disabled:cursor-not-allowed"
       >
-        {optimistic === "NONE" ? (
+        {optimistic === "NONE" || !meta ? (
           <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground/60">
             Brak
           </span>
         ) : (
-          <PriorityBadge priority={optimistic} size="xs" />
+          <span
+            className="inline-flex items-center gap-[5px] rounded-[7px] px-[9px] py-[3px]"
+            style={{
+              background: `${meta.dotColor}1F`,
+              color: meta.dotColor,
+            }}
+          >
+            <span
+              className="h-[6px] w-[6px] shrink-0 rounded-full"
+              style={{ background: meta.dotColor }}
+              aria-hidden="true"
+            />
+            <span className="text-[11.5px] font-bold leading-none">
+              {meta.label}
+            </span>
+          </span>
         )}
         {canEdit && (
           <ChevronDown size={11} className="text-muted-foreground/60" />
@@ -86,8 +105,11 @@ export function PriorityPickerCell({
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-full z-40 mt-1 flex w-[180px] flex-col gap-0.5 rounded-lg border border-border bg-card p-1 shadow-xl"
+          className="popover-glass popover-enter shadow-aura absolute left-0 top-full z-40 mt-1 flex w-[220px] flex-col gap-1 p-[7px]"
         >
+          <span className="eyebrow mb-0.5 block px-1.5 text-[0.66rem]">
+            Priorytet
+          </span>
           {PRIORITY_VALUES.map((value) => {
             const meta = PRIORITY_META[value];
             const active = value === optimistic;
@@ -98,27 +120,29 @@ export function PriorityPickerCell({
                 role="menuitemradio"
                 aria-checked={active}
                 onClick={() => handlePick(value)}
-                className={`flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-[0.82rem] transition-colors hover:bg-accent ${
-                  active ? "bg-primary/5" : ""
-                }`}
+                data-active={active}
+                className="flex items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition-colors hover:bg-muted active:bg-primary/10 data-[active=true]:bg-primary/10"
               >
-                <span className="flex items-center gap-2">
-                  <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{
-                      background:
-                        value === "NONE" ? "transparent" : meta.dotColor,
-                      border:
-                        value === "NONE"
-                          ? "1px dashed currentColor"
-                          : undefined,
-                    }}
-                  />
-                  <span className={value === "NONE" ? "text-muted-foreground" : ""}>
-                    {meta.label}
-                  </span>
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{
+                    background:
+                      value === "NONE" ? "transparent" : meta.dotColor,
+                    border:
+                      value === "NONE"
+                        ? "1px dashed currentColor"
+                        : undefined,
+                  }}
+                  aria-hidden="true"
+                />
+                <span
+                  className={`flex-1 truncate text-[13px] font-medium ${
+                    value === "NONE" ? "text-muted-foreground" : "text-foreground"
+                  }`}
+                >
+                  {meta.label}
                 </span>
-                <span className="font-mono text-[0.6rem] uppercase tracking-[0.1em] text-muted-foreground/60">
+                <span className="ml-auto rounded-[5px] bg-muted/60 px-1.5 py-0.5 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                   {meta.shortCode}
                 </span>
               </button>

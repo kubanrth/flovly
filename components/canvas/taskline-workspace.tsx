@@ -78,13 +78,20 @@ export function TaskLineWorkspace({
   );
 
   return (
-    <div className="flex flex-col gap-3 md:flex-row md:gap-4 h-[calc(100dvh-18rem)] min-h-[640px]">
+    // v4 TASKLINE spec line 218-232: layout md:flex-row max-md:flex-col;
+    // sidebar 320px po lewej + canvas po prawej. Outer NIE wciąga
+    // BoardHeader'a — ten zostaje OSOBNO nad workspace'em w page'u.
+    <div className="flex h-[calc(100dvh-18rem)] min-h-[640px] flex-col gap-3 md:flex-row md:gap-4">
       <TaskLineSidebar
         workspaceId={workspaceId}
         tasks={availableTasks}
         members={members}
       />
-      <div className="flex-1 overflow-hidden rounded-xl border border-border bg-card min-h-[420px]">
+      {/* Canvas po prawej: glass rounded-[22px] z dotted bg (mirror styling
+          z canvas-editor — klient wymaga reuse). */}
+      <div
+        className="glass-surface relative min-h-[420px] flex-1 overflow-hidden rounded-[22px] shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)]"
+      >
         <TaskLineFlow
           canvasId={canvasId}
           initialItems={initialItems}
