@@ -201,17 +201,19 @@ function WorkspaceHero({
   return (
     <section
       aria-label="Workspace overview"
-      className="relative overflow-hidden rounded-[22px] border border-white/60 bg-white/55 px-5 py-4 shadow-[0_18px_40px_-24px_rgba(76,29,149,0.26)] backdrop-blur-2xl md:px-6 md:py-5 dark:border-white/10 dark:bg-white/[0.04]"
+      className="relative overflow-hidden rounded-[22px] border border-white/60 bg-white/70 px-5 py-4 shadow-[0_18px_40px_-24px_rgba(76,29,149,0.26)] md:px-6 md:py-5 dark:border-white/10 dark:bg-white/[0.04]"
     >
-      {/* Animated aura blobs — two radial gradients absolute, blur-3xl,
-          fl-drift slow-loop. Pointer-events none so they don't eat clicks. */}
+      {/* F12-K85 perf: blobs są STATIC. animate-fl-drift dawał continuous
+          repaint (transform+scale w 24s loop) który zabijał GPU — klient
+          raportuje zamulanie. Plus backdrop-blur-2xl na sekcji usunięty
+          (zostaje sam gradient z aury). */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-32 -left-24 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(122,51,236,0.32),transparent_65%)] blur-3xl animate-fl-drift"
+        className="pointer-events-none absolute -top-32 -left-24 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(122,51,236,0.28),transparent_65%)] blur-3xl"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-28 -right-16 h-[380px] w-[380px] rounded-full bg-[radial-gradient(circle,rgba(225,49,143,0.26),transparent_65%)] blur-3xl animate-fl-drift2"
+        className="pointer-events-none absolute -bottom-28 -right-16 h-[380px] w-[380px] rounded-full bg-[radial-gradient(circle,rgba(225,49,143,0.22),transparent_65%)] blur-3xl"
       />
 
       {/* Foreground row: eyebrow + name + avatars (left)  |  search + CTA (right) */}

@@ -224,7 +224,11 @@ export function Sidebar({
             żeby user nie był zamknięty w zagnieżdżonym scroll'u listy workspace'ów.
             Desktop: zewnętrzny overflow-hidden, wewnętrzna sekcja workspace'ów ma
             własny scroll bo header i footer mają trzymać się na top/bottom. */}
-        <div className="sidebar-glass relative flex h-full flex-col md:overflow-hidden max-md:overflow-y-auto backdrop-blur-[40px] backdrop-saturate-[1.8] md:rounded-[22px] max-md:rounded-none max-md:border-0">
+        {/* F12-K85 perf: usunięty backdrop-blur-[40px] saturate-[1.8] —
+            sidebar jest ZAWSZE widoczny + przy każdym hover/scroll repaint
+            kosztował tysiące ms na slabszych GPU (klient raportuje zamulę).
+            Background z .sidebar-glass utility wystarczy dla v4 vibe'u. */}
+        <div className="sidebar-glass relative flex h-full flex-col md:overflow-hidden max-md:overflow-y-auto md:rounded-[22px] max-md:rounded-none max-md:border-0">
 
           {/* ─── HEADER: brand mark + wordmark + collapse/close toggle ─── */}
           {/* v4: padding 14px wewnątrz, brand mark 28px (gradient square + chevron). */}
@@ -553,7 +557,7 @@ function NavItem({
   // v4: gap-2.5, padding 2.5/2 (vs poprzednie 2/1.5), rounded-lg (vs rounded-sm),
   // font-medium (vs default), text size 0.84rem (vs 0.88rem) — bardziej zwarte.
   const cls =
-    "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[0.84rem] font-medium transition-all data-[active=true]:bg-[linear-gradient(135deg,rgba(124,92,255,0.14),rgba(210,71,181,0.10))] data-[active=true]:shadow-[inset_0_0_0_1px_rgba(124,92,255,0.18),0_1px_2px_rgba(12,13,18,0.04)] data-[active=true]:text-foreground dark:data-[active=true]:bg-[linear-gradient(135deg,rgba(155,107,242,0.28),rgba(225,49,143,0.18))] dark:data-[active=true]:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] dark:data-[active=true]:text-white max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]";
+    "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[0.84rem] font-medium transition-colors data-[active=true]:bg-[linear-gradient(135deg,rgba(124,92,255,0.14),rgba(210,71,181,0.10))] data-[active=true]:shadow-[inset_0_0_0_1px_rgba(124,92,255,0.18),0_1px_2px_rgba(12,13,18,0.04)] data-[active=true]:text-foreground dark:data-[active=true]:bg-[linear-gradient(135deg,rgba(155,107,242,0.28),rgba(225,49,143,0.18))] dark:data-[active=true]:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] dark:data-[active=true]:text-white max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]";
 
   if (disabled) {
     return (
@@ -654,7 +658,7 @@ function SortableWorkspaceRow({
     <div ref={setNodeRef} style={style} className="flex flex-col">
       <div
         data-active={isActive ? "true" : "false"}
-        className="group relative flex items-center gap-1 rounded-lg transition-all data-[active=true]:bg-[linear-gradient(135deg,rgba(124,92,255,0.14),rgba(210,71,181,0.10))] data-[active=true]:shadow-[inset_0_0_0_1px_rgba(124,92,255,0.18),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-[linear-gradient(135deg,rgba(155,107,242,0.28),rgba(225,49,143,0.18))] dark:data-[active=true]:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]"
+        className="group relative flex items-center gap-1 rounded-lg transition-colors data-[active=true]:bg-[linear-gradient(135deg,rgba(124,92,255,0.14),rgba(210,71,181,0.10))] data-[active=true]:shadow-[inset_0_0_0_1px_rgba(124,92,255,0.18),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-[linear-gradient(135deg,rgba(155,107,242,0.28),rgba(225,49,143,0.18))] dark:data-[active=true]:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]"
       >
         {!collapsed && (
           <button
@@ -868,7 +872,7 @@ function SortableBoardRow({
       ref={setNodeRef}
       style={style}
       data-active={boardActive ? "true" : "false"}
-      className="group relative flex items-center gap-1 rounded-md transition-all data-[active=true]:bg-white/80 data-[active=true]:shadow-[0_0_0_0.5px_rgba(12,13,18,0.08),inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-white/[0.07] dark:data-[active=true]:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.06)]"
+      className="group relative flex items-center gap-1 rounded-md transition-colors data-[active=true]:bg-white/80 data-[active=true]:shadow-[0_0_0_0.5px_rgba(12,13,18,0.08),inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-white/[0.07] dark:data-[active=true]:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.06)]"
     >
       {canDrag && (
         <button

@@ -352,11 +352,13 @@
       #0B0912;
   }
 
-  /* ─── Glass surface utility ─── */
+  /* ─── Glass surface utility ───
+   * F12-K85 perf: blur 28→12 (klient zgłasza zamulanie). 12px nadal daje
+   * "glass" feel, ale repaint kosztuje ~3x mniej na GPU. */
   .glass-surface {
-    background: rgba(255, 255, 255, 0.7);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
-    backdrop-filter: blur(28px) saturate(180%);
+    background: rgba(255, 255, 255, 0.78);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.85);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.9),
@@ -389,9 +391,9 @@
    * Dark mode: ciemna szyba (spec primary case).
    */
   .dialog-glass {
-    background: rgba(255, 255, 255, 0.78);
-    -webkit-backdrop-filter: blur(40px) saturate(160%);
-    backdrop-filter: blur(40px) saturate(160%);
+    background: rgba(255, 255, 255, 0.88);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    backdrop-filter: blur(20px) saturate(150%);
     border: 1px solid rgba(255, 255, 255, 0.85);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.9),
@@ -414,9 +416,9 @@
    * shadow. Reusable żeby było 1:1 w każdym miejscu.
    */
   .popover-glass {
-    background: color-mix(in oklch, var(--popover) 95%, transparent);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
-    backdrop-filter: blur(24px) saturate(160%);
+    background: color-mix(in oklch, var(--popover) 98%, transparent);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    backdrop-filter: blur(10px) saturate(140%);
     border: 1px solid var(--border);
     border-radius: 12px;
     box-shadow:
@@ -986,6 +988,11 @@
 @media (prefers-reduced-motion: reduce) {
   .lg-seg-indicator {
     transition: none;
+  }
+  .animate-fl-drift,
+  .animate-fl-drift2,
+  .animate-fl-pulse {
+    animation: none;
   }
 }
 .lg-seg--js .lg-seg-btn[data-active="true"] {

@@ -97,9 +97,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ]),
   );
 
-  // F12-K83: Top 10 tasków przypisanych do usera dla Cmd+K palette.
-  // Wyciągnięty osobno (po memberships) — TaskAssignee join + workspace info.
-  // Limit 10 żeby payload + render były tanie; głębsze search'e przez /api później.
+  // F12-K85 perf: top 5 tasków (zmniejszone z 10) dla Cmd+K palette.
+  // SSR fetch na każdy render layout (app) — klient zgłasza zamulanie.
+  // TODO: w kolejnym sprincie wyciągnij to do lazy fetch przez /api/cmdk/tasks
+  // który strzela dopiero gdy user otworzy palette (większość pageview'ów nie
+  // wymaga tej listy w ogóle). Wtedy SSR layoutu staje się ~50ms szybszy.
   const myAssignedTasks = await db.task.findMany({
     where: {
       assignees: { some: { userId: session.user.id } },
@@ -107,7 +109,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       board: { deletedAt: null, workspace: { deletedAt: null } },
     },
     orderBy: { updatedAt: "desc" },
-    take: 10,
+    take: 5,
     select: {
       id: true,
       title: true,
