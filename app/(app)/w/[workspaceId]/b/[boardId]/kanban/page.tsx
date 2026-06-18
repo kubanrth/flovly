@@ -4,6 +4,7 @@ import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { CreateTaskButton } from "@/components/task/create-task-button";
+import { ImportTasksDialog } from "@/components/task/import-tasks-dialog";
 import { BackgroundCustomizer } from "@/components/view/background-customizer";
 import { BoardShell } from "@/components/view/board-shell";
 import { ViewTransition } from "@/components/view/view-transition";
@@ -84,7 +85,13 @@ export default async function BoardKanbanPage({
               />
             )}
             {canCreate && (
-              <CreateTaskButton workspaceId={workspaceId} boardId={board.id} />
+              <>
+                <ImportTasksDialog
+                  workspaceId={workspaceId}
+                  boardId={board.id}
+                />
+                <CreateTaskButton workspaceId={workspaceId} boardId={board.id} />
+              </>
             )}
           </>
         }

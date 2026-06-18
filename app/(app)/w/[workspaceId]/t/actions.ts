@@ -520,6 +520,185 @@ export async function bulkSetPriorityAction(formData: FormData) {
   await broadcastWorkspaceChange(workspaceId, { type: "task.changed" });
 }
 
+// F12-K77: bulk import zadań z CSV/XLS. Klient parsuje plik, robi field
+// mapping i wysyła już znormalizowane rows. Tu walidujemy + bulk insert
+// w jednej transakcji (atomicznie). Limity: max 500 wierszy per call,
+// żeby nie obciążyć DB pojedynczym monstrum.
+
+const importRowSchema = z.object({
+  title: z.string().trim().min(1).max(2000),
+  statusName: z.string().max(120).optional(),
+  priority: z.enum(["NONE", "LOW", "MEDIUM", "HIGH", "URGENT"]).optional(),
+  assigneeNames: z.array(z.string().trim().max(120)).optional(),
+  startAt: z.string().optional(),
+  stopAt: z.string().optional(),
+});
+
+const bulkImportSchema = z.object({
+  workspaceId: z.string().min(1),
+  boardId: z.string().min(1),
+  rows: z.array(importRowSchema).min(1).max(500),
+});
+
+export type BulkImportResult =
+  | { ok: true; created: number; skipped: number; warnings: string[] }
+  | { ok: false; error: string };
+
+function parseImportDate(s: string | undefined): Date | undefined {
+  if (!s) return undefined;
+  const trimmed = s.trim();
+  if (!trimmed) return undefined;
+  // Akceptujemy ISO 8601 + popularne CSV (YYYY-MM-DD, DD.MM.YYYY, DD/MM/YYYY).
+  const iso = new Date(trimmed);
+  if (!isNaN(iso.getTime())) return iso;
+  const dotMatch = trimmed.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
+  if (dotMatch) {
+    const [, d, m, y] = dotMatch;
+    const date = new Date(Number(y), Number(m) - 1, Number(d));
+    if (!isNaN(date.getTime())) return date;
+  }
+  return undefined;
+}
+
+export async function bulkImportTasksAction(
+  input: z.infer<typeof bulkImportSchema>,
+): Promise<BulkImportResult> {
+  const parsed = bulkImportSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Bad input" };
+  }
+  const ctx = await requireWorkspaceAction(parsed.data.workspaceId, "task.create");
+
+  // Lookup status columns + members raz — żeby resolve name → id w pętli było O(1).
+  const [statusColumns, members] = await Promise.all([
+    db.statusColumn.findMany({
+      where: { boardId: parsed.data.boardId },
+      select: { id: true, name: true, order: true },
+      orderBy: { order: "asc" },
+    }),
+    db.workspaceMembership.findMany({
+      where: { workspaceId: parsed.data.workspaceId },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    }),
+  ]);
+
+  const statusByName = new Map(
+    statusColumns.map((s) => [s.name.toLowerCase().trim(), s.id]),
+  );
+  const fallbackStatusId = statusColumns[0]?.id ?? null;
+
+  // Member lookup: name lub local-part email'a.
+  const memberByName = new Map<string, string>();
+  for (const m of members) {
+    if (m.user.name) memberByName.set(m.user.name.toLowerCase().trim(), m.user.id);
+    memberByName.set(m.user.email.toLowerCase().trim(), m.user.id);
+    memberByName.set(
+      m.user.email.split("@")[0].toLowerCase().trim(),
+      m.user.id,
+    );
+  }
+
+  // displayId — od max+1 w workspace'ie.
+  const lastDisplay = await db.task.findFirst({
+    where: { workspaceId: parsed.data.workspaceId },
+    orderBy: { displayId: "desc" },
+    select: { displayId: true },
+  });
+  let nextDisplayId = (lastDisplay?.displayId ?? 0) + 1;
+
+  // rowOrder — od max+1 (na koniec listy w domyślnym statusie). Każdy nowy
+  // task dostaje +1.
+  const maxRowOrder = await db.task.aggregate({
+    where: { workspaceId: parsed.data.workspaceId },
+    _max: { rowOrder: true },
+  });
+  let nextRowOrder = (maxRowOrder._max.rowOrder ?? 0) + 1;
+
+  const warnings: string[] = [];
+  let skipped = 0;
+
+  // Transakcja — jeśli któryś task się sypnie (rare po walidacji zod), wszystko rollback.
+  const created = await db.$transaction(async (tx) => {
+    const createdTasks: { id: string; assignees: string[] }[] = [];
+
+    for (const [idx, row] of parsed.data.rows.entries()) {
+      let statusColumnId: string | null = fallbackStatusId;
+      if (row.statusName) {
+        const found = statusByName.get(row.statusName.toLowerCase().trim());
+        if (found) {
+          statusColumnId = found;
+        } else {
+          warnings.push(
+            `Wiersz ${idx + 1}: nie znalazłem statusu "${row.statusName}", użyto domyślnego.`,
+          );
+        }
+      }
+
+      const assigneeIds: string[] = [];
+      if (row.assigneeNames && row.assigneeNames.length > 0) {
+        for (const name of row.assigneeNames) {
+          const trimmed = name.trim();
+          if (!trimmed) continue;
+          const userId = memberByName.get(trimmed.toLowerCase());
+          if (userId) {
+            assigneeIds.push(userId);
+          } else {
+            warnings.push(`Wiersz ${idx + 1}: pomijam nieznanego usera "${trimmed}".`);
+          }
+        }
+      }
+
+      const task = await tx.task.create({
+        data: {
+          workspaceId: parsed.data.workspaceId,
+          boardId: parsed.data.boardId,
+          displayId: nextDisplayId++,
+          statusColumnId,
+          creatorId: ctx.userId,
+          title: row.title,
+          rowOrder: nextRowOrder++,
+          startAt: parseImportDate(row.startAt),
+          stopAt: parseImportDate(row.stopAt),
+          ...(row.priority && row.priority !== "NONE"
+            ? { priority: row.priority }
+            : {}),
+        },
+        select: { id: true },
+      });
+
+      if (assigneeIds.length > 0) {
+        await tx.taskAssignee.createMany({
+          data: assigneeIds.map((userId) => ({ taskId: task.id, userId })),
+          skipDuplicates: true,
+        });
+      }
+
+      createdTasks.push({ id: task.id, assignees: assigneeIds });
+    }
+
+    return createdTasks;
+  });
+
+  await writeAudit({
+    workspaceId: parsed.data.workspaceId,
+    objectType: "Task",
+    objectId: created[0]?.id ?? "",
+    actorId: ctx.userId,
+    action: "task.bulkImport",
+    diff: { count: created.length, warnings: warnings.length },
+  });
+
+  revalidatePath(`/w/${parsed.data.workspaceId}`);
+  await broadcastWorkspaceChange(parsed.data.workspaceId, { type: "task.changed" });
+
+  return {
+    ok: true,
+    created: created.length,
+    skipped,
+    warnings: warnings.slice(0, 20),
+  };
+}
+
 // F12-K76: bulk assign osoby do N task'ów. Mode='add' tworzy TaskAssignee
 // dla tych co jeszcze nie mają; mode='remove' kasuje powiązanie.
 export async function bulkAssignAction(formData: FormData) {

@@ -5,6 +5,7 @@ import { can } from "@/lib/permissions";
 import { BoardTable, type CustomTableColumn } from "@/components/table/board-table";
 import type { TableFilter, TableSort } from "@/lib/table-filters";
 import { CreateTaskButton } from "@/components/task/create-task-button";
+import { ImportTasksDialog } from "@/components/task/import-tasks-dialog";
 import { BackgroundCustomizer } from "@/components/view/background-customizer";
 import { BoardShell } from "@/components/view/board-shell";
 import { ViewTransition } from "@/components/view/view-transition";
@@ -144,7 +145,13 @@ export default async function BoardTablePage({
               />
             )}
             {canCreate && (
-              <CreateTaskButton workspaceId={workspaceId} boardId={board.id} />
+              <>
+                <ImportTasksDialog
+                  workspaceId={workspaceId}
+                  boardId={board.id}
+                />
+                <CreateTaskButton workspaceId={workspaceId} boardId={board.id} />
+              </>
             )}
           </>
         }
