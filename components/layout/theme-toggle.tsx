@@ -24,7 +24,7 @@ export function ThemeToggle({
   variant = "sidebar",
   collapsed = false,
 }: {
-  variant?: "sidebar" | "compact" | "labeled";
+  variant?: "sidebar" | "compact" | "labeled" | "menu-item";
   collapsed?: boolean;
 }) {
   const [theme, setTheme] = useState<Theme>("light");
@@ -52,6 +52,18 @@ export function ThemeToggle({
 
   // Avoid hydration mismatch — render an inert placeholder until effect runs.
   if (!mounted) {
+    if (variant === "menu-item") {
+      return (
+        <button
+          type="button"
+          aria-label="Tryb"
+          className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-foreground/60"
+        >
+          <Sun size={15} />
+          <span className="flex-1 text-left">Tryb…</span>
+        </button>
+      );
+    }
     if (variant === "labeled") {
       return (
         <button
@@ -81,6 +93,22 @@ export function ThemeToggle({
 
   const Icon = theme === "dark" ? Sun : Moon;
   const label = theme === "dark" ? "Tryb jasny" : "Tryb ciemny";
+
+  if (variant === "menu-item") {
+    return (
+      <button
+        type="button"
+        onClick={toggle}
+        aria-label={label}
+        className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] text-foreground/80 transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/[0.06]"
+      >
+        <span className="text-foreground/60">
+          <Icon size={15} />
+        </span>
+        <span className="flex-1">{label}</span>
+      </button>
+    );
+  }
 
   if (variant === "labeled") {
     return (

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { signOutAction } from "@/app/(app)/actions";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { cn } from "@/lib/utils";
 
 export interface ProfileDropdownUser {
@@ -40,7 +41,10 @@ export function ProfileDropdown({
     icon: React.ReactNode;
     label: string;
   }> = [
-    { href: "/profile", icon: <User size={15} />, label: "Konto" },
+    ...(user.isSuperAdmin
+      ? [{ href: "/admin", icon: <ShieldCheck size={15} />, label: "Panel admina" }]
+      : []),
+    { href: "/profile", icon: <User size={15} />, label: "Ustawienia konta" },
     { href: "/inbox", icon: <Bell size={15} />, label: "Powiadomienia" },
     { href: "/profile#2fa", icon: <ShieldCheck size={15} />, label: "2FA" },
     { href: "/profile#sesje", icon: <Monitor size={15} />, label: "Sesje" },
@@ -119,6 +123,10 @@ export function ProfileDropdown({
                   }
                 />
               ))}
+
+              <div className="my-1 h-px bg-black/5 dark:bg-white/[0.06]" />
+
+              <ThemeToggle variant="menu-item" />
 
               <div className="my-1 h-px bg-black/5 dark:bg-white/[0.06]" />
 

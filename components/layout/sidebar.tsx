@@ -48,23 +48,19 @@ import {
   Inbox,
   Layers,
   LineChart,
-  LogOut,
   Menu,
   Plane,
   Plus,
   Settings,
-  ShieldCheck,
   StickyNote,
   X,
 } from "lucide-react";
 import type { Role } from "@/lib/generated/prisma/enums";
-import { signOutAction } from "@/app/(app)/actions";
 import { reorderWorkspacesAction } from "@/app/(app)/workspaces/actions";
 import { FlovlyMark, FlovlyWordmark } from "@/components/brand/flovly-logo";
 import { reorderBoardsAction } from "@/app/(app)/w/[workspaceId]/b/actions";
 import { CreateBoardDialog } from "@/components/workspaces/create-board-dialog";
 import { DeleteBoardDialog } from "@/components/workspaces/delete-board-dialog";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { ProfileDropdown } from "@/components/profile/profile-dropdown";
 import {
   WorkspaceSwitcher,
@@ -423,41 +419,13 @@ export function Sidebar({
             </div>
           </div>
 
-          {/* ─── FOOTER: admin / settings / theme / logout / user widget ─── */}
+          {/* ─── FOOTER: user widget (klik → ProfileDropdown z Panel admina /
+              Ustawienia / Powiadomienia / 2FA / Sesje / Tryb / Wyloguj).
+              4 stare itemy footera (admin/settings/theme/logout) przeniesione do
+              dropdownu — żeby workspace list dostała pełną wysokość. */}
           <div className="border-t border-black/5 dark:border-white/[0.05] max-md:px-4 max-md:pt-2">
-            <div className="flex flex-col gap-1 px-3 py-2">
-              {user.isSuperAdmin && (
-                <NavItem
-                  href="/admin"
-                  icon={<ShieldCheck size={16} />}
-                  label="Panel admina"
-                  pathname={pathname}
-                  collapsed={collapsed}
-                />
-              )}
-              <NavItem
-                href="/profile"
-                icon={<Settings size={16} />}
-                label="Ustawienia konta"
-                pathname={pathname}
-                collapsed={collapsed}
-              />
-              <ThemeToggle variant="labeled" collapsed={collapsed} />
-              <form action={signOutAction} className="w-full">
-                <button
-                  type="submit"
-                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[0.84rem] font-medium text-muted-foreground transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/[0.05] max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
-                >
-                  <LogOut size={16} className="shrink-0 max-md:size-[18px]" />
-                  {!collapsed && <span className="truncate">Wyloguj</span>}
-                </button>
-              </form>
-            </div>
 
-            {/* User profile widget — sub-card z glass tint + border (v4 mock).
-                F12-K83: click otwiera ProfileDropdown popover (Konto / Powiadomienia /
-                2FA / Sesje / Wyloguj). Bezpośredni /profile link został przeniesiony do
-                pierwszej pozycji dropdownu. */}
+            {/* User profile widget — sub-card z glass tint + border (v4 mock). */}
             <div className="px-3 pb-3 pt-1 max-md:px-4 max-md:pb-4">
               <ProfileDropdown
                 user={{
