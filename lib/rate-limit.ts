@@ -19,7 +19,12 @@ export type LimiterName =
   | "comment.create"
   | "task.create"
   | "task.sendEmail"
-  | "workspace.invite";
+  | "workspace.invite"
+  // F12-K74: Ateron AI chat. Twardy limit zapytań żeby insider abuse nie
+  // spalił klucza OpenAI w godziny. Per (userId + workspaceId).
+  | "chat.message"
+  // Drugi pasek (per day) — chroni przed slow drip exhaustion.
+  | "chat.daily";
 
 interface LimiterSpec {
   tokens: number;
@@ -41,6 +46,21 @@ const SPECS: Record<LimiterName, LimiterSpec> = {
     tokens: 20,
     window: "1 h",
     friendly: "20 zaproszeń/godz na przestrzeń",
+  },
+  // 20 wiadomości/min wystarczy dla legit usera (1 pytanie co 3s), spam'er
+  // dostaje 429. Per (userId + workspaceId) — user z 5 workspace'ami
+  // ma 5×20 = 100/min globalnie ale max 20 per workspace.
+  "chat.message": {
+    tokens: 20,
+    window: "1 m",
+    friendly: "20 wiadomości na minutę",
+  },
+  // 300/dzień to przy gpt-4o-mini ~$0.50/dzień max per user-workspace.
+  // Dla 10-osobowego teamu = ~$150/mc górnego limitu cost.
+  "chat.daily": {
+    tokens: 300,
+    window: "1 d",
+    friendly: "300 wiadomości na dzień",
   },
 };
 

@@ -50,6 +50,8 @@ function ToolMarker({ name }: { name: string }) {
 
 const TOOL_LABELS: Record<string, string> = {
   list_boards: "sprawdzam tablice",
+  find_user: "szukam osoby",
+  count_tasks_by_status: "liczę zadania",
   list_tasks: "szukam zadań",
   list_overdue_tasks: "sprawdzam przeterminowane",
   get_user_activity: "sprawdzam aktywność",

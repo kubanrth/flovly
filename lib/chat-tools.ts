@@ -315,8 +315,9 @@ async function resolveUserId(
   | { found: true; userId: string; name: string; email: string }
   | { found: false; candidates: { id: string; name: string | null; email: string }[] }
 > {
+  // M3: trim'ujemy zanim sprawdzimy ME (LLM często wysyła "ME " z trailing).
   // Sygnatura 'ME' = zalogowany user.
-  if (query.toUpperCase() === "ME") {
+  if (query.trim().toUpperCase() === "ME") {
     const me = await db.user.findUnique({
       where: { id: ctx.userId },
       select: { id: true, name: true, email: true },
@@ -408,7 +409,15 @@ async function toolListBoards(ctx: ToolContext) {
 
 async function toolFindUser(ctx: ToolContext, args: Record<string, unknown>) {
   const query = typeof args.query === "string" ? args.query.trim() : "";
-  if (!query) return { count: 0, users: [], error: "Brak query." };
+  // C3: min 2 znaki — pojedyncza litera dopasowuje prawie wszystkich userów,
+  // i wszystkie ich emaile wpadałyby do logów LLM provider'a (PII leak).
+  if (query.length < 2) {
+    return {
+      count: 0,
+      users: [],
+      error: "Podaj min 2 znaki imienia / nazwiska.",
+    };
+  }
 
   const lc = query.toLowerCase();
   const members = await db.user.findMany({
@@ -424,12 +433,14 @@ async function toolFindUser(ctx: ToolContext, args: Record<string, unknown>) {
     return name.includes(lc) || email.includes(lc) || u.id === query;
   });
 
+  // C3: NIE zwracamy pełnego email'a do LLM'a — wystarczy local-part (przed @)
+  // jako disambiguator. Pełen adres redundantny, tylko zwiększał PII surface.
   return {
     count: matches.length,
     users: matches.slice(0, 10).map((u) => ({
       id: u.id,
       name: u.name ?? u.email.split("@")[0],
-      email: u.email,
+      emailHandle: u.email.split("@")[0],
     })),
   };
 }
@@ -819,22 +830,43 @@ async function toolGetUserActivity(
     .filter((e) => e.objectType === "Board")
     .map((e) => e.objectId);
 
+  // C5 fix: lookup tasków/board'ów MUSI respektować ACL pytającego usera,
+  // nie target'u. Inaczej user A widzi tytuły z PRIVATE board'ów do których
+  // nie ma membershipu — tylko dlatego że user B (też w workspace'ie) tam
+  // coś robił.
+  const accessibleBoardIds = await getAccessibleBoardIds(ctx);
   const [tasks, boards] = await Promise.all([
     taskIds.length > 0
       ? db.task.findMany({
-          where: { id: { in: taskIds } },
+          where: {
+            id: { in: taskIds },
+            workspaceId: ctx.workspaceId,
+            boardId: { in: accessibleBoardIds },
+          },
           select: { id: true, title: true, displayId: true },
         })
       : Promise.resolve([]),
     boardIds.length > 0
       ? db.board.findMany({
-          where: { id: { in: boardIds } },
-          select: { id: true, name: true },
+          where: {
+            id: { in: boardIds },
+            workspaceId: ctx.workspaceId,
+            // Board lookup ograniczamy do tych do których pytający user ma dostęp.
+            // Reszta wpadnie do "(brak dostępu)" w label'u eventa poniżej.
+          },
+          select: { id: true, name: true, visibility: true },
         })
       : Promise.resolve([]),
   ]);
   const taskById = new Map(tasks.map((t) => [t.id, t]));
-  const boardById = new Map(boards.map((b) => [b.id, b]));
+  // Board: filter PRIVATE'y do których pytający nie ma dostępu — używamy
+  // accessibleBoardIds set, żeby PRIVATE board's name nie wyciekał.
+  const accessibleBoardsSet = new Set(accessibleBoardIds);
+  const boardById = new Map(
+    boards
+      .filter((b) => accessibleBoardsSet.has(b.id))
+      .map((b) => [b.id, b]),
+  );
 
   return {
     user: {
@@ -848,10 +880,12 @@ async function toolGetUserActivity(
       objectType: e.objectType,
       label:
         e.objectType === "Task"
-          ? taskById.get(e.objectId)?.title ?? "(usunięte zadanie)"
+          ? taskById.get(e.objectId)?.title ?? "(brak dostępu lub usunięte)"
           : e.objectType === "Board"
-            ? boardById.get(e.objectId)?.name ?? "(usunięta tablica)"
-            : e.objectId,
+            ? boardById.get(e.objectId)?.name ?? "(brak dostępu lub usunięte)"
+            : "(inny obiekt)",
+      // NIE pokazujemy raw e.objectId (cuid) gdy nie ma label'a — leakuje
+      // istnienie obiektów do których user nie ma dostępu.
       at: e.createdAt.toISOString(),
     })),
   };

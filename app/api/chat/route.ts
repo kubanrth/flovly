@@ -24,6 +24,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { chat, type ChatMessageInput } from "@/lib/llm";
 import { TOOL_DEFS, executeChatTool, type ToolContext } from "@/lib/chat-tools";
+import { checkLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -38,6 +39,17 @@ const POST_SCHEMA = z.object({
 // Trade-off: model nie pamięta starych konwersacji w tej sesji.
 const MAX_HISTORY_MESSAGES = 12;
 const MAX_TOOL_ITERATIONS = 5;
+
+// H7: user może mieć w name newliny / fake "SYSTEM:" prefix → injection.
+// Twardy sanitize: jednolinijka, max 80 znaków, escapuje '<' żeby user nie
+// wstawił </user> i nie zamknął naszego delimitera.
+function sanitizeUserLabel(s: string): string {
+  return s
+    .replace(/[\n\r\t<>]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 80);
+}
 
 function buildSystemPrompt(currentUserLabel: string): string {
   return `Jesteś Ateron — asystent AI w aplikacji FLOVLY (system PM klasy ClickUp).
@@ -88,30 +100,21 @@ export async function POST(request: Request) {
     );
   }
 
-  const { workspaceId, message } = parsed.data;
+  const { message } = parsed.data;
   let { sessionId } = parsed.data;
   const userId = session.user.id;
+  // workspaceId z BODY tylko dla NOWEJ sesji. Dla istniejącej zawsze
+  // bierzemy z chatSession.workspaceId — eliminuje cross-workspace takeover (C2).
+  let workspaceId = parsed.data.workspaceId;
 
-  // ─────────── Workspace membership + user label dla system prompt'a ─
-  const membership = await getWorkspaceSession(workspaceId, userId);
-  if (!membership) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  // Pobieramy imię + email zalogowanego usera żeby LLM wiedział "kto pyta".
-  const currentUser = await db.user.findUnique({
-    where: { id: userId },
-    select: { name: true, email: true },
-  });
-  const currentUserLabel = currentUser
-    ? `${currentUser.name ?? currentUser.email.split("@")[0]} (${currentUser.email})`
-    : "Anonimowy user";
-
-  // ─────────── Resolve / create ChatSession ───────────
+  // ─────────── Resolve / create ChatSession (PRZED workspace check) ───────
+  // C2 fix: gdy istniejąca sesja, walidujemy SAM userId (właściciel) i
+  // nadpisujemy workspaceId tym z sesji. Body workspaceId ignorowane.
   let chatSession;
   if (sessionId) {
     chatSession = await db.chatSession.findFirst({
-      where: { id: sessionId, workspaceId, userId },
+      where: { id: sessionId, userId },
+      select: { id: true, workspaceId: true, title: true },
     });
     if (!chatSession) {
       return NextResponse.json(
@@ -119,29 +122,77 @@ export async function POST(request: Request) {
         { status: 404 },
       );
     }
-  } else {
+    // C2: użyj workspaceId z sesji, nie z body.
+    workspaceId = chatSession.workspaceId;
+  }
+
+  // ─────────── Workspace membership ───────────
+  const membership = await getWorkspaceSession(workspaceId, userId);
+  if (!membership) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // ─────────── C1: Rate limit (per user+workspace) ───────────
+  // Sliding-window minute + daily total.
+  const rateKey = `${userId}:${workspaceId}`;
+  const [perMin, perDay] = await Promise.all([
+    checkLimit("chat.message", rateKey),
+    checkLimit("chat.daily", rateKey),
+  ]);
+  if (!perMin.ok) {
+    return NextResponse.json(
+      { error: "Rate limit", message: perMin.error, resetMs: perMin.resetMs },
+      { status: 429 },
+    );
+  }
+  if (!perDay.ok) {
+    return NextResponse.json(
+      { error: "Daily limit", message: perDay.error, resetMs: perDay.resetMs },
+      { status: 429 },
+    );
+  }
+
+  // Pobieramy imię + email zalogowanego usera żeby LLM wiedział "kto pyta".
+  const currentUser = await db.user.findUnique({
+    where: { id: userId },
+    select: { name: true, email: true },
+  });
+  // H7: sanitize żeby user nie wstrzyknął fake "SYSTEM:" w nazwę.
+  const currentUserLabel = currentUser
+    ? `${sanitizeUserLabel(currentUser.name ?? currentUser.email.split("@")[0])} (${sanitizeUserLabel(currentUser.email)})`
+    : "Anonimowy user";
+
+  // Create new session (po wszystkich check'ach żeby nie tworzyć orphan'ów).
+  if (!chatSession) {
     chatSession = await db.chatSession.create({
       data: { workspaceId, userId },
+      select: { id: true, workspaceId: true, title: true },
     });
     sessionId = chatSession.id;
   }
+  // Po tym punkcie sessionId jest na pewno stringiem (utworzona albo
+  // istniejąca). TS nie wnioskuje przez branch'e więc explicit assignment.
+  const sid: string = chatSession.id;
 
   // ─────────── Save user message ───────────
   await db.chatMessage.create({
-    data: { sessionId, role: "user", content: message },
+    data: { sessionId: sid, role: "user", content: message },
   });
 
   // ─────────── Load history ───────────
+  // H1 fix: pobieramy NAJNOWSZE MAX_HISTORY_MESSAGES (DESC), potem reverse'em
+  // przywracamy chronologię. Bug: wcześniej `orderBy: asc + take` zwracało
+  // NAJSTARSZE 12 messages → po pierwszych 12 wiadomościach model "tracił
+  // pamięć" o aktualnej konwersacji.
   const history = await db.chatMessage.findMany({
-    where: { sessionId },
-    orderBy: { createdAt: "asc" },
-    take: MAX_HISTORY_MESSAGES + 5,
+    where: { sessionId: sid },
+    orderBy: { createdAt: "desc" },
+    take: MAX_HISTORY_MESSAGES,
   });
 
-  // Konwersja DB rows → ChatMessageInput dla LLM'a.
   const llmHistory: ChatMessageInput[] = [
     { role: "system", content: buildSystemPrompt(currentUserLabel) },
-    ...history.slice(-MAX_HISTORY_MESSAGES).map((m) => {
+    ...history.reverse().map((m) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const tc = (m.toolCalls as any[] | null) ?? undefined;
       return {
@@ -188,7 +239,7 @@ export async function POST(request: Request) {
       // Plain odpowiedź — zapisujemy i kończymy.
       await db.chatMessage.create({
         data: {
-          sessionId,
+          sessionId: sid,
           role: "assistant",
           content: result.content,
           tokensIn: result.tokensIn,
@@ -204,7 +255,7 @@ export async function POST(request: Request) {
     // tool, zapisz wyniki, push do history, kontynuuj loop.
     await db.chatMessage.create({
       data: {
-        sessionId,
+        sessionId: sid,
         role: "assistant",
         content: result.content,
         toolCalls: result.toolCalls.map((c) => ({
@@ -243,7 +294,7 @@ export async function POST(request: Request) {
         const serialized = JSON.stringify(toolResults[idx]);
         return db.chatMessage.create({
           data: {
-            sessionId,
+            sessionId: sid,
             role: "tool",
             content: serialized,
             toolCallId: call.id,
@@ -268,7 +319,7 @@ export async function POST(request: Request) {
   // ─────────── Update session metadata ───────────
   const titleNeedsUpdate = chatSession.title === "Nowa rozmowa";
   await db.chatSession.update({
-    where: { id: sessionId },
+    where: { id: sid },
     data: {
       lastModel,
       updatedAt: new Date(),
@@ -280,7 +331,7 @@ export async function POST(request: Request) {
 
   // ─────────── Return updated messages ───────────
   const updated = await db.chatMessage.findMany({
-    where: { sessionId },
+    where: { sessionId: sid },
     orderBy: { createdAt: "asc" },
     select: {
       id: true,
@@ -292,7 +343,7 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json({
-    sessionId,
+    sessionId: sid,
     messages: updated.map((m) => ({
       id: m.id,
       role: m.role,
