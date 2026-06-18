@@ -8,7 +8,16 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Plus, Check, X } from "lucide-react";
+import {
+  Trash2,
+  Plus,
+  Check,
+  X,
+  Bell,
+  Flag,
+  Maximize2,
+  Pencil,
+} from "lucide-react";
 import type { Role } from "@/lib/generated/prisma/enums";
 import {
   createTagAction,
@@ -37,7 +46,6 @@ import { assignTaskToMilestoneAction } from "@/app/(app)/w/[workspaceId]/b/[boar
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { RecurrencePicker } from "@/components/task/recurrence-picker";
 import { PortalDropdown } from "@/components/ui/portal-dropdown";
-import { Bell, Flag } from "lucide-react";
 
 // Tag palette moved to lib/colors.ts (BRAND_PALETTE).
 import { TAG_PALETTE as TAG_COLORS } from "@/lib/colors";
@@ -141,6 +149,13 @@ export interface LinkCandidate {
   displayId: number;
 }
 
+// Inicjały do avatara (max 2 znaki, uppercase).
+function initialsOf(name: string | null, email: string): string {
+  const src = name?.trim() || email.split("@")[0] || "?";
+  const parts = src.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0]![0]! + parts[1]![0]!).toUpperCase();
+  return src.slice(0, 2).toUpperCase();
+}
 
 export function TaskDetail({
   workspaceId,
@@ -170,8 +185,6 @@ export function TaskDetail({
   linkCandidates,
   boardId,
   workspaceBoards,
-  contactId,
-  workspaceContacts,
   customColumns,
   customValues,
 }: TaskDetailProps) {
@@ -212,322 +225,591 @@ export function TaskDetail({
     router.refresh();
   };
 
+  // Aktywni przypisani jako stack avatarów (max 5 + counter).
+  const activeAssignees = allMembers.filter((m) => assigneeIds.has(m.id));
+  const activeTags = allTags.filter((t) => tagIds.has(t.id));
+
   return (
-    <div className="flex flex-col gap-6 md:gap-10">
-      {/* Meta: ID + actions. Mobile (max-md): pille zawijają się na drugą
-          linię — gap-2 zamiast gap-4, flex-wrap włączone. Każda akcja ma
-          własny kolor (sky / violet / destructive) — łatwo zidentyfikować. */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
-          zadanie · #{task.displayId || "—"}
-        </span>
+    <div className="flex flex-col gap-6">
+      {/* =====================================================================
+          HEADER — v4 layout
+          Row 1: ID badge (#42) + Status pill + Priority pill + akcje (expand / X)
+          Row 2: tytuł zadania (textarea, edytowalny inline) + ikona pencila
+          ===================================================================== */}
+      <header className="flex flex-col gap-3.5">
+        {/* meta row */}
         <div className="flex flex-wrap items-center gap-2">
-          {canEdit && (
-            <SendEmailDialog
-              taskId={task.id}
-              taskTitle={task.title}
-              attachments={attachments.map((a) => ({
-                id: a.id,
-                filename: a.filename,
-                sizeBytes: a.sizeBytes,
-              }))}
-            />
-          )}
-          {canEdit && workspaceBoards.length > 1 && (
-            <MoveTaskMenu
-              taskId={task.id}
-              currentBoardId={boardId}
-              availableBoards={workspaceBoards}
-            />
-          )}
-          {canDelete && (
-            <form action={deleteTaskAction}>
-              <input type="hidden" name="id" value={task.id} />
-              <input type="hidden" name="workspaceId" value={workspaceId} />
-              <button
-                type="submit"
-                className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-destructive/30 bg-destructive/10 px-3 font-sans text-[0.78rem] font-semibold text-destructive transition-colors hover:border-destructive/50 hover:bg-destructive/15 active:scale-[0.97] motion-reduce:active:scale-100"
-              >
-                <Trash2 size={12} /> Usuń
-              </button>
-            </form>
-          )}
+          <span className="inline-flex h-6 items-center rounded-md bg-primary/12 px-2 font-mono text-[0.72rem] font-semibold tracking-tight text-primary">
+            #{task.displayId || "—"}
+          </span>
+
+          {/* status — pill statyczna w nagłówku, edytowalna z prawego sidebar'a */}
+          <HeaderStatusPill task={task} statusColumns={statusColumns} />
+          {/* priority — pill statyczna w nagłówku, edytowalna z prawego sidebar'a */}
+          <HeaderPriorityPill priority={task.priority} />
+
+          {/* prawa strona — akcje (email / move / expand / close obsługuje shell) */}
+          <div className="ml-auto flex items-center gap-1.5">
+            {canEdit && (
+              <SendEmailDialog
+                taskId={task.id}
+                taskTitle={task.title}
+                attachments={attachments.map((a) => ({
+                  id: a.id,
+                  filename: a.filename,
+                  sizeBytes: a.sizeBytes,
+                }))}
+              />
+            )}
+            {canEdit && workspaceBoards.length > 1 && (
+              <MoveTaskMenu
+                taskId={task.id}
+                currentBoardId={boardId}
+                availableBoards={workspaceBoards}
+              />
+            )}
+            <button
+              type="button"
+              aria-label="Pełny widok"
+              className="grid h-[30px] w-[30px] place-items-center rounded-[9px] border border-border bg-card/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+              onClick={() => router.push(`/w/${workspaceId}/b/${boardId}/t/${task.id}`)}
+            >
+              <Maximize2 size={14} />
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Main form — title, description, status, dates */}
-      <form
-        action={(fd) => startTransition(() => formAction(fd))}
-        className="flex flex-col gap-6"
-      >
-        <input type="hidden" name="id" value={task.id} />
-
-        <label className="flex flex-col gap-2">
-          <span className="eyebrow">Tytuł</span>
-          {/* F12-K57: textarea zamiast input żeby długie tytuły zawijały
-              się w wiele linii (klient: 'jeśli tytuł dłuższy niż szerokość
-              to potrzebujemy zawijanie'). rows=1 + field-sizing-content
-              powoduje auto-grow. Max 2000 znaków zamiast 200. */}
-          <textarea
-            ref={titleRef}
-            name="title"
-            required
-            maxLength={2000}
-            rows={1}
-            readOnly={!canEdit}
-            defaultValue={task.title}
-            aria-invalid={!!fieldErrors?.title}
-            className="resize-none overflow-hidden border-b border-border bg-transparent pb-2 font-display text-[1.4rem] leading-[1.15] tracking-[-0.02em] outline-none focus:border-primary aria-[invalid=true]:border-destructive md:text-[1.8rem] [field-sizing:content]"
-          />
+        {/* title row */}
+        <form
+          id="task-update-form"
+          action={(fd) => startTransition(() => formAction(fd))}
+          className="flex flex-col gap-2"
+        >
+          <input type="hidden" name="id" value={task.id} />
+          <div className="flex items-start gap-2">
+            <textarea
+              ref={titleRef}
+              name="title"
+              required
+              maxLength={2000}
+              rows={1}
+              readOnly={!canEdit}
+              defaultValue={task.title}
+              aria-invalid={!!fieldErrors?.title}
+              className="flex-1 resize-none overflow-hidden border-0 bg-transparent p-0 font-display text-[1.5rem] font-bold leading-[1.2] tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground focus:outline-none aria-[invalid=true]:text-destructive md:text-[1.75rem] [field-sizing:content]"
+            />
+            {canEdit && (
+              <Pencil
+                size={15}
+                className="mt-2 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+            )}
+          </div>
           {fieldErrors?.title && (
             <span className="font-mono text-[0.68rem] text-destructive">
               {fieldErrors.title}
             </span>
           )}
-        </label>
 
-        <div className="grid gap-6 md:grid-cols-4">
-          <div className="flex flex-col gap-2">
-            <span className="eyebrow">Status</span>
-            <StatusPill
-              name="statusColumnId"
-              statuses={statusColumns}
-              defaultValue={task.statusColumnId}
-              disabled={!canEdit}
-            />
-          </div>
-          {/* F12-K75: priority inline picker — zapisuje od razu via
-              setTaskPriorityAction, nie czeka na submit całego form'a. */}
-          <div className="flex flex-col gap-2">
-            <span className="eyebrow">Priorytet</span>
-            <PriorityPickerCell
+          {/* recurrence info — istniejące zadanie cykliczne (instancja) */}
+          {task.recurrenceParentId && (
+            <p className="font-mono text-[0.66rem] uppercase tracking-[0.12em] text-muted-foreground">
+              🔁 instancja zadania cyklicznego — edytuj szablon żeby zmienić regułę
+            </p>
+          )}
+
+          {/* flash + error pod tytułem */}
+          {!state?.ok && state?.error && (
+            <p className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-destructive">
+              {state.error}
+            </p>
+          )}
+          {flash && (
+            <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-primary">
+              {flash}
+            </span>
+          )}
+        </form>
+      </header>
+
+      {/* =====================================================================
+          BODY — 2 kolumny: main (1fr) + sticky meta sidebar (280px)
+          Mobile (max-md): meta sidebar zwija się pod main column.
+          ===================================================================== */}
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_280px]">
+        {/* ============ MAIN COLUMN ============ */}
+        <main className="flex min-w-0 flex-col gap-8">
+          {/* Description — Tiptap rich text editor */}
+          <Section eyebrow="Opis">
+            <DescriptionSection
               taskId={task.id}
-              current={task.priority}
+              initial={task.descriptionJson}
               canEdit={canEdit}
             />
-          </div>
-          <div className="flex flex-col gap-2">
-            <span className="eyebrow">Start</span>
-            <DateTimePicker
-              name="startAt"
-              defaultValue={task.startAt}
-              disabled={!canEdit}
-              placeholder="Brak daty startu"
-              label="Data startu"
+          </Section>
+
+          {/* Subtasks (checklist + progress bar) */}
+          <Section eyebrow={`Podzadania${subtasks.length ? ` · ${subtasks.filter((s) => s.completed).length}/${subtasks.length}` : ""}`}>
+            <SubtasksSection
+              taskId={task.id}
+              subtasks={subtasks}
+              canManage={canManageSubtasks}
             />
-          </div>
-          <div className="flex flex-col gap-2">
-            <span className="eyebrow">Koniec</span>
-            <DateTimePicker
-              name="stopAt"
-              defaultValue={task.stopAt}
-              disabled={!canEdit}
-              placeholder="Brak daty końca"
-              label="Data końca"
+          </Section>
+
+          {/* Attachments — image previews + file cards + dashed dodaj */}
+          <Section eyebrow={`Załączniki${attachments.length ? ` · ${attachments.length}` : ""}`}>
+            <AttachmentsSection
+              taskId={task.id}
+              attachments={attachments}
+              canUpload={canUpload}
+              canModerate={canModerateAttachments}
             />
-          </div>
-        </div>
+          </Section>
 
-        <ReminderField
-          defaultValue={task.reminderOffset ?? "none"}
-          reminderAt={task.reminderAt}
-          disabled={!canEdit}
-        />
+          {/* Linked tasks — pokrewne zadania */}
+          {(linkedTasks.length > 0 || canEdit) && (
+            <Section eyebrow={`Powiązane${linkedTasks.length ? ` · ${linkedTasks.length}` : ""}`}>
+              <LinkedTasksSection
+                workspaceId={workspaceId}
+                taskId={task.id}
+                linkedTasks={linkedTasks}
+                candidates={linkCandidates}
+                canEdit={canEdit}
+              />
+            </Section>
+          )}
 
-        {/* F12-K67 update: ContactField celowo wyciągnięty z karty zadania —
-            klient nie chciał widzieć picker'a klienta przy każdym tasku w
-            zwykłych tablicach. Linkowanie task ↔ kontakt robi się teraz
-            wyłącznie po stronie kontaktu (ContactTasksTile → "Powiąż
-            zadanie") oraz przez Deal.contactId w Planie sprzedaży. */}
+          {/* Poll — głosowanie zespołu */}
+          {(poll || canManagePoll) && (
+            <Section eyebrow="Głosowanie">
+              <PollSection
+                taskId={task.id}
+                poll={poll}
+                canManage={canManagePoll}
+                canVote={canVote}
+                currentUserId={currentUserId}
+              />
+            </Section>
+          )}
 
-        {/* F11-17 (#24): recurring tasks. Template task (rule != null)
-            spawns instances via cron daily at 00:05 UTC. Instances
-            (recurrenceParentId set) are read-only here — user changes
-            the template, not individual instances. */}
-        {!task.recurrenceParentId && (
-          <RecurrencePicker
-            taskId={task.id}
-            rule={task.recurrenceRule}
-            disabled={!canEdit}
-          />
-        )}
-        {task.recurrenceParentId && (
-          <p className="font-mono text-[0.66rem] uppercase tracking-[0.12em] text-muted-foreground">
-            🔁 instancja zadania cyklicznego — edytuj szablon żeby zmienić regułę
-          </p>
-        )}
+          {/* F12-K54: custom kolumny tabeli — sekcja tylko gdy board ma jakieś. */}
+          {customColumns.length > 0 && (
+            <Section eyebrow="Pola dodatkowe">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {customColumns.map((col) => (
+                  <div key={col.id} className="flex flex-col gap-1.5">
+                    <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+                      {col.name}
+                    </span>
+                    <div className="min-h-[34px] rounded-md border border-border bg-background px-2 py-1.5">
+                      <FieldCell
+                        taskId={task.id}
+                        columnId={col.id}
+                        type={col.type}
+                        raw={customValues[col.id] ?? ""}
+                        options={parseFieldOptions(col.options)}
+                        disabled={!canEdit}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
 
-        {!state?.ok && state?.error && (
-          <p className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-destructive">
-            {state.error}
-          </p>
-        )}
+          {/* Comments thread */}
+          <Section eyebrow={`Komentarze${comments.length ? ` · ${comments.length}` : ""}`}>
+            <CommentsSection
+              taskId={task.id}
+              comments={comments}
+              canComment={canComment}
+              canModerateComments={canModerateComments}
+              members={allMembers}
+            />
+          </Section>
 
-        {canEdit && (
-          <div className="flex items-center gap-4">
-            <button
-              type="submit"
-              disabled={pending}
-              className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
+          {/* Activity feed — audit timeline */}
+          <Section eyebrow="Aktywność">
+            <ActivityLog entries={activity} />
+          </Section>
+        </main>
+
+        {/* ============ META SIDEBAR (sticky 280px) ============ */}
+        <aside className="md:sticky md:top-4 md:self-start">
+          <div className="flex flex-col gap-5 rounded-2xl border border-border bg-card/40 p-5 shadow-[0_4px_24px_-12px_rgba(0,0,0,0.12)] backdrop-blur-sm">
+            {/* STATUS picker inline */}
+            <MetaBlock label="Status">
+              <StatusPill
+                form="task-update-form"
+                name="statusColumnId"
+                statuses={statusColumns}
+                defaultValue={task.statusColumnId}
+                disabled={!canEdit}
+              />
+            </MetaBlock>
+
+            {/* PRIORITY picker inline (F12-K75 — instant save) */}
+            <MetaBlock label="Priorytet">
+              <PriorityPickerCell
+                taskId={task.id}
+                current={task.priority}
+                canEdit={canEdit}
+              />
+            </MetaBlock>
+
+            {/* ASSIGNEES stack — max 5 avatarów + "+ Dodaj" */}
+            <MetaBlock label="Przypisane">
+              <AssigneesStack
+                activeAssignees={activeAssignees}
+                allMembers={allMembers}
+                assigneeIds={assigneeIds}
+                taskId={task.id}
+                canEdit={canEdit}
+                onToggle={toggleAssigneeWithRefresh}
+              />
+            </MetaBlock>
+
+            {/* DATES — start / koniec */}
+            <div className="grid grid-cols-2 gap-3">
+              <MetaBlock label="Start">
+                <DateTimePicker
+                  form="task-update-form"
+                  name="startAt"
+                  defaultValue={task.startAt}
+                  disabled={!canEdit}
+                  placeholder="Brak daty"
+                  label="Data startu"
+                />
+              </MetaBlock>
+              <MetaBlock label="Koniec">
+                <DateTimePicker
+                  form="task-update-form"
+                  name="stopAt"
+                  defaultValue={task.stopAt}
+                  disabled={!canEdit}
+                  placeholder="Brak daty"
+                  label="Data końca"
+                />
+              </MetaBlock>
+            </div>
+
+            {/* MILESTONE — instant select */}
+            <MetaBlock
+              label={
+                <span className="inline-flex items-center gap-1.5">
+                  <Flag size={11} aria-hidden /> Milestone
+                </span>
+              }
             >
-              {pending ? "Zapisuję…" : "Zapisz"}
-            </button>
-            {flash && (
-              <span className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-primary">
-                {flash}
-              </span>
+              <MilestoneSection
+                // remount on server change — fresh state bez setState-in-render.
+                key={`ms-${task.milestoneId ?? "none"}`}
+                taskId={task.id}
+                currentMilestoneId={task.milestoneId}
+                milestones={milestones}
+                canEdit={canEdit}
+              />
+            </MetaBlock>
+
+            {/* TAGS — max 5 + "+ Dodaj tag" */}
+            <MetaBlock label="Tagi">
+              <TagsSection
+                workspaceId={workspaceId}
+                taskId={task.id}
+                allTags={allTags}
+                tagIds={tagIds}
+                activeTags={activeTags}
+                canEdit={canEdit}
+              />
+            </MetaBlock>
+
+            {/* REMINDER — wpinka do parent form'a (hidden input) */}
+            <MetaBlock
+              label={
+                <span className="inline-flex items-center gap-1.5">
+                  <Bell size={11} aria-hidden /> Przypomnienie
+                </span>
+              }
+            >
+              <ReminderField
+                defaultValue={task.reminderOffset ?? "none"}
+                reminderAt={task.reminderAt}
+                disabled={!canEdit}
+              />
+            </MetaBlock>
+
+            {/* RECURRENCE — tylko dla template'ów (nie instancji) */}
+            {!task.recurrenceParentId && (
+              <MetaBlock label="Cykliczność">
+                <RecurrencePicker
+                  taskId={task.id}
+                  rule={task.recurrenceRule}
+                  disabled={!canEdit}
+                />
+              </MetaBlock>
             )}
           </div>
+        </aside>
+      </div>
+
+      {/* =====================================================================
+          FOOTER — Start timer (lewa) + Save (środek) + Delete (prawa)
+          Sticky liquid-glass bar — backdrop-blur z hairline shadow.
+          ===================================================================== */}
+      <footer className="sticky bottom-0 z-10 -mx-4 mt-2 flex flex-wrap items-center gap-3 border-t border-border bg-background/80 px-4 py-3 backdrop-blur-md md:-mx-6 md:px-6">
+        {/* Timer (zachowuje pełną logikę startedAt/completedAt + duration display) */}
+        <TaskTimer
+          taskId={task.id}
+          accumulatedSeconds={task.timeTrackedSeconds}
+          startedAt={task.timerStartedAt}
+          completedAt={task.timerCompletedAt}
+          canEdit={canEdit}
+        />
+
+        <div className="ml-auto flex items-center gap-2">
+          {canEdit && (
+            <button
+              type="submit"
+              form="task-update-form"
+              disabled={pending}
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-brand-gradient px-5 font-sans text-[0.86rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
+            >
+              {pending ? "Zapisuję…" : "Zapisz zmiany"}
+            </button>
+          )}
+          {canDelete && (
+            <form action={deleteTaskAction} className="m-0">
+              <input type="hidden" name="id" value={task.id} />
+              <input type="hidden" name="workspaceId" value={workspaceId} />
+              <button
+                type="submit"
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 font-sans text-[0.84rem] font-semibold text-destructive transition-colors hover:border-destructive/50 hover:bg-destructive/15 active:scale-[0.97] motion-reduce:active:scale-100"
+              >
+                <Trash2 size={14} /> Usuń
+              </button>
+            </form>
+          )}
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+/* =========================================================================
+   ATOMOWE PRIMITIVES — wewnętrzne komponenty layoutu
+   ========================================================================= */
+
+// Sekcja main column: eyebrow + content + delikatny separator border-b.
+function Section({
+  eyebrow,
+  children,
+}: {
+  eyebrow: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-3 border-b border-border pb-8 last:border-0 last:pb-0">
+      <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+        {eyebrow}
+      </span>
+      <div>{children}</div>
+    </section>
+  );
+}
+
+// Pojedynczy "kafelek" w meta sidebar — label + kontrolka.
+function MetaBlock({
+  label,
+  children,
+}: {
+  label: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+// Header status pill — wyświetla aktualny status (read-only podgląd; edycja w sidebar).
+function HeaderStatusPill({
+  task,
+  statusColumns,
+}: {
+  task: { statusColumnId: string | null };
+  statusColumns: { id: string; name: string; colorHex: string }[];
+}) {
+  const current = statusColumns.find((s) => s.id === task.statusColumnId);
+  if (!current) {
+    return (
+      <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-border bg-card/60 px-2.5 text-[0.72rem] font-semibold text-muted-foreground">
+        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+        Brak statusu
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[0.72rem] font-semibold"
+      style={{
+        background: `${current.colorHex}1F`,
+        border: `1px solid ${current.colorHex}55`,
+        color: current.colorHex,
+      }}
+    >
+      <span
+        className="h-1.5 w-1.5 rounded-full"
+        style={{ background: current.colorHex }}
+      />
+      {current.name}
+    </span>
+  );
+}
+
+// Header priority pill — kolorowa pillka według priorytetu.
+function HeaderPriorityPill({ priority }: { priority: TaskPriorityValue }) {
+  if (priority === "NONE") return null;
+  const palette: Record<
+    Exclude<TaskPriorityValue, "NONE">,
+    { label: string; color: string; bg: string; border: string }
+  > = {
+    LOW: { label: "P3 · Niski", color: "#34BEF8", bg: "rgba(52,190,248,.14)", border: "rgba(52,190,248,.3)" },
+    MEDIUM: { label: "P2 · Średni", color: "#A78BFA", bg: "rgba(167,139,250,.14)", border: "rgba(167,139,250,.3)" },
+    HIGH: { label: "P1 · Wysoki", color: "#F59E0B", bg: "rgba(245,158,11,.14)", border: "rgba(245,158,11,.3)" },
+    URGENT: { label: "P0 · Pilny", color: "#FB7185", bg: "rgba(244,63,94,.14)", border: "rgba(244,63,94,.3)" },
+  };
+  const p = palette[priority];
+  return (
+    <span
+      className="inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[0.72rem] font-semibold"
+      style={{ background: p.bg, border: `1px solid ${p.border}`, color: p.color }}
+    >
+      <svg
+        width="11"
+        height="11"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={p.color}
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        aria-hidden
+      >
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 8v4M12 16h.01" />
+      </svg>
+      {p.label}
+    </span>
+  );
+}
+
+// Stack avatarów przypisanych + przycisk "+ Dodaj" otwierający picker'a.
+// Picker jest popoverem (PortalDropdown) — toggle per user via form action.
+function AssigneesStack({
+  activeAssignees,
+  allMembers,
+  assigneeIds,
+  taskId,
+  canEdit,
+  onToggle,
+}: {
+  activeAssignees: TaskDetailProps["allMembers"];
+  allMembers: TaskDetailProps["allMembers"];
+  assigneeIds: Set<string>;
+  taskId: string;
+  canEdit: boolean;
+  onToggle: (fd: FormData) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const visible = activeAssignees.slice(0, 5);
+  const overflow = Math.max(0, activeAssignees.length - 5);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center">
+        {visible.length === 0 && (
+          <span className="text-[0.78rem] text-muted-foreground">Brak przypisanych</span>
         )}
-      </form>
+        {visible.map((m, i) => (
+          <span
+            key={m.id}
+            className="grid h-7 w-7 place-items-center overflow-hidden rounded-lg border-2 border-card bg-brand-gradient font-display text-[0.62rem] font-bold text-white"
+            style={{ marginLeft: i === 0 ? 0 : -7, zIndex: 10 - i }}
+            title={m.name ?? m.email}
+          >
+            {m.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={m.avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              initialsOf(m.name, m.email)
+            )}
+          </span>
+        ))}
+        {overflow > 0 && (
+          <span
+            className="grid h-7 w-7 place-items-center rounded-lg border-2 border-card bg-muted text-[0.62rem] font-bold text-muted-foreground"
+            style={{ marginLeft: -7 }}
+          >
+            +{overflow}
+          </span>
+        )}
+        {canEdit && (
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-label="Dodaj osobę"
+            aria-expanded={open}
+            className="grid h-7 w-7 place-items-center rounded-lg border-2 border-card bg-muted/60 text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
+            style={{ marginLeft: visible.length > 0 || overflow > 0 ? -7 : 0 }}
+          >
+            <Plus size={14} />
+          </button>
+        )}
+      </div>
 
-      {/* F12-K54: custom kolumny tabeli — pokazują tutaj te same wartości
-          co w widoku tabeli, edycja w obie strony. Tylko gdy board ma
-          jakieś custom columns (inaczej sekcja jest hidden). */}
-      {customColumns.length > 0 && (
-        <section className="flex flex-col gap-3">
-          <span className="eyebrow">Pola dodatkowe</span>
-          <div className="grid gap-3 rounded-xl border border-border bg-card/50 p-4 sm:grid-cols-2">
-            {customColumns.map((col) => (
-              <div key={col.id} className="flex flex-col gap-1.5">
-                <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                  {col.name}
-                </span>
-                <div className="min-h-[34px] rounded-md border border-border bg-background px-2 py-1.5">
-                  <FieldCell
-                    taskId={task.id}
-                    columnId={col.id}
-                    type={col.type}
-                    raw={customValues[col.id] ?? ""}
-                    options={parseFieldOptions(col.options)}
-                    disabled={!canEdit}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* F12-K40: time tracking — Rozpocznij/Zatrzymaj/Zakończ. */}
-      <TaskTimer
-        taskId={task.id}
-        accumulatedSeconds={task.timeTrackedSeconds}
-        startedAt={task.timerStartedAt}
-        completedAt={task.timerCompletedAt}
-        canEdit={canEdit}
-      />
-
-      {/* Description — own save flow (view/edit modes) */}
-      <DescriptionSection
-        taskId={task.id}
-        initial={task.descriptionJson}
-        canEdit={canEdit}
-      />
-
-      {/* Milestone — instant select (onChange fires the action).
-          F12-K21: controlled value + router.refresh po akcji. Wcześniej
-          select miał `defaultValue` (uncontrolled) + React 19 form-reset,
-          przez co po server-save select wracał do oryginalnego value
-          jeśli intercepted modal route nie zrewalidował się na czas. */}
-      <MilestoneSection
-        // key=milestoneId remounts on server change — fresh state without setState-in-render.
-        key={`ms-${task.milestoneId ?? "none"}`}
-        taskId={task.id}
-        currentMilestoneId={task.milestoneId}
-        milestones={milestones}
-        canEdit={canEdit}
-      />
-
-      {/* Assignees */}
-      <section className="flex flex-col gap-3">
-        <span className="eyebrow">Osoby</span>
-        <div className="flex flex-wrap gap-2">
+      {/* Picker — rozwijana lista członków (toggle per user) */}
+      {open && canEdit && (
+        <div className="flex flex-col gap-1 rounded-xl border border-border bg-card p-2 shadow-lg">
           {allMembers.map((m) => {
             const active = assigneeIds.has(m.id);
             return (
-              <form key={m.id} action={toggleAssigneeWithRefresh} className="m-0">
-                <input type="hidden" name="taskId" value={task.id} />
+              <form key={m.id} action={onToggle} className="m-0">
+                <input type="hidden" name="taskId" value={taskId} />
                 <input type="hidden" name="userId" value={m.id} />
                 <button
                   type="submit"
-                  disabled={!canEdit}
-                  className="group inline-flex items-center gap-2 rounded-full border border-border px-2 py-1 text-[0.82rem] transition-colors data-[active=true]:border-primary data-[active=true]:bg-primary/10 data-[active=true]:text-foreground hover:border-primary/60 disabled:cursor-not-allowed"
                   data-active={active ? "true" : "false"}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.82rem] transition-colors hover:bg-primary/10 data-[active=true]:bg-primary/12 data-[active=true]:text-foreground"
                   title={m.email}
                 >
-                  <span className="grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.62rem] font-bold text-white">
+                  <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-md bg-brand-gradient font-display text-[0.6rem] font-bold text-white">
                     {m.avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={m.avatarUrl} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      (m.name ?? m.email).slice(0, 2).toUpperCase()
+                      initialsOf(m.name, m.email)
                     )}
                   </span>
                   <span className="truncate">{m.name ?? m.email.split("@")[0]}</span>
+                  {active && <Check size={13} className="ml-auto text-primary" />}
                 </button>
               </form>
             );
           })}
         </div>
-      </section>
-
-      {/* Tags */}
-      <TagsSection
-        workspaceId={workspaceId}
-        taskId={task.id}
-        allTags={allTags}
-        tagIds={tagIds}
-        canEdit={canEdit}
-      />
-
-      {/* Attachments */}
-      <AttachmentsSection
-        taskId={task.id}
-        attachments={attachments}
-        canUpload={canUpload}
-        canModerate={canModerateAttachments}
-      />
-
-      {/* Subtasks (checklist) */}
-      <SubtasksSection
-        taskId={task.id}
-        subtasks={subtasks}
-        canManage={canManageSubtasks}
-      />
-
-      {/* Linked tasks — sibling tasks referenced from this one (or vice versa) */}
-      <LinkedTasksSection
-        workspaceId={workspaceId}
-        taskId={task.id}
-        linkedTasks={linkedTasks}
-        candidates={linkCandidates}
-        canEdit={canEdit}
-      />
-
-      {/* Poll / głosowanie */}
-      <PollSection
-        taskId={task.id}
-        poll={poll}
-        canManage={canManagePoll}
-        canVote={canVote}
-        currentUserId={currentUserId}
-      />
-
-      {/* Comments */}
-      <CommentsSection
-        taskId={task.id}
-        comments={comments}
-        canComment={canComment}
-        canModerateComments={canModerateComments}
-        members={allMembers}
-      />
-
-      {/* Activity log */}
-      <ActivityLog entries={activity} />
+      )}
     </div>
   );
 }
+
+/* =========================================================================
+   SUB-SECTIONS (zachowane z poprzedniej wersji, lekko przearanżowane)
+   ========================================================================= */
 
 // Optimistic UI: setValue runs immediately; router.refresh() pulls fresh props through intercepted modal route.
 function MilestoneSection({
@@ -544,7 +826,7 @@ function MilestoneSection({
   const router = useRouter();
   const [value, setValue] = useState<string>(currentMilestoneId ?? "");
 
-  // Sentinel needed — PortalDropdown treats "" as no-selection so empty can't be picked as "Brak".
+  // Sentinel — PortalDropdown traktuje "" jako brak selekcji.
   const NONE = "__none__";
   const handleChange = (next: string) => {
     const persisted = next === NONE ? "" : next;
@@ -556,7 +838,7 @@ function MilestoneSection({
     startTransition(async () => {
       const result = await assignTaskToMilestoneAction(fd);
       // F12-K69: server zwraca {ok:false,error} gdy daty zadania wychodzą poza
-      // zakres milestone'a. Roll back UI + pokaz komunikat zamiast cichego no-op.
+      // zakres milestone'a. Roll back UI + komunikat zamiast cichego no-op.
       if (result && !result.ok) {
         setValue(previous);
         alert(result.error);
@@ -567,40 +849,28 @@ function MilestoneSection({
   };
 
   return (
-    <section className="flex flex-col gap-3">
-      <span className="eyebrow inline-flex items-center gap-1.5">
-        <Flag size={11} />
-        Milestone
-      </span>
-      <div className="flex items-center gap-2">
-        <PortalDropdown<string>
-          ariaLabel="Wybierz milestone"
-          disabled={!canEdit}
-          width={280}
-          placeholder="— brak —"
-          emptyHint="Utwórz milestone w roadmapie"
-          value={value === "" ? NONE : value}
-          onChange={handleChange}
-          options={[
-            { value: NONE, label: "— brak —" },
-            ...milestones.map((m) => ({
-              value: m.id,
-              label: m.title,
-            })),
-          ]}
-          triggerClassName="inline-flex h-9 min-w-[260px] items-center justify-between gap-2 rounded-md border border-border bg-background px-3 text-[0.86rem] outline-none transition-colors hover:border-primary/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
-        />
-        {milestones.length === 0 && (
-          <span className="font-mono text-[0.64rem] uppercase tracking-[0.12em] text-muted-foreground">
-            utwórz milestone w roadmapie
-          </span>
-        )}
-      </div>
-    </section>
+    <PortalDropdown<string>
+      ariaLabel="Wybierz milestone"
+      disabled={!canEdit}
+      width={240}
+      placeholder="— brak —"
+      emptyHint="Utwórz milestone w roadmapie"
+      value={value === "" ? NONE : value}
+      onChange={handleChange}
+      options={[
+        { value: NONE, label: "— brak —" },
+        ...milestones.map((m) => ({
+          value: m.id,
+          label: m.title,
+        })),
+      ]}
+      triggerClassName="inline-flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-border bg-background/60 px-3 text-[0.82rem] outline-none transition-colors hover:border-primary/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
+    />
   );
 }
 
-// Hidden-input + PortalDropdown so reminderOffset still flows into parent form's FormData.
+// Hidden-input + PortalDropdown — reminderOffset flows into parent form's FormData
+// via form="task-update-form" attribute na hidden inputie.
 function ReminderField({
   defaultValue,
   reminderAt,
@@ -612,12 +882,13 @@ function ReminderField({
 }) {
   const [value, setValue] = useState<string>(defaultValue);
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <span className="eyebrow inline-flex items-center gap-1.5">
-        <Bell size={11} />
-        Przypomnienie
-      </span>
-      <input type="hidden" name="reminderOffset" value={value} />
+    <div className="flex flex-col gap-2">
+      <input
+        type="hidden"
+        form="task-update-form"
+        name="reminderOffset"
+        value={value}
+      />
       <PortalDropdown<string>
         ariaLabel="Wybierz czas przypomnienia"
         disabled={disabled}
@@ -631,9 +902,10 @@ function ReminderField({
           { value: "1d", label: "1 dzień przed" },
           { value: "3d", label: "3 dni przed" },
         ]}
+        triggerClassName="inline-flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-border bg-background/60 px-3 text-[0.82rem] outline-none transition-colors hover:border-primary/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
       />
       {reminderAt && (
-        <span className="font-mono text-[0.66rem] uppercase tracking-[0.12em] text-muted-foreground">
+        <span className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground">
           wyśle się{" "}
           {new Date(reminderAt).toLocaleString("pl-PL", {
             dateStyle: "medium",
@@ -650,15 +922,18 @@ function TagsSection({
   taskId,
   allTags,
   tagIds,
+  activeTags,
   canEdit,
 }: {
   workspaceId: string;
   taskId: string;
   allTags: { id: string; name: string; colorHex: string }[];
   tagIds: Set<string>;
+  activeTags: { id: string; name: string; colorHex: string }[];
   canEdit: boolean;
 }) {
   const router = useRouter();
+  const [picking, setPicking] = useState(false);
   const [creating, setCreating] = useState(false);
   const [color, setColor] = useState(TAG_COLORS[0]);
 
@@ -668,111 +943,164 @@ function TagsSection({
     router.refresh();
   };
 
-  return (
-    <section className="flex flex-col gap-3">
-      <span className="eyebrow">Tagi</span>
-      {allTags.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {allTags.map((t) => {
-            const active = tagIds.has(t.id);
-            return (
-              <form key={t.id} action={toggleTagWithRefresh} className="m-0">
-                <input type="hidden" name="taskId" value={taskId} />
-                <input type="hidden" name="tagId" value={t.id} />
-                <button
-                  type="submit"
-                  disabled={!canEdit}
-                  data-active={active ? "true" : "false"}
-                  className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[0.78rem] font-medium transition-[border-color,opacity] data-[active=false]:opacity-50 hover:opacity-100 disabled:cursor-not-allowed"
-                  style={{
-                    borderColor: active ? t.colorHex : "var(--border)",
-                    background: active ? `${t.colorHex}1A` : "transparent",
-                    color: active ? t.colorHex : "var(--foreground)",
-                  }}
-                >
-                  <span className="h-2 w-2 rounded-full" style={{ background: t.colorHex }} />
-                  {t.name}
-                </button>
-              </form>
-            );
-          })}
-        </div>
-      ) : (
-        <p className="text-[0.88rem] text-muted-foreground">Brak tagów.</p>
-      )}
+  const visibleActive = activeTags.slice(0, 5);
+  const overflow = Math.max(0, activeTags.length - 5);
 
-      {canEdit && (
-        creating ? (
-          <form
-            action={createTagAction}
-            onSubmit={() => {
-              setCreating(false);
-              setColor(TAG_COLORS[0]);
+  return (
+    <div className="flex flex-col gap-2">
+      {/* Aktywne tagi (max 5 + counter) */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        {visibleActive.length === 0 && !picking && (
+          <span className="text-[0.78rem] text-muted-foreground">Brak tagów</span>
+        )}
+        {visibleActive.map((t) => (
+          <span
+            key={t.id}
+            className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[0.72rem] font-medium"
+            style={{
+              borderColor: `${t.colorHex}55`,
+              background: `${t.colorHex}1A`,
+              color: t.colorHex,
             }}
-            className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 p-2"
           >
-            <input type="hidden" name="workspaceId" value={workspaceId} />
-            <input type="hidden" name="colorHex" value={color} />
-            <input
-              name="name"
-              type="text"
-              required
-              maxLength={32}
-              placeholder="np. urgent"
-              autoFocus
-              className="flex-1 min-w-[140px] rounded-md bg-transparent px-2 py-1 text-[0.82rem] outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
-            />
-            <div className="flex items-center gap-1">
-              {TAG_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setColor(c)}
-                  className="grid h-6 w-6 place-items-center rounded-full transition-transform hover:scale-110"
-                  style={{
-                    background: c,
-                    outline: color === c ? "2px solid var(--foreground)" : "none",
-                    outlineOffset: color === c ? 2 : 0,
-                  }}
-                  aria-label={`kolor ${c}`}
-                />
-              ))}
+            {t.name}
+          </span>
+        ))}
+        {overflow > 0 && (
+          <span className="rounded-full border border-border bg-card/60 px-2 py-0.5 text-[0.7rem] text-muted-foreground">
+            +{overflow}
+          </span>
+        )}
+        {canEdit && !picking && !creating && (
+          <button
+            type="button"
+            onClick={() => setPicking(true)}
+            className="inline-flex items-center gap-1 rounded-full border border-dashed border-border px-2.5 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
+          >
+            <Plus size={10} /> Dodaj tag
+          </button>
+        )}
+      </div>
+
+      {/* Picker — pełna lista tagów (toggle) + przycisk "Nowy tag" */}
+      {picking && canEdit && (
+        <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-2.5 shadow-lg">
+          {allTags.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {allTags.map((t) => {
+                const active = tagIds.has(t.id);
+                return (
+                  <form key={t.id} action={toggleTagWithRefresh} className="m-0">
+                    <input type="hidden" name="taskId" value={taskId} />
+                    <input type="hidden" name="tagId" value={t.id} />
+                    <button
+                      type="submit"
+                      data-active={active ? "true" : "false"}
+                      className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[0.72rem] font-medium transition-[border-color,opacity] data-[active=false]:opacity-50 hover:opacity-100"
+                      style={{
+                        borderColor: active ? t.colorHex : "var(--border)",
+                        background: active ? `${t.colorHex}1A` : "transparent",
+                        color: active ? t.colorHex : "var(--foreground)",
+                      }}
+                    >
+                      <span
+                        className="h-1.5 w-1.5 rounded-full"
+                        style={{ background: t.colorHex }}
+                      />
+                      {t.name}
+                    </button>
+                  </form>
+                );
+              })}
             </div>
+          ) : (
+            <p className="text-[0.78rem] text-muted-foreground">Brak tagów w workspace.</p>
+          )}
+
+          <div className="flex items-center gap-2 pt-1">
             <button
-              type="submit"
-              className="grid h-8 w-8 place-items-center rounded-md bg-brand-gradient text-white transition-opacity hover:opacity-90"
-              aria-label="Utwórz tag"
+              type="button"
+              onClick={() => setCreating(true)}
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-primary transition-colors hover:bg-primary/10"
             >
-              <Check size={14} />
+              <Plus size={10} /> Nowy tag
             </button>
             <button
               type="button"
-              onClick={() => setCreating(false)}
-              className="grid h-8 w-8 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="Anuluj"
+              onClick={() => setPicking(false)}
+              className="ml-auto text-[0.7rem] text-muted-foreground hover:text-foreground"
             >
-              <X size={14} />
+              Gotowe
             </button>
-          </form>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setCreating(true)}
-            className="inline-flex h-8 w-fit items-center gap-1.5 rounded-full border border-dashed border-border px-3 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
-          >
-            <Plus size={12} /> Nowy tag
-          </button>
-        )
+          </div>
+
+          {creating && (
+            <form
+              action={createTagAction}
+              onSubmit={() => {
+                setCreating(false);
+                setColor(TAG_COLORS[0]);
+              }}
+              className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 p-2"
+            >
+              <input type="hidden" name="workspaceId" value={workspaceId} />
+              <input type="hidden" name="colorHex" value={color} />
+              <input
+                name="name"
+                type="text"
+                required
+                maxLength={32}
+                placeholder="np. urgent"
+                autoFocus
+                className="min-w-[110px] flex-1 rounded-md bg-transparent px-2 py-1 text-[0.78rem] outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
+              />
+              <div className="flex items-center gap-1">
+                {TAG_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setColor(c)}
+                    className="grid h-5 w-5 place-items-center rounded-full transition-transform hover:scale-110"
+                    style={{
+                      background: c,
+                      outline: color === c ? "2px solid var(--foreground)" : "none",
+                      outlineOffset: color === c ? 2 : 0,
+                    }}
+                    aria-label={`kolor ${c}`}
+                  />
+                ))}
+              </div>
+              <button
+                type="submit"
+                className="grid h-7 w-7 place-items-center rounded-md bg-brand-gradient text-white transition-opacity hover:opacity-90"
+                aria-label="Utwórz tag"
+              >
+                <Check size={12} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreating(false)}
+                className="grid h-7 w-7 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:text-foreground"
+                aria-label="Anuluj"
+              >
+                <X size={12} />
+              </button>
+            </form>
+          )}
+        </div>
       )}
-    </section>
+    </div>
   );
 }
 
 // F12-K67: dropdown wiążący task'a z kontaktem CRM. Autosave przez
-// patchTaskAction po onChange (mirror MilestoneSection / ReminderField
-// pattern). workspaceId potrzebny serwerowi do walidacji że kontakt jest
-// z tego workspace'u, klient tylko go propaguje.
-function ContactField({
+// patchTaskAction po onChange (mirror MilestoneSection / ReminderField pattern).
+// workspaceId potrzebny serwerowi do walidacji że kontakt jest z tego workspace'u.
+// NOTE: ContactField celowo wyciągnięty z karty zadania w F12-K67 — klient nie
+// chciał widzieć picker'a klienta przy każdym tasku. Linkowanie task ↔ kontakt
+// robi się teraz po stronie kontaktu (ContactTasksTile) oraz przez Deal.contactId.
+// Komponent zostawiony w pliku jako re-eksport gdyby był potrzebny gdzie indziej.
+export function ContactField({
   taskId,
   workspaceId: _workspaceId,
   contactId,
@@ -793,14 +1121,14 @@ function ContactField({
   };
   return (
     <div className="flex flex-col gap-2">
-      <span className="eyebrow inline-flex items-center gap-1.5">
+      <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
         Kontakt (klient)
       </span>
       <select
         value={contactId ?? ""}
         onChange={(e) => submit(e.target.value)}
         disabled={disabled}
-        className="h-10 w-full max-w-[420px] rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-60"
+        className="h-9 w-full rounded-lg border border-border bg-background/60 px-3 text-[0.82rem] outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-60"
       >
         <option value="">— brak —</option>
         {contacts.map((c) => (

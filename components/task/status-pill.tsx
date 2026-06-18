@@ -15,12 +15,18 @@ export interface StatusOption {
 // so react-hook-form / native forms see the new value.
 export function StatusPill({
   name,
+  form,
   statuses,
   defaultValue,
   disabled,
   onCommit,
 }: {
   name: string;
+  // HTML5 `form` attribute — associates the hidden input with a form by id
+  // even when the component is rendered outside the form's DOM subtree.
+  // Used by task-detail.tsx to keep status in a sticky meta sidebar while
+  // the submit lives in a separate footer button.
+  form?: string;
   statuses: StatusOption[];
   defaultValue: string | null;
   disabled?: boolean;
@@ -60,7 +66,7 @@ export function StatusPill({
 
   return (
     <div ref={rootRef} className="relative w-fit">
-      <input type="hidden" name={name} value={value} />
+      <input type="hidden" name={name} value={value} form={form} />
       <button
         type="button"
         disabled={disabled}

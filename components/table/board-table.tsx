@@ -448,7 +448,7 @@ export function BoardTable({
                 // — co w pl wymaga lang="pl". text-pretty + pr-0.5 dorzucają
                 // budżet na ostatni glif (negatywne tracking + sub-pixel
                 // rounding obcinały ogonek 'ą' / 'ę' / 'ó').
-                className="block whitespace-normal break-normal hyphens-auto text-pretty pr-0.5 font-display text-[0.96rem] font-semibold leading-tight transition-colors hover:text-primary"
+                className="block whitespace-normal break-normal hyphens-auto text-pretty pr-0.5 font-display text-[0.94rem] font-semibold leading-snug tracking-[-0.005em] transition-colors hover:text-primary"
               >
                 {info.getValue()}
               </Link>
@@ -688,9 +688,10 @@ export function BoardTable({
   })();
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
+      {/* Cmd+F search bar — pojawia się nad toolbarem, nie zajmuje miejsca gdy zamknięty. */}
       {searchOpen && (
-        <div className="flex items-center gap-2 rounded-lg border border-primary/40 bg-popover px-3 py-1.5 shadow-[0_4px_12px_-4px_rgba(10,10,40,0.15)]">
+        <div className="flex items-center gap-2 rounded-xl border border-primary/40 bg-popover/95 px-3 py-2 shadow-[0_8px_24px_-8px_rgba(122,51,236,0.25)] backdrop-blur-sm">
           <Search size={14} className="text-muted-foreground" />
           <input
             ref={searchInputRef}
@@ -703,9 +704,9 @@ export function BoardTable({
               }
             }}
             placeholder="Szukaj w tabeli… (Esc aby zamknąć)"
-            className="flex-1 bg-transparent text-[0.9rem] outline-none placeholder:text-muted-foreground/60"
+            className="flex-1 bg-transparent text-[0.88rem] outline-none placeholder:text-muted-foreground/60"
           />
-          <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+          <span className="font-mono text-[0.62rem] uppercase tracking-[0.1em] text-muted-foreground">
             {filteredSorted.length} {taskPl(filteredSorted.length)}
           </span>
           <button
@@ -721,7 +722,9 @@ export function BoardTable({
           </button>
         </div>
       )}
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+
+      {/* v4 .tbl-controls — pasek nad tabelą: filtr/sort/grupuj z lewej, kolumny z prawej. */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <TableFiltersToolbar
           workspaceId={workspaceId}
           boardId={boardId}
@@ -760,391 +763,404 @@ export function BoardTable({
         )}
       </div>
 
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_4px_12px_-4px_rgba(46,19,52,0.10),0_18px_40px_-16px_rgba(76,29,149,0.18)]">
-      <div className="overflow-x-auto">
-        <table
-          ref={tableRef}
-          className="text-[0.88rem]"
-          style={{ tableLayout: "fixed", width: "max-content", minWidth: "100%" }}
-          onKeyDown={(e) => {
-            if (!activeCell) return;
-            // Only intercept when a CELL (td) is focus target — otherwise inputs in cells own their keystrokes.
-            const target = e.target as HTMLElement;
-            const onCellTd = target.tagName === "TD" || target.dataset.cell === "1";
-            if (!onCellTd) return;
-            const visibleRows = filteredSorted;
-            const colIds = table.getVisibleLeafColumns().map((c) => c.id);
-            const moveTo = (r: number, c: number) => {
-              const clampedR = Math.max(0, Math.min(visibleRows.length - 1, r));
-              const clampedC = Math.max(0, Math.min(colIds.length - 1, c));
-              setActiveCell({ row: clampedR, col: clampedC });
-              const sel = `td[data-cell="1"][data-row="${clampedR}"][data-col="${clampedC}"]`;
-              const next = tableRef.current?.querySelector<HTMLTableCellElement>(sel);
-              next?.focus();
-            };
-            if (e.key === "ArrowDown") {
-              e.preventDefault();
-              moveTo(activeCell.row + 1, activeCell.col);
-            } else if (e.key === "ArrowUp") {
-              e.preventDefault();
-              moveTo(activeCell.row - 1, activeCell.col);
-            } else if (e.key === "ArrowLeft") {
-              e.preventDefault();
-              moveTo(activeCell.row, activeCell.col - 1);
-            } else if (e.key === "ArrowRight" || (e.key === "Tab" && !e.shiftKey)) {
-              e.preventDefault();
-              const nextCol = activeCell.col + 1;
-              if (nextCol >= colIds.length) {
-                moveTo(activeCell.row + 1, 0);
-              } else {
-                moveTo(activeCell.row, nextCol);
+      {/* v4 .tbl-wrap — kontener tabeli z brand-tinted cieniem, rounded-[22px] = 2xl+. */}
+      <div className="relative overflow-hidden rounded-[22px] border border-border/80 bg-card shadow-[0_4px_12px_-4px_rgba(122,51,236,0.08),0_24px_56px_-24px_rgba(122,51,236,0.22)]">
+        <div className="overflow-x-auto">
+          <table
+            ref={tableRef}
+            className="text-[0.86rem]"
+            style={{ tableLayout: "fixed", width: "max-content", minWidth: "100%" }}
+            onKeyDown={(e) => {
+              if (!activeCell) return;
+              // Only intercept when a CELL (td) is focus target — otherwise inputs in cells own their keystrokes.
+              const target = e.target as HTMLElement;
+              const onCellTd = target.tagName === "TD" || target.dataset.cell === "1";
+              if (!onCellTd) return;
+              const visibleRows = filteredSorted;
+              const colIds = table.getVisibleLeafColumns().map((c) => c.id);
+              const moveTo = (r: number, c: number) => {
+                const clampedR = Math.max(0, Math.min(visibleRows.length - 1, r));
+                const clampedC = Math.max(0, Math.min(colIds.length - 1, c));
+                setActiveCell({ row: clampedR, col: clampedC });
+                const sel = `td[data-cell="1"][data-row="${clampedR}"][data-col="${clampedC}"]`;
+                const next = tableRef.current?.querySelector<HTMLTableCellElement>(sel);
+                next?.focus();
+              };
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                moveTo(activeCell.row + 1, activeCell.col);
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                moveTo(activeCell.row - 1, activeCell.col);
+              } else if (e.key === "ArrowLeft") {
+                e.preventDefault();
+                moveTo(activeCell.row, activeCell.col - 1);
+              } else if (e.key === "ArrowRight" || (e.key === "Tab" && !e.shiftKey)) {
+                e.preventDefault();
+                const nextCol = activeCell.col + 1;
+                if (nextCol >= colIds.length) {
+                  moveTo(activeCell.row + 1, 0);
+                } else {
+                  moveTo(activeCell.row, nextCol);
+                }
+              } else if (e.key === "Tab" && e.shiftKey) {
+                e.preventDefault();
+                const prevCol = activeCell.col - 1;
+                if (prevCol < 0) {
+                  moveTo(activeCell.row - 1, colIds.length - 1);
+                } else {
+                  moveTo(activeCell.row, prevCol);
+                }
+              } else if (e.key === "Enter" || e.key === "F2") {
+                // Focus first interactive child so user can start typing immediately.
+                e.preventDefault();
+                const editable = target.querySelector<HTMLElement>(
+                  'input, textarea, select, button:not([aria-label="Konfiguruj kolumnę"])',
+                );
+                editable?.focus();
               }
-            } else if (e.key === "Tab" && e.shiftKey) {
-              e.preventDefault();
-              const prevCol = activeCell.col - 1;
-              if (prevCol < 0) {
-                moveTo(activeCell.row - 1, colIds.length - 1);
-              } else {
-                moveTo(activeCell.row, prevCol);
-              }
-            } else if (e.key === "Enter" || e.key === "F2") {
-              // Focus first interactive child so user can start typing immediately.
-              e.preventDefault();
-              const editable = target.querySelector<HTMLElement>(
-                'input, textarea, select, button:not([aria-label="Konfiguruj kolumnę"])',
-              );
-              editable?.focus();
-            }
-          }}
-        >
-          <thead>
-            {table.getHeaderGroups().map((hg) => {
-              // Render pinned headers first so DOM order matches visual order.
-              const leftHeaders = hg.headers.filter(
-                (h) => h.column.getIsPinned() === "left",
-              );
-              const centerHeaders = hg.headers.filter(
-                (h) => !h.column.getIsPinned(),
-              );
-              const checkboxOffset = canEdit ? 40 : 0;
-              return (
-                <tr key={hg.id} className="border-b border-border bg-card">
-                  {canEdit && (
-                    // Sticky pinning disabled on mobile (max-md:!static) — couldn't scroll past pinned columns.
-                    <th
-                      className="sticky left-0 top-0 z-30 h-10 w-10 bg-card px-2 shadow-[1px_0_0_0_var(--border)] max-md:!static max-md:!shadow-none"
-                      // F12-K76: hint o shift+click range select — najczęstszy
-                      // bulk-action UX, ale wymaga discovery.
-                      title="Klik = zaznacz wszystkie. Klik + Shift na innym wierszu = zakres."
-                    >
-                      {(() => {
-                        const allChecked =
-                          table.getRowModel().rows.length > 0 &&
-                          table.getRowModel().rows.every((r) => rowSelection[r.id]);
-                        const someChecked = table
-                          .getRowModel()
-                          .rows.some((r) => rowSelection[r.id]);
-                        return (
-                          <Checkbox
-                            ariaLabel="Zaznacz wszystkie wiersze (shift+click na innym = zakres)"
-                            checked={allChecked}
-                            indeterminate={!allChecked && someChecked}
-                            onChange={(e) => {
-                              if (e.currentTarget.checked) {
-                                const next: RowSelectionState = {};
-                                for (const r of table.getRowModel().rows) next[r.id] = true;
-                                setRowSelection(next);
+            }}
+          >
+            <thead>
+              {table.getHeaderGroups().map((hg) => {
+                // Render pinned headers first so DOM order matches visual order.
+                const leftHeaders = hg.headers.filter(
+                  (h) => h.column.getIsPinned() === "left",
+                );
+                const centerHeaders = hg.headers.filter(
+                  (h) => !h.column.getIsPinned(),
+                );
+                const checkboxOffset = canEdit ? 44 : 0;
+                return (
+                  <tr key={hg.id} className="border-b border-border/70 bg-muted/30">
+                    {canEdit && (
+                      // Sticky pinning disabled on mobile (max-md:!static) — couldn't scroll past pinned columns.
+                      <th
+                        className="sticky left-0 top-0 z-30 h-11 w-11 bg-muted/95 px-3 shadow-[1px_0_0_0_var(--border)] backdrop-blur-sm max-md:!static max-md:!shadow-none max-md:!backdrop-blur-none"
+                        // F12-K76: hint o shift+click range select — najczęstszy
+                        // bulk-action UX, ale wymaga discovery.
+                        title="Klik = zaznacz wszystkie. Klik + Shift na innym wierszu = zakres."
+                      >
+                        {(() => {
+                          const allChecked =
+                            table.getRowModel().rows.length > 0 &&
+                            table.getRowModel().rows.every((r) => rowSelection[r.id]);
+                          const someChecked = table
+                            .getRowModel()
+                            .rows.some((r) => rowSelection[r.id]);
+                          return (
+                            <Checkbox
+                              ariaLabel="Zaznacz wszystkie wiersze (shift+click na innym = zakres)"
+                              checked={allChecked}
+                              indeterminate={!allChecked && someChecked}
+                              onChange={(e) => {
+                                if (e.currentTarget.checked) {
+                                  const next: RowSelectionState = {};
+                                  for (const r of table.getRowModel().rows) next[r.id] = true;
+                                  setRowSelection(next);
+                                } else {
+                                  setRowSelection({});
+                                }
+                              }}
+                            />
+                          );
+                        })()}
+                      </th>
+                    )}
+                    {[...leftHeaders, ...centerHeaders].map((header) => {
+                      const canResize = header.column.getCanResize();
+                      const isResizing = header.column.getIsResizing();
+                      const colId = header.column.id;
+                      const isCustom = colId.startsWith("custom:");
+                      const customCol = isCustom
+                        ? customColumns.find((c) => `custom:${c.id}` === colId)
+                        : null;
+                      const headerLabel =
+                        typeof header.column.columnDef.header === "string"
+                          ? header.column.columnDef.header
+                          : colId;
+                      const sortDir =
+                        tableSort?.columnId ===
+                        (isCustom ? colId.replace(/^custom:/, "") : colId)
+                          ? tableSort.dir
+                          : false;
+                      const isPinned = header.column.getIsPinned() === "left";
+                      const pinnedLeft = isPinned
+                        ? checkboxOffset + header.column.getStart("left")
+                        : null;
+                      return (
+                        <th
+                          key={header.id}
+                          className={`group/th relative sticky top-0 h-11 px-4 text-left font-mono text-[0.66rem] font-bold uppercase tracking-[0.08em] text-muted-foreground/90 ${
+                            isPinned
+                              ? "z-20 bg-muted/95 shadow-[1px_0_0_0_var(--border)] backdrop-blur-sm max-md:!static max-md:!bg-transparent max-md:!shadow-none max-md:!backdrop-blur-none"
+                              : "bg-muted/30 backdrop-blur-sm"
+                          }`}
+                          style={{
+                            width: header.getSize(),
+                            ...(isPinned && pinnedLeft !== null ? { left: `${pinnedLeft}px` } : {}),
+                          }}
+                        >
+                          <TableHeaderCell
+                            columnId={colId}
+                            label={headerLabel}
+                            fieldType={customCol?.type}
+                            canManagePrefs={canManagePrefs}
+                            isSorted={sortDir as false | "asc" | "desc"}
+                            isPinned={isPinned}
+                            onTogglePin={() => header.column.pin(isPinned ? false : "left")}
+                            onSort={(dir) => {
+                              if (dir === null) {
+                                setTableSort(null);
+                                persistFilters({ filters, sort: null, groupBy });
                               } else {
-                                setRowSelection({});
+                                const targetId = isCustom
+                                  ? colId.replace(/^custom:/, "")
+                                  : colId;
+                                const kind: TableSort["kind"] = customCol
+                                  ? customCol.type
+                                  : colId === "title"
+                                    ? "BUILTIN_TITLE"
+                                    : colId === "statusColumnId"
+                                      ? "BUILTIN_STATUS"
+                                      : "BUILTIN_DATE";
+                                const next: TableSort = { columnId: targetId, kind, dir };
+                                setTableSort(next);
+                                persistFilters({ filters, sort: next, groupBy });
                               }
                             }}
-                          />
-                        );
-                      })()}
-                    </th>
-                  )}
-                  {[...leftHeaders, ...centerHeaders].map((header) => {
-                    const canResize = header.column.getCanResize();
-                    const isResizing = header.column.getIsResizing();
-                    const colId = header.column.id;
-                    const isCustom = colId.startsWith("custom:");
-                    const customCol = isCustom
-                      ? customColumns.find((c) => `custom:${c.id}` === colId)
-                      : null;
-                    const headerLabel =
-                      typeof header.column.columnDef.header === "string"
-                        ? header.column.columnDef.header
-                        : colId;
-                    const sortDir =
-                      tableSort?.columnId ===
-                      (isCustom ? colId.replace(/^custom:/, "") : colId)
-                        ? tableSort.dir
-                        : false;
-                    const isPinned = header.column.getIsPinned() === "left";
-                    const pinnedLeft = isPinned
-                      ? checkboxOffset + header.column.getStart("left")
-                      : null;
-                    return (
-                      <th
-                        key={header.id}
-                        className={`group/th relative sticky top-0 h-10 px-4 text-left font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground ${
-                          isPinned
-                            ? "z-20 bg-muted/95 shadow-[1px_0_0_0_var(--border)] backdrop-blur-sm max-md:!static max-md:!bg-transparent max-md:!shadow-none max-md:!backdrop-blur-none"
-                            : ""
-                        }`}
-                        style={{
-                          width: header.getSize(),
-                          ...(isPinned && pinnedLeft !== null ? { left: `${pinnedLeft}px` } : {}),
-                        }}
-                      >
-                        <TableHeaderCell
-                          columnId={colId}
-                          label={headerLabel}
-                          fieldType={customCol?.type}
-                          canManagePrefs={canManagePrefs}
-                          isSorted={sortDir as false | "asc" | "desc"}
-                          isPinned={isPinned}
-                          onTogglePin={() => header.column.pin(isPinned ? false : "left")}
-                          onSort={(dir) => {
-                            if (dir === null) {
-                              setTableSort(null);
-                              persistFilters({ filters, sort: null, groupBy });
-                            } else {
+                            onFilter={() => {
+                              // Add empty filter — toolbar chip pops up ready for value input.
                               const targetId = isCustom
                                 ? colId.replace(/^custom:/, "")
                                 : colId;
-                              const kind: TableSort["kind"] = customCol
+                              const kind: TableFilter["kind"] = customCol
                                 ? customCol.type
                                 : colId === "title"
                                   ? "BUILTIN_TITLE"
                                   : colId === "statusColumnId"
                                     ? "BUILTIN_STATUS"
                                     : "BUILTIN_DATE";
-                              const next: TableSort = { columnId: targetId, kind, dir };
-                              setTableSort(next);
-                              persistFilters({ filters, sort: next, groupBy });
-                            }
-                          }}
-                          onFilter={() => {
-                            // Add empty filter — toolbar chip pops up ready for value input.
-                            const targetId = isCustom
-                              ? colId.replace(/^custom:/, "")
-                              : colId;
-                            const kind: TableFilter["kind"] = customCol
-                              ? customCol.type
-                              : colId === "title"
-                                ? "BUILTIN_TITLE"
-                                : colId === "statusColumnId"
-                                  ? "BUILTIN_STATUS"
-                                  : "BUILTIN_DATE";
-                            const newFilter: TableFilter = {
-                              columnId: targetId,
-                              kind,
-                              op:
-                                kind === "BUILTIN_STATUS" || kind === "SINGLE_SELECT"
-                                  ? "equals"
-                                  : kind === "NUMBER" || kind === "RATING"
+                              const newFilter: TableFilter = {
+                                columnId: targetId,
+                                kind,
+                                op:
+                                  kind === "BUILTIN_STATUS" || kind === "SINGLE_SELECT"
                                     ? "equals"
-                                    : kind === "CHECKBOX"
-                                      ? "isChecked"
-                                      : "contains",
-                              value: "",
-                            };
-                            const nextFilters = [...filters, newFilter];
-                            setFilters(nextFilters);
-                            persistFilters({ filters: nextFilters, sort: tableSort, groupBy });
-                          }}
-                          onHide={() => {
-                            const next = { ...columnVisibility, [colId]: false };
-                            setColumnVisibility(next);
-                            const hidden = Object.entries(next)
-                              .filter(([, v]) => !v)
-                              .map(([id]) => id);
-                            persistPrefs({ hidden, columnOrder });
-                          }}
-                        />
-                        {canResize && canManagePrefs && (
-                          <div
-                            onMouseDown={header.getResizeHandler()}
-                            onTouchStart={header.getResizeHandler()}
-                            onDoubleClick={() => header.column.resetSize()}
-                            role="separator"
-                            aria-orientation="vertical"
-                            aria-label="Zmień szerokość kolumny"
-                            className={`absolute right-0 top-0 z-10 h-full w-1.5 cursor-col-resize select-none touch-none transition-colors ${
-                              isResizing ? "bg-primary" : "bg-transparent hover:bg-primary/40"
-                            }`}
+                                    : kind === "NUMBER" || kind === "RATING"
+                                      ? "equals"
+                                      : kind === "CHECKBOX"
+                                        ? "isChecked"
+                                        : "contains",
+                                value: "",
+                              };
+                              const nextFilters = [...filters, newFilter];
+                              setFilters(nextFilters);
+                              persistFilters({ filters: nextFilters, sort: tableSort, groupBy });
+                            }}
+                            onHide={() => {
+                              const next = { ...columnVisibility, [colId]: false };
+                              setColumnVisibility(next);
+                              const hidden = Object.entries(next)
+                                .filter(([, v]) => !v)
+                                .map(([id]) => id);
+                              persistPrefs({ hidden, columnOrder });
+                            }}
                           />
-                        )}
-                      </th>
-                    );
-                  })}
-                  {canManagePrefs && (
-                    <th className="sticky top-0 h-10 w-12 px-2 text-left font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      <AddColumnButton workspaceId={workspaceId} boardId={boardId} />
-                    </th>
-                  )}
-                </tr>
-              );
-            })}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length + (canManagePrefs ? 1 : 0)}
-                  className="py-12 text-center text-muted-foreground"
-                >
-                  <p className="font-display text-[0.95rem] font-semibold">Brak zadań.</p>
-                  <p className="mt-1 font-mono text-[0.68rem] uppercase tracking-[0.14em]">
-                    {filters.length > 0 ? "filtry nic nie zwróciły" : "użyj „Nowe zadanie” powyżej"}
-                  </p>
-                </td>
-              </tr>
-            ) : (
-              // When grouped, each bucket gets a colored header row + matching subset of rows.
-              // Build Map<rowId, RowModel> once → O(N) instead of O(N×M) filter() per bucket.
-              (() => {
-                const rowModel = table.getRowModel().rows;
-                const rowById = new Map(rowModel.map((r) => [r.original.id, r]));
-                return groupedRows.map((bucket) => {
-                  const bucketRows = bucket.rows
-                    .map((t) => rowById.get(t.id))
-                    .filter((r): r is (typeof rowModel)[number] => Boolean(r));
-                  if (bucketRows.length === 0) return null;
-                return (
-                  <GroupBucket
-                    key={bucket.key}
-                    label={bucket.label}
-                    color={bucket.color}
-                    columnCount={columns.length + (canManagePrefs ? 1 : 0)}
-                    showHeader={Boolean(groupBy)}
-                  >
-                    {bucketRows.map((row) => {
-                      const isSelected = !!rowSelection[row.id];
-                      return (
-                        <tr
-                          key={row.id}
-                          className={`border-b border-border last:border-b-0 transition-colors ${
-                            isSelected ? "bg-primary/5" : "hover:bg-accent/40"
-                          }`}
-                          {...assign.rowProps(
-                            row.original.id,
-                            row.original.assignees.map((a) => a.id),
+                          {canResize && canManagePrefs && (
+                            <div
+                              onMouseDown={header.getResizeHandler()}
+                              onTouchStart={header.getResizeHandler()}
+                              onDoubleClick={() => header.column.resetSize()}
+                              role="separator"
+                              aria-orientation="vertical"
+                              aria-label="Zmień szerokość kolumny"
+                              className={`absolute right-0 top-0 z-10 h-full w-1.5 cursor-col-resize select-none touch-none transition-colors ${
+                                isResizing ? "bg-primary" : "bg-transparent hover:bg-primary/40"
+                              }`}
+                            />
                           )}
-                        >
-                          {canEdit && (
-                            <td
-                              className="sticky left-0 z-10 w-10 bg-card px-2 align-middle shadow-[1px_0_0_0_var(--border)] max-md:!static max-md:!shadow-none"
-                              style={{
-                                background: isSelected ? "rgba(var(--primary-rgb,0,0,0),0.05)" : undefined,
-                              }}
-                              title="Klik = pojedyncze. Shift + klik = zakres od ostatnio zaznaczonego."
-                            >
-                              <Checkbox
-                                ariaLabel={`Zaznacz wiersz ${row.original.title} (shift+click dla zakresu)`}
-                                checked={isSelected}
-                                onClick={(e) => {
-                                  if (e.shiftKey && lastClickedRowRef.current) {
-                                    e.preventDefault();
-                                    extendSelection(row.original.id);
-                                  } else {
-                                    setRowSelection((prev) => ({
-                                      ...prev,
-                                      [row.original.id]: !prev[row.original.id],
-                                    }));
-                                    e.preventDefault();
-                                  }
-                                  lastClickedRowRef.current = row.original.id;
-                                }}
-                                onChange={() => {
-                                  /* handled in onClick to support shift+click */
-                                }}
-                              />
-                            </td>
-                          )}
-                          {(() => {
-                            // Same pinned-first reorder as headers — DOM cells line up with visible columns.
-                            const allCells = row.getVisibleCells();
-                            const leftCells = allCells.filter(
-                              (c) => c.column.getIsPinned() === "left",
-                            );
-                            const centerCells = allCells.filter(
-                              (c) => !c.column.getIsPinned(),
-                            );
-                            const orderedCells = [...leftCells, ...centerCells];
-                            const checkboxOffset = canEdit ? 40 : 0;
-                            const visibleRowIdx = filteredSorted.findIndex(
-                              (t) => t.id === row.original.id,
-                            );
-                            return orderedCells.map((cell, cIdx) => {
-                              const isPinned = cell.column.getIsPinned() === "left";
-                              const pinnedLeft = isPinned
-                                ? checkboxOffset + cell.column.getStart("left")
-                                : null;
-                              const isActive =
-                                activeCell?.row === visibleRowIdx && activeCell?.col === cIdx;
-                              return (
-                                <td
-                                  key={cell.id}
-                                  data-cell="1"
-                                  data-row={visibleRowIdx}
-                                  data-col={cIdx}
-                                  tabIndex={0}
-                                  onFocus={() => setActiveCell({ row: visibleRowIdx, col: cIdx })}
-                                  className={`px-4 py-2.5 align-middle outline-none ${
-                                    isPinned
-                                      ? "sticky z-10 bg-card shadow-[1px_0_0_0_var(--border)] max-md:!static max-md:!bg-transparent max-md:!shadow-none"
-                                      : ""
-                                  } ${isActive ? "ring-2 ring-inset ring-primary/60" : ""}`}
-                                  style={{
-                                    width: cell.column.getSize(),
-                                    ...(isPinned && pinnedLeft !== null
-                                      ? { left: `${pinnedLeft}px` }
-                                      : {}),
-                                  }}
-                                >
-                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                </td>
-                              );
-                            });
-                          })()}
-                          {canManagePrefs && <td className="w-12" />}
-                        </tr>
+                        </th>
                       );
                     })}
-                  </GroupBucket>
+                    {canManagePrefs && (
+                      <th className="sticky top-0 h-11 w-12 bg-muted/30 px-2 text-left font-mono text-[0.66rem] font-bold uppercase tracking-[0.08em] text-muted-foreground/90 backdrop-blur-sm">
+                        <AddColumnButton workspaceId={workspaceId} boardId={boardId} />
+                      </th>
+                    )}
+                  </tr>
                 );
-              });
-              })()
-            )}
-            {canEdit && (
-              <AddRowInline
-                workspaceId={workspaceId}
-                boardId={boardId}
-                columnCount={columns.length + (canManagePrefs ? 1 : 0)}
-              />
-            )}
-          </tbody>
-        </table>
+              })}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={columns.length + (canManagePrefs ? 1 : 0)}
+                    className="py-16 text-center text-muted-foreground"
+                  >
+                    <p className="font-display text-[0.98rem] font-semibold tracking-[-0.01em]">Brak zadań.</p>
+                    <p className="mt-1.5 font-mono text-[0.66rem] uppercase tracking-[0.1em] text-muted-foreground/70">
+                      {filters.length > 0 ? "filtry nic nie zwróciły" : "użyj „Nowe zadanie” powyżej"}
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                // When grouped, each bucket gets a colored header row + matching subset of rows.
+                // Build Map<rowId, RowModel> once → O(N) instead of O(N×M) filter() per bucket.
+                (() => {
+                  const rowModel = table.getRowModel().rows;
+                  const rowById = new Map(rowModel.map((r) => [r.original.id, r]));
+                  return groupedRows.map((bucket) => {
+                    const bucketRows = bucket.rows
+                      .map((t) => rowById.get(t.id))
+                      .filter((r): r is (typeof rowModel)[number] => Boolean(r));
+                    if (bucketRows.length === 0) return null;
+                  return (
+                    <GroupBucket
+                      key={bucket.key}
+                      label={bucket.label}
+                      color={bucket.color}
+                      count={bucketRows.length}
+                      columnCount={columns.length + (canManagePrefs ? 1 : 0)}
+                      showHeader={Boolean(groupBy)}
+                    >
+                      {bucketRows.map((row) => {
+                        const isSelected = !!rowSelection[row.id];
+                        return (
+                          <tr
+                            key={row.id}
+                            className={`group/row border-b border-border/40 last:border-b-0 transition-colors ${
+                              isSelected ? "bg-primary/[0.06]" : "hover:bg-accent/30"
+                            }`}
+                            {...assign.rowProps(
+                              row.original.id,
+                              row.original.assignees.map((a) => a.id),
+                            )}
+                          >
+                            {canEdit && (
+                              <td
+                                className="sticky left-0 z-10 w-11 bg-card px-3 align-middle shadow-[1px_0_0_0_var(--border)] max-md:!static max-md:!shadow-none"
+                                style={{
+                                  background: isSelected
+                                    ? "color-mix(in oklab, var(--primary) 6%, var(--card))"
+                                    : undefined,
+                                }}
+                                title="Klik = pojedyncze. Shift + klik = zakres od ostatnio zaznaczonego."
+                              >
+                                <Checkbox
+                                  ariaLabel={`Zaznacz wiersz ${row.original.title} (shift+click dla zakresu)`}
+                                  checked={isSelected}
+                                  onClick={(e) => {
+                                    if (e.shiftKey && lastClickedRowRef.current) {
+                                      e.preventDefault();
+                                      extendSelection(row.original.id);
+                                    } else {
+                                      setRowSelection((prev) => ({
+                                        ...prev,
+                                        [row.original.id]: !prev[row.original.id],
+                                      }));
+                                      e.preventDefault();
+                                    }
+                                    lastClickedRowRef.current = row.original.id;
+                                  }}
+                                  onChange={() => {
+                                    /* handled in onClick to support shift+click */
+                                  }}
+                                />
+                              </td>
+                            )}
+                            {(() => {
+                              // Same pinned-first reorder as headers — DOM cells line up with visible columns.
+                              const allCells = row.getVisibleCells();
+                              const leftCells = allCells.filter(
+                                (c) => c.column.getIsPinned() === "left",
+                              );
+                              const centerCells = allCells.filter(
+                                (c) => !c.column.getIsPinned(),
+                              );
+                              const orderedCells = [...leftCells, ...centerCells];
+                              const checkboxOffset = canEdit ? 44 : 0;
+                              const visibleRowIdx = filteredSorted.findIndex(
+                                (t) => t.id === row.original.id,
+                              );
+                              return orderedCells.map((cell, cIdx) => {
+                                const isPinned = cell.column.getIsPinned() === "left";
+                                const pinnedLeft = isPinned
+                                  ? checkboxOffset + cell.column.getStart("left")
+                                  : null;
+                                const isActive =
+                                  activeCell?.row === visibleRowIdx && activeCell?.col === cIdx;
+                                return (
+                                  <td
+                                    key={cell.id}
+                                    data-cell="1"
+                                    data-row={visibleRowIdx}
+                                    data-col={cIdx}
+                                    tabIndex={0}
+                                    onFocus={() => setActiveCell({ row: visibleRowIdx, col: cIdx })}
+                                    className={`px-4 py-3 align-middle outline-none transition-colors ${
+                                      isPinned
+                                        ? "sticky z-10 bg-card shadow-[1px_0_0_0_var(--border)] max-md:!static max-md:!bg-transparent max-md:!shadow-none"
+                                        : ""
+                                    } ${isActive ? "rounded-sm ring-2 ring-inset ring-primary/60" : ""}`}
+                                    style={{
+                                      width: cell.column.getSize(),
+                                      ...(isPinned && pinnedLeft !== null
+                                        ? { left: `${pinnedLeft}px` }
+                                        : {}),
+                                    }}
+                                  >
+                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                  </td>
+                                );
+                              });
+                            })()}
+                            {canManagePrefs && <td className="w-12" />}
+                          </tr>
+                        );
+                      })}
+                    </GroupBucket>
+                  );
+                });
+                })()
+              )}
+              {canEdit && (
+                <AddRowInline
+                  workspaceId={workspaceId}
+                  boardId={boardId}
+                  columnCount={columns.length + (canManagePrefs ? 1 : 0)}
+                />
+              )}
+            </tbody>
+          </table>
+        </div>
+        {/* v4 .tbl-foot — licznik z lewej, hint z <kbd> z prawej. */}
+        <div className="flex items-center justify-between border-t border-border/70 bg-muted/20 px-4 py-2.5 font-mono text-[0.66rem] uppercase tracking-[0.1em] text-muted-foreground">
+          <span>
+            <strong className="font-semibold text-foreground/80">{tasks.length}</strong>{" "}
+            {taskPl(tasks.length)}
+          </span>
+          <span className="max-md:hidden normal-case tracking-normal text-[0.72rem] font-sans">
+            Najedź na zadanie i wciśnij{" "}
+            <kbd className="ml-0.5 inline-flex items-center rounded-md border border-border/80 bg-muted px-1.5 py-0.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.05em] text-foreground/80 shadow-[0_1px_0_0_var(--border)]">
+              M
+            </kbd>{" "}
+            aby przypisać osobę
+          </span>
+        </div>
       </div>
-      <div className="flex items-center justify-between border-t border-border px-4 py-2 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">
-        <span>{tasks.length} {taskPl(tasks.length)}</span>
-        <span className="max-md:hidden">
-          hint · najedź na zadanie i wciśnij <kbd className="rounded-sm border border-border bg-muted px-1 py-0.5 text-[0.58rem]">M</kbd> aby przypisać osobę
-        </span>
-      </div>
-    </div>
-    {assign.menu}
-    {selectedTaskIds.length > 0 && (
-      <BulkActionsBar
-        workspaceId={workspaceId}
-        selectedIds={selectedTaskIds}
-        statusColumns={statusColumns}
-        members={members}
-        onClear={() => setRowSelection({})}
-      />
-    )}
+
+      {assign.menu}
+      {selectedTaskIds.length > 0 && (
+        <BulkActionsBar
+          workspaceId={workspaceId}
+          selectedIds={selectedTaskIds}
+          statusColumns={statusColumns}
+          members={members}
+          onClear={() => setRowSelection({})}
+        />
+      )}
     </div>
   );
 }
@@ -1215,9 +1231,10 @@ function BulkActionsBar({
 
   if (typeof document === "undefined") return null;
   return createPortal(
-    <div className="fixed bottom-6 left-1/2 z-50 flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-popover px-4 py-2 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]">
-      <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
-        Zaznaczone: <strong className="text-foreground">{selectedIds.length}</strong>
+    // v4 bulk toolbar — floating pill na dole, mocny cień + backdrop-blur.
+    <div className="fixed bottom-6 left-1/2 z-50 flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-3 rounded-2xl border border-border/70 bg-popover/95 px-4 py-2.5 shadow-[0_18px_50px_-12px_rgba(122,51,236,0.35)] backdrop-blur-md">
+      <span className="font-mono text-[0.66rem] uppercase tracking-[0.1em] text-muted-foreground">
+        Zaznaczone: <strong className="font-bold text-foreground">{selectedIds.length}</strong>
       </span>
       <span className="h-4 w-px bg-border" />
 
@@ -1226,16 +1243,17 @@ function BulkActionsBar({
         <button
           type="button"
           onClick={() => setActiveMenu((m) => (m === "status" ? null : "status"))}
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[0.78rem] font-medium text-foreground transition-colors hover:bg-accent"
+          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.78rem] font-medium text-foreground transition-colors hover:bg-accent"
         >
+          <span className="h-2 w-2 rounded-full bg-amber-500" />
           Status
         </button>
         {activeMenu === "status" && (
-          <div className="absolute bottom-[calc(100%+6px)] left-1/2 max-h-[280px] -translate-x-1/2 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-md">
+          <div className="absolute bottom-[calc(100%+8px)] left-1/2 max-h-[280px] -translate-x-1/2 overflow-y-auto rounded-xl border border-border/70 bg-popover/95 p-1 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)] backdrop-blur-md">
             <button
               type="button"
               onClick={() => setStatus("")}
-              className="block w-full whitespace-nowrap rounded-md px-2 py-1 text-left text-[0.78rem] text-muted-foreground transition-colors hover:bg-accent"
+              className="block w-full whitespace-nowrap rounded-md px-2.5 py-1.5 text-left text-[0.78rem] text-muted-foreground transition-colors hover:bg-accent"
             >
               — brak —
             </button>
@@ -1244,9 +1262,13 @@ function BulkActionsBar({
                 key={s.id}
                 type="button"
                 onClick={() => setStatus(s.id)}
-                className="block w-full whitespace-nowrap rounded-md px-2 py-1 text-left text-[0.78rem] transition-colors hover:bg-accent"
+                className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2.5 py-1.5 text-left text-[0.78rem] transition-colors hover:bg-accent"
                 style={{ color: s.colorHex }}
               >
+                <span
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ background: s.colorHex }}
+                />
                 {s.name}
               </button>
             ))}
@@ -1259,12 +1281,13 @@ function BulkActionsBar({
         <button
           type="button"
           onClick={() => setActiveMenu((m) => (m === "priority" ? null : "priority"))}
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[0.78rem] font-medium text-foreground transition-colors hover:bg-accent"
+          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.78rem] font-medium text-foreground transition-colors hover:bg-accent"
         >
+          <span className="h-2 w-2 rounded-full bg-rose-500" />
           Priorytet
         </button>
         {activeMenu === "priority" && (
-          <div className="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 rounded-lg border border-border bg-popover p-1 shadow-md">
+          <div className="absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 rounded-xl border border-border/70 bg-popover/95 p-1 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)] backdrop-blur-md">
             {PRIORITY_VALUES.map((value) => {
               const meta = PRIORITY_META[value];
               return (
@@ -1272,7 +1295,7 @@ function BulkActionsBar({
                   key={value}
                   type="button"
                   onClick={() => setBulkPriority(value)}
-                  className="flex w-full items-center justify-between gap-3 whitespace-nowrap rounded-md px-2 py-1 text-left text-[0.78rem] transition-colors hover:bg-accent"
+                  className="flex w-full items-center justify-between gap-3 whitespace-nowrap rounded-md px-2.5 py-1.5 text-left text-[0.78rem] transition-colors hover:bg-accent"
                 >
                   <span className="flex items-center gap-2">
                     <span
@@ -1290,7 +1313,7 @@ function BulkActionsBar({
                       {meta.label}
                     </span>
                   </span>
-                  <span className="font-mono text-[0.6rem] uppercase tracking-[0.1em] text-muted-foreground/60">
+                  <span className="font-mono text-[0.6rem] uppercase tracking-[0.08em] text-muted-foreground/60">
                     {meta.shortCode}
                   </span>
                 </button>
@@ -1305,12 +1328,25 @@ function BulkActionsBar({
         <button
           type="button"
           onClick={() => setActiveMenu((m) => (m === "assign" ? null : "assign"))}
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[0.78rem] font-medium text-foreground transition-colors hover:bg-accent"
+          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.78rem] font-medium text-foreground transition-colors hover:bg-accent"
         >
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="text-muted-foreground"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 21v-2a6 6 0 0 1 12 0v2" />
+          </svg>
           Osoba
         </button>
         {activeMenu === "assign" && members.length > 0 && (
-          <div className="absolute bottom-[calc(100%+6px)] left-1/2 max-h-[280px] -translate-x-1/2 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-md">
+          <div className="absolute bottom-[calc(100%+8px)] left-1/2 max-h-[280px] -translate-x-1/2 overflow-y-auto rounded-xl border border-border/70 bg-popover/95 p-1 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)] backdrop-blur-md">
             {members.map((m) => (
               <div
                 key={m.id}
@@ -1345,8 +1381,19 @@ function BulkActionsBar({
       <button
         type="button"
         onClick={submitDelete}
-        className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[0.78rem] font-medium text-destructive transition-colors hover:bg-destructive/10"
+        className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.78rem] font-medium text-rose-500 transition-colors hover:bg-rose-500/10"
       >
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden="true"
+        >
+          <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+        </svg>
         Usuń
       </button>
       <span className="h-4 w-px bg-border" />
@@ -1409,8 +1456,9 @@ function DateCell({
   disabled: boolean;
 }) {
   if (disabled) {
+    // v4: font-mono dla dat — w designie 12px, lekko stonowane kolorystycznie.
     return value ? (
-      <span className="font-mono text-[0.8rem]">
+      <span className="font-mono text-[0.76rem] text-muted-foreground">
         {new Date(value).toLocaleString("pl-PL", {
           dateStyle: "short",
           timeStyle: "short",
@@ -1442,19 +1490,22 @@ function DateCell({
 }
 
 function MutedDash() {
-  return <span className="font-mono text-[0.7rem] text-muted-foreground/60">—</span>;
+  // v4: cienki dash w kolumnach dat gdy pusto — font-mono żeby wizualnie pasowało do dat.
+  return <span className="font-mono text-[0.72rem] text-muted-foreground/50">—</span>;
 }
 
 // When `showHeader` is false we render only children — non-grouped path stays unchanged.
 function GroupBucket({
   label,
   color,
+  count,
   columnCount,
   showHeader,
   children,
 }: {
   label: string;
   color?: string;
+  count: number;
   columnCount: number;
   showHeader: boolean;
   children: React.ReactNode;
@@ -1464,24 +1515,32 @@ function GroupBucket({
   const accent = color ?? "var(--muted-foreground)";
   return (
     <>
-      <tr className="bg-muted/30">
-        <td colSpan={columnCount} className="px-4 py-2">
+      {/* v4 group header — caret + color dot + label + count badge */}
+      <tr className="bg-muted/40">
+        <td colSpan={columnCount} className="px-4 py-2.5">
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
-            className="inline-flex items-center gap-2"
+            className="inline-flex items-center gap-2.5 text-left transition-opacity hover:opacity-80"
           >
             <span
-              className="grid h-5 w-5 place-items-center rounded-sm text-[0.7rem] text-muted-foreground transition-transform"
+              className="grid h-4 w-4 place-items-center text-muted-foreground transition-transform"
               style={{ transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}
+              aria-hidden="true"
             >
-              ▾
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
             </span>
             <span
-              className="inline-flex items-center rounded-full px-2 py-0.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.12em]"
-              style={{ color: accent, background: `${accent}1F` }}
-            >
+              className="h-2.5 w-2.5 rounded-full shadow-[0_0_0_2px_var(--card)]"
+              style={{ background: accent }}
+            />
+            <span className="font-display text-[0.86rem] font-bold tracking-[-0.005em] text-foreground">
               {label || "—"}
+            </span>
+            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground">
+              {count}
             </span>
           </button>
         </td>
@@ -1597,7 +1656,7 @@ function AddColumnButton({
         onClick={() => (open ? closeReset() : openWithCoords())}
         aria-label="Dodaj kolumnę"
         title="Dodaj kolumnę"
-        className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-all hover:scale-105 hover:bg-accent hover:text-foreground"
       >
         <Plus size={13} />
       </button>
@@ -1612,10 +1671,12 @@ function AddColumnButton({
               width: 320,
               maxHeight: coords.maxHeight,
             }}
-            className="z-[60] flex flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-[0_18px_40px_-16px_rgba(76,29,149,0.36)]"
+            className="z-[60] flex flex-col overflow-hidden rounded-xl border border-border/70 bg-popover/95 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)] backdrop-blur-md"
           >
-            <div className="shrink-0 border-b border-border px-3 py-2">
-              <p className="eyebrow">Nowa kolumna</p>
+            <div className="shrink-0 border-b border-border/70 px-3 py-2.5">
+              <p className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+                Nowa kolumna
+              </p>
             </div>
             {/* min-h-0 is required so flex-1 + overflow-y-auto clips the middle section instead of stretching. */}
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
@@ -1631,9 +1692,9 @@ function AddColumnButton({
                 }}
                 maxLength={80}
                 placeholder="Nazwa pola…"
-                className="mb-3 w-full rounded-md border border-border bg-background px-2 py-1.5 text-[0.86rem] outline-none focus:border-primary/60"
+                className="mb-3 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-[0.86rem] outline-none transition-colors focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
-              <p className="mb-1.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground/80">
+              <p className="mb-1.5 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground/80">
                 Typ
               </p>
               <FieldTypePicker value={type} onChange={setType} />
@@ -1641,11 +1702,11 @@ function AddColumnButton({
                 <FieldOptionsEditor type={type} value={options} onChange={setOptions} />
               </div>
             </div>
-            <div className="shrink-0 flex items-center justify-end gap-2 border-t border-border bg-popover px-3 py-2">
+            <div className="shrink-0 flex items-center justify-end gap-2 border-t border-border/70 bg-popover/95 px-3 py-2.5">
               <button
                 type="button"
                 onClick={closeReset}
-                className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+                className="font-mono text-[0.62rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground transition-colors hover:text-foreground"
               >
                 Anuluj
               </button>
@@ -1653,7 +1714,7 @@ function AddColumnButton({
                 type="button"
                 onClick={submit}
                 disabled={!name.trim()}
-                className="inline-flex h-7 items-center rounded-md bg-primary px-3 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="inline-flex h-7 items-center rounded-md bg-brand-gradient px-3 font-mono text-[0.62rem] font-bold uppercase tracking-[0.1em] text-white shadow-[0_6px_16px_-6px_rgba(122,51,236,0.6)] transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 Dodaj kolumnę
               </button>
@@ -1693,8 +1754,9 @@ function AddRowInline({
     });
   };
   return (
-    <tr className="border-t border-dashed border-border/70 hover:bg-accent/20">
-      <td colSpan={columnCount} className="px-4 py-2">
+    // v4 .tbl-newrow — dashed border-t, subtle hover. Inline "+ Nowy wiersz".
+    <tr className="group/newrow border-t border-dashed border-border/60 transition-colors hover:border-primary/30 hover:bg-primary/[0.03]">
+      <td colSpan={columnCount} className="px-4 py-3">
         {editing ? (
           <input
             autoFocus
@@ -1712,19 +1774,18 @@ function AddRowInline({
             }}
             maxLength={2000}
             placeholder="Tytuł zadania…"
-            className="w-full bg-transparent text-[0.92rem] outline-none placeholder:text-muted-foreground/50"
+            className="w-full bg-transparent text-[0.9rem] font-medium outline-none placeholder:text-muted-foreground/50"
           />
         ) : (
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="inline-flex items-center gap-1.5 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+            className="inline-flex items-center gap-2 font-mono text-[0.66rem] font-semibold uppercase tracking-[0.1em] text-muted-foreground transition-colors group-hover/newrow:text-primary"
           >
-            <Plus size={11} /> Nowy wiersz
+            <Plus size={12} strokeWidth={2.4} /> Nowy wiersz
           </button>
         )}
       </td>
     </tr>
   );
 }
-

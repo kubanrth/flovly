@@ -12,6 +12,10 @@ import "react-day-picker/style.css";
 
 export interface DateTimePickerProps {
   name: string;
+  // HTML5 `form` attribute na hidden input — pozwala renderować pickera poza
+  // <form> a wartość i tak ląduje w submission. Używane w task-detail (sidebar
+  // meta), gdzie submit żyje w sticky footerze a same kontrolki w sidebarze.
+  form?: string;
   defaultValue: string | null;
   disabled?: boolean;
   placeholder?: string;
@@ -47,6 +51,7 @@ function pad2(n: number): string {
 
 export function DateTimePicker({
   name,
+  form,
   defaultValue,
   disabled,
   placeholder = "Wybierz datę",
@@ -243,7 +248,7 @@ export function DateTimePicker({
           </span>
         )}
       </button>
-      <input type="hidden" name={name} value={isoForForm} />
+      <input type="hidden" name={name} value={isoForForm} form={form} />
 
       {open && coords && typeof document !== "undefined" &&
         createPortal(

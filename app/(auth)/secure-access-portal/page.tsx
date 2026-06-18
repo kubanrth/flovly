@@ -6,44 +6,62 @@ export const metadata: Metadata = {
   title: "Wejście · FLOVLY",
 };
 
+// F12-K81 (v4 design): pełen refactor do glass card centered na bg-aura.
+// Layout 1:1 z `flovly v2/Flovly Auth & Workspaces.dc.html` (sekcja LOGIN).
+// Header / footer usunięte — brand mark trzyma się wewnątrz karty.
 export default async function SecureAccessPortalPage({
   searchParams,
 }: {
+  // Next 16: searchParams jest Promise<{}>, musi być await'owany.
   searchParams: Promise<{ redirect?: string }>;
 }) {
   const { redirect } = await searchParams;
 
   return (
-    <div className="relative flex min-h-dvh flex-col bg-aura">
-      <header className="flex items-center justify-between px-8 pt-8 md:px-14 md:pt-10">
-        <FlovlySignature size="md" />
-        <span className="eyebrow hidden md:inline">secure access portal</span>
-      </header>
+    <div className="relative isolate flex min-h-dvh items-center justify-center overflow-hidden bg-aura px-6 py-12">
+      {/* Dodatkowe radial blob'y nad bg-aura — wzmacniają hero feel z referencji.
+          Pointer-events none, czysty dekor. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[520px] w-[520px] -translate-x-1/2 rounded-full opacity-60 blur-3xl"
+        style={{
+          background:
+            "radial-gradient(circle, color-mix(in oklch, var(--accent-brand) 35%, transparent), transparent 65%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-32 -right-20 -z-10 h-[420px] w-[420px] rounded-full opacity-50 blur-3xl"
+        style={{
+          background:
+            "radial-gradient(circle, color-mix(in oklch, var(--accent-brand-2) 35%, transparent), transparent 65%)",
+        }}
+      />
 
-      <main className="mx-auto flex w-full max-w-[420px] flex-1 flex-col justify-center px-6 py-16">
-        <div className="mb-10 flex flex-col items-start gap-3">
+      <main className="glass-surface relative w-full max-w-[420px] rounded-2xl p-8 md:p-10">
+        {/* Brand mark + wordmark + tagline, jak na referencji v4 (logo nad heading'em) */}
+        <div className="mb-8 flex flex-col items-center text-center">
+          <FlovlySignature size="md" />
+          <p className="mt-3 text-[0.82rem] text-muted-foreground">
+            Workflow który płynie
+          </p>
+        </div>
+
+        <div className="mb-7 flex flex-col items-start gap-2">
           <span className="eyebrow">Witaj z powrotem</span>
-          <h1 className="font-display text-[2.6rem] font-bold leading-[1.05] tracking-[-0.03em] text-foreground">
-            Zaloguj się,<br />
+          <h1 className="font-display text-[2.1rem] font-bold leading-[1.05] tracking-[-0.03em] text-foreground">
+            Zaloguj się,
+            <br />
             <span className="text-brand-gradient">do roboty.</span>
           </h1>
-          <p className="mt-3 max-w-[36ch] text-[0.95rem] leading-[1.6] text-muted-foreground">
-            Wpisz swoje dane służbowe, żeby wejść do systemu zarządzania
-            projektami.
-          </p>
         </div>
 
         <LoginForm redirectTo={redirect} />
 
-        <p className="mt-10 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">
+        <p className="mt-7 text-center font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
           Problem z dostępem? Skontaktuj się z administratorem workspace’u.
         </p>
       </main>
-
-      <footer className="flex items-center justify-between px-8 pb-8 md:px-14 md:pb-10">
-        <span className="eyebrow">© {new Date().getFullYear()} · Wewnętrzny dostęp</span>
-        <span className="eyebrow hidden md:inline">Not for public distribution</span>
-      </footer>
     </div>
   );
 }

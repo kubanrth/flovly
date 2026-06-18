@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   closestCenter,
@@ -37,9 +37,16 @@ import { reorderBoardsAction } from "@/app/(app)/w/[workspaceId]/b/actions";
 import { type ViewName } from "@/lib/board-views";
 import { taskPl } from "@/lib/pluralize";
 
-// Drag-and-drop reorder tablic w workspace overview.
+// =============================================================================
+// Drag-and-drop reorder tablic w workspace overview (design v4).
 // Cały render board sections jest w client component żeby dnd-kit mógł
-// zarządzać kolejnością.
+// zarządzać kolejnością. Layout 1:1 z Flovly v4 (Hero · Workspace Overview):
+//   - liquid-glass karty: rgba(255,255,255,.6) bg + backdrop-blur, 1px border
+//   - 3px top accent strip w kolorze workspace
+//   - init badge 38px z kolorem workspace + brand-tinted shadow
+//   - hover: translateY(-3px), spring easing cubic-bezier(.34,1.56,.64,1)
+//   - view pills: rounded-lg 11px neutral; "+N" pill brand-tinted
+// =============================================================================
 
 const VIEW_META: Record<
   ViewName,
@@ -53,6 +60,42 @@ const VIEW_META: Record<
   whiteboard: { label: "Whiteboard", Icon: Pencil, accent: "text-emerald-500" },
   taskline: { label: "Linia zadań", Icon: Workflow, accent: "text-fuchsia-500" },
 };
+
+// Paleta v4 hero (boards): violet · sky · emerald · amber · rose · sky-deep.
+// Pierwsze 4 to bezpośrednio sample z HTML referencji, kolejne dorzucone żeby
+// każda kolejna tablica miała własną tożsamość. Cyklujemy po id-hash żeby
+// kolejność tablic nie wpływała na "który kolor dostała moja tablica".
+const SWATCH_GRADIENTS: { color: string; shadow: string }[] = [
+  { color: "#7A33EC", shadow: "rgba(122,51,236,.45)" }, // brand violet
+  { color: "#34BEF8", shadow: "rgba(52,190,248,.40)" }, // sky accent
+  { color: "#10B981", shadow: "rgba(16,185,129,.40)" }, // emerald
+  { color: "#F59E0B", shadow: "rgba(245,158,11,.40)" }, // amber
+  { color: "#E1318F", shadow: "rgba(225,49,143,.40)" }, // magenta brand-b
+  { color: "#0EA5E9", shadow: "rgba(14,165,233,.40)" }, // info deep
+];
+
+// Stabilny hash dla deterministic color per board (nie randomizujemy żeby
+// kolejne renderowania nie migały). FNV-1a 32-bit – wystarcza dla rozróżnienia.
+function swatchFor(id: string): { color: string; shadow: string } {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  const idx = (h >>> 0) % SWATCH_GRADIENTS.length;
+  return SWATCH_GRADIENTS[idx]!;
+}
+
+// 2-znakowe inicjały z nazwy tablicy (jak w v4 hero — "RA", "MQ", "OD", "BP").
+// Bierzemy pierwsze litery pierwszych 2 słów, fallback na pierwsze 2 znaki.
+function initialsFor(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    return (words[0]![0]! + words[1]![0]!).toUpperCase();
+  }
+  const single = words[0] ?? "??";
+  return single.slice(0, 2).toUpperCase();
+}
 
 export interface BoardSectionData {
   id: string;
@@ -72,19 +115,12 @@ export interface BoardTask {
   tags: { id: string; name: string; colorHex: string }[];
 }
 
-// Klient: "zamienmy w momencie jak wchodzisz w dana przestrzen i wybierasz
-// widok lista to zrob taki sam widok jak wchodzisz we wszystkie przestrzenie
-// i dajesz widok lista". Stary SortableBoardsList renderował SortableBoard-
-// Section z rich task-preview'em (rozwijane sekcje z status badges, dates,
-// assignees). Klient woli prostszy row-based list jak na /workspaces.
-//
-// Nowy layout = 1:1 SortableWorkspacesList:
-//   - <ul> z overflow-hidden rounded-xl border bg-card
-//   - per row: drag handle + Link z grid'em [name minmax(0,1fr) | view-pills 130px | tasks 70px | arrow 30px]
-//   - mobile: vertical stack (md+ wraca do grid)
-//
-// Stary SortableBoardSection przemianowany na SortableBoardSectionLegacy —
-// zostaje na wypadek gdyby ktoś chciał wrócić, ale nie jest exportowany.
+// =============================================================================
+// LIST variant — kompaktowa lista wierszy (workspace overview / list view).
+// Mirror SortableWorkspaceRow: drag handle + Link z grid'em
+// [name | view-pills | task count | arrow]. Mobile: vertical stack.
+// =============================================================================
+
 export function SortableBoardsList({
   workspaceId,
   boards,
@@ -119,7 +155,7 @@ export function SortableBoardsList({
 
   if (items.length === 0) {
     return (
-      <ul className="overflow-hidden rounded-xl border border-border bg-card">
+      <ul className="overflow-hidden rounded-2xl border border-border bg-card/60 backdrop-blur-xl">
         <li className="px-5 py-6 text-center text-[0.9rem] text-muted-foreground">
           Brak tablic — utwórz pierwszą.
         </li>
@@ -130,7 +166,7 @@ export function SortableBoardsList({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={items.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-        <ul className="overflow-hidden rounded-xl border border-border bg-card">
+        <ul className="overflow-hidden rounded-2xl border border-border bg-card/60 backdrop-blur-xl">
           {items.map((board) => (
             <SortableBoardRow
               key={board.id}
@@ -144,8 +180,8 @@ export function SortableBoardsList({
   );
 }
 
-// Row mirror SortableWorkspaceRow — grid 4-col na desktop, vertical stack
-// mobile. View pills w środkowej kolumnie zamiast "rola"/"slug" usera.
+// Wiersz listy — wzbogacony o color-coded init badge zgodny z v4 kafelkami,
+// dzięki czemu lista i grid mają spójną tożsamość per workspace.
 function SortableBoardRow({
   workspaceId,
   board,
@@ -164,10 +200,12 @@ function SortableBoardRow({
   } as const;
 
   // Top 4 view'ów żeby nie ciągnąć całej listy w wąskiej kolumnie. Reszta
-  // dostępna po kliknięciu w wiersz (Link → /b/[id]/table). 4 jest blisko
-  // pełnej listy (max 5: Tabela/Kanban/Roadmapa/Gantt/Whiteboard).
+  // dostępna po kliknięciu w wiersz (Link → /b/[id]/table).
   const visibleViews = board.enabledViews.slice(0, 4);
   const moreCount = board.enabledViews.length - visibleViews.length;
+
+  const swatch = useMemo(() => swatchFor(board.id), [board.id]);
+  const initials = useMemo(() => initialsFor(board.name), [board.name]);
 
   return (
     <li ref={setNodeRef} style={style} className="border-b border-border last:border-b-0">
@@ -184,8 +222,20 @@ function SortableBoardRow({
         </button>
         <Link
           href={`/w/${workspaceId}/b/${board.id}/table`}
-          className="group flex flex-1 flex-col gap-2 px-3 py-3 transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none md:grid md:grid-cols-[minmax(0,1fr)_180px_70px_30px] md:items-center md:gap-4 md:py-3.5"
+          className="group flex flex-1 items-center gap-3 px-3 py-3 transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none md:grid md:grid-cols-[40px_minmax(0,1fr)_180px_70px_30px] md:gap-4 md:py-3.5"
         >
+          {/* Init badge — workspace color identity, mirror grid card */}
+          <span
+            aria-hidden
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl font-display text-[0.72rem] font-bold text-white"
+            style={{
+              background: swatch.color,
+              boxShadow: `0 6px 14px -5px ${swatch.shadow}`,
+            }}
+          >
+            {initials}
+          </span>
+
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="truncate font-display text-[1.05rem] font-semibold leading-tight tracking-[-0.01em] transition-colors group-hover:text-primary">
               {board.name}
@@ -205,7 +255,7 @@ function SortableBoardRow({
                   <span
                     key={view}
                     title={meta.label}
-                    className={`inline-flex h-6 items-center gap-1 rounded-md border border-border bg-background px-1.5 font-mono text-[0.6rem] uppercase tracking-[0.12em] ${meta.accent}`}
+                    className={`inline-flex h-6 items-center gap-1 rounded-lg border border-border bg-background/70 px-1.5 font-mono text-[0.6rem] uppercase tracking-[0.12em] backdrop-blur-sm ${meta.accent}`}
                   >
                     <Icon size={10} />
                     <span className="max-md:hidden">{meta.label}</span>
@@ -213,7 +263,7 @@ function SortableBoardRow({
                 );
               })}
               {moreCount > 0 && (
-                <span className="inline-flex h-6 items-center rounded-md border border-border bg-background px-1.5 font-mono text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground">
+                <span className="inline-flex h-6 items-center rounded-lg bg-primary/10 px-1.5 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-primary">
                   +{moreCount}
                 </span>
               )}
@@ -231,6 +281,12 @@ function SortableBoardRow({
     </li>
   );
 }
+
+// =============================================================================
+// SECTION variant (legacy / rich preview) — pełna sekcja z rozwijanymi taskami
+// + ViewSwitcher. Zostaje na wypadek gdyby ktoś chciał wrócić, nie jest
+// publicznie exportowany ale zachowuje pełną funkcjonalność.
+// =============================================================================
 
 // localStorage key — scoped per (workspace, board) so collapse state survives
 // nav between workspaces without bleeding across them.
@@ -267,10 +323,8 @@ function SortableBoardSection({
       const next = !prev;
       try {
         if (next) {
-          // Collapsed = default; remove the explicit-expanded marker.
           localStorage.removeItem(COLLAPSE_KEY(workspaceId, board.id));
         } else {
-          // Explicit expand — persist so it survives revisits.
           localStorage.setItem(COLLAPSE_KEY(workspaceId, board.id), "0");
         }
       } catch {
@@ -295,7 +349,6 @@ function SortableBoardSection({
     >
       <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:justify-between">
         <div className="flex items-center gap-2">
-          {/* Drag handle */}
           <button
             type="button"
             {...attributes}
@@ -306,8 +359,6 @@ function SortableBoardSection({
           >
             <GripVertical size={16} />
           </button>
-          {/* Collapse toggle — keeps the workspace overview scannable when a
-              workspace has many boards with long task lists. */}
           <button
             type="button"
             onClick={toggleCollapsed}
@@ -446,10 +497,13 @@ function SortableBoardSection({
   );
 }
 
+// Suppress unused warning — komponent legacy, zachowujemy ale nie eksportujemy.
+void SortableBoardSection;
+
 // =============================================================================
-// GRID variant — kafelki jak na /workspaces (3-col responsive). Klient:
-// "Potrzebujemy zrobić to w formie kafelek, jak w przypadku widoku wszystkich
-// workspace". List variant zostaje jako opcja w BoardsLayoutToggle.
+// GRID variant (default) — kafelki v4 hero (3-col responsive). 1:1 z Flovly v4
+// "Hero · Workspace Overview". Liquid-glass surfaces, color-coded badges,
+// 3px top accent strip, spring hover translateY(-3px).
 // =============================================================================
 
 export function SortableBoardsGrid({
@@ -487,7 +541,7 @@ export function SortableBoardsGrid({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={items.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {items.map((board) => (
             <SortableBoardCard key={board.id} workspaceId={workspaceId} board={board} />
           ))}
@@ -514,41 +568,70 @@ function SortableBoardCard({
     zIndex: isDragging ? 10 : "auto",
   } as const;
 
+  const swatch = useMemo(() => swatchFor(board.id), [board.id]);
+  const initials = useMemo(() => initialsFor(board.name), [board.name]);
+
+  // Pierwsze 4 viewy widoczne w pełni (label + ikona). Reszta jako "+N" pill
+  // w stylu brand-tinted (zgodnie z v4 HTML: rgba(122,51,236,.1) bg, #6A24DC).
+  const visibleViews = board.enabledViews.slice(0, 4);
+  const moreCount = board.enabledViews.length - visibleViews.length;
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={`group relative ${isDragging ? "cursor-grabbing" : ""}`}
     >
-      {/* Klient: "zostawmy tylko informacje o tym jakie są widoki, ale niech
-          się mieszczą w jednej linii. Bez zadań, żeby przestrzenie wyglądały
-          na równe". Fixed h-[180px] zamiast min-h żeby kafelki MIAŁY tę samą
-          wysokość niezależnie od liczby widoków. flex-nowrap + overflow-x-auto
-          na pillach żeby przy 5 włączonych widokach (Tabela/Kanban/Roadmapa/
-          Gantt/Whiteboard) nie złamało się na drugą linię. */}
-      {/* Desktop: h-[180px] żeby wszystkie kafelki w grid'zie były równe.
-          Mobile: min-h żeby wrap'nięte pills (Roadmapa/Whiteboard) mogły
-          przelać się na drugą linię bez ucinania. */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 pl-12 shadow-[0_4px_12px_-4px_rgba(46,19,52,0.10),0_18px_40px_-16px_rgba(76,29,149,0.14)] transition-all group-hover:-translate-y-[2px] group-hover:border-primary/40 group-hover:shadow-[0_18px_40px_-16px_rgba(124,92,255,0.30),0_30px_70px_-24px_rgba(210,71,181,0.20)] max-md:min-h-[180px] md:h-[180px]">
+      {/* Karta v4: liquid-glass z backdrop-blur, layered shadow, 3px top strip
+          w kolorze workspace. p-5 (większe niż stare p-4), rounded-2xl (18px).
+          Spring easing na hover [cubic-bezier(.34,1.56,.64,1)] żeby kafelki
+          "skakały" z odbiciem — sygnatura v4 motion. */}
+      <div
+        className="relative flex h-full flex-col gap-3.5 overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-5 pl-12 backdrop-blur-xl shadow-[0_1px_0_rgba(255,255,255,.6)_inset,0_14px_30px_-18px_rgba(76,29,149,.30)] transition-[transform,box-shadow,border-color] duration-300 [transition-timing-function:cubic-bezier(.34,1.56,.64,1)] group-hover:-translate-y-[3px] group-hover:border-primary/30 group-hover:shadow-[0_1px_0_rgba(255,255,255,.7)_inset,0_22px_44px_-18px_rgba(76,29,149,.45),0_30px_70px_-24px_rgba(225,49,143,.20)] max-md:min-h-[200px] md:h-[200px]"
+      >
+        {/* 3px top accent strip — wizualna "kotwica" koloru tablicy (v4 hero) */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-[3px]"
+          style={{ background: swatch.color }}
+        />
+
         <Link
           href={`/w/${workspaceId}/b/${board.id}/table`}
-          className="flex min-w-0 flex-col gap-2 focus-visible:outline-none"
+          className="flex min-w-0 flex-col gap-2.5 focus-visible:outline-none"
         >
-          <span className="eyebrow">Tablica</span>
-          <h2 className="truncate font-display text-[1.25rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground transition-colors group-hover:text-primary">
-            {board.name}
-          </h2>
-          <span className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
-            {board.taskCount} {taskPl(board.taskCount)}
-          </span>
+          {/* HEAD: init badge + nazwa/desc + task counter pill */}
+          <div className="flex items-start gap-3">
+            <span
+              aria-hidden
+              className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-xl font-display text-[0.82rem] font-bold text-white"
+              style={{
+                background: swatch.color,
+                boxShadow: `0 6px 14px -5px ${swatch.shadow}`,
+              }}
+            >
+              {initials}
+            </span>
+            <div className="min-w-0 flex-1">
+              <span className="eyebrow">Tablica</span>
+              <h2 className="mt-1 truncate font-display text-[1.05rem] font-bold leading-tight tracking-[-0.015em] text-foreground transition-colors group-hover:text-primary">
+                {board.name}
+              </h2>
+              <p className="mt-0.5 truncate font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
+                {board.taskCount} {taskPl(board.taskCount)}
+              </p>
+            </div>
+            {/* Task counter — brand-tinted pill (v4: rgba(122,51,236,.08)) */}
+            <span className="shrink-0 rounded-lg bg-primary/10 px-2 py-1 font-mono text-[0.66rem] font-semibold text-primary">
+              {board.taskCount}
+            </span>
+          </div>
         </Link>
 
-        {/* View pills — szybkie wejście z kafelka do konkretnego widoku.
-            Mobile (max-md): flex-wrap żeby Roadmapa/Whiteboard nie były ucięte
-            poza prawą krawędzią (klient: "Roadmapa ucięta"). md+: flex-nowrap
-            + overflow-x-auto żeby pojedyncza linia w gridzie 3-col. */}
-        <div className="-mx-1 mt-auto flex items-center gap-1.5 px-1 pb-1 max-md:flex-wrap md:flex-nowrap md:overflow-x-auto">
-          {board.enabledViews.map((view) => {
+        {/* View pills — mt-auto żeby zawsze siadały na dole karty (równe kafelki).
+            v4: rounded-lg, 11px medium, neutral bg z subtelnym border. */}
+        <div className="-mx-1 mt-auto flex flex-wrap items-center gap-1.5 px-1 pb-0.5">
+          {visibleViews.map((view) => {
             const meta = VIEW_META[view];
             const Icon = meta.Icon;
             return (
@@ -556,24 +639,29 @@ function SortableBoardCard({
                 key={view}
                 href={`/w/${workspaceId}/b/${board.id}/${view}`}
                 title={meta.label}
-                className={`inline-flex h-7 shrink-0 items-center gap-1 rounded-md border border-border bg-background px-2 font-mono text-[0.62rem] uppercase tracking-[0.12em] transition-colors hover:border-primary/40 hover:text-foreground ${meta.accent}`}
+                className={`inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-border/60 bg-background/70 px-2 font-mono text-[0.62rem] font-medium uppercase tracking-[0.12em] backdrop-blur-sm transition-colors hover:border-primary/40 hover:bg-background ${meta.accent}`}
               >
                 <Icon size={11} />
                 <span>{meta.label}</span>
               </Link>
             );
           })}
+          {moreCount > 0 && (
+            <span className="inline-flex h-7 shrink-0 items-center rounded-lg bg-primary/10 px-2 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.12em] text-primary">
+              +{moreCount}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Drag handle po lewej krawędzi karty */}
+      {/* Drag handle po lewej krawędzi karty — wyciszony, ujawnia się na hover */}
       <button
         type="button"
         {...attributes}
         {...listeners}
         aria-label="Przeciągnij tablicę"
         title="Przeciągnij aby zmienić kolejność"
-        className="absolute left-3 top-1/2 grid h-8 w-8 -translate-y-1/2 cursor-grab place-items-center rounded-md text-muted-foreground/50 transition-colors hover:bg-accent hover:text-foreground active:cursor-grabbing"
+        className="absolute left-3 top-[18px] grid h-8 w-8 cursor-grab place-items-center rounded-md text-muted-foreground/40 transition-colors hover:bg-accent hover:text-foreground active:cursor-grabbing"
       >
         <GripVertical size={16} />
       </button>

@@ -3,7 +3,7 @@
 import { startTransition, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsUpDown, GripVertical, Plus } from "lucide-react";
 import { createTaskAction } from "@/app/(app)/w/[workspaceId]/t/actions";
 import {
   createStatusColumnAction,
@@ -43,6 +43,10 @@ import {
 import { PriorityBadge } from "@/components/task/priority-badge";
 import type { TaskPriorityValue } from "@/lib/task-priority";
 
+// ══════════════════════════════════════════════════════════════════════════
+// Typescript interfaces — DOKŁADNIE jak w poprzedniej wersji (zachowane).
+// ══════════════════════════════════════════════════════════════════════════
+
 export interface KanbanTask {
   id: string;
   title: string;
@@ -75,6 +79,14 @@ export interface KanbanStatusColumn {
 // Synthetic "No status" column id used locally; tasks without a status
 // land here. On drop we persist statusColumnId = null.
 const NO_STATUS = "__none__";
+
+// v4: konsystentne wymiary kolumn — 280 mobile, 300 desktop.
+const COLUMN_W_BASE = "w-[280px]";
+const COLUMN_W_MD = "md:w-[300px]";
+
+// ══════════════════════════════════════════════════════════════════════════
+// MAIN: KanbanBoard
+// ══════════════════════════════════════════════════════════════════════════
 
 export function KanbanBoard({
   workspaceId,
@@ -283,8 +295,12 @@ export function KanbanBoard({
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
     >
-      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:gap-4 md:px-0">
-        {renderColumns.map(({ id, column }, idx) => {
+      {/* v4: horizontal flex z scroll-snap na mobile dla swipe między kolumnami.
+          gap-3 mobile / gap-3.5 desktop trzyma się referencji (13px gap). */}
+      <div
+        className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:snap-none md:gap-3.5 md:px-0"
+      >
+        {renderColumns.map(({ id, column }) => {
           const colTasks = columns.get(id) ?? [];
           // NO_STATUS is virtual (not in DB) — exclude from reorder.
           const realColumns = renderColumns.filter((rc) => rc.id !== NO_STATUS);
@@ -334,6 +350,11 @@ export function KanbanBoard({
   );
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// COLUMN — v4: glass-surface kolumna z grip-handle + color-dot + count.
+// Sticky header zostaje (sticky top-0 wewnątrz overflow body).
+// ══════════════════════════════════════════════════════════════════════════
+
 function Column({
   id,
   column,
@@ -365,72 +386,107 @@ function Column({
   // Bez statusu column can't be added to — no statusColumnId for the server action.
   const canAddInline = id !== NO_STATUS;
 
+  const moveLeft = () => {
+    if (!realColumnIds || isFirstReal) return;
+    const fromIdx = realColumnIds.indexOf(id);
+    if (fromIdx <= 0) return;
+    const next = [...realColumnIds];
+    [next[fromIdx - 1], next[fromIdx]] = [next[fromIdx], next[fromIdx - 1]];
+    const fd = new FormData();
+    fd.set("workspaceId", workspaceId);
+    fd.set("boardId", boardId);
+    fd.set("ids", next.join(","));
+    startTransition(() => reorderStatusColumnsAction(fd));
+  };
+
+  const moveRight = () => {
+    if (!realColumnIds || isLastReal) return;
+    const fromIdx = realColumnIds.indexOf(id);
+    if (fromIdx < 0 || fromIdx >= realColumnIds.length - 1) return;
+    const next = [...realColumnIds];
+    [next[fromIdx], next[fromIdx + 1]] = [next[fromIdx + 1], next[fromIdx]];
+    const fd = new FormData();
+    fd.set("workspaceId", workspaceId);
+    fd.set("boardId", boardId);
+    fd.set("ids", next.join(","));
+    startTransition(() => reorderStatusColumnsAction(fd));
+  };
+
   return (
     <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+      {/* v4: kolumna = glass surface, rounded-[15px] (z designu), border subtle.
+          flex-col z body który scrolluje samodzielnie (header sticky). */}
       <div
-        className="flex w-[280px] shrink-0 flex-col gap-2 rounded-2xl border border-border/60 bg-card/40 p-3 backdrop-blur-sm md:w-[300px]"
+        className={`group/col flex ${COLUMN_W_BASE} ${COLUMN_W_MD} shrink-0 snap-start flex-col overflow-hidden rounded-[15px] border border-white/[0.08] bg-white/[0.03] backdrop-blur-md md:snap-none dark:border-white/[0.07] dark:bg-white/[0.03]`}
+        style={{
+          // Light mode override — w light surface jest jaśniejszy (rgba(255,255,255,.45))
+          // używamy CSS-only via :not(.dark) nie zadziała w Tailwind v4, więc inline custom
+          // property + selector dla utility .glass-surface. Tu używamy bezpośrednio
+          // klas — light bg/border ustawiamy w className wyżej przez dark: prefix wariant.
+        }}
       >
-        <div className="flex items-center justify-between gap-2 px-1">
-          <div className="flex items-center gap-1">
-            {canReorder && realColumnIds && realColumnIds.length > 1 && (
-              <div className="flex items-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isFirstReal) return;
-                    const fromIdx = realColumnIds.indexOf(id);
-                    if (fromIdx <= 0) return;
-                    const next = [...realColumnIds];
-                    [next[fromIdx - 1], next[fromIdx]] = [next[fromIdx], next[fromIdx - 1]];
-                    const fd = new FormData();
-                    fd.set("workspaceId", workspaceId);
-                    fd.set("boardId", boardId);
-                    fd.set("ids", next.join(","));
-                    startTransition(() => reorderStatusColumnsAction(fd));
-                  }}
-                  disabled={isFirstReal}
-                  aria-label="W lewo"
-                  title="Przesuń kolumnę w lewo"
-                  className="grid h-5 w-5 place-items-center rounded-sm text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
-                >
-                  <ChevronLeft size={11} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isLastReal) return;
-                    const fromIdx = realColumnIds.indexOf(id);
-                    if (fromIdx < 0 || fromIdx >= realColumnIds.length - 1) return;
-                    const next = [...realColumnIds];
-                    [next[fromIdx], next[fromIdx + 1]] = [next[fromIdx + 1], next[fromIdx]];
-                    const fd = new FormData();
-                    fd.set("workspaceId", workspaceId);
-                    fd.set("boardId", boardId);
-                    fd.set("ids", next.join(","));
-                    startTransition(() => reorderStatusColumnsAction(fd));
-                  }}
-                  disabled={isLastReal}
-                  aria-label="W prawo"
-                  title="Przesuń kolumnę w prawo"
-                  className="grid h-5 w-5 place-items-center rounded-sm text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
-                >
-                  <ChevronRight size={11} />
-                </button>
-              </div>
-            )}
-            <span
-              className="inline-flex h-6 items-center rounded-full px-2 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.12em]"
-              style={{ color, background: `${color}22` }}
-            >
-              {name}
-            </span>
-          </div>
-          <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+        {/* HEADER — sticky w obrębie kolumny.
+            Layout: grip-icon (drag/reorder visual cue) + color-dot + nazwa (bold) +
+            count (mała szara) + chevrons reorder z prawej. */}
+        <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-white/[0.07] bg-card/40 px-3 py-3 backdrop-blur-md dark:border-white/[0.07] dark:bg-white/[0.02]">
+          {/* Grip icon — 6 kropek z designu, czysto wizualny (sygnał reorder) */}
+          <GripVertical
+            size={13}
+            className="shrink-0 text-muted-foreground/40"
+            aria-hidden
+          />
+          {/* Color dot — 8px z designu */}
+          <span
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ background: color }}
+            aria-hidden
+          />
+          {/* Nazwa — bold 13px z designu */}
+          <span className="truncate font-display text-[0.81rem] font-bold leading-none text-foreground">
+            {name}
+          </span>
+          {/* Count — drobny szary, font-mono dla numeric tabular */}
+          <span className="shrink-0 font-mono text-[0.69rem] tabular-nums text-muted-foreground/70">
             {tasks.length}
           </span>
+          {/* Reorder chevrons — w prawym rogu (ml-auto) */}
+          {canReorder && realColumnIds && realColumnIds.length > 1 ? (
+            <div className="ml-auto flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={moveLeft}
+                disabled={isFirstReal}
+                aria-label="Przesuń kolumnę w lewo"
+                title="Przesuń kolumnę w lewo"
+                className="grid h-5 w-5 place-items-center rounded-md text-muted-foreground/60 transition-colors hover:bg-white/[0.06] hover:text-foreground disabled:cursor-not-allowed disabled:opacity-25 disabled:hover:bg-transparent dark:hover:bg-white/[0.06]"
+              >
+                <ChevronLeft size={12} />
+              </button>
+              <button
+                type="button"
+                onClick={moveRight}
+                disabled={isLastReal}
+                aria-label="Przesuń kolumnę w prawo"
+                title="Przesuń kolumnę w prawo"
+                className="grid h-5 w-5 place-items-center rounded-md text-muted-foreground/60 transition-colors hover:bg-white/[0.06] hover:text-foreground disabled:cursor-not-allowed disabled:opacity-25 disabled:hover:bg-transparent dark:hover:bg-white/[0.06]"
+              >
+                <ChevronRight size={12} />
+              </button>
+            </div>
+          ) : (
+            // Placeholder żeby header trzymał równą wysokość bez reorder.
+            <ChevronsUpDown
+              size={12}
+              className="ml-auto shrink-0 text-muted-foreground/30"
+              aria-hidden
+            />
+          )}
         </div>
+
+        {/* BODY — scroll container.
+            v4: padding 10px (≈ p-2.5), gap 9px (gap-2.5) — z referencji. */}
         <ColumnDropZone id={id}>
-          <div className="flex flex-col gap-2 min-h-[40px]">
+          <div className="flex min-h-[60px] flex-1 flex-col gap-2.5 overflow-y-auto p-2.5">
             {tasks.map((t) => (
               <SortableCard
                 key={t.id}
@@ -439,24 +495,50 @@ function Column({
                 hotkeyProps={getHotkeyProps?.(t)}
               />
             ))}
+            {/* EMPTY STATE — dashed brand-tinted border, "Upuść tutaj" copy z v4. */}
             {tasks.length === 0 && (
-              <div className="rounded-lg border border-dashed border-border bg-background/40 py-6 text-center text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground/60">
-                upuść tu
+              <div className="rounded-xl border border-dashed border-primary/30 bg-primary/[0.06] px-3 py-4 text-center text-[0.72rem] font-medium text-muted-foreground">
+                Upuść tutaj
               </div>
+            )}
+            {/* INLINE ADD TASK — render po liście, na końcu body. */}
+            {canAddInline && (
+              <InlineAddTask
+                workspaceId={workspaceId}
+                boardId={boardId}
+                statusColumnId={id}
+              />
             )}
           </div>
         </ColumnDropZone>
-        {canAddInline && (
-          <InlineAddTask
-            workspaceId={workspaceId}
-            boardId={boardId}
-            statusColumnId={id}
-          />
-        )}
       </div>
     </SortableContext>
   );
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// COLUMN DROP ZONE — pełne body kolumny jako drop target.
+// ══════════════════════════════════════════════════════════════════════════
+
+function ColumnDropZone({ id, children }: { id: string; children: React.ReactNode }) {
+  // Entire column is a drop target. Prefix "col:" so onDragOver/onDragEnd
+  // can distinguish column hits from card-on-card hits.
+  const { setNodeRef, isOver } = useDroppable({ id: `col:${id}` });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex flex-1 flex-col transition-colors ${
+        isOver ? "bg-primary/[0.04]" : ""
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// INLINE ADD TASK — v4: ghost button "+ Nowe zadanie" na dnie body kolumny.
+// ══════════════════════════════════════════════════════════════════════════
 
 function InlineAddTask({
   workspaceId,
@@ -487,18 +569,22 @@ function InlineAddTask({
     });
   };
   if (!editing) {
+    // v4: ghost button, padding 9px 11px, rounded-xl (11px),
+    // muted text, hover -> foreground + subtle bg tint.
     return (
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className="inline-flex h-7 items-center gap-1.5 rounded-md border border-dashed border-border bg-background/40 px-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
+        className="mt-1 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-left text-[0.78rem] font-medium text-muted-foreground transition-colors hover:bg-white/[0.04] hover:text-foreground dark:hover:bg-white/[0.04]"
       >
-        <Plus size={11} /> Nowe zadanie
+        <Plus size={14} strokeWidth={2} />
+        <span>Nowe zadanie</span>
       </button>
     );
   }
   return (
-    <div className="flex flex-col gap-1.5 rounded-md border border-primary/40 bg-background p-2">
+    // Edit mode — ramka brand-tinted, focused input.
+    <div className="flex flex-col gap-1.5 rounded-xl border border-primary/40 bg-card p-2.5 shadow-[0_8px_18px_-10px_rgba(124,92,255,0.25)]">
       <input
         autoFocus
         value={title}
@@ -540,16 +626,9 @@ function InlineAddTask({
   );
 }
 
-function ColumnDropZone({ id, children }: { id: string; children: React.ReactNode }) {
-  // Entire column is a drop target. Prefix "col:" so onDragOver/onDragEnd
-  // can distinguish column hits from card-on-card hits.
-  const { setNodeRef } = useDroppable({ id: `col:${id}` });
-  return (
-    <div ref={setNodeRef} className="flex-1">
-      {children}
-    </div>
-  );
-}
+// ══════════════════════════════════════════════════════════════════════════
+// SORTABLE CARD — wrapper z dnd-kit useSortable.
+// ══════════════════════════════════════════════════════════════════════════
 
 function SortableCard({
   task,
@@ -572,7 +651,9 @@ function SortableCard({
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.4 : 1,
+        // v4: drag state — opacity 0.5 + scale 0.98 (delikatne "wycofanie" karty).
+        opacity: isDragging ? 0.5 : 1,
+        scale: isDragging ? "0.98" : "1",
       }}
       {...attributes}
       {...listeners}
@@ -581,6 +662,16 @@ function SortableCard({
     </div>
   );
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// CARD SHELL — wizualna kartka z designu v4.
+// Layout:
+//  1. Tags row (max 4)
+//  2. Priority badge (jeśli != NONE)
+//  3. Title (line-clamp-3, semibold, hover → primary)
+//  4. TaskActivityHints (description/comments/subtasks/linked)
+//  5. Meta: avatars stacked (max 3) + stopAt date pill
+// ══════════════════════════════════════════════════════════════════════════
 
 function CardShell({
   task,
@@ -596,45 +687,78 @@ function CardShell({
     onMouseLeave: () => void;
   };
 }) {
+  // Sprawdź czy zadanie jest po deadline (stopAt < dziś) — kolor pill date.
+  const isOverdue = useMemo(() => {
+    if (!task.stopAt) return false;
+    const stop = new Date(task.stopAt);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return stop < today;
+  }, [task.stopAt]);
+
+  const extraAssignees = Math.max(0, task.assignees.length - 3);
+
   return (
     <article
       {...(hotkeyProps ?? {})}
-      className={`flex cursor-grab flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-[0_1px_2px_rgba(46,19,52,0.06)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_10px_26px_-10px_rgba(124,92,255,0.32)] active:cursor-grabbing ${
-        dragging ? "ring-2 ring-primary/50 shadow-[0_20px_32px_-12px_rgba(123,104,238,0.45)]" : ""
-      }`}
+      className={[
+        // v4: rounded-xl (13px), border subtle, bg-card, p-3.
+        "group/card flex cursor-grab flex-col gap-2 rounded-[13px] border border-border/60 bg-card p-3",
+        // v4: shadow 8px 18px -10px (low-opacity drop shadow, jak w referencji).
+        "shadow-[0_8px_18px_-10px_rgba(46,19,52,0.12)] dark:shadow-[0_8px_18px_-10px_rgba(0,0,0,0.6)] dark:border-white/[0.10] dark:bg-white/[0.05]",
+        // Hover: translate-y i glow (tylko transform + box-shadow — żadnego transition-all).
+        "transition-[transform,box-shadow,border-color] duration-200 ease-out",
+        "hover:-translate-y-px hover:border-primary/30 hover:shadow-[0_12px_26px_-10px_rgba(124,92,255,0.28)] dark:hover:border-primary/40",
+        "active:cursor-grabbing",
+        // Drag state — silniejsza ramka + ring.
+        dragging
+          ? "ring-2 ring-primary/50 shadow-[0_20px_32px_-12px_rgba(124,92,255,0.45)]"
+          : "",
+      ].join(" ")}
     >
-      {(task.priority !== "NONE" || task.tags.length > 0) && (
+      {/* ROW 1 — TAGS (max 4) — v4: małe pille z color tint background. */}
+      {task.tags.length > 0 && (
         <div className="flex flex-wrap items-center gap-1">
-          {/* F12-K75: priorytet jako pierwszy badge — najważniejszy
-              sygnał dla scanning'u karty. NONE → nic nie renderujemy. */}
-          {task.priority !== "NONE" && (
-            <PriorityBadge priority={task.priority} size="xs" />
-          )}
           {task.tags.slice(0, 4).map((t) => (
             <span
               key={t.id}
-              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.64rem] font-medium"
+              className="inline-flex items-center rounded-md px-1.5 py-0.5 text-[0.66rem] font-medium leading-none"
               style={{ background: `${t.colorHex}1A`, color: t.colorHex }}
             >
-              <span className="h-1 w-1 rounded-full" style={{ background: t.colorHex }} />
               {t.name}
             </span>
           ))}
+          {task.tags.length > 4 && (
+            <span className="text-[0.62rem] text-muted-foreground/70">
+              +{task.tags.length - 4}
+            </span>
+          )}
         </div>
       )}
+
+      {/* ROW 2 — PRIORITY BADGE (jeśli != NONE).
+          F12-K75: PriorityBadge to reusable komponent — ZACHOWANY. */}
+      {task.priority !== "NONE" && (
+        <div className="flex items-center">
+          <PriorityBadge priority={task.priority} size="xs" />
+        </div>
+      )}
+
+      {/* ROW 3 — TITLE.
+          line-clamp-3 z designu (3 linie max, potem ellipsis).
+          hyphens-auto + lang="pl" → soft hyphen na polskich wyrazach przed
+          break-words. hover:text-primary jak link standard. */}
       <Link
         href={`/w/${workspaceId}/t/${task.id}`}
         onPointerDown={(e) => e.stopPropagation()}
         lang="pl"
-        // break-words zostaje (długie URL'e nie powinny rozpychać karty ponad
-        // 300px), ale dorzucamy hyphens-auto + lang="pl" żeby polskie wyrazy
-        // dostały soft-hyphen ZANIM browser sięgnie po break-words i obetnie
-        // ogonek "ó"/"ą" w środku znaku. text-pretty + pr-0.5 = budżet na
-        // ostatni glif przy negatywnym tracking'u.
-        className="font-display text-[0.95rem] font-semibold leading-tight whitespace-normal break-words hyphens-auto text-pretty pr-0.5 transition-colors hover:text-primary"
+        className="font-display text-[0.86rem] font-semibold leading-snug tracking-[-0.005em] text-pretty break-words hyphens-auto text-foreground transition-colors hover:text-primary line-clamp-3 pr-0.5"
       >
         {task.title}
       </Link>
+
+      {/* ROW 4 — ACTIVITY HINTS (description, comments, subtasks, linked).
+          ZACHOWANY komponent TaskActivityHints. */}
       <TaskActivityHints
         hasDescription={task.hasDescription}
         commentCount={task.commentCount}
@@ -642,14 +766,17 @@ function CardShell({
         subtaskDoneCount={task.subtaskDoneCount}
         linkedCount={task.linkedCount}
       />
-      <div className="mt-auto flex items-center justify-between pt-1">
+
+      {/* ROW 5 — META row: avatars left, stopAt pill right. mt-auto żeby się
+          przyklejał do dołu karty (gdy treść różnej wysokości). */}
+      <div className="mt-auto flex items-center justify-between gap-2 pt-0.5">
         {task.assignees.length > 0 ? (
-          <div className="flex -space-x-1.5">
+          <div className="flex items-center -space-x-1.5">
             {task.assignees.slice(0, 3).map((a) => (
               <span
                 key={a.id}
                 title={a.name ?? a.email}
-                className="grid h-5 w-5 place-items-center overflow-hidden rounded-full border-2 border-card bg-brand-gradient font-display text-[0.56rem] font-bold text-white"
+                className="grid h-[22px] w-[22px] place-items-center overflow-hidden rounded-md border-2 border-card bg-brand-gradient font-display text-[0.55rem] font-bold text-white dark:border-[#0C0A14]"
               >
                 {a.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -659,13 +786,31 @@ function CardShell({
                 )}
               </span>
             ))}
+            {extraAssignees > 0 && (
+              <span
+                className="grid h-[22px] min-w-[22px] place-items-center rounded-md border-2 border-card bg-muted px-1 font-mono text-[0.56rem] font-bold text-muted-foreground dark:border-[#0C0A14]"
+                title={`+${extraAssignees} więcej`}
+              >
+                +{extraAssignees}
+              </span>
+            )}
           </div>
         ) : (
           <span />
         )}
         {task.stopAt && (
-          <span className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground">
-            {new Date(task.stopAt).toLocaleDateString("pl-PL", { month: "short", day: "numeric" })}
+          <span
+            className={[
+              "inline-flex items-center rounded-full px-2 py-0.5 font-mono text-[0.65rem] font-semibold uppercase tabular-nums tracking-[0.04em]",
+              isOverdue
+                ? "bg-rose-500/15 text-rose-500 dark:bg-rose-400/15 dark:text-rose-300"
+                : "bg-white/[0.06] text-muted-foreground dark:bg-white/[0.06]",
+            ].join(" ")}
+          >
+            {new Date(task.stopAt).toLocaleDateString("pl-PL", {
+              month: "short",
+              day: "numeric",
+            })}
           </span>
         )}
       </div>
@@ -673,7 +818,11 @@ function CardShell({
   );
 }
 
-// Mirrors AddColumnButton in board-table.tsx; creates a StatusColumn (not TableColumn).
+// ══════════════════════════════════════════════════════════════════════════
+// ADD KANBAN COLUMN BUTTON — "+ Dodaj kolumnę" trigger + popover.
+// Mirrors AddColumnButton in board-table.tsx; creates a StatusColumn.
+// ══════════════════════════════════════════════════════════════════════════
+
 function AddKanbanColumnButton({
   workspaceId,
   boardId,
@@ -771,15 +920,17 @@ function AddKanbanColumnButton({
 
   return (
     <>
-      {/* self-start + fixed h-[52px] keeps trigger from stretching to column height. */}
+      {/* v4: self-start + fixed height żeby trigger nie rozciągał się do wysokości
+          kolumn. Trigger dopasowany do v4 estetyki — dashed border, glass tint. */}
       <button
         ref={triggerRef}
         type="button"
         onClick={() => (open ? closeReset() : openWithCoords())}
         aria-label="Dodaj kolumnę"
-        className="inline-flex h-[52px] w-[280px] shrink-0 self-start items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-muted/20 px-3 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted/40 hover:text-foreground md:w-[300px]"
+        className={`inline-flex h-[52px] ${COLUMN_W_BASE} ${COLUMN_W_MD} shrink-0 snap-start self-start items-center justify-center gap-2 rounded-[15px] border border-dashed border-white/[0.12] bg-white/[0.02] px-3 text-[0.78rem] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-white/[0.04] hover:text-foreground dark:border-white/[0.12] dark:bg-white/[0.02]`}
       >
-        <Plus size={13} /> Dodaj kolumnę
+        <Plus size={14} strokeWidth={2} />
+        <span>Dodaj kolumnę</span>
       </button>
       {open && coords && typeof document !== "undefined" &&
         createPortal(
@@ -857,4 +1008,3 @@ function AddKanbanColumnButton({
     </>
   );
 }
-

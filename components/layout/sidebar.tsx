@@ -1,5 +1,17 @@
 "use client";
 
+// F12-K81 (v4 sidebar refactor): pełen visual refresh do FLOVLY Brand v4.
+//  • 210px floating glass card (vs poprzednie 252px) — matchuje v4 hero mock.
+//  • Sekcjonowanie: eyebrow labels ("Twoje" / "Przestrzenie") nad każdą grupą.
+//  • Brand mark (FlovlyMark 32px) + wordmark FLOVLY w headerze.
+//  • Workspace swatches w v4 stylu (rounded-lg z gradient'em + soft shadow).
+//  • User profile widget = sub-card na dole z border + glass tint.
+//  • Active state: gradient brand tint (rgba(122,51,236,.12) → rgba(225,49,143,.1)).
+//
+// Zachowane 100%: dnd-kit workspace + board reorder, collapse toggle,
+// mobile drawer (slide-in, backdrop, body scroll lock, Esc close),
+// ThemeToggle, path-based active state, wszystkie linki + ikonki.
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { startTransition, useEffect, useState } from "react";
@@ -199,220 +211,259 @@ export function Sidebar({
       )}
 
       <aside
-      data-collapsed={collapsed ? "true" : "false"}
-      data-mobile-open={mobileOpen ? "true" : "false"}
-      // Dual-mode: mobile drawer (max-md) vs desktop sticky (md+). Mobile rules MUST use `max-md:` —
-      // otherwise data-[mobile-open=false]:-translate-x-full (specificity 0,2,0) beats md:translate-x-0
-      // (0,1,0) and the sidebar stays hidden on desktop.
-      className="group/sidebar flex h-dvh flex-col text-sidebar-foreground transition-[transform,width] duration-200 max-md:fixed max-md:inset-0 max-md:z-40 max-md:w-full max-md:p-0 max-md:data-[mobile-open=false]:-translate-x-full max-md:data-[mobile-open=true]:translate-x-0 md:sticky md:top-0 md:self-start md:p-3.5 md:pr-2 data-[collapsed=true]:md:w-[80px] data-[collapsed=false]:md:w-[252px]"
-    >
-      {/* Mobile: cały sidebar scrolluje jako jedna kolumna (max-md:overflow-y-auto)
-          żeby user nie był zamknięty w zagnieżdżonym scroll'u listy workspace'ów.
-          Desktop: zewnętrzny overflow-hidden, wewnętrzna sekcja workspace'ów ma
-          własny scroll bo header i footer mają trzymać się na top/bottom. */}
-      <div className="sidebar-glass relative flex h-full flex-col md:overflow-hidden max-md:overflow-y-auto backdrop-blur-[40px] backdrop-saturate-[1.8] md:rounded-[22px] max-md:rounded-none max-md:border-0">
-      {/* v4: Brand mark u góry sidebar'a (FLOVLY logo). */}
-      <Link
-        href="/workspaces"
-        className="flex items-center gap-2 border-b border-black/5 dark:border-white/[0.05] px-3.5 py-3 transition-opacity hover:opacity-80 max-md:px-5 max-md:py-4"
-        title="Flovly — strona główna"
+        data-collapsed={collapsed ? "true" : "false"}
+        data-mobile-open={mobileOpen ? "true" : "false"}
+        // Dual-mode: mobile drawer (max-md) vs desktop sticky (md+). Mobile rules MUST use `max-md:` —
+        // otherwise data-[mobile-open=false]:-translate-x-full (specificity 0,2,0) beats md:translate-x-0
+        // (0,1,0) and the sidebar stays hidden on desktop.
+        // v4: 210px expanded (matchuje hero mock), 72px collapsed (icon-only).
+        className="group/sidebar flex h-dvh flex-col text-sidebar-foreground transition-[transform,width] duration-200 max-md:fixed max-md:inset-0 max-md:z-40 max-md:w-full max-md:p-0 max-md:data-[mobile-open=false]:-translate-x-full max-md:data-[mobile-open=true]:translate-x-0 md:sticky md:top-0 md:self-start md:p-3 md:pr-2 data-[collapsed=true]:md:w-[72px] data-[collapsed=false]:md:w-[210px]"
       >
-        <FlovlyMark size={collapsed ? 28 : 24} />
-        {!collapsed && <FlovlyWordmark size="sm" gradientV={false} />}
-      </Link>
-      {/* When collapsed, header stacks vertically so the chevron isn't clipped by overflow-hidden. */}
-      <div
-        className={`flex gap-2 border-b border-black/5 dark:border-white/[0.05] px-3 py-3 max-md:gap-3 max-md:px-4 max-md:py-4 ${
-          collapsed
-            ? "flex-col items-center"
-            : "items-center justify-between"
-        }`}
-      >
-        <Link
-          href="/profile"
-          className="flex min-w-0 items-center gap-2.5 rounded-sm px-1.5 py-1 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] focus-visible:bg-white/[0.07] focus-visible:outline-none max-md:gap-3.5 max-md:rounded-md max-md:px-2 max-md:py-2"
-        >
-          <span
-            style={{ background: "linear-gradient(140deg, #7C5CFF, #D247B5)" }}
-            className="relative grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full font-display text-[0.72rem] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_4px_12px_-4px_rgba(124,92,255,0.45)] max-md:h-11 max-md:w-11 max-md:text-[0.95rem]"
-          >
-            {user.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
-            ) : (
-              initials
-            )}
-          </span>
-          {!collapsed && (
-            <div className="min-w-0 flex-1 leading-tight">
-              <div className="truncate font-display text-[0.92rem] font-semibold tracking-[-0.01em] max-md:text-[1.12rem]">
-                {user.name ?? user.email.split("@")[0]}
-              </div>
-              <div className="truncate font-mono text-[0.64rem] uppercase tracking-[0.14em] text-muted-foreground max-md:text-[0.72rem]">
-                {user.isSuperAdmin ? "super admin" : "member"}
-              </div>
-            </div>
-          )}
-        </Link>
-        <div className="flex shrink-0 items-center gap-1">
-          {/* Mobile close X — 44px tap target (Apple HIG min); only way to close drawer on mobile besides Esc. */}
-          <button
-            type="button"
-            onClick={() => setMobileOpen(false)}
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground md:hidden"
-            aria-label="Zamknij menu"
-          >
-            <X size={20} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setCollapsed((v) => !v)}
-            className="hidden h-7 w-7 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground md:grid"
-            aria-label={collapsed ? "Rozwiń panel" : "Zwiń panel"}
-          >
-            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-          </button>
-        </div>
-      </div>
+        {/* Mobile: cały sidebar scrolluje jako jedna kolumna (max-md:overflow-y-auto)
+            żeby user nie był zamknięty w zagnieżdżonym scroll'u listy workspace'ów.
+            Desktop: zewnętrzny overflow-hidden, wewnętrzna sekcja workspace'ów ma
+            własny scroll bo header i footer mają trzymać się na top/bottom. */}
+        <div className="sidebar-glass relative flex h-full flex-col md:overflow-hidden max-md:overflow-y-auto backdrop-blur-[40px] backdrop-saturate-[1.8] md:rounded-[22px] max-md:rounded-none max-md:border-0">
 
-      <nav className="flex flex-col gap-0.5 border-b border-black/5 dark:border-white/[0.05] px-2 py-2">
-        <NavItem
-          href="/inbox"
-          icon={<Inbox size={15} />}
-          label="Powiadomienia"
-          pathname={pathname}
-          collapsed={collapsed}
-          badge={unreadNotificationCount > 0 ? unreadNotificationCount : undefined}
-        />
-        <NavItem
-          href="/my-tasks"
-          icon={<Compass size={15} />}
-          label="Zadania dla Ciebie"
-          pathname={pathname}
-          collapsed={collapsed}
-        />
-        <NavItem
-          href="/my/todo"
-          icon={<CheckSquare size={15} />}
-          label="TO DO"
-          pathname={pathname}
-          collapsed={collapsed}
-        />
-        <NavItem
-          href="/my/calendar"
-          icon={<CalendarDays size={15} />}
-          label="Kalendarz"
-          pathname={pathname}
-          collapsed={collapsed}
-        />
-        <NavItem
-          href="/my/notes"
-          icon={<StickyNote size={15} />}
-          label="Notatnik"
-          pathname={pathname}
-          collapsed={collapsed}
-        />
-        <NavItem
-          href="/my/reminders"
-          icon={<Bell size={15} />}
-          label="Przypomnienia"
-          pathname={pathname}
-          collapsed={collapsed}
-        />
-        <NavItem
-          href="/vacations"
-          icon={<Plane size={15} />}
-          label="Urlopy"
-          pathname={pathname}
-          collapsed={collapsed}
-        />
-        <NavItem
-          href="/workspaces"
-          icon={<Layers size={15} />}
-          label="Wszystkie przestrzenie"
-          pathname={pathname}
-          collapsed={collapsed}
-          exact
-        />
-      </nav>
-
-      {/* Lista workspace'ów: na mobile DZIELI scroll z resztą sidebar'a (cały
-          drawer scrolluje jednym ruchem). Na desktopie zostaje nested scroll
-          żeby user mógł zerknąć na long list bez utraty header'a + footer'a. */}
-      <div className="px-2 py-2 md:flex-1 md:overflow-y-auto">
-        {!collapsed && (
-          <div className="mb-2 flex items-center justify-between px-2 max-md:mb-3 max-md:px-3 max-md:pt-2">
-            <span className="eyebrow max-md:text-[0.78rem] max-md:tracking-[0.12em]">Przestrzenie</span>
+          {/* ─── HEADER: brand mark + wordmark + collapse/close toggle ─── */}
+          {/* v4: padding 14px wewnątrz, brand mark 28px (gradient square + chevron). */}
+          <div
+            className={`relative flex items-center gap-2.5 border-b border-black/5 dark:border-white/[0.05] px-3.5 py-3.5 max-md:px-5 max-md:py-4 ${
+              collapsed ? "justify-center" : "justify-between"
+            }`}
+          >
             <Link
               href="/workspaces"
-              aria-label="Nowa przestrzeń"
-              className="grid h-5 w-5 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground max-md:h-10 max-md:w-10 max-md:rounded-md"
+              className={`flex min-w-0 items-center gap-2.5 rounded-md transition-opacity hover:opacity-80 ${
+                collapsed ? "" : "flex-1"
+              }`}
+              title="Flovly — strona główna"
             >
-              <Plus size={13} className="max-md:size-[18px]" />
+              <FlovlyMark size={collapsed ? 30 : 28} />
+              {!collapsed && (
+                <FlovlyWordmark size="sm" gradientV={false} className="!text-[18px]" />
+              )}
             </Link>
+            {!collapsed && (
+              <div className="flex shrink-0 items-center gap-1">
+                {/* Mobile close X — 44px tap target (Apple HIG min); only way to close drawer on mobile besides Esc. */}
+                <button
+                  type="button"
+                  onClick={() => setMobileOpen(false)}
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground md:hidden"
+                  aria-label="Zamknij menu"
+                >
+                  <X size={20} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCollapsed((v) => !v)}
+                  className="hidden h-7 w-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground md:grid"
+                  aria-label="Zwiń panel"
+                >
+                  <ChevronLeft size={14} />
+                </button>
+              </div>
+            )}
+            {/* W trybie collapsed chevron jest poniżej (centered) — inaczej zachodzi na logo. */}
           </div>
-        )}
-        <div className="flex flex-col gap-0.5">
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={onWorkspaceDragEnd}
-          >
-            <SortableContext
-              items={workspaceItems.map((w) => w.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {workspaceItems.map((ws) => (
-                <SortableWorkspaceRow
-                  key={ws.id}
-                  workspace={ws}
-                  pathname={pathname}
-                  activeWorkspaceId={activeWorkspaceId}
-                  expanded={expandedIds.has(ws.id)}
-                  onToggle={() => toggleWorkspace(ws.id)}
-                  collapsed={collapsed}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
-          {workspaceItems.length === 0 && (
-            <div className="px-2 py-3 text-[0.82rem] text-muted-foreground">
-              {!collapsed && "Brak przestrzeni. Utwórz pierwszą."}
+          {collapsed && (
+            <div className="hidden justify-center border-b border-black/5 px-2 py-2 dark:border-white/[0.05] md:flex">
+              <button
+                type="button"
+                onClick={() => setCollapsed(false)}
+                className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/[0.05]"
+                aria-label="Rozwiń panel"
+              >
+                <ChevronRight size={14} />
+              </button>
             </div>
           )}
-        </div>
-      </div>
 
-      <div className="flex flex-col gap-0.5 border-t border-black/5 dark:border-white/[0.05] px-2 py-2">
-        {user.isSuperAdmin && (
-          <NavItem
-            href="/admin"
-            icon={<ShieldCheck size={15} />}
-            label="Panel admina"
-            pathname={pathname}
-            collapsed={collapsed}
-          />
-        )}
-        <NavItem
-          href="/profile"
-          icon={<Settings size={15} />}
-          label="Ustawienia konta"
-          pathname={pathname}
-          collapsed={collapsed}
-        />
-        <ThemeToggle variant="labeled" collapsed={collapsed} />
-        <form action={signOutAction} className="w-full">
-          <button
-            type="submit"
-            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
-          >
-            <LogOut size={15} className="shrink-0 max-md:size-[18px]" />
-            {!collapsed && <span className="truncate">Wyloguj</span>}
-          </button>
-        </form>
-      </div>
-      </div>
-    </aside>
+          {/* ─── SEKCJA "TWOJE" — personal nav items ─── */}
+          <div className="border-b border-black/5 px-3 pb-2 pt-3 dark:border-white/[0.05] max-md:px-4 max-md:pt-4">
+            {!collapsed && (
+              <div className="mb-2 px-1.5">
+                <span className="eyebrow max-md:text-[0.78rem] max-md:tracking-[0.12em]">
+                  Twoje
+                </span>
+              </div>
+            )}
+            <nav className="flex flex-col gap-1">
+              <NavItem
+                href="/inbox"
+                icon={<Inbox size={16} />}
+                label="Powiadomienia"
+                pathname={pathname}
+                collapsed={collapsed}
+                badge={unreadNotificationCount > 0 ? unreadNotificationCount : undefined}
+              />
+              <NavItem
+                href="/my-tasks"
+                icon={<Compass size={16} />}
+                label="Zadania dla Ciebie"
+                pathname={pathname}
+                collapsed={collapsed}
+              />
+              <NavItem
+                href="/my/todo"
+                icon={<CheckSquare size={16} />}
+                label="TO DO"
+                pathname={pathname}
+                collapsed={collapsed}
+              />
+              <NavItem
+                href="/my/calendar"
+                icon={<CalendarDays size={16} />}
+                label="Kalendarz"
+                pathname={pathname}
+                collapsed={collapsed}
+              />
+              <NavItem
+                href="/my/notes"
+                icon={<StickyNote size={16} />}
+                label="Notatnik"
+                pathname={pathname}
+                collapsed={collapsed}
+              />
+              <NavItem
+                href="/my/reminders"
+                icon={<Bell size={16} />}
+                label="Przypomnienia"
+                pathname={pathname}
+                collapsed={collapsed}
+              />
+              <NavItem
+                href="/vacations"
+                icon={<Plane size={16} />}
+                label="Urlopy"
+                pathname={pathname}
+                collapsed={collapsed}
+              />
+              <NavItem
+                href="/workspaces"
+                icon={<Layers size={16} />}
+                label="Wszystkie przestrzenie"
+                pathname={pathname}
+                collapsed={collapsed}
+                exact
+              />
+            </nav>
+          </div>
+
+          {/* ─── SEKCJA "PRZESTRZENIE" — workspaces list + DnD reorder ─── */}
+          {/* Na mobile DZIELI scroll z resztą sidebar'a; na desktopie nested scroll. */}
+          <div className="px-3 pb-2 pt-3 md:flex-1 md:overflow-y-auto max-md:px-4 max-md:pt-4">
+            {!collapsed && (
+              <div className="mb-2 flex items-center justify-between px-1.5 max-md:mb-3">
+                <span className="eyebrow max-md:text-[0.78rem] max-md:tracking-[0.12em]">
+                  Przestrzenie
+                </span>
+                <Link
+                  href="/workspaces"
+                  aria-label="Nowa przestrzeń"
+                  className="grid h-5 w-5 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground max-md:h-10 max-md:w-10"
+                >
+                  <Plus size={13} className="max-md:size-[18px]" />
+                </Link>
+              </div>
+            )}
+            <div className="flex flex-col gap-1">
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={onWorkspaceDragEnd}
+              >
+                <SortableContext
+                  items={workspaceItems.map((w) => w.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {workspaceItems.map((ws) => (
+                    <SortableWorkspaceRow
+                      key={ws.id}
+                      workspace={ws}
+                      pathname={pathname}
+                      activeWorkspaceId={activeWorkspaceId}
+                      expanded={expandedIds.has(ws.id)}
+                      onToggle={() => toggleWorkspace(ws.id)}
+                      collapsed={collapsed}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+              {workspaceItems.length === 0 && !collapsed && (
+                <div className="px-2 py-3 text-[0.82rem] text-muted-foreground">
+                  Brak przestrzeni. Utwórz pierwszą.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ─── FOOTER: admin / settings / theme / logout / user widget ─── */}
+          <div className="border-t border-black/5 dark:border-white/[0.05] max-md:px-4 max-md:pt-2">
+            <div className="flex flex-col gap-1 px-3 py-2">
+              {user.isSuperAdmin && (
+                <NavItem
+                  href="/admin"
+                  icon={<ShieldCheck size={16} />}
+                  label="Panel admina"
+                  pathname={pathname}
+                  collapsed={collapsed}
+                />
+              )}
+              <NavItem
+                href="/profile"
+                icon={<Settings size={16} />}
+                label="Ustawienia konta"
+                pathname={pathname}
+                collapsed={collapsed}
+              />
+              <ThemeToggle variant="labeled" collapsed={collapsed} />
+              <form action={signOutAction} className="w-full">
+                <button
+                  type="submit"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[0.84rem] font-medium text-muted-foreground transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/[0.05] max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
+                >
+                  <LogOut size={16} className="shrink-0 max-md:size-[18px]" />
+                  {!collapsed && <span className="truncate">Wyloguj</span>}
+                </button>
+              </form>
+            </div>
+
+            {/* User profile widget — sub-card z glass tint + border (v4 mock). */}
+            <div className="px-3 pb-3 pt-1 max-md:px-4 max-md:pb-4">
+              <Link
+                href="/profile"
+                className={`flex items-center gap-2.5 rounded-[13px] border border-white/70 bg-white/55 p-2 transition-colors hover:bg-white/70 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/[0.08] ${
+                  collapsed ? "justify-center" : ""
+                } max-md:gap-3.5 max-md:p-3`}
+              >
+                <span
+                  style={{ background: "linear-gradient(140deg, #34BEF8, #7C5CFF)" }}
+                  className="relative grid h-[30px] w-[30px] shrink-0 place-items-center overflow-hidden rounded-[9px] font-display text-[0.72rem] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_4px_12px_-4px_rgba(124,92,255,0.45)] max-md:h-11 max-md:w-11 max-md:rounded-[12px] max-md:text-[0.95rem]"
+                >
+                  {user.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    initials
+                  )}
+                </span>
+                {!collapsed && (
+                  <div className="min-w-0 flex-1 leading-tight">
+                    <div className="truncate text-[0.78rem] font-semibold tracking-[-0.005em] text-foreground max-md:text-[1rem]">
+                      {user.name ?? user.email.split("@")[0]}
+                    </div>
+                    <div className="truncate text-[0.68rem] text-muted-foreground max-md:text-[0.78rem]">
+                      {user.isSuperAdmin ? "Owner" : "Member"}
+                    </div>
+                  </div>
+                )}
+              </Link>
+            </div>
+          </div>
+        </div>
+      </aside>
     </>
   );
 }
@@ -434,7 +485,7 @@ function WsSubLink({
     <Link
       href={href}
       data-active={active ? "true" : "false"}
-      className="group relative inline-flex items-center gap-1.5 rounded-sm px-2 py-1 font-mono text-[0.78rem] uppercase tracking-[0.12em] text-muted-foreground/80 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground data-[active=true]:bg-white/80 data-[active=true]:shadow-[0_0_0_0.5px_rgba(12,13,18,0.08),inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-white/[0.07] dark:data-[active=true]:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.06)] data-[active=true]:font-semibold data-[active=true]:text-foreground max-md:gap-2.5 max-md:rounded-md max-md:px-3 max-md:py-2.5 max-md:text-[0.86rem] [&>svg]:max-md:size-4"
+      className="group relative inline-flex items-center gap-2 rounded-md px-2 py-1 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground/80 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground data-[active=true]:bg-white/80 data-[active=true]:shadow-[0_0_0_0.5px_rgba(12,13,18,0.08),inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-white/[0.07] dark:data-[active=true]:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.06)] data-[active=true]:font-semibold data-[active=true]:text-foreground max-md:gap-2.5 max-md:px-3 max-md:py-2.5 max-md:text-[0.86rem] [&>svg]:max-md:size-4"
     >
       {icon} {label}
       {badge !== undefined && badge > 0 && (
@@ -471,7 +522,7 @@ function NavItem({
 
   const content = (
     <>
-      <span className="relative shrink-0 text-muted-foreground group-hover:text-foreground group-data-[active=true]:text-foreground [&>svg]:max-md:size-[18px]">
+      <span className="relative shrink-0 text-muted-foreground transition-colors group-hover:text-foreground group-data-[active=true]:text-foreground [&>svg]:max-md:size-[18px]">
         {icon}
         {collapsed && badge !== undefined && badge > 0 && (
           // Fixed width — badge size stable across 1 → 9 → 9+ so icon row doesn't reflow.
@@ -484,7 +535,7 @@ function NavItem({
         <span className="min-w-0 flex-1 truncate tracking-tight">{label}</span>
       )}
       {!collapsed && badge !== undefined && badge > 0 && (
-        <span className="grid h-5 w-6 shrink-0 place-items-center rounded-full bg-primary font-mono text-[0.62rem] font-bold text-primary-foreground">
+        <span className="grid h-5 min-w-[24px] place-items-center rounded-full bg-primary px-1.5 font-mono text-[0.62rem] font-bold text-primary-foreground">
           {badge > 99 ? "99+" : badge}
         </span>
       )}
@@ -496,8 +547,10 @@ function NavItem({
     </>
   );
 
+  // v4: gap-2.5, padding 2.5/2 (vs poprzednie 2/1.5), rounded-lg (vs rounded-sm),
+  // font-medium (vs default), text size 0.84rem (vs 0.88rem) — bardziej zwarte.
   const cls =
-    "group flex items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] data-[active=true]:bg-white/80 data-[active=true]:shadow-[0_0_0_0.5px_rgba(12,13,18,0.08),inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-white/[0.07] dark:data-[active=true]:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.06)] data-[active=true]:text-foreground max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]";
+    "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[0.84rem] font-medium transition-all data-[active=true]:bg-[linear-gradient(135deg,rgba(124,92,255,0.14),rgba(210,71,181,0.10))] data-[active=true]:shadow-[inset_0_0_0_1px_rgba(124,92,255,0.18),0_1px_2px_rgba(12,13,18,0.04)] data-[active=true]:text-foreground dark:data-[active=true]:bg-[linear-gradient(135deg,rgba(155,107,242,0.28),rgba(225,49,143,0.18))] dark:data-[active=true]:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] dark:data-[active=true]:text-white max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]";
 
   if (disabled) {
     return (
@@ -515,7 +568,7 @@ function NavItem({
     <Link
       href={href}
       data-active={active ? "true" : "false"}
-      className={`${cls} text-sidebar-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground`}
+      className={`${cls} text-sidebar-foreground hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground`}
     >
       {content}
     </Link>
@@ -533,12 +586,12 @@ function canCreateBoard(role: Role): boolean {
 
 // Inline style instead of Tailwind classes — dynamic class arrays aren't picked up by Tailwind v4 JIT.
 const SWATCH_GRADIENTS: ReadonlyArray<readonly [string, string]> = [
-  ["#93c5fd", "#a78bfa"], // blue → violet (default)
-  ["#fda4af", "#fb923c"], // pink → orange
-  ["#6ee7b7", "#34d399"], // mint → emerald
-  ["#fde68a", "#f59e0b"], // butter → amber
-  ["#a5b4fc", "#6366f1"], // periwinkle → indigo
-  ["#f0abfc", "#c084fc"], // pink → purple
+  ["#7C5CFF", "#D247B5"], // brand violet → magenta (v4 primary)
+  ["#34BEF8", "#7C5CFF"], // sky → violet
+  ["#34BEF8", "#10B981"], // sky → emerald
+  ["#F59E0B", "#E1318F"], // amber → magenta
+  ["#A5B4FC", "#6366F1"], // periwinkle → indigo
+  ["#F0ABFC", "#C084FC"], // pink → purple
 ];
 
 function swatchIndex(id: string): number {
@@ -549,13 +602,15 @@ function swatchIndex(id: string): number {
   return Math.abs(h) % SWATCH_GRADIENTS.length;
 }
 
+// v4: workspace swatch jest większy (20px → matchuje hero mock'i),
+// rounded-lg, z gradient'em + inset highlight + soft shadow.
 function WorkspaceSwatch({ id }: { id: string }) {
   const [from, to] = SWATCH_GRADIENTS[swatchIndex(id)];
   return (
     <span
       aria-hidden
-      style={{ background: `linear-gradient(135deg, ${from}, ${to})` }}
-      className="block h-4 w-4 shrink-0 rounded-[5px] shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.3),0_1px_1px_rgba(0,0,0,0.3)] max-md:h-[18px] max-md:w-[18px]"
+      style={{ background: `linear-gradient(140deg, ${from}, ${to})` }}
+      className="block h-5 w-5 shrink-0 rounded-[7px] shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_2px_6px_-2px_rgba(0,0,0,0.25)] max-md:h-[22px] max-md:w-[22px]"
     />
   );
 }
@@ -596,7 +651,7 @@ function SortableWorkspaceRow({
     <div ref={setNodeRef} style={style} className="flex flex-col">
       <div
         data-active={isActive ? "true" : "false"}
-        className="group relative flex items-center gap-1 rounded-sm data-[active=true]:bg-white/80 data-[active=true]:shadow-[0_0_0_0.5px_rgba(12,13,18,0.08),inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-white/[0.07] dark:data-[active=true]:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.06)]"
+        className="group relative flex items-center gap-1 rounded-lg transition-all data-[active=true]:bg-[linear-gradient(135deg,rgba(124,92,255,0.14),rgba(210,71,181,0.10))] data-[active=true]:shadow-[inset_0_0_0_1px_rgba(124,92,255,0.18),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-[linear-gradient(135deg,rgba(155,107,242,0.28),rgba(225,49,143,0.18))] dark:data-[active=true]:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]"
       >
         {!collapsed && (
           <button
@@ -606,14 +661,14 @@ function SortableWorkspaceRow({
             aria-label="Przeciągnij przestrzeń"
             title="Przeciągnij aby zmienić kolejność"
             // display:none default (not opacity-0 + w-7 — that clipped the workspace name); group-hover:grid on desktop.
-            className="hidden h-7 w-7 shrink-0 cursor-grab place-items-center rounded-sm text-muted-foreground/60 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground active:cursor-grabbing group-hover:grid max-md:!grid max-md:h-10 max-md:w-10 max-md:rounded-md max-md:text-muted-foreground/50"
+            className="hidden h-7 w-5 shrink-0 cursor-grab place-items-center rounded-md text-muted-foreground/60 transition-colors hover:text-foreground active:cursor-grabbing group-hover:grid max-md:!grid max-md:h-10 max-md:w-10 max-md:text-muted-foreground/50"
           >
             <GripVertical size={13} className="max-md:size-[16px]" />
           </button>
         )}
         <Link
           href={`/w/${ws.id}`}
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
+          className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2 py-2 text-[0.84rem] font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
         >
           <WorkspaceSwatch id={ws.id} />
           {!collapsed && (
@@ -635,7 +690,7 @@ function SortableWorkspaceRow({
           <button
             type="button"
             onClick={onToggle}
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground max-md:h-11 max-md:w-11 max-md:rounded-md"
+            className="grid h-7 w-6 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground max-md:h-11 max-md:w-11"
             aria-label={expanded ? "Zwiń" : "Rozwiń"}
             aria-expanded={expanded}
           >
@@ -810,7 +865,7 @@ function SortableBoardRow({
       ref={setNodeRef}
       style={style}
       data-active={boardActive ? "true" : "false"}
-      className="group relative flex items-center gap-1 rounded-sm data-[active=true]:bg-white/80 data-[active=true]:shadow-[0_0_0_0.5px_rgba(12,13,18,0.08),inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-white/[0.07] dark:data-[active=true]:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.06)]"
+      className="group relative flex items-center gap-1 rounded-md transition-all data-[active=true]:bg-white/80 data-[active=true]:shadow-[0_0_0_0.5px_rgba(12,13,18,0.08),inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-white/[0.07] dark:data-[active=true]:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.06)]"
     >
       {canDrag && (
         <button
@@ -819,14 +874,14 @@ function SortableBoardRow({
           {...listeners}
           aria-label="Przeciągnij tablicę"
           title="Przeciągnij aby zmienić kolejność"
-          className="hidden h-6 w-6 shrink-0 cursor-grab place-items-center rounded-sm text-muted-foreground/60 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground active:cursor-grabbing group-hover:grid max-md:!grid max-md:h-9 max-md:w-9 max-md:rounded-md max-md:text-muted-foreground/50"
+          className="hidden h-6 w-6 shrink-0 cursor-grab place-items-center rounded-md text-muted-foreground/60 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground active:cursor-grabbing group-hover:grid max-md:!grid max-md:h-9 max-md:w-9 max-md:text-muted-foreground/50"
         >
           <GripVertical size={12} className="max-md:size-[14px]" />
         </button>
       )}
       <Link
         href={`/w/${workspaceId}/b/${b.id}/table`}
-        className={`min-w-0 flex-1 truncate rounded-sm px-2 py-1 text-[0.82rem] transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground max-md:rounded-md max-md:px-3 max-md:py-2.5 max-md:text-[0.95rem] ${
+        className={`min-w-0 flex-1 truncate rounded-md px-2 py-1 text-[0.8rem] transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground max-md:px-3 max-md:py-2.5 max-md:text-[0.95rem] ${
           boardActive
             ? "font-semibold text-foreground"
             : "text-muted-foreground"
