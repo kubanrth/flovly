@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  @keyframes fl-drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(18px,-22px) scale(1.08); } }
+</style>
+</helmet>
+
+<div style="--p: {{ primary }}; --p2: {{ primary2 }}; width: max-content; min-width: 100%; min-height: 100vh; box-sizing: border-box; padding: 56px 48px 110px; background: #0B0912; font-family: 'Inter', system-ui, sans-serif; position: relative; overflow: hidden;">
+  <div style="position: absolute; top: -160px; left: -100px; width: 760px; height: 760px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.3), transparent 65%); filter: blur(60px); animation: fl-drift 24s ease-in-out infinite; pointer-events: none;"></div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 44px; width: max-content; margin: 0 auto;">
+
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <div style="width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(140deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 10px 26px -8px rgba(122,51,236,.7);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+      <div><div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">FLOVLY — Menus · Search · Onboarding</div><div style="font-size: 14px; color: #8B8398; margin-top: 2px;">Profile dropdown · workspace switcher · wyniki · tour</div></div>
+    </div>
+
+    <!-- DROPDOWNS -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">A1 · Profile dropdown · A2 · Workspace switcher</div>
+      <div style="display: flex; gap: 40px; align-items: flex-start; padding: 30px; border-radius: 22px; background: repeating-linear-gradient(135deg, #14111E, #14111E 11px, #181425 11px, #181425 22px); border: 1px solid rgba(255,255,255,.06);">
+
+        <!-- A1 profile -->
+        <div style="width: 240px; border-radius: 16px; background: rgba(20,17,30,.82); backdrop-filter: blur(40px) saturate(160%); -webkit-backdrop-filter: blur(40px) saturate(160%); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 24px 56px -22px rgba(0,0,0,.8); overflow: hidden;">
+          <div style="display: flex; align-items: center; gap: 11px; padding: 16px; border-bottom: 1px solid rgba(255,255,255,.08);">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(140deg,#7A33EC,#E1318F); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 700;">AD</div>
+            <div style="min-width: 0;"><div style="font-size: 13.5px; font-weight: 600; color: #fff;">Adam Dąbrowski</div><div style="font-size: 11.5px; color: #8B8398; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">adam@studio.pl</div></div>
+          </div>
+          <div style="padding: 7px;">
+            <sc-for list="{{ profileItems }}" as="i" hint-placeholder-count="4">
+              <div style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 9px; color: #C9C3D4; font-size: 13px;">{{ i.icon }}<span>{{ i.label }}</span></div>
+            </sc-for>
+            <div style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 9px;"><span style="display:flex; color:#9B8BE6;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 0 18 6 6 0 0 0 0-18Z"></path><path d="M12 3v18"></path></svg></span><span style="font-size: 13px; color: #C9C3D4;">Tryb ciemny</span><div style="margin-left: auto; width: 34px; height: 20px; border-radius: 999px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); position: relative;"><span style="position: absolute; top: 2px; left: 16px; width: 16px; height: 16px; border-radius: 50%; background: #fff;"></span></div></div>
+            <div style="height: 1px; background: rgba(255,255,255,.08); margin: 6px 4px;"></div>
+            <div style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 9px; color: #FB7185; font-size: 13px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FB7185" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>Wyloguj</div>
+          </div>
+        </div>
+
+        <!-- A2 workspace switcher -->
+        <div style="width: 280px; border-radius: 16px; background: rgba(20,17,30,.82); backdrop-filter: blur(40px) saturate(160%); -webkit-backdrop-filter: blur(40px) saturate(160%); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 24px 56px -22px rgba(0,0,0,.8); overflow: hidden;">
+          <div style="padding: 13px 14px 9px;"><span style="font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478;">Workspace'y</span></div>
+          <div style="padding: 0 7px;">
+            <sc-for list="{{ wsList }}" as="w" hint-placeholder-count="3">
+              <div style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 11px; background: {{ w.row }};"><div style="width: 32px; height: 32px; border-radius: 9px; background: {{ w.c }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700; flex: none;">{{ w.init }}</div><div style="flex: 1; min-width: 0;"><div style="font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ w.name }}</div></div><span style="padding: 2px 8px; border-radius: 999px; background: {{ w.badgeBg }}; font-size: 10.5px; font-weight: 600; color: {{ w.badgeC }}; flex: none;">{{ w.role }}</span>{{ w.tick }}</div>
+            </sc-for>
+          </div>
+          <div style="height: 1px; background: rgba(255,255,255,.08); margin: 8px 11px;"></div>
+          <div style="padding: 0 7px 9px;">
+            <div style="display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 11px; color: #C9B6F7; font-size: 13px; font-weight: 600;"><span style="width: 32px; height: 32px; border-radius: 9px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center; flex: none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>Nowy workspace</div>
+            <div style="display: flex; align-items: center; gap: 11px; padding: 9px 10px 9px 49px; border-radius: 11px; color: #8B8398; font-size: 12.5px;">Zarządzaj workspace'ami</div>
+          </div>
+        </div>
+
+        <div style="flex: 1; align-self: center; color: #6B6478; font-size: 12.5px; line-height: 1.6; max-width: 240px;">Dropdowny renderowane na backdrop-blur card z hairline border — spójne z popoverami v2.</div>
+      </div>
+    </section>
+
+    <!-- SEARCH RESULTS -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">A3 · Search results · /search?q=glass</div>
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+        <div style="flex: none; width: 760px;">
+          <div style="position: relative; overflow: hidden; height: 600px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="padding: 20px 24px 16px; background: rgba(255,255,255,.04); border-bottom: 1px solid rgba(255,255,255,.08);">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 12px 15px; border-radius: 13px; background: rgba(255,255,255,.05); border: 1.5px solid var(--p,#7A33EC); box-shadow: 0 0 0 4px rgba(122,51,236,.18);"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9B8BE6" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3-3"></path></svg><span style="flex: 1; font-size: 15px; color: #fff;">glass</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #6B6478;">18 wyników</span></div>
+              <div style="display: flex; gap: 6px; margin-top: 14px;">
+                <sc-for list="{{ searchFilters }}" as="fl" hint-placeholder-count="6"><span style="padding: 6px 13px; border-radius: 999px; background: {{ fl.bg }}; border: 1px solid {{ fl.bd }}; font-size: 12px; font-weight: {{ fl.fw }}; color: {{ fl.c }};">{{ fl.n }}</span></sc-for>
+              </div>
+            </div>
+            <div style="flex: 1; overflow: hidden; padding: 18px 24px; display: flex; flex-direction: column; gap: 20px;">
+              <sc-for list="{{ searchGroups }}" as="g" hint-placeholder-count="3">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;"><span style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478;">{{ g.cat }}</span><span style="font-size: 11px; color: #6B6478; padding: 1px 7px; border-radius: 999px; background: rgba(255,255,255,.06);">{{ g.count }}</span></div>
+                  <div style="display: flex; flex-direction: column; gap: 7px;">
+                    <sc-for list="{{ g.items }}" as="r" hint-placeholder-count="3">
+                      <div style="display: flex; gap: 11px; padding: 11px 13px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07);">
+                        <div style="width: 30px; height: 30px; border-radius: 9px; background: {{ r.iconBg }}; display: flex; align-items: center; justify-content: center; flex: none;">{{ r.icon }}</div>
+                        <div style="flex: 1; min-width: 0;"><div style="font-size: 13.5px; color: #fff;">{{ r.titleEl }}</div><div style="font-size: 11px; color: #6B6478; margin-top: 2px;">{{ r.path }}</div></div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <!-- empty state -->
+        <div style="flex: none; width: 480px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Empty — brak wyników</div>
+          <div style="position: relative; overflow: hidden; height: 600px; border-radius: 24px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px;">
+            <div style="position: absolute; top: 30%; left: 50%; transform: translateX(-50%); width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.2), transparent 65%); filter: blur(40px); pointer-events: none;"></div>
+            <div style="position: relative; width: 64px; height: 64px; border-radius: 19px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="1.8"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3-3M8 11h6"></path></svg></div>
+            <div style="position: relative; font-size: 17px; font-weight: 700; color: #fff; margin-top: 18px;">Brak wyników</div>
+            <div style="position: relative; font-size: 13.5px; color: #8B8398; margin-top: 6px; max-width: 280px; line-height: 1.5;">Nic nie pasuje do „xyzzy-foobar". Spróbuj innej frazy lub wyczyść filtry.</div>
+            <div style="position: relative; margin-top: 18px; padding: 9px 16px; border-radius: 11px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); font-size: 13px; font-weight: 600; color: #C9C3D4;">Wyczyść filtry</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ONBOARDING TOUR -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">A4 · Onboarding tour · 4 kroki (modal overlay)</div>
+      <div style="display: flex; gap: 20px; align-items: flex-start;">
+        <sc-for list="{{ tour }}" as="t" hint-placeholder-count="4">
+          <div style="flex: none; width: 350px; position: relative; overflow: hidden; border-radius: 22px; background: rgba(20,17,30,.85); backdrop-filter: blur(40px) saturate(160%); -webkit-backdrop-filter: blur(40px) saturate(160%); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 30px 70px -24px rgba(0,0,0,.8);">
+            <div style="height: 170px; position: relative; overflow: hidden; background: {{ t.illBg }}; display: flex; align-items: center; justify-content: center;">
+              <div style="position: absolute; inset: 0; background: radial-gradient(circle at 50% 40%, {{ t.aura }}, transparent 60%);"></div>
+              <div style="position: relative; width: 64px; height: 64px; border-radius: 20px; background: {{ t.iconBg }}; border: 1px solid rgba(255,255,255,.16); display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 28px -8px rgba(0,0,0,.5);">{{ t.icon }}</div>
+            </div>
+            <div style="padding: 20px;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9B8BE6; margin-bottom: 6px;">Krok {{ t.num }} / 4</div>
+              <div style="font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -0.01em;">{{ t.title }}</div>
+              <div style="font-size: 13.5px; color: #8B8398; margin-top: 7px; line-height: 1.55; min-height: 56px;">{{ t.desc }}</div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
+                <div style="display: flex; gap: 5px;">{{ t.dots }}</div>
+                <div style="display: flex; gap: 8px;"><span style="font-size: 13px; color: #8B8398; padding: 8px 4px;">Pomiń</span><span style="padding: 8px 16px; border-radius: 10px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 13px; font-weight: 600;">{{ t.cta }}</span></div>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1600, &quot;height&quot;: 1000}, &quot;primary&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#7A33EC&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;primary2&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#E1318F&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  ic(sz, sw, ...ds) {
+    return React.createElement('svg', { width: sz, height: sz, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw, strokeLinecap: 'round', strokeLinejoin: 'round' }, ds.map((d, i) => React.createElement('path', { key: i, d })));
+  }
+  itemIcon(...ds) { return React.createElement('span', { style: { color: '#9B8BE6', display: 'flex' } }, this.ic(16, 1.8, ...ds)); }
+  resIcon(color, ...ds) { return React.createElement('span', { style: { color, display: 'flex' } }, this.ic(16, 2, ...ds)); }
+  tourIcon(...ds) { return React.createElement('span', { style: { color: '#fff', display: 'flex' } }, this.ic(30, 1.8, ...ds)); }
+  tick() { return React.createElement('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: this.props.primary || '#7A33EC', strokeWidth: 2.6, strokeLinecap: 'round', strokeLinejoin: 'round', style: { flex: 'none' } }, React.createElement('path', { d: 'M20 6 9 17l-5-5' })); }
+  highlight(pre, match, post) {
+    return React.createElement('span', {}, pre,
+      React.createElement('span', { style: { background: 'rgba(122,51,236,.3)', borderRadius: '3px', padding: '0 2px', color: '#fff', fontWeight: 600 } }, match), post);
+  }
+  dots(active) {
+    return React.createElement('span', { style: { display: 'flex', gap: '5px' } }, [0, 1, 2, 3].map(i =>
+      React.createElement('span', { key: i, style: { width: i === active ? '18px' : '6px', height: '6px', borderRadius: '3px', background: i === active ? `linear-gradient(135deg, ${this.props.primary || '#7A33EC'}, #E1318F)` : 'rgba(255,255,255,.2)' } })));
+  }
+  renderVals() {
+    const p = this.props || {};
+    const primary = p.primary || '#7A33EC';
+    const primary2 = p.primary2 || '#E1318F';
+    const H = this.highlight.bind(this);
+
+    return {
+      primary, primary2,
+      profileItems: [
+        { label: 'Konto', icon: this.itemIcon('M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2', 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8') },
+        { label: 'Powiadomienia', icon: this.itemIcon('M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9', 'M13.7 21a2 2 0 0 1-3.4 0') },
+        { label: '2FA', icon: this.itemIcon('M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z', 'M7 11V7a5 5 0 0 1 10 0v4') },
+        { label: 'Sesje', icon: this.itemIcon('M2 3h20v14H2z', 'M8 21h8M12 17v4') }
+      ],
+      wsList: [
+        { name: 'Studio Nebula', init: 'SN', c: 'linear-gradient(140deg,#7A33EC,#E1318F)', role: 'Owner', badgeBg: 'rgba(122,51,236,.18)', badgeC: '#C9B6F7', row: 'rgba(122,51,236,.12)', tick: this.tick() },
+        { name: 'Brandflow', init: 'BF', c: 'linear-gradient(140deg,#34BEF8,#0EA5E9)', role: 'Admin', badgeBg: 'rgba(52,190,248,.16)', badgeC: '#93D7F5', row: 'transparent', tick: '' },
+        { name: 'NovaSoft', init: 'NS', c: 'linear-gradient(140deg,#10B981,#34BEF8)', role: 'Member', badgeBg: 'rgba(255,255,255,.08)', badgeC: '#A9A1B8', row: 'transparent', tick: '' }
+      ],
+      searchFilters: [
+        { n: 'Wszystko', active: true }, { n: 'Zadania' }, { n: 'Tablice' }, { n: 'Kontakty' }, { n: 'Notatki' }, { n: 'Wiki' }
+      ].map(f => ({ n: f.n, bg: f.active ? `linear-gradient(135deg, ${primary}, ${primary2})` : 'rgba(255,255,255,.05)', bd: f.active ? 'transparent' : 'rgba(255,255,255,.1)', fw: f.active ? 600 : 500, c: f.active ? '#fff' : '#C9C3D4' })),
+      searchGroups: [
+        { cat: 'Zadania', count: '6', items: [
+          { iconBg: 'rgba(122,51,236,.16)', icon: this.resIcon('#9B8BE6', 'M9 11l3 3L22 4', 'M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'), titleEl: H('Finalizacja liquid ', 'glass', ' sidebar'), path: 'Studio Nebula › Redesign › #42' },
+          { iconBg: 'rgba(122,51,236,.16)', icon: this.resIcon('#9B8BE6', 'M9 11l3 3L22 4', 'M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'), titleEl: H('Refraction borders + ', 'glass', ' tokeny'), path: 'Studio Nebula › Redesign › #48' }
+        ] },
+        { cat: 'Tablice', count: '2', items: [
+          { iconBg: 'rgba(52,190,248,.16)', icon: this.resIcon('#5BCBFA', 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z'), titleEl: H('Design System (', 'glass', ' UI)'), path: 'Studio Nebula' }
+        ] },
+        { cat: 'Notatki', count: '3', items: [
+          { iconBg: 'rgba(245,158,11,.16)', icon: this.resIcon('#F6B65A', 'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7', 'M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z'), titleEl: H('Notatki ze spotkania — ', 'glass', ' kierunek'), path: 'Notatki › Projekt' },
+          { iconBg: 'rgba(245,158,11,.16)', icon: this.resIcon('#F6B65A', 'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7', 'M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z'), titleEl: H('Research — ', 'glass', ' w konkurencji'), path: 'Notatki › Projekt' }
+        ] }
+      ],
+      tour: [
+        { num: '1', title: 'Twoje przestrzenie', desc: 'Przełączaj się między workspace\'ami w lewym górnym rogu. Każdy ma własne tablice i zespół.', cta: 'Dalej', illBg: 'linear-gradient(140deg,#1A1226,#2A1530)', aura: 'rgba(122,51,236,.4)', iconBg: 'linear-gradient(140deg,#7A33EC,#E1318F)', icon: this.tourIcon('M4 4h6v6H4z', 'M14 4h6v6h-6z', 'M14 14h6v6h-6z', 'M4 14h6v6H4z'), dots: this.dots(0) },
+        { num: '2', title: 'Tablice i widoki', desc: 'Każda tablica ma 7 widoków: Tabela, Kanban, Roadmap, Gantt, Kalendarz, Whiteboard, Linia.', cta: 'Dalej', illBg: 'linear-gradient(140deg,#101A26,#15243A)', aura: 'rgba(52,190,248,.4)', iconBg: 'linear-gradient(140deg,#34BEF8,#7A33EC)', icon: this.tourIcon('M6 3v18', 'M12 3v12', 'M18 3v8', 'M3 3h18'), dots: this.dots(1) },
+        { num: '3', title: 'Ateron AI', desc: 'Asystent w prawym dolnym rogu. Pytaj o zadania, deadline\'y i postęp — działa w kontekście workspace\'u.', cta: 'Dalej', illBg: 'linear-gradient(140deg,#101A26,#1A1530)', aura: 'rgba(52,190,248,.45)', iconBg: 'linear-gradient(140deg,#34BEF8,#7A33EC)', icon: React.createElement('span', { style: { color: '#fff', fontSize: '24px', fontWeight: 800 } }, 'At'), dots: this.dots(2) },
+        { num: '4', title: 'Twoja przestrzeń', desc: 'Moje zadania, TO DO i notatki — wszystko cross-workspace w jednym miejscu.', cta: 'Zaczynamy', illBg: 'linear-gradient(140deg,#16221A,#15302A)', aura: 'rgba(16,185,129,.4)', iconBg: 'linear-gradient(140deg,#10B981,#34BEF8)', icon: this.tourIcon('M9 11l3 3L22 4', 'M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'), dots: this.dots(3) }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

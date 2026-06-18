@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  @keyframes fl-drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(18px,-22px) scale(1.08); } }
+</style>
+</helmet>
+
+<div style="--p: {{ primary }}; --p2: {{ primary2 }}; width: max-content; min-width: 100%; min-height: 100vh; box-sizing: border-box; padding: 56px 48px 110px; background: #0B0912; font-family: 'Inter', system-ui, sans-serif; position: relative; overflow: hidden;">
+  <div style="position: absolute; top: -160px; left: -100px; width: 760px; height: 760px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.3), transparent 65%); filter: blur(60px); animation: fl-drift 24s ease-in-out infinite; pointer-events: none;"></div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 44px; width: max-content; margin: 0 auto;">
+
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <div style="width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(140deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 10px 26px -8px rgba(122,51,236,.7);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+      <div><div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">FLOVLY — Whiteboard · Linia zadań</div><div style="font-size: 14px; color: #8B8398; margin-top: 2px;">Infinite canvas · linear flow · dark + light</div></div>
+    </div>
+
+    <!-- ===== WHITEBOARD ===== -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Whiteboard · toolbar · canvas · properties panel</div>
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="flex: none; width: 1080px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">{{ f.label }}</div>
+            <div style="position: relative; overflow: hidden; height: 560px; border-radius: 22px; background: {{ f.bg }}; border: 1px solid {{ f.border }}; box-shadow: 0 30px 70px -30px rgba(0,0,0,.6);">
+              <!-- dotted canvas -->
+              <div style="position: absolute; inset: 0; background-image: radial-gradient({{ f.dot }} 1.4px, transparent 1.4px); background-size: 26px 26px;"></div>
+
+              <!-- left toolbar -->
+              <div style="position: absolute; top: 50%; left: 16px; transform: translateY(-50%); display: flex; flex-direction: column; gap: 4px; padding: 7px; border-radius: 16px; background: {{ f.glass }}; backdrop-filter: blur(30px) saturate(160%); -webkit-backdrop-filter: blur(30px) saturate(160%); border: 1px solid {{ f.glassBd }}; box-shadow: 0 18px 40px -18px rgba(0,0,0,.5); z-index: 3;">
+                <sc-for list="{{ f.tools }}" as="t" hint-placeholder-count="7"><div style="width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; background: {{ t.bg }}; color: {{ t.c }};">{{ t.icon }}</div></sc-for>
+              </div>
+
+              <!-- top toolbar -->
+              <div style="position: absolute; top: 16px; right: 16px; display: flex; align-items: center; gap: 8px; z-index: 3;">
+                <div style="display: flex; align-items: center; gap: 4px; padding: 6px 8px; border-radius: 12px; background: {{ f.glass }}; backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid {{ f.glassBd }};"><span style="width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: {{ f.muted }};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"></path></svg></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: {{ f.fg }}; width: 42px; text-align: center;">100%</span><span style="width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: {{ f.muted }};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg></span></div>
+                <div style="display: flex; align-items: center; gap: 7px; padding: 9px 14px; border-radius: 12px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 12.5px; font-weight: 600; box-shadow: 0 6px 16px -6px rgba(122,51,236,.6);"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg>Export PNG</div>
+              </div>
+
+              <!-- canvas nodes -->
+              <svg style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;"><path d="M 360 200 C 440 200, 440 250, 520 250" fill="none" stroke="{{ f.connector }}" stroke-width="2" stroke-dasharray="2 5" stroke-linecap="round"></path><path d="M 520 250 l -9 -5 v 10 z" fill="{{ f.connector }}"></path></svg>
+              <div style="position: absolute; top: 110px; left: 150px; width: 200px; border-radius: 14px; background: {{ f.node }}; border: 1px solid {{ f.nodeBd }}; box-shadow: 0 14px 30px -14px rgba(0,0,0,.5); padding: 13px; z-index: 2;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 7px;"><span style="padding: 2px 7px; border-radius: 6px; background: rgba(244,63,94,.16); font-size: 10px; font-weight: 700; color: #FB7185;">P0</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{ f.muted }};">#42</span></div>
+                <div style="font-size: 13px; font-weight: 600; color: {{ f.fg }}; line-height: 1.35;">Finalizacja liquid glass</div>
+                <div style="display: flex; margin-top: 9px;"><div style="width: 22px; height: 22px; border-radius: 7px; border: 2px solid {{ f.node }}; background: linear-gradient(140deg,#7A33EC,#E1318F); display:flex; align-items:center; justify-content:center; color:#fff; font-size:9px; font-weight:700;">AD</div></div>
+              </div>
+              <div style="position: absolute; top: 215px; left: 520px; width: 170px; height: 110px; border-radius: 12px; background: {{ f.sticky }}; box-shadow: 0 10px 24px -10px rgba(0,0,0,.4); padding: 13px; z-index: 2; transform: rotate(-2deg);"><div style="font-size: 12.5px; color: #4A3B12; line-height: 1.4; font-weight: 500;">Sprawdzić blur na Safari — backdrop-filter bywa kapryśny 🧪</div></div>
+              <div style="position: absolute; top: 360px; left: 230px; width: 150px; height: 84px; border-radius: 12px; background: {{ f.sticky2 }}; box-shadow: 0 10px 24px -10px rgba(0,0,0,.4); padding: 13px; z-index: 2; transform: rotate(1.5deg);"><div style="font-size: 12.5px; color: #0E3A2E; line-height: 1.4; font-weight: 500;">Aura tła = 18% opacity</div></div>
+
+              <!-- right properties -->
+              <div style="position: absolute; top: 16px; bottom: 16px; right: 16px; width: 200px; border-radius: 16px; background: {{ f.glass }}; backdrop-filter: blur(30px) saturate(160%); -webkit-backdrop-filter: blur(30px) saturate(160%); border: 1px solid {{ f.glassBd }}; padding: 16px 14px; z-index: 4; margin-top: 52px;">
+                <div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: {{ f.muted }}; margin-bottom: 14px;">Właściwości</div>
+                <div style="font-size: 11px; color: {{ f.muted }}; margin-bottom: 6px;">Wypełnienie</div>
+                <div style="display: flex; gap: 6px; margin-bottom: 14px;"><span style="width: 24px; height: 24px; border-radius: 7px; background: #7A33EC; box-shadow: 0 0 0 2px {{ f.ring }};"></span><span style="width: 24px; height: 24px; border-radius: 7px; background: #34BEF8;"></span><span style="width: 24px; height: 24px; border-radius: 7px; background: #10B981;"></span><span style="width: 24px; height: 24px; border-radius: 7px; background: #F59E0B;"></span></div>
+                <div style="font-size: 11px; color: {{ f.muted }}; margin-bottom: 6px;">Rozmiar</div>
+                <div style="display: flex; gap: 8px; margin-bottom: 14px;"><div style="flex: 1; padding: 7px 9px; border-radius: 9px; background: {{ f.field }}; border: 1px solid {{ f.glassBd }}; font-size: 12px; color: {{ f.fg }};">W 200</div><div style="flex: 1; padding: 7px 9px; border-radius: 9px; background: {{ f.field }}; border: 1px solid {{ f.glassBd }}; font-size: 12px; color: {{ f.fg }};">H 110</div></div>
+                <div style="font-size: 11px; color: {{ f.muted }}; margin-bottom: 6px;">Etykieta</div>
+                <div style="padding: 7px 9px; border-radius: 9px; background: {{ f.field }}; border: 1px solid {{ f.glassBd }}; font-size: 12px; color: {{ f.fg }};">Task #42</div>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ===== TASK LINE ===== -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Linia zadań · task pool · linear flow · row wrap divider</div>
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="flex: none; width: 1080px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">{{ f.label }}</div>
+            <div style="position: relative; overflow: hidden; height: 560px; border-radius: 22px; background: {{ f.bg }}; border: 1px solid {{ f.border }}; box-shadow: 0 30px 70px -30px rgba(0,0,0,.6); display: flex;">
+              <!-- task pool sidebar -->
+              <div style="flex: none; width: 280px; background: {{ f.glass2 }}; border-right: 1px solid {{ f.border }}; display: flex; flex-direction: column;">
+                <div style="padding: 16px 16px 12px;">
+                  <div style="font-size: 14px; font-weight: 700; color: {{ f.fg }}; margin-bottom: 11px;">Pula zadań</div>
+                  <div style="display: flex; align-items: center; gap: 7px; padding: 8px 11px; border-radius: 10px; background: {{ f.field }}; border: 1px solid {{ f.glassBd }}; color: {{ f.muted }}; font-size: 12.5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3-3"></path></svg>Szukaj zadań…</div>
+                </div>
+                <div style="flex: 1; overflow: hidden; padding: 0 12px; display: flex; flex-direction: column; gap: 7px;">
+                  <sc-for list="{{ pool }}" as="t" hint-placeholder-count="4">
+                    <div style="display: flex; align-items: center; gap: 9px; padding: 11px 12px; border-radius: 12px; background: {{ f.node }}; border: 1px solid {{ f.nodeBd }};"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{ f.muted }}" stroke-width="2"><circle cx="9" cy="6" r="1"></circle><circle cx="15" cy="6" r="1"></circle><circle cx="9" cy="12" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="9" cy="18" r="1"></circle><circle cx="15" cy="18" r="1"></circle></svg><span style="width: 7px; height: 7px; border-radius: 50%; background: {{ t.c }}; flex: none;"></span><span style="font-size: 12.5px; color: {{ f.fg }}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ t.title }}</span></div>
+                  </sc-for>
+                </div>
+              </div>
+              <!-- linear flow -->
+              <div style="flex: 1; min-width: 0; overflow: hidden; padding: 22px;">
+                <!-- start anchor + row 1 -->
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 999px; background: linear-gradient(135deg, #10B981, #34BEF8); color: #fff; font-size: 12px; font-weight: 700; flex: none;">START</span>
+                  <div style="flex: 1; height: 2px; background: {{ f.connector }};"></div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 24px 1fr 24px 1fr; align-items: center; gap: 8px; margin-top: 14px;">
+                  {{ f.row1 }}
+                </div>
+                <!-- row wrap divider -->
+                <div style="display: flex; align-items: center; gap: 10px; margin: 16px 0;">
+                  <div style="flex: 1; height: 2px; background: linear-gradient(90deg, transparent, var(--p,#7A33EC), var(--p2,#E1318F));"></div>
+                  <span style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9px; background: {{ f.glass }}; border: 1px solid {{ f.glassBd }}; color: var(--p2,#E1318F); flex: none;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 9v6a2 2 0 0 1-2 2H7"></path><path d="m10 20-3-3 3-3"></path></svg></span>
+                </div>
+                <!-- row 2 -->
+                <div style="display: grid; grid-template-columns: 1fr 24px 1fr 24px 1fr; align-items: center; gap: 8px;">
+                  {{ f.row2 }}
+                </div>
+                <!-- end -->
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 16px;">
+                  <div style="flex: 1; height: 2px; background: {{ f.connector }};"></div>
+                  <span style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 999px; background: {{ f.field }}; border: 1px solid {{ f.glassBd }}; color: {{ f.muted }}; font-size: 12px; font-weight: 700; flex: none;">+ dodaj</span>
+                  <span style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 999px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 12px; font-weight: 700; flex: none;">END</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1600, &quot;height&quot;: 1000}, &quot;primary&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#7A33EC&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;primary2&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#E1318F&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  ic(sz, sw, ...ds) {
+    return React.createElement('svg', { width: sz, height: sz, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw, strokeLinecap: 'round', strokeLinejoin: 'round' }, ds.map((d, i) => React.createElement('path', { key: i, d })));
+  }
+  tools(theme, primary) {
+    const defs = [
+      { active: true, ds: ['m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z'] },
+      { ds: ['M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z'] },
+      { ds: ['M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11l5-5V5a2 2 0 0 0-2-2Z', 'M16 21v-5h5'] },
+      { ds: ['M12 19l7-7 3 3-7 7-3-3z', 'M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z', 'M2 2l7.586 7.586'] },
+      { ds: ['M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z', 'M9 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z', 'm21 15-5-5L5 21'] },
+      { ds: ['M4 7V4h16v3', 'M9 20h6', 'M12 4v16'] },
+      { ds: ['M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2'] }
+    ];
+    return defs.map(d => ({
+      bg: d.active ? `linear-gradient(135deg, ${primary}, #E1318F)` : 'transparent',
+      c: d.active ? '#fff' : theme.muted,
+      icon: this.ic(18, 1.9, ...d.ds)
+    }));
+  }
+  flowCard(theme, dark, id, title, prio, pc, ini, av, withArrow) {
+    const card = React.createElement('div', { style: { padding: '12px', borderRadius: '13px', background: theme.node, border: `1px solid ${theme.nodeBd}`, boxShadow: '0 8px 18px -10px rgba(0,0,0,.5)' } },
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '7px' } },
+        React.createElement('span', { style: { padding: '2px 7px', borderRadius: '6px', background: `${pc}28`, fontSize: '10px', fontWeight: 700, color: pc } }, prio),
+        React.createElement('span', { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', color: theme.muted } }, id)),
+      React.createElement('div', { style: { fontSize: '12.5px', fontWeight: 600, color: theme.fg, lineHeight: 1.35 } }, title),
+      React.createElement('div', { style: { display: 'flex', marginTop: '9px' } },
+        React.createElement('div', { style: { width: '22px', height: '22px', borderRadius: '7px', border: `2px solid ${theme.node}`, background: av, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '9px', fontWeight: 700 } }, ini)));
+    const arrow = React.createElement('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.muted, fontSize: '16px', fontWeight: 700 } }, '→');
+    return withArrow ? [card, arrow] : [card];
+  }
+  buildRow(theme, dark, defs) {
+    const out = [];
+    defs.forEach((d, i) => {
+      this.flowCard(theme, dark, d.id, d.title, d.prio, d.pc, d.ini, d.av, i < defs.length - 1).forEach(el => out.push(el));
+    });
+    return React.createElement(React.Fragment, {}, out.map((el, i) => React.cloneElement(el, { key: i })));
+  }
+  renderVals() {
+    const p = this.props || {};
+    const primary = p.primary || '#7A33EC';
+    const primary2 = p.primary2 || '#E1318F';
+
+    const AD = 'linear-gradient(140deg,#7A33EC,#E1318F)';
+    const KM = 'linear-gradient(140deg,#34BEF8,#10B981)';
+    const TL = 'linear-gradient(140deg,#F59E0B,#E1318F)';
+
+    const darkT = { label: 'Dark', dark: true, bg: '#0C0A14', border: 'rgba(255,255,255,.08)', fg: '#fff', muted: '#8B8398', dot: 'rgba(255,255,255,.07)', glass: 'rgba(20,17,30,.8)', glass2: 'rgba(255,255,255,.03)', glassBd: 'rgba(255,255,255,.12)', node: 'rgba(255,255,255,.06)', nodeBd: 'rgba(255,255,255,.1)', field: 'rgba(255,255,255,.05)', connector: 'rgba(255,255,255,.18)', ring: '#fff', sticky: '#FCE38A', sticky2: '#A7F3D0' };
+    const lightT = { label: 'Light', dark: false, bg: '#ECE7F4', border: 'rgba(255,255,255,.7)', fg: '#14111B', muted: '#847B96', dot: 'rgba(20,17,27,.1)', glass: 'rgba(255,255,255,.8)', glass2: 'rgba(255,255,255,.45)', glassBd: 'rgba(255,255,255,.9)', node: '#fff', nodeBd: 'rgba(255,255,255,.9)', field: 'rgba(255,255,255,.7)', connector: 'rgba(20,17,27,.18)', ring: '#7A33EC', sticky: '#FCE38A', sticky2: '#A7F3D0' };
+
+    const row1 = [
+      { id: '#29', title: 'Definicja blur tokens', prio: 'P1', pc: '#F59E0B', ini: 'KM', av: KM },
+      { id: '#42', title: 'Finalizacja glass sidebar', prio: 'P0', pc: '#F43F5E', ini: 'AD', av: AD },
+      { id: '#48', title: 'Refraction borders', prio: 'P2', pc: '#3B82F6', ini: 'TL', av: TL }
+    ];
+    const row2 = [
+      { id: '#37', title: 'Audyt kontrastu WCAG', prio: 'P0', pc: '#F43F5E', ini: 'AD', av: AD },
+      { id: '#51', title: 'Demo dla DANIELOS', prio: 'P1', pc: '#F59E0B', ini: 'AD', av: AD },
+      { id: '#54', title: 'Eksport tokenów', prio: 'P2', pc: '#3B82F6', ini: 'KM', av: KM }
+    ];
+
+    const frames = [darkT, lightT].map(t => ({
+      ...t,
+      tools: this.tools(t, primary),
+      row1: this.buildRow(t, t.dark, row1),
+      row2: this.buildRow(t, t.dark, row2)
+    }));
+
+    return {
+      primary, primary2, frames,
+      pool: [
+        { title: 'Spring easing dla animacji', c: '#3B82F6' },
+        { title: 'Filter drawer builder', c: '#F59E0B' },
+        { title: 'Whiteboard collab cursors', c: '#A78BFA' },
+        { title: 'Eksport PPTX deck', c: '#10B981' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  @keyframes fl-drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(18px,-22px) scale(1.08); } }
+  @keyframes fl-think { 0%,80%,100% { transform: translateY(0); opacity: .4; } 40% { transform: translateY(-4px); opacity: 1; } }
+  .mscroll::-webkit-scrollbar { height: 5px; } .mscroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.14); border-radius: 3px; }
+</style>
+</helmet>
+
+<div style="--p: {{ primary }}; --p2: {{ primary2 }}; width: max-content; min-width: 100%; min-height: 100vh; box-sizing: border-box; padding: 56px 48px 110px; background: #0B0912; font-family: 'Inter', system-ui, sans-serif; position: relative; overflow: hidden;">
+  <div style="position: absolute; top: -160px; left: -100px; width: 760px; height: 760px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.3), transparent 65%); filter: blur(60px); animation: fl-drift 24s ease-in-out infinite; pointer-events: none;"></div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 44px; width: max-content; margin: 0 auto;">
+
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <div style="width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(140deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 10px 26px -8px rgba(122,51,236,.7);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+      <div><div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">FLOVLY Mobile — Board · Tasks · AI</div><div style="font-size: 14px; color: #8B8398; margin-top: 2px;">390px iPhone 14 · priorytet B3 · B4 · B9</div></div>
+    </div>
+
+    <!-- B3 BOARD VIEWS MOBILE -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">B3 · Board views mobile</div>
+      <div style="display: flex; gap: 24px; align-items: flex-start;">
+
+        <!-- Tabela mobile: sticky first col + h-scroll -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Tabela · sticky Status + h-scroll</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 16px 16px 12px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A9A1B8" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"></path></svg><span style="font-size: 16px; font-weight: 700; color: #fff;">Redesign · Tabela</span></div>
+            <div style="flex: 1; display: flex; overflow: hidden;">
+              <!-- pinned col -->
+              <div style="flex: none; width: 116px; border-right: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.02); z-index: 2; box-shadow: 6px 0 12px -6px rgba(0,0,0,.5);">
+                <div style="padding: 9px 12px; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #6B6478; border-bottom: 1px solid rgba(255,255,255,.07);">Status</div>
+                <sc-for list="{{ tableRows }}" as="r" hint-placeholder-count="5">
+                  <div style="height: 52px; padding: 0 12px; display: flex; align-items: center; border-bottom: 1px solid rgba(255,255,255,.05);"><span style="display:inline-flex; align-items:center; gap:5px; padding: 3px 8px; border-radius: 999px; background: {{ r.sbg }};"><span style="width:6px;height:6px;border-radius:50%;background:{{ r.sc }};"></span><span style="font-size: 10.5px; font-weight: 600; color: {{ r.sc }}; white-space: nowrap;">{{ r.status }}</span></span></div>
+                </sc-for>
+              </div>
+              <!-- scroll region -->
+              <div class="mscroll" style="flex: 1; overflow-x: auto; overflow-y: hidden;">
+                <div style="width: 360px;">
+                  <div style="display: grid; grid-template-columns: 2fr 1fr 1.1fr; padding: 9px 0; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #6B6478; border-bottom: 1px solid rgba(255,255,255,.07);"><span style="padding-left:12px;">Tytuł</span><span>Prio</span><span>Koniec</span></div>
+                  <sc-for list="{{ tableRows }}" as="r" hint-placeholder-count="5">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1.1fr; align-items: center; height: 52px; border-bottom: 1px solid rgba(255,255,255,.05);"><span style="padding-left:12px; font-size: 12px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ r.title }}</span><span><span style="padding: 2px 7px; border-radius: 6px; background: {{ r.pbg }}; font-size: 10px; font-weight: 700; color: {{ r.pc }};">{{ r.prio }}</span></span><span style="font-size: 11px; color: {{ r.endc }};">{{ r.end }}</span></div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+            <div style="padding: 9px 14px calc(9px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(255,255,255,.07);"><span style="font-size: 11px; color: #6B6478;">← przesuń w bok aby zobaczyć kolumny</span></div>
+          </div>
+        </div>
+
+        <!-- Roadmap mobile: vertical timeline -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Roadmap · vertical timeline</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="padding: 16px 16px 14px; font-size: 16px; font-weight: 700; color: #fff;">Roadmapa</div>
+            <div style="flex: 1; overflow: hidden; padding: 0 16px;">
+              <sc-for list="{{ milestones }}" as="m" hint-placeholder-count="4">
+                <div style="display: flex; gap: 12px;">
+                  <div style="display: flex; flex-direction: column; align-items: center; flex: none;"><div style="width: 14px; height: 14px; border-radius: 50%; background: {{ m.c }}; box-shadow: 0 0 0 4px {{ m.glow }};"></div><div style="width: 2px; flex: 1; background: rgba(255,255,255,.1); margin: 4px 0;"></div></div>
+                  <div style="padding-bottom: 16px; flex: 1; min-width: 0;"><div style="border-radius: 13px; background: {{ m.grad }}; padding: 12px 14px; box-shadow: 0 8px 18px -8px {{ m.glow }};"><div style="font-size: 13.5px; font-weight: 700; color: #fff;">{{ m.name }}</div><div style="font-size: 11px; color: rgba(255,255,255,.82); margin-top: 3px;">{{ m.range }} · {{ m.tasks }} zadań</div><div style="display: flex; align-items: center; gap: 7px; margin-top: 8px;"><div style="flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,.25); overflow: hidden;"><div style="width: {{ m.progress }}; height: 100%; background: #fff;"></div></div><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700; color: #fff;">{{ m.progress }}</span></div></div></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gantt mobile: task list + deadline pills -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Gantt · lista + „za X dni"</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="padding: 16px 16px 14px; font-size: 16px; font-weight: 700; color: #fff;">Harmonogram</div>
+            <div style="flex: 1; overflow: hidden; padding: 0 16px; display: flex; flex-direction: column; gap: 8px;">
+              <sc-for list="{{ ganttList }}" as="g" hint-placeholder-count="6">
+                <div style="display: flex; align-items: center; gap: 11px; padding: 13px; border-radius: 13px; background: {{ g.row }}; border: 1px solid rgba(255,255,255,.07);">
+                  <span style="width: 4px; height: 32px; border-radius: 2px; background: {{ g.c }}; flex: none;"></span>
+                  <div style="flex: 1; min-width: 0;"><div style="font-size: 13px; font-weight: {{ g.fw }}; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ g.name }}</div><div style="font-size: 11px; color: #8B8398; margin-top: 2px;">{{ g.dates }}</div></div>
+                  <span style="padding: 4px 9px; border-radius: 999px; background: {{ g.pillbg }}; font-size: 10.5px; font-weight: 600; color: {{ g.pillc }}; flex: none; white-space: nowrap;">{{ g.pill }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <!-- Whiteboard mobile: view-only zoom/pan -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Whiteboard · view-only</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8);">
+            <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.07) 1.4px, transparent 1.4px); background-size: 24px 24px;"></div>
+            <div style="position: absolute; top: 16px; left: 16px; right: 16px; display: flex; align-items: center; gap: 8px; padding: 11px 14px; border-radius: 14px; background: rgba(20,17,30,.85); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,.12); z-index: 3;"><span style="font-size: 14px; font-weight: 700; color: #fff;">Whiteboard</span><span style="padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.08); font-size: 10.5px; color: #8B8398;">view-only</span></div>
+            <div style="position: absolute; top: 200px; left: 50px; width: 150px; border-radius: 13px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); padding: 12px; z-index: 2; transform: scale(.95);"><div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;"><span style="padding: 2px 7px; border-radius: 6px; background: rgba(244,63,94,.16); font-size: 9.5px; font-weight: 700; color: #FB7185;">P0</span></div><div style="font-size: 12px; font-weight: 600; color: #fff;">Glass sidebar</div></div>
+            <div style="position: absolute; top: 330px; left: 130px; width: 130px; height: 80px; border-radius: 12px; background: #FCE38A; padding: 11px; z-index: 2; transform: rotate(-2deg);"><div style="font-size: 11px; color: #4A3B12; line-height: 1.4; font-weight: 500;">Sprawdzić blur na Safari 🧪</div></div>
+            <div style="position: absolute; bottom: calc(20px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 13px; background: rgba(20,17,30,.85); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,.12); z-index: 3;"><span style="width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: #C9C3D4;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"></path></svg></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #fff;">80%</span><span style="width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: #C9C3D4;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg></span></div>
+          </div>
+        </div>
+
+        <!-- Task Line mobile: vertical stack -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Linia zadań · pionowo</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="padding: 16px 16px 14px; font-size: 16px; font-weight: 700; color: #fff;">Linia zadań</div>
+            <div style="flex: 1; overflow: hidden; padding: 0 16px; display: flex; flex-direction: column; align-items: center;">
+              <span style="padding: 6px 14px; border-radius: 999px; background: linear-gradient(135deg,#10B981,#34BEF8); color: #fff; font-size: 11px; font-weight: 700;">START</span>
+              <sc-for list="{{ lineCards }}" as="c" hint-placeholder-count="3">
+                <svg width="16" height="20" viewBox="0 0 16 20" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 6px 0;"><path d="M8 2v14M3 11l5 5 5-5"></path></svg>
+                <div style="width: 100%; padding: 13px; border-radius: 13px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);"><div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;"><span style="padding: 2px 7px; border-radius: 6px; background: {{ c.pbg }}; font-size: 10px; font-weight: 700; color: {{ c.pc }};">{{ c.prio }}</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #6B6478;">{{ c.id }}</span></div><div style="font-size: 13px; font-weight: 600; color: #fff;">{{ c.title }}</div></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- B4 TASK INTERACTIONS MOBILE -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">B4 · Task interactions mobile · bottom sheets</div>
+      <div style="display: flex; gap: 24px; align-items: flex-start;">
+
+        <!-- Create task full-screen bottom sheet -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Nowe zadanie · full-screen</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 16px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A9A1B8" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg><span style="font-size: 17px; font-weight: 700; color: #fff;">Nowe zadanie</span></div>
+            <div style="flex: 1; overflow: hidden; padding: 8px 16px; display: flex; flex-direction: column; gap: 16px;">
+              <div style="padding: 14px; border-radius: 13px; background: rgba(255,255,255,.05); border: 1.5px solid var(--p,#7A33EC); box-shadow: 0 0 0 4px rgba(122,51,236,.18); font-size: 16px; color: #fff;">Przygotować demo<span style="display:inline-block; width:2px; height:18px; background:#E1318F; vertical-align:middle; margin-left:1px;"></span></div>
+              <div>
+                <div style="font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6B6478; margin-bottom: 9px;">Priorytet</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                  <div style="display: flex; align-items: center; gap: 8px; padding: 13px; border-radius: 12px; background: rgba(244,63,94,.16); border: 1.5px solid rgba(244,63,94,.5);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4M12 16h.01"></path></svg><span style="font-size: 14px; font-weight: 600; color: #FB7185;">Pilny</span></div>
+                  <div style="display: flex; align-items: center; gap: 8px; padding: 13px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2.2" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg><span style="font-size: 14px; color: #C9C3D4;">Wysoki</span></div>
+                  <div style="display: flex; align-items: center; gap: 8px; padding: 13px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"></path></svg><span style="font-size: 14px; color: #C9C3D4;">Średni</span></div>
+                  <div style="display: flex; align-items: center; gap: 8px; padding: 13px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.2" stroke-linecap="round"><path d="m6 9 6 6 6-6"></path></svg><span style="font-size: 14px; color: #C9C3D4;">Niski</span></div>
+                </div>
+              </div>
+            </div>
+            <div style="padding: 14px 16px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(255,255,255,.08);"><div style="padding: 14px; border-radius: 13px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 15px; font-weight: 600; text-align: center; box-shadow: 0 8px 20px -8px rgba(122,51,236,.6);">Utwórz zadanie</div></div>
+          </div>
+        </div>
+
+        <!-- Status bottom sheet -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Popover → bottom sheet (Status)</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8);">
+            <div style="position: absolute; inset: 0; background: rgba(0,0,0,.5);"></div>
+            <div style="position: absolute; inset: 0; padding: 50px 16px; opacity: .35;"><div style="font-size: 16px; font-weight: 700; color: #fff;">Zadanie #42</div></div>
+            <div style="position: absolute; left: 0; right: 0; bottom: 0; border-radius: 24px 24px 0 0; background: rgba(20,17,30,.96); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border-top: 1px solid rgba(255,255,255,.12); padding: 12px 16px calc(20px + env(safe-area-inset-bottom)); box-shadow: 0 -20px 50px -20px rgba(0,0,0,.7);">
+              <div style="display: flex; justify-content: center; margin-bottom: 14px;"><div style="width: 40px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.18);"></div></div>
+              <div style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 12px;">Status</div>
+              <sc-for list="{{ statuses }}" as="s" hint-placeholder-count="5">
+                <div style="display: flex; align-items: center; gap: 11px; padding: 14px 12px; border-radius: 12px; background: {{ s.row }}; margin-bottom: 4px;"><span style="width: 11px; height: 11px; border-radius: 50%; background: {{ s.c }};"></span><span style="font-size: 15px; font-weight: 500; color: #E5E1EC;">{{ s.n }}</span>{{ s.tick }}</div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <!-- Date bottom sheet -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Date picker · bottom sheet</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8);">
+            <div style="position: absolute; inset: 0; background: rgba(0,0,0,.5);"></div>
+            <div style="position: absolute; left: 0; right: 0; bottom: 0; border-radius: 24px 24px 0 0; background: rgba(20,17,30,.96); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border-top: 1px solid rgba(255,255,255,.12); padding: 12px 16px calc(20px + env(safe-area-inset-bottom));">
+              <div style="display: flex; justify-content: center; margin-bottom: 14px;"><div style="width: 40px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.18);"></div></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg><span style="font-size: 16px; font-weight: 700; color: #fff;">Czerwiec 2026</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg></div>
+              <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 6px;"><sc-for list="{{ dows }}" as="d" hint-placeholder-count="7"><div style="text-align: center; font-size: 11px; color: #6B6478; padding-bottom: 4px;">{{ d }}</div></sc-for></div>
+              <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;"><sc-for list="{{ days }}" as="day" hint-placeholder-count="30"><div style="aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 9px; font-size: 14px; font-weight: {{ day.fw }}; background: {{ day.bg }}; color: {{ day.c }};">{{ day.n }}</div></sc-for></div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 13px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4l2.5 1.5"></path></svg><span style="font-size: 14px; color: #C9C3D4;">14:00</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bulk toolbar sticky bottom -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Bulk toolbar · sticky bottom</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 16px; background: rgba(122,51,236,.14); border-bottom: 1px solid rgba(122,51,236,.24);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg><span style="font-size: 16px; font-weight: 700; color: #fff;">Zaznaczono 3</span></div>
+            <div style="flex: 1; overflow: hidden; padding: 14px 16px; display: flex; flex-direction: column; gap: 9px;">
+              <sc-for list="{{ bulkItems }}" as="b" hint-placeholder-count="5">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 14px; background: {{ b.row }}; border: 1px solid {{ b.bd }};"><div style="width: 22px; height: 22px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; background: {{ b.fill }}; border: 2px solid {{ b.ring }};">{{ b.check }}</div><span style="font-size: 13.5px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ b.title }}</span></div>
+              </sc-for>
+            </div>
+            <div style="display: flex; gap: 8px; padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); background: rgba(28,22,42,.95); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border-top: 1px solid rgba(255,255,255,.12);">
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; border-radius: 12px; background: rgba(255,255,255,.05);"><span style="width:10px;height:10px;border-radius:50%;background:#F59E0B;"></span><span style="font-size: 10.5px; color: #C9C3D4;">Status</span></div>
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; border-radius: 12px; background: rgba(255,255,255,.05);"><span style="width:10px;height:10px;border-radius:50%;background:#F43F5E;"></span><span style="font-size: 10.5px; color: #C9C3D4;">Prio</span></div>
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; border-radius: 12px; background: rgba(255,255,255,.05);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9C3D4" stroke-width="2"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-2a6 6 0 0 1 12 0v2"></path></svg><span style="font-size: 10.5px; color: #C9C3D4;">Osoba</span></div>
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; border-radius: 12px; background: rgba(244,63,94,.14);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FB7185" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg><span style="font-size: 10.5px; color: #FB7185;">Usuń</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- B9 AI MOBILE -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">B9 · Ateron AI · full-screen overlay</div>
+      <div style="display: flex; gap: 24px; align-items: flex-start;">
+
+        <!-- FAB + thread -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">FAB (safe-area) + full-screen chat</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="position: absolute; top: -90px; right: -40px; width: 280px; height: 280px; border-radius: 50%; background: radial-gradient(circle, rgba(52,190,248,.28), transparent 65%); filter: blur(34px); pointer-events: none;"></div>
+            <div style="position: relative; display: flex; align-items: center; gap: 11px; padding: 16px; border-bottom: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A9A1B8" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+              <div style="width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(140deg, #34BEF8, #7A33EC); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700;">At</div>
+              <div style="flex: 1;"><div style="font-size: 14.5px; font-weight: 700; color: #fff;">Ateron AI</div><div style="font-size: 11px; color: #8B8398;">Asystent workspace'u</div></div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+            </div>
+            <div style="position: relative; flex: 1; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+              <div style="align-self: flex-end; max-width: 80%; padding: 11px 14px; border-radius: 15px 15px 4px 15px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 13.5px; line-height: 1.5;">Które P0 są przeterminowane?</div>
+              <div style="display: flex; gap: 9px; max-width: 90%;">
+                <div style="width: 28px; height: 28px; border-radius: 9px; flex: none; background: linear-gradient(140deg, #34BEF8, #7A33EC); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 700;">At</div>
+                <div style="padding: 11px 14px; border-radius: 4px 15px 15px 15px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); color: #E5E1EC; font-size: 13.5px; line-height: 1.55;">Masz <strong style="color:#fff;">2 przeterminowane</strong> P0:<br>• <span style="color:#C9B6F7;">#42</span> Glass sidebar<br>• <span style="color:#C9B6F7;">#37</span> Audyt WCAG</div>
+              </div>
+              <div style="display: flex; gap: 9px;">
+                <div style="width: 28px; height: 28px; border-radius: 9px; flex: none; background: linear-gradient(140deg, #34BEF8, #7A33EC); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 700;">At</div>
+                <div style="display: flex; align-items: center; gap: 4px; padding: 13px 16px; border-radius: 4px 15px 15px 15px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);"><span style="width: 6px; height: 6px; border-radius: 50%; background: #8B8398; animation: fl-think 1.4s ease-in-out infinite;"></span><span style="width: 6px; height: 6px; border-radius: 50%; background: #8B8398; animation: fl-think 1.4s ease-in-out .2s infinite;"></span><span style="width: 6px; height: 6px; border-radius: 50%; background: #8B8398; animation: fl-think 1.4s ease-in-out .4s infinite;"></span></div>
+              </div>
+            </div>
+            <div style="position: relative; padding: 12px 16px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid rgba(255,255,255,.08);">
+              <div style="display: flex; align-items: center; gap: 9px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12);"><span style="flex: 1; font-size: 13.5px; color: #8B8398;">Zapytaj Aterona…</span><div style="width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg></div></div>
+            </div>
+            <!-- FAB overlay (shown floating to demonstrate position) -->
+            <div style="position: absolute; right: 16px; bottom: calc(84px + env(safe-area-inset-bottom)); width: 56px; height: 56px; z-index: 5; opacity: .25;"><div style="width: 56px; height: 56px; border-radius: 18px; background: linear-gradient(140deg, #34BEF8, #7A33EC); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; font-weight: 800;">At</div></div>
+          </div>
+        </div>
+
+        <!-- empty + FAB closed home -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">FAB na home (safe-area-inset-bottom)</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 660px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="position: absolute; top: -80px; right: -40px; width: 240px; height: 240px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.4), transparent 65%); filter: blur(34px); pointer-events: none;"></div>
+            <div style="position: relative; display: flex; align-items: center; gap: 10px; padding: 18px 16px 14px;"><div style="width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(140deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div><span style="font-size: 17px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">FLOVLY</span></div>
+            <div style="position: relative; flex: 1; overflow: hidden; padding: 6px 16px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="font-size: 13px; font-weight: 700; color: #8B8398;">Tablice</div>
+              <sc-for list="{{ homeBoards }}" as="b" hint-placeholder-count="3">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 15px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);"><div style="width: 38px; height: 38px; border-radius: 11px; background: {{ b.c }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700; flex: none;">{{ b.init }}</div><div style="flex: 1; min-width: 0;"><div style="font-size: 14px; font-weight: 600; color: #fff;">{{ b.name }}</div><div style="font-size: 11.5px; color: #8B8398;">{{ b.tasks }} zadań</div></div></div>
+              </sc-for>
+            </div>
+            <!-- FAB with pulse -->
+            <div style="position: absolute; right: 18px; bottom: calc(24px + env(safe-area-inset-bottom)); width: 56px; height: 56px; z-index: 5;">
+              <span style="position: absolute; inset: 0; border-radius: 18px; border: 2px solid #34BEF8; animation: fl-think 2.4s ease-out infinite;"></span>
+              <span style="position: absolute; inset: -6px; border-radius: 22px; background: radial-gradient(circle, rgba(122,51,236,.5), transparent 70%); filter: blur(8px);"></span>
+              <div style="position: relative; width: 56px; height: 56px; border-radius: 18px; background: linear-gradient(140deg, #34BEF8, #7A33EC); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; font-weight: 800; box-shadow: 0 12px 28px -8px rgba(122,51,236,.8), inset 0 1px 0 rgba(255,255,255,.4);">At</div>
+            </div>
+            <div style="position: relative; height: calc(58px + env(safe-area-inset-bottom));"></div>
+          </div>
+        </div>
+
+        <div style="flex: 1; align-self: center; max-width: 220px; color: #6B6478; font-size: 12.5px; line-height: 1.6;">Full-screen overlay zamiast panelu 720px. Composer przyklejony do dołu z uwzględnieniem klawiatury; sesje przez hamburger w nagłówku. FAB respektuje safe-area-inset-bottom.</div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1600, &quot;height&quot;: 1000}, &quot;primary&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#7A33EC&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;primary2&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#E1318F&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  tick() { return React.createElement('svg', { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: this.props.primary || '#7A33EC', strokeWidth: 2.6, strokeLinecap: 'round', strokeLinejoin: 'round', style: { marginLeft: 'auto' } }, React.createElement('path', { d: 'M20 6 9 17l-5-5' })); }
+  check() { return React.createElement('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: '#fff', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }, React.createElement('path', { d: 'M20 6 9 17l-5-5' })); }
+  renderVals() {
+    const p = this.props || {};
+    const primary = p.primary || '#7A33EC';
+    const primary2 = p.primary2 || '#E1318F';
+
+    return {
+      primary, primary2,
+      tableRows: [
+        { status: 'W toku', sc: '#F6B65A', sbg: 'rgba(245,158,11,.16)', title: 'Glass sidebar', prio: 'P0', pc: '#FB7185', pbg: 'rgba(244,63,94,.16)', end: '18 cze', endc: '#FB7185' },
+        { status: 'W toku', sc: '#F6B65A', sbg: 'rgba(245,158,11,.16)', title: 'Refraction borders', prio: 'P2', pc: '#93C5FD', pbg: 'rgba(59,130,246,.16)', end: '19 cze', endc: '#8B8398' },
+        { status: 'Review', sc: '#5BCBFA', sbg: 'rgba(52,190,248,.16)', title: 'Audyt WCAG', prio: 'P0', pc: '#FB7185', pbg: 'rgba(244,63,94,.16)', end: '16 cze', endc: '#FB7185' },
+        { status: 'To Do', sc: '#93C5FD', sbg: 'rgba(59,130,246,.16)', title: 'Demo DANIELOS', prio: 'P1', pc: '#FBBF77', pbg: 'rgba(245,158,11,.16)', end: '18 cze', endc: '#8B8398' },
+        { status: 'To Do', sc: '#93C5FD', sbg: 'rgba(59,130,246,.16)', title: 'Eksport tokenów', prio: 'P2', pc: '#93C5FD', pbg: 'rgba(59,130,246,.16)', end: '20 cze', endc: '#8B8398' }
+      ],
+      milestones: [
+        { name: 'Brand & Design System', range: '1–20 cze', tasks: 24, progress: '85%', c: '#7A33EC', glow: 'rgba(122,51,236,.6)', grad: 'linear-gradient(135deg,#7A33EC,#E1318F)' },
+        { name: 'Board Views', range: '15 cze–10 lip', tasks: 38, progress: '60%', c: '#34BEF8', glow: 'rgba(52,190,248,.5)', grad: 'linear-gradient(135deg,#34BEF8,#7A33EC)' },
+        { name: 'CRM & Deals', range: '1–25 lip', tasks: 19, progress: '20%', c: '#10B981', glow: 'rgba(16,185,129,.5)', grad: 'linear-gradient(135deg,#10B981,#34BEF8)' },
+        { name: 'Launch Enterprise', range: '20 sie–15 wrz', tasks: 12, progress: '5%', c: '#F59E0B', glow: 'rgba(245,158,11,.5)', grad: 'linear-gradient(135deg,#F59E0B,#E1318F)' }
+      ],
+      ganttList: [
+        { name: 'Design System', dates: '1–20 cze', c: '#7A33EC', fw: 700, row: 'rgba(255,255,255,.05)', pill: 'gotowe', pillbg: 'rgba(16,185,129,.16)', pillc: '#6EE7C7' },
+        { name: 'Komponenty', dates: '8–17 cze', c: '#F59E0B', fw: 500, row: 'rgba(255,255,255,.04)', pill: 'za 2 dni', pillbg: 'rgba(245,158,11,.16)', pillc: '#F6B65A' },
+        { name: 'Tabela + Kanban', dates: '15–22 cze', c: '#F59E0B', fw: 500, row: 'rgba(255,255,255,.04)', pill: 'za 4 dni', pillbg: 'rgba(245,158,11,.16)', pillc: '#F6B65A' },
+        { name: 'Gantt + Roadmap', dates: '20–28 cze', c: '#3B82F6', fw: 500, row: 'rgba(255,255,255,.04)', pill: 'za 10 dni', pillbg: 'rgba(59,130,246,.16)', pillc: '#93C5FD' },
+        { name: 'Audyt WCAG', dates: '10–16 cze', c: '#F43F5E', fw: 500, row: 'rgba(255,255,255,.04)', pill: 'po terminie', pillbg: 'rgba(244,63,94,.16)', pillc: '#FB7185' },
+        { name: 'CRM & Deals', dates: '1–25 lip', c: '#10B981', fw: 500, row: 'rgba(255,255,255,.04)', pill: 'za 18 dni', pillbg: 'rgba(255,255,255,.06)', pillc: '#A9A1B8' }
+      ],
+      lineCards: [
+        { id: '#29', title: 'Definicja blur tokens', prio: 'P1', pc: '#FBBF77', pbg: 'rgba(245,158,11,.16)' },
+        { id: '#42', title: 'Finalizacja glass sidebar', prio: 'P0', pc: '#FB7185', pbg: 'rgba(244,63,94,.16)' },
+        { id: '#48', title: 'Refraction borders', prio: 'P2', pc: '#93C5FD', pbg: 'rgba(59,130,246,.16)' }
+      ],
+      statuses: [
+        { n: 'Backlog', c: '#94A3B8', row: 'transparent', tick: '' },
+        { n: 'To Do', c: '#3B82F6', row: 'transparent', tick: '' },
+        { n: 'W toku', c: '#F59E0B', row: 'rgba(245,158,11,.12)', tick: this.tick() },
+        { n: 'Review', c: '#34BEF8', row: 'transparent', tick: '' },
+        { n: 'Gotowe', c: '#10B981', row: 'transparent', tick: '' }
+      ],
+      dows: ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'],
+      days: Array.from({ length: 30 }, (_, i) => {
+        const n = i + 1;
+        const sel = n === 18;
+        return { n, fw: sel ? 700 : 500, bg: sel ? `linear-gradient(135deg, ${primary}, ${primary2})` : 'transparent', c: sel ? '#fff' : '#C9C3D4' };
+      }),
+      bulkItems: [
+        { title: 'Finalizacja glass sidebar', row: 'rgba(122,51,236,.12)', bd: 'rgba(122,51,236,.3)', fill: primary, ring: primary, check: this.check() },
+        { title: 'Audyt kontrastu WCAG', row: 'rgba(122,51,236,.12)', bd: 'rgba(122,51,236,.3)', fill: primary, ring: primary, check: this.check() },
+        { title: 'Refraction borders', row: 'rgba(122,51,236,.12)', bd: 'rgba(122,51,236,.3)', fill: primary, ring: primary, check: this.check() },
+        { title: 'Eksport tokenów do Tailwind', row: 'rgba(255,255,255,.04)', bd: 'rgba(255,255,255,.08)', fill: 'transparent', ring: '#4B4359', check: '' },
+        { title: 'Spring easing dla animacji', row: 'rgba(255,255,255,.04)', bd: 'rgba(255,255,255,.08)', fill: 'transparent', ring: '#4B4359', check: '' }
+      ],
+      homeBoards: [
+        { name: 'Redesign Aplikacji', tasks: 58, c: 'linear-gradient(140deg,#7A33EC,#E1318F)', init: 'RA' },
+        { name: 'Marketing Q3', tasks: 34, c: 'linear-gradient(140deg,#34BEF8,#0EA5E9)', init: 'MQ' },
+        { name: 'Onboarding DANIELOS', tasks: 21, c: 'linear-gradient(140deg,#10B981,#34BEF8)', init: 'OD' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

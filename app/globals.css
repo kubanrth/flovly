@@ -4,8 +4,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ════════════════════════════════════════════════════════════════════════
+ * FLOVLY v4 DESIGN TOKENS — Liquid Glass
+ * ────────────────────────────────────────────────────────────────────────
+ * Brand: violet #7C5CFF → magenta #D247B5 (140deg)
+ * Accent: sky #34BEF8 (cool sparkling highlights — badges, focus)
+ * Neutral: warm gray 50→950 (cieplejsze niż klasyczny slate)
+ * Surfaces: Light canvas #ECE8F4 · Dark canvas #0B0912
+ * ──────────────────────────────────────────────────────────────────────── */
+
 @theme inline {
-  /* Brand tokens */
+  /* ─── Bazowe tokeny semantyczne (kompat z shadcn) ─── */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-paper: var(--paper);
@@ -13,14 +22,54 @@
   --color-accent-brand: var(--accent-brand);
   --color-accent-brand-fg: var(--accent-brand-fg);
   --color-accent-brand-2: var(--accent-brand-2);
+  --color-accent-sky: var(--accent-sky);
 
-  /* Fonts */
+  /* ─── Brand Primary (violet) 50→950 ─── */
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
+
+  /* ─── Sky accent 50→950 ─── */
+  --color-sky-50: var(--sky-50);
+  --color-sky-100: var(--sky-100);
+  --color-sky-200: var(--sky-200);
+  --color-sky-300: var(--sky-300);
+  --color-sky-400: var(--sky-400);
+  --color-sky-500: var(--sky-500);
+  --color-sky-600: var(--sky-600);
+  --color-sky-700: var(--sky-700);
+  --color-sky-800: var(--sky-800);
+  --color-sky-900: var(--sky-900);
+  --color-sky-950: var(--sky-950);
+
+  /* ─── Neutral warm gray 50→950 ─── */
+  --color-n-50: var(--n-50);
+  --color-n-100: var(--n-100);
+  --color-n-200: var(--n-200);
+  --color-n-300: var(--n-300);
+  --color-n-400: var(--n-400);
+  --color-n-500: var(--n-500);
+  --color-n-600: var(--n-600);
+  --color-n-700: var(--n-700);
+  --color-n-800: var(--n-800);
+  --color-n-900: var(--n-900);
+  --color-n-950: var(--n-950);
+
+  /* ─── Fonts ─── */
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-display: var(--font-display);
   --font-heading: var(--font-display);
 
-  /* shadcn semantic tokens (kept for compatibility) */
+  /* ─── shadcn semantic tokens (zachowane dla kompat) ─── */
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -51,97 +100,184 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
 
-  --radius-sm: calc(var(--radius) * 0.5);
-  --radius-md: calc(var(--radius) * 0.75);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.25);
-  --radius-2xl: calc(var(--radius) * 1.6);
-  --radius-3xl: calc(var(--radius) * 2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /* ─── Radius (v4 scale: 8/12/16/22/28/full) ─── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-2xl: 28px;
+  --radius-3xl: 36px;
+  --radius-4xl: 48px;
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+ * LIGHT MODE (domyślny, ale aplikacja defaultuje user'a na dark)
+ * Canvas: #ECE8F4 — warm lavender-white
+ * Card: #FFFFFF — pure white na lekkim cieple z aury
+ * ──────────────────────────────────────────────────────────────────────── */
 :root {
-  /* Neutral SaaS palette — white paper, cool-dark ink */
-  --paper: oklch(1 0 0);
-  --ink: oklch(0.21 0.015 265);
-  /* ClickUp-adjacent purple + pink gradient accents */
-  --accent-brand: oklch(0.59 0.19 282);          /* #7B68EE */
-  --accent-brand-2: oklch(0.67 0.29 339);        /* #FF02F0 */
-  --accent-brand-fg: oklch(1 0 0);
+  /* ─── Brand Primary (violet) — z v4 design system ─── */
+  --brand-50: #F1EEFF;
+  --brand-100: #E5DEFF;
+  --brand-200: #CDC0FF;
+  --brand-300: #B0A0FF;
+  --brand-400: #9580FF;
+  --brand-500: #7C5CFF; /* PRIMARY */
+  --brand-600: #6B45F0;
+  --brand-700: #5A33D6;
+  --brand-800: #4727A8;
+  --brand-900: #36207E;
+  --brand-950: #221356;
 
+  /* ─── Sky accent ─── */
+  --sky-50: #E6F7FE;
+  --sky-100: #C6ECFD;
+  --sky-200: #94DDFB;
+  --sky-300: #5BCBFA;
+  --sky-400: #34BEF8; /* ACCENT */
+  --sky-500: #14A6E4;
+  --sky-600: #0E8AC4;
+  --sky-700: #0E6E9C;
+  --sky-800: #11587C;
+  --sky-900: #134965;
+  --sky-950: #0A2F44;
+
+  /* ─── Neutral warm gray ─── */
+  --n-50: #FBFAFC;
+  --n-100: #F5F3F8;
+  --n-200: #ECE9F1;
+  --n-300: #DEDAE6;
+  --n-400: #C9C3D4;
+  --n-500: #A9A1B8;
+  --n-600: #847B96;
+  --n-700: #655C77;
+  --n-800: #4B4359;
+  --n-900: #221E2A;
+  --n-950: #14111B;
+
+  /* ─── Brand gradient stops (140deg violet → magenta) ─── */
+  --accent-brand: #7C5CFF;
+  --accent-brand-2: #D247B5;
+  --accent-brand-fg: #FFFFFF;
+  --accent-sky: #34BEF8;
+
+  /* ─── Surfaces (light) ─── */
+  --paper: #ECE8F4;          /* Workspace canvas — warm lavender-white */
+  --ink: #14111B;             /* Highest contrast text */
   --background: var(--paper);
   --foreground: var(--ink);
-  --card: oklch(1 0 0);
-  --card-foreground: var(--ink);
-  --popover: oklch(1 0 0);
-  --popover-foreground: var(--ink);
-  --primary: var(--accent-brand);
-  --primary-foreground: var(--accent-brand-fg);
-  --secondary: oklch(0.97 0.003 265);
-  --secondary-foreground: var(--ink);
-  --muted: oklch(0.97 0.003 265);
-  --muted-foreground: oklch(0.48 0.013 265);
-  --accent: oklch(0.96 0.01 282);
-  --accent-foreground: var(--accent-brand);
-  --destructive: oklch(0.58 0.22 28);
-  --border: oklch(0.92 0.006 265);
-  --input: oklch(0.92 0.006 265);
-  --ring: oklch(0.59 0.19 282 / 0.55);
-  --chart-1: oklch(0.59 0.19 282);
-  --chart-2: oklch(0.67 0.29 339);
-  --chart-3: oklch(0.7 0.15 170);
-  --chart-4: oklch(0.75 0.17 80);
-  --chart-5: oklch(0.55 0.18 230);
-  --radius: 0.75rem;
 
-  --sidebar: oklch(0.985 0.003 265);
+  --card: #FFFFFF;
+  --card-foreground: var(--ink);
+  --popover: #FFFFFF;
+  --popover-foreground: var(--ink);
+  --primary: var(--brand-500);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--brand-50);
+  --secondary-foreground: var(--brand-700);
+  --muted: var(--n-100);
+  --muted-foreground: var(--n-600);
+  --accent: var(--brand-50);
+  --accent-foreground: var(--brand-700);
+
+  /* ─── Semantic ─── */
+  --destructive: #E11D48;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --info: #0EA5E9;
+
+  --border: var(--n-200);
+  --input: var(--n-200);
+  --ring: rgba(124, 92, 255, 0.4);
+
+  --chart-1: var(--brand-500);
+  --chart-2: #D247B5;
+  --chart-3: var(--sky-400);
+  --chart-4: #10B981;
+  --chart-5: var(--n-400);
+  --radius: 12px;
+
+  --sidebar: rgba(255, 255, 255, 0.62);
   --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--accent-brand);
-  --sidebar-primary-foreground: var(--accent-brand-fg);
-  --sidebar-accent: oklch(0.95 0.008 282);
-  --sidebar-accent-foreground: var(--accent-brand);
-  --sidebar-border: oklch(0.92 0.006 265);
-  --sidebar-ring: oklch(0.59 0.19 282 / 0.55);
+  --sidebar-primary: var(--brand-500);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: var(--brand-50);
+  --sidebar-accent-foreground: var(--brand-700);
+  --sidebar-border: rgba(20, 17, 27, 0.06);
+  --sidebar-ring: rgba(124, 92, 255, 0.4);
+
+  /* ─── Shadows (brand-tinted, z v4 design system) ─── */
+  --shadow-sm: 0 1px 2px rgba(46, 19, 52, 0.08);
+  --shadow-md: 0 4px 12px -4px rgba(46, 19, 52, 0.14);
+  --shadow-lg: 0 10px 26px -10px rgba(46, 19, 52, 0.2);
+  --shadow-xl: 0 18px 40px -16px rgba(76, 29, 149, 0.26);
+  --shadow-2xl: 0 30px 70px -24px rgba(76, 29, 149, 0.34);
+
+  /* ─── Motion (v4 spec) ─── */
+  --motion-instant: 100ms ease-out;
+  --motion-quick: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-smooth: 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-dramatic: 500ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+ * DARK MODE (default w app'ce — klient lubi dark)
+ * Canvas: #0B0912 — deep violet-black
+ * Card: glass rgba(255,255,255,.04-.08)
+ * ──────────────────────────────────────────────────────────────────────── */
 .dark {
-  --paper: oklch(0.17 0.012 265);
-  --ink: oklch(0.95 0.003 265);
+  /* Surfaces */
+  --paper: #0B0912;
+  --ink: #F5F3F8;
   --background: var(--paper);
   --foreground: var(--ink);
-  --card: oklch(0.21 0.012 265);
+
+  --card: #14111B;
   --card-foreground: var(--ink);
-  --popover: oklch(0.21 0.012 265);
+  --popover: #14111B;
   --popover-foreground: var(--ink);
-  --primary: oklch(0.7 0.19 282);
-  --primary-foreground: oklch(0.14 0.01 265);
-  --secondary: oklch(0.27 0.01 265);
-  --secondary-foreground: var(--ink);
-  --muted: oklch(0.27 0.01 265);
-  --muted-foreground: oklch(0.72 0.005 265);
-  --accent: oklch(0.27 0.01 265);
-  --accent-foreground: var(--ink);
-  --destructive: oklch(0.66 0.22 25);
-  --border: oklch(1 0 0 / 0.08);
-  --input: oklch(1 0 0 / 0.12);
-  --ring: oklch(0.7 0.19 282 / 0.55);
-  --sidebar: oklch(0.19 0.012 265);
+  --primary: var(--brand-400);
+  --primary-foreground: #14111B;
+  --secondary: rgba(124, 92, 255, 0.12);
+  --secondary-foreground: var(--brand-200);
+  --muted: rgba(255, 255, 255, 0.05);
+  --muted-foreground: var(--n-500);
+  --accent: rgba(124, 92, 255, 0.12);
+  --accent-foreground: var(--brand-200);
+
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: rgba(149, 128, 255, 0.55);
+
+  --sidebar: rgba(28, 28, 34, 0.55);
   --sidebar-foreground: var(--ink);
-  --sidebar-primary: oklch(0.7 0.19 282);
-  --sidebar-primary-foreground: oklch(0.14 0.01 265);
-  --sidebar-accent: oklch(0.25 0.015 280);
-  --sidebar-accent-foreground: var(--ink);
-  --sidebar-border: oklch(1 0 0 / 0.08);
-  --sidebar-ring: oklch(0.7 0.19 282 / 0.55);
+  --sidebar-primary: var(--brand-400);
+  --sidebar-primary-foreground: #14111B;
+  --sidebar-accent: rgba(124, 92, 255, 0.15);
+  --sidebar-accent-foreground: var(--brand-200);
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: rgba(149, 128, 255, 0.55);
+
+  /* Shadows głębsze w dark (głębszy violet-black) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px -4px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 26px -10px rgba(0, 0, 0, 0.55);
+  --shadow-xl: 0 18px 40px -16px rgba(20, 5, 50, 0.65);
+  --shadow-2xl: 0 30px 70px -24px rgba(20, 5, 50, 0.75);
 }
 
+/* ════════════════════════════════════════════════════════════════════════
+ * BASE STYLES
+ * ──────────────────────────────────────────────────────────────────────── */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "ss01", "ss02", "cv01";
+    font-feature-settings: "ss01", "ss02", "cv01", "cv11", "tnum";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
   html {
     @apply font-sans;
@@ -150,7 +286,8 @@
     font-family: var(--font-display);
     letter-spacing: -0.025em;
   }
-  /* Micro-label in mono small caps — kept from previous design as a workhorse */
+
+  /* ─── Eyebrow — mono small caps, używane masowo do labelek ─── */
   .eyebrow {
     font-family: var(--font-mono);
     text-transform: uppercase;
@@ -159,25 +296,91 @@
     font-weight: 500;
     color: var(--muted-foreground);
   }
-  /* ClickUp-style brand gradient — used on primary CTAs + hero accents */
+
+  /* ─── Brand gradient utilities ─── */
+  /* v4: 140deg start (vs poprzednie 135deg) — bardziej diagonal */
   .bg-brand-gradient {
-    background-image: linear-gradient(135deg, var(--accent-brand) 0%, var(--accent-brand-2) 100%);
+    background-image: linear-gradient(140deg, var(--accent-brand) 0%, var(--accent-brand-2) 100%);
   }
   .text-brand-gradient {
-    background: linear-gradient(135deg, var(--accent-brand) 0%, var(--accent-brand-2) 100%);
+    background: linear-gradient(140deg, var(--accent-brand) 0%, var(--accent-brand-2) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
   .shadow-brand {
     box-shadow:
-      0 1px 0 color-mix(in oklch, var(--accent-brand) 70%, black) inset,
-      0 10px 24px -10px color-mix(in oklch, var(--accent-brand) 55%, transparent);
+      0 1px 0 rgba(255, 255, 255, 0.2) inset,
+      0 10px 28px -10px rgba(124, 92, 255, 0.55),
+      0 4px 12px -4px rgba(210, 71, 181, 0.4);
+  }
+
+  /* ─── v4 NEW: Aura background ─── */
+  /* Soft mesh blobs jak iOS wallpaper. Aplikowany na full-page surfaces
+     (auth, public viewer, splash). Bardzo subtelny — ~15% opacity. */
+  .bg-aura-light {
+    background:
+      radial-gradient(ellipse 80% 60% at 12% 10%, rgba(124, 92, 255, 0.16), transparent 55%),
+      radial-gradient(ellipse 70% 50% at 88% 88%, rgba(210, 71, 181, 0.14), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 90% 10%, rgba(52, 190, 248, 0.10), transparent 60%),
+      #ECE8F4;
+  }
+  .bg-aura-dark {
+    background:
+      radial-gradient(ellipse 80% 60% at 12% 10%, rgba(124, 92, 255, 0.20), transparent 55%),
+      radial-gradient(ellipse 70% 50% at 88% 88%, rgba(210, 71, 181, 0.18), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 90% 10%, rgba(52, 190, 248, 0.10), transparent 60%),
+      #0B0912;
+  }
+  /* Auto-switch po theme */
+  body.bg-aura,
+  .bg-aura {
+    background:
+      radial-gradient(ellipse 80% 60% at 12% 10%, rgba(124, 92, 255, 0.16), transparent 55%),
+      radial-gradient(ellipse 70% 50% at 88% 88%, rgba(210, 71, 181, 0.14), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 90% 10%, rgba(52, 190, 248, 0.10), transparent 60%),
+      #ECE8F4;
+  }
+  .dark body.bg-aura,
+  .dark .bg-aura {
+    background:
+      radial-gradient(ellipse 80% 60% at 12% 10%, rgba(124, 92, 255, 0.20), transparent 55%),
+      radial-gradient(ellipse 70% 50% at 88% 88%, rgba(210, 71, 181, 0.18), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 90% 10%, rgba(52, 190, 248, 0.10), transparent 60%),
+      #0B0912;
+  }
+
+  /* ─── Glass surface utility ─── */
+  .glass-surface {
+    background: rgba(255, 255, 255, 0.7);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      inset 0 -1px 0 rgba(12, 13, 18, 0.05),
+      0 10px 30px -10px rgba(46, 19, 52, 0.18);
+  }
+  .dark .glass-surface {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+      0 18px 50px -18px rgba(0, 0, 0, 0.6);
+  }
+
+  /* ─── Volumetric brand shadow utility ─── */
+  .shadow-aura {
+    box-shadow:
+      0 18px 40px -16px rgba(76, 29, 149, 0.26),
+      0 30px 70px -24px rgba(124, 92, 255, 0.18);
   }
 }
 
-/* F12-K6: react-day-picker theme — match popover/primary tokens.
-   Wrapped in `.rdp-host` so styles apply only inside DateTimePicker. */
+/* ════════════════════════════════════════════════════════════════════════
+ * F12-K6: react-day-picker theme
+ * ──────────────────────────────────────────────────────────────────────── */
 .rdp-host .rdp-root {
   --rdp-accent-color: var(--primary);
   --rdp-accent-background-color: color-mix(in oklch, var(--primary) 18%, transparent);
@@ -239,11 +442,10 @@
   background-color: var(--accent);
 }
 
-/* ─────────────────────────────────────────────────────────────────
- * F12-K59 / F12-K60: FLOVLY glass sidebar + iPhone liquid-glass tabs.
- * Dark = default (klient defaultuje na dark mode w app'ce). Light mode
- * overrides triggered przez `.dark` na html nieobecne — light kicks in.
- * ───────────────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════════
+ * FLOVLY GLASS SIDEBAR + iPhone LIQUID GLASS TABS
+ * (zachowane z poprzedniej iteracji — już matchują v4 vibe)
+ * ──────────────────────────────────────────────────────────────────────── */
 
 /* Floating glass card wrapper dla sidebara. */
 .sidebar-glass {
@@ -262,7 +464,6 @@
     0 1px 2px rgba(0,0,0,0.3),
     0 20px 60px rgba(0,0,0,0.45);
 }
-/* Top sheen via ::before pseudo. */
 .sidebar-glass::before {
   content: "";
   position: absolute;
@@ -275,7 +476,7 @@
   background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 30%);
 }
 
-/* Nav row hover + active state — dual-theme. */
+/* Nav row states */
 .sidebar-row {
   transition: background-color 120ms ease, color 120ms ease;
 }
@@ -300,7 +501,6 @@
     inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
-/* Hairline dividers w sidebar'ze (między sekcjami). */
 .sidebar-hairline {
   border-color: rgba(12,13,18,0.06);
 }
@@ -308,10 +508,7 @@
   border-color: rgba(255,255,255,0.05);
 }
 
-/* iPhone-style liquid-glass segmented control dla view switchera
- * (Tabela / Kanban / Roadmapa / Gantt / Whiteboard) na board page.
- * Klient zażyczył sobie efekt szkła jak na iOS lock screen — frosted
- * pill z białą obwódką, top sheen, fioletowym inner glow, deep shadow. */
+/* iPhone liquid-glass segmented (view switcher) */
 .lg-seg {
   display: inline-flex;
   gap: 4px;
@@ -388,7 +585,6 @@
     0 6px 18px rgba(0,0,0,0.45),
     0 0 0 0.5px rgba(255,255,255,0.30);
 }
-/* Glossy top sheen on active pill. */
 .lg-seg-btn[data-active="true"]::before {
   content: "";
   position: absolute;
@@ -402,7 +598,6 @@
 .dark .lg-seg-btn[data-active="true"]::before {
   background: linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0.02) 90%);
 }
-/* Soft violet floor bloom under active pill. */
 .lg-seg-btn[data-active="true"]::after {
   content: "";
   position: absolute;
@@ -418,10 +613,7 @@
   background: radial-gradient(ellipse at center, rgba(124,92,255,0.35), transparent 70%);
 }
 
-/* Sliding active indicator. Renders once JS measures tab positions; until then
-   the per-button [data-active] styling above is the SSR/no-JS fallback. When
-   .lg-seg--js is present that fallback is suppressed and this single element
-   slides between tabs instead of the highlight jumping. */
+/* Sliding indicator (JS-driven) */
 .lg-seg-indicator {
   position: absolute;
   left: 0;
@@ -488,7 +680,6 @@
     transition: none;
   }
 }
-/* JS took over → suppress the static per-button highlight; keep text color. */
 .lg-seg--js .lg-seg-btn[data-active="true"] {
   background: none;
   border-color: transparent;
@@ -501,16 +692,12 @@
   display: none;
 }
 .lg-seg-btn {
-  z-index: 1; /* sit above the sliding indicator */
+  z-index: 1;
 }
 
-/* ───────────────────────── Motion ─────────────────────────
-   Toast enter/exit (notification-toaster.tsx). Enter = materialize
-   (opacity + translateY + blur); exit celowo subtelniejszy — uwaga
-   usera idzie już gdzie indziej. Transform na karcie toasta jest
-   bezpieczny: brak fixed/dnd descendantów (por. komentarz
-   w view-transition.tsx — tam transform na KONTENERZE widoku łamał
-   dnd-kit; tu animujemy leaf element). */
+/* ════════════════════════════════════════════════════════════════════════
+ * MOTION & ANIMATIONS
+ * ──────────────────────────────────────────────────────────────────────── */
 @keyframes toast-in {
   from {
     opacity: 0;
@@ -537,11 +724,7 @@
   animation: toast-out 160ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
-/* Global reduced-motion safety net. Pokrywa też tw-animate-css'owe
-   animate-in/out w dialogach/popoverach, które same tego nie robią.
-   .animate-spin wyłączony z bloku — zamrożony spinner przestaje
-   komunikować ładowanie. Duration 0.01ms (nie `none`): animationend
-   nadal odpala, więc logika sprzątająca po exit-animacjach działa. */
+/* Global reduced-motion safety net. */
 @media (prefers-reduced-motion: reduce) {
   *:not(.animate-spin),
   *:not(.animate-spin)::before,

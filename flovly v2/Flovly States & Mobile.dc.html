@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  @keyframes fl-drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(18px,-22px) scale(1.08); } }
+</style>
+</helmet>
+
+<div style="--p: {{ primary }}; --p2: {{ primary2 }}; width: max-content; min-width: 100%; min-height: 100vh; box-sizing: border-box; padding: 56px 48px 110px; background: #0B0912; font-family: 'Inter', system-ui, sans-serif; position: relative; overflow: hidden;">
+  <div style="position: absolute; top: -160px; left: -100px; width: 760px; height: 760px; border-radius: 50%; background: radial-gradient(circle, rgba(124,92,255,.3), transparent 65%); filter: blur(60px); animation: fl-drift 24s ease-in-out infinite; pointer-events: none;"></div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 46px; width: max-content; margin: 0 auto;">
+
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <div style="width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(140deg, var(--p,#7C5CFF), var(--p2,#D247B5)); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 10px 26px -8px rgba(124,92,255,.7);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+      <div><div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">FLOVLY — Stany &amp; Mobile</div><div style="font-size: 14px; color: #8B8398; margin-top: 2px;">Empty states · Error states · wzorce mobilne</div></div>
+    </div>
+
+    <!-- EMPTY STATES -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Empty states · 6 wariantów</div>
+      <div style="display: grid; grid-template-columns: repeat(3, 460px); gap: 20px;">
+        <sc-for list="{{ empties }}" as="e" hint-placeholder-count="6">
+          <div style="position: relative; overflow: hidden; height: 290px; border-radius: 22px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 24px 56px -28px rgba(0,0,0,.7); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px;">
+            <div style="position: absolute; top: 24px; left: 50%; transform: translateX(-50%); width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, {{ e.aura }}, transparent 65%); filter: blur(40px); pointer-events: none;"></div>
+            <div style="position: relative; width: 64px; height: 64px; border-radius: 19px; background: {{ e.iconBg }}; border: 1px solid {{ e.iconBd }}; display: flex; align-items: center; justify-content: center;">{{ e.icon }}</div>
+            <div style="position: relative; font-size: 17px; font-weight: 700; color: #fff; margin-top: 18px; letter-spacing: -0.01em;">{{ e.title }}</div>
+            <div style="position: relative; font-size: 13px; color: #8B8398; margin-top: 6px; max-width: 290px; line-height: 1.5;">{{ e.desc }}</div>
+            <div style="position: relative; margin-top: 18px;">{{ e.cta }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ERROR STATES -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Error states · 404 / 403 / 500 / 429 / offline</div>
+      <div style="display: flex; gap: 20px; align-items: flex-start;">
+        <!-- 404 big -->
+        <div style="flex: none; width: 600px;">
+          <div style="position: relative; overflow: hidden; height: 320px; border-radius: 22px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 24px 56px -28px rgba(0,0,0,.7); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px;">
+            <div style="position: absolute; inset: 0; background: radial-gradient(circle at 50% 40%, rgba(124,92,255,.2), transparent 60%); pointer-events: none;"></div>
+            <div style="position: relative; font-size: 96px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); -webkit-background-clip: text; background-clip: text; color: transparent;">404</div>
+            <div style="position: relative; font-size: 18px; font-weight: 700; color: #fff; margin-top: 10px;">Nie znaleziono strony</div>
+            <div style="position: relative; font-size: 13.5px; color: #8B8398; margin-top: 6px;">Ta tablica mogła zostać przeniesiona lub usunięta.</div>
+            <div style="position: relative; display: flex; align-items: center; gap: 7px; margin-top: 18px; padding: 11px 20px; border-radius: 12px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); color: #fff; font-size: 14px; font-weight: 600; box-shadow: 0 8px 20px -8px rgba(124,92,255,.6);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="m12 19-7-7 7-7M19 12H5"></path></svg>Wróć do pulpitu</div>
+          </div>
+        </div>
+        <!-- 4 small errors -->
+        <div style="flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <sc-for list="{{ errors }}" as="er" hint-placeholder-count="4">
+            <div style="width: 380px; height: 150px; border-radius: 18px; background: #0C0A14; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 18px 40px -22px rgba(0,0,0,.7); display: flex; align-items: center; gap: 16px; padding: 20px;">
+              <div style="width: 52px; height: 52px; border-radius: 15px; background: {{ er.bg }}; border: 1px solid {{ er.bd }}; display: flex; align-items: center; justify-content: center; flex: none;">{{ er.icon }}</div>
+              <div style="min-width: 0;"><div style="display: flex; align-items: center; gap: 8px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: {{ er.code_c }};">{{ er.code }}</span><span style="font-size: 15px; font-weight: 700; color: #fff;">{{ er.title }}</span></div><div style="font-size: 12.5px; color: #8B8398; margin-top: 5px; line-height: 1.45;">{{ er.desc }}</div></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <!-- MOBILE PATTERNS -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Wzorce mobilne · 390×width</div>
+      <div style="display: flex; gap: 24px; align-items: flex-start;">
+
+        <!-- BOTTOM NAV (home) -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Bottom navigation</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 640px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8);">
+            <div style="position: absolute; top: -80px; right: -40px; width: 240px; height: 240px; border-radius: 50%; background: radial-gradient(circle, rgba(124,92,255,.4), transparent 65%); filter: blur(34px); pointer-events: none;"></div>
+            <div style="position: relative; display: flex; flex-direction: column; height: 100%;">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 18px 18px 14px;">
+                <div style="width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(140deg, var(--p,#7C5CFF), var(--p2,#D247B5)); display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+                <span style="font-size: 17px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">FLOVLY</span>
+                <div style="margin-left: auto; width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(140deg,#34BEF8,#7C5CFF); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700;">AD</div>
+              </div>
+              <div style="flex: 1; overflow: hidden; padding: 6px 16px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="font-size: 13px; font-weight: 700; color: #8B8398; padding: 4px 0;">Tablice</div>
+                <sc-for list="{{ mobileBoards }}" as="b" hint-placeholder-count="3">
+                  <div style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 15px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);"><div style="width: 38px; height: 38px; border-radius: 11px; background: {{ b.c }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700; flex: none;">{{ b.init }}</div><div style="flex: 1; min-width: 0;"><div style="font-size: 14px; font-weight: 600; color: #fff;">{{ b.name }}</div><div style="font-size: 11.5px; color: #8B8398;">{{ b.tasks }} zadań</div></div></div>
+                </sc-for>
+              </div>
+              <div style="display: flex; padding: 10px 12px calc(14px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.04); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border-top: 1px solid rgba(255,255,255,.08);">
+                <sc-for list="{{ bottomNav }}" as="n" hint-placeholder-count="5">
+                  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; color: {{ n.c }};">{{ n.icon }}<span style="font-size: 9.5px; font-weight: {{ n.fw }};">{{ n.label }}</span></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WORKSPACE DRAWER -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Workspace drawer (slide-in)</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 640px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8);">
+            <div style="position: absolute; inset: 0; background: rgba(0,0,0,.5);"></div>
+            <div style="position: absolute; top: 0; left: 0; bottom: 0; width: 250px; background: rgba(18,15,28,.96); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border-right: 1px solid rgba(255,255,255,.1); padding: 18px 14px; display: flex; flex-direction: column; gap: 3px;">
+              <div style="position: absolute; top: -60px; left: -40px; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, rgba(124,92,255,.4), transparent 65%); filter: blur(30px); pointer-events: none;"></div>
+              <div style="position: relative; display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px;"><div style="width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(140deg, var(--p,#7C5CFF), var(--p2,#D247B5)); display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div><span style="font-size: 16px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">FLOVLY</span></div>
+              <div style="position: relative; display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 12px; background: rgba(255,255,255,.05); margin-bottom: 8px;"><div style="width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(140deg,#7C5CFF,#D247B5); display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:700;">SN</div><div style="flex:1;"><div style="font-size: 13px; font-weight: 600; color: #fff;">Studio Nebula</div><div style="font-size: 10.5px; color: #8B8398;">12 członków</div></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2"><path d="m6 9 6 6 6-6"></path></svg></div>
+              <sc-for list="{{ drawerNav }}" as="n" hint-placeholder-count="6">
+                <div style="position: relative; display: flex; align-items: center; gap: 11px; padding: 10px 11px; border-radius: 11px; background: {{ n.row }}; color: {{ n.c }}; font-size: 13.5px; font-weight: {{ n.fw }};">{{ n.icon }}<span>{{ n.label }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <!-- BULK SELECT -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Bulk select (long-press)</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 640px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 18px 16px 14px; background: rgba(124,92,255,.14); border-bottom: 1px solid rgba(124,92,255,.24);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+              <span style="font-size: 15px; font-weight: 700; color: #fff;">Zaznaczono 2</span>
+              <div style="margin-left: auto; display: flex; gap: 12px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9B6F7" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9B6F7" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M19 8v6M22 11h-6"></path></svg><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FB7185" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg></div>
+            </div>
+            <div style="flex: 1; overflow: hidden; padding: 14px 16px; display: flex; flex-direction: column; gap: 9px;">
+              <sc-for list="{{ bulkItems }}" as="b" hint-placeholder-count="5">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 14px; background: {{ b.row }}; border: 1px solid {{ b.bd }};">
+                  <div style="width: 22px; height: 22px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; background: {{ b.fill }}; border: 2px solid {{ b.ring }};">{{ b.check }}</div>
+                  <div style="flex: 1; min-width: 0;"><div style="font-size: 13.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ b.title }}</div><div style="font-size: 11px; color: #8B8398; margin-top: 2px;">{{ b.meta }}</div></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <!-- MOBILE KANBAN -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Kanban (swipe poziomy)</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 640px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 18px 16px 12px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A9A1B8" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"></path></svg><span style="font-size: 16px; font-weight: 700; color: #fff;">Redesign</span></div>
+            <div style="display: flex; align-items: center justify-content: center; gap: 6px; padding: 0 16px 12px;">
+              <span style="display:flex; align-items:center; gap:5px; padding: 5px 11px; border-radius: 999px; background: rgba(245,158,11,.16); font-size: 12px; font-weight: 600; color: #F6B65A;"><span style="width:6px;height:6px;border-radius:50%;background:#F59E0B;"></span>W toku · 3</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6478" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg>
+            </div>
+            <div style="flex: 1; overflow: hidden; padding: 0 16px; display: flex; flex-direction: column; gap: 10px;">
+              <sc-for list="{{ mobileKanban }}" as="c" hint-placeholder-count="3">
+                <div style="padding: 14px; border-radius: 15px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);">
+                  <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 8px;"><span style="display:inline-flex; align-items:center; gap:4px; padding: 2px 8px; border-radius: 6px; background: {{ c.pbg }};"><span style="width:6px;height:6px;border-radius:50%;background:{{ c.pc }};"></span><span style="font-size: 10.5px; font-weight: 700; color: {{ c.pc }};">{{ c.prio }}</span></span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #6B6478;">{{ c.id }}</span></div>
+                  <div style="font-size: 14px; font-weight: 600; color: #fff; line-height: 1.35;">{{ c.title }}</div>
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 11px;"><div style="width: 24px; height: 24px; border-radius: 7px; background: {{ c.av }}; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 9px; font-weight: 700;">{{ c.ini }}</div><span style="font-size: 11px; color: #8B8398;">{{ c.due }}</span></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display: flex; justify-content: center; gap: 6px; padding: 14px;"><span style="width: 18px; height: 6px; border-radius: 3px; background: var(--p,#7C5CFF);"></span><span style="width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.2);"></span><span style="width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.2);"></span><span style="width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.2);"></span></div>
+          </div>
+        </div>
+
+        <!-- MOBILE CALENDAR -->
+        <div style="flex: none;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">Kalendarz (tap → lista)</div>
+          <div style="position: relative; overflow: hidden; width: 320px; height: 640px; border-radius: 34px; background: #0C0A14; border: 5px solid #1B1726; box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 16px 12px;"><span style="font-size: 16px; font-weight: 700; color: #fff;">Czerwiec</span><div style="display: flex; gap: 10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B8398" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg></div></div>
+            <div style="padding: 0 14px;">
+              <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 3px;">
+                <sc-for list="{{ calDows }}" as="d" hint-placeholder-count="7"><div style="text-align: center; font-size: 9.5px; color: #6B6478;">{{ d }}</div></sc-for>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px;">
+                <sc-for list="{{ calDays }}" as="day" hint-placeholder-count="30"><div style="aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 8px; background: {{ day.bg }};"><span style="font-size: 11px; font-weight: {{ day.fw }}; color: {{ day.c }};">{{ day.n }}</span>{{ day.dot }}</div></sc-for>
+              </div>
+            </div>
+            <div style="flex: 1; margin-top: 12px; padding: 16px 16px 0; border-top: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02);">
+              <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 11px;">Środa, 18 czerwca</div>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <sc-for list="{{ calEvents }}" as="e" hint-placeholder-count="2">
+                  <div style="display: flex; align-items: center; gap: 10px; padding: 11px 13px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);"><span style="width: 4px; height: 30px; border-radius: 2px; background: {{ e.c }};"></span><div style="flex: 1; min-width: 0;"><div style="font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ e.title }}</div><div style="font-size: 11px; color: #8B8398;">{{ e.time }}</div></div></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1600, &quot;height&quot;: 1000}, &quot;primary&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#7C5CFF&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;primary2&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#D247B5&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  ic(sw, sz, ...ds) {
+    return React.createElement('svg', { width: sz, height: sz, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw, strokeLinecap: 'round', strokeLinejoin: 'round' }, ds.map((d, i) => React.createElement('path', { key: i, d })));
+  }
+  bigIcon(color, ...ds) {
+    return React.createElement('span', { style: { color, display: 'flex' } }, this.ic(1.6, 28, ...ds));
+  }
+  midIcon(color, ...ds) {
+    return React.createElement('span', { style: { color, display: 'flex' } }, this.ic(1.8, 24, ...ds));
+  }
+  cta(label, primary, primary2) {
+    return React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '10px 18px', borderRadius: '12px', background: `linear-gradient(135deg, ${primary}, ${primary2})`, color: '#fff', fontSize: '13.5px', fontWeight: 600, boxShadow: '0 8px 20px -8px rgba(124,92,255,.6)' } },
+      React.createElement('svg', { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none', stroke: '#fff', strokeWidth: 2.4, strokeLinecap: 'round' }, React.createElement('path', { d: 'M12 5v14M5 12h14' })), label);
+  }
+  ghostCta(label) {
+    return React.createElement('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '9px 16px', borderRadius: '11px', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)', color: '#C9C3D4', fontSize: '13px', fontWeight: 600 } }, label);
+  }
+  navIcon(active, ...ds) {
+    return React.createElement('span', { style: { color: active ? this.props.primary || '#7C5CFF' : '#6B6478', display: 'flex' } }, this.ic(2, 21, ...ds));
+  }
+  drawerIcon(active, ...ds) {
+    return React.createElement('span', { style: { color: active ? '#fff' : '#8B8398', display: 'flex' } }, this.ic(2, 17, ...ds));
+  }
+  check() {
+    return React.createElement('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: '#fff', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }, React.createElement('path', { d: 'M20 6 9 17l-5-5' }));
+  }
+  dot(color) {
+    return React.createElement('span', { style: { width: '4px', height: '4px', borderRadius: '50%', background: color } });
+  }
+  renderVals() {
+    const p = this.props || {};
+    const primary = p.primary || '#7C5CFF';
+    const primary2 = p.primary2 || '#D247B5';
+    const C = this.cta.bind(this), G = this.ghostCta.bind(this);
+
+    return {
+      primary, primary2,
+      empties: [
+        { title: 'Brak tablic', desc: 'Utwórz pierwszą tablicę, aby zacząć organizować pracę zespołu.', aura: 'rgba(124,92,255,.3)', iconBg: 'rgba(124,92,255,.14)', iconBd: 'rgba(124,92,255,.24)', icon: this.bigIcon('#9B8BE6', 'M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z'), cta: C('Utwórz pierwszą tablicę', primary, primary2) },
+        { title: 'Tablica jest pusta', desc: 'Dodaj pierwsze zadanie albo zaimportuj plik CSV.', aura: 'rgba(52,190,248,.26)', iconBg: 'rgba(52,190,248,.14)', iconBd: 'rgba(52,190,248,.24)', icon: this.bigIcon('#5BCBFA', 'M9 11l3 3L22 4', 'M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'), cta: C('Dodaj zadanie', primary, primary2) },
+        { title: 'Brak zadań TODO', desc: 'Dodaj swój pierwszy TODO i miej wszystko pod kontrolą.', aura: 'rgba(16,185,129,.26)', iconBg: 'rgba(16,185,129,.14)', iconBd: 'rgba(16,185,129,.24)', icon: this.bigIcon('#6EE7C7', 'M11 12H3M16 6H3M16 18H3M18 9v6M21 12h-6'), cta: C('Dodaj TODO', primary, primary2) },
+        { title: 'Brak notatek', desc: 'Napisz pierwszą notatkę — pomysły, ustalenia, research.', aura: 'rgba(245,158,11,.24)', iconBg: 'rgba(245,158,11,.14)', iconBd: 'rgba(245,158,11,.24)', icon: this.bigIcon('#F6B65A', 'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7', 'M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z'), cta: C('Nowa notatka', primary, primary2) },
+        { title: 'Brak powiadomień', desc: 'Tu pojawią się Twoje powiadomienia o zadaniach i wzmiankach.', aura: 'rgba(124,92,255,.2)', iconBg: 'rgba(255,255,255,.05)', iconBd: 'rgba(255,255,255,.1)', icon: this.bigIcon('#8B8398', 'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9', 'M13.7 21a2 2 0 0 1-3.4 0'), cta: '' },
+        { title: 'Brak wyników', desc: 'Nic nie pasuje do „glass sidebar". Spróbuj innej frazy.', aura: 'rgba(124,92,255,.2)', iconBg: 'rgba(255,255,255,.05)', iconBd: 'rgba(255,255,255,.1)', icon: this.bigIcon('#8B8398', 'M11 11a7 7 0 1 0-14 0 7 7 0 0 0 14 0Z', 'm20 20-3-3'), cta: G('Wyczyść filtry') }
+      ],
+      errors: [
+        { code: '403', code_c: '#FB7185', title: 'Brak dostępu', desc: 'Nie masz uprawnień do tego workspace\'u.', bg: 'rgba(244,63,94,.1)', bd: 'rgba(244,63,94,.24)', icon: this.midIcon('#FB7185', 'M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z', 'M7 11V7a5 5 0 0 1 10 0v4') },
+        { code: '500', code_c: '#F6B65A', title: 'Coś poszło nie tak', desc: 'Spróbuj ponownie za chwilę.', bg: 'rgba(245,158,11,.1)', bd: 'rgba(245,158,11,.24)', icon: this.midIcon('#F6B65A', 'M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z', 'M12 9v4', 'M12 17h.01') },
+        { code: '429', code_c: '#93C5FD', title: 'Zbyt wiele zapytań', desc: 'Odetchnij chwilę i spróbuj ponownie.', bg: 'rgba(59,130,246,.1)', bd: 'rgba(59,130,246,.24)', icon: this.midIcon('#93C5FD', 'M12 8v4l3 2', 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z') },
+        { code: 'OFF', code_c: '#A9A1B8', title: 'Brak połączenia', desc: 'Próbujemy połączyć ponownie…', bg: 'rgba(255,255,255,.05)', bd: 'rgba(255,255,255,.1)', icon: this.midIcon('#A9A1B8', 'M2 2l20 20', 'M8.5 16.5a5 5 0 0 1 7 0', 'M5 12.5a10 10 0 0 1 3-2', 'M19 12.5a10 10 0 0 0-4-2.5', 'M2 8.8a16 16 0 0 1 4.5-2.7', 'M22 8.8a16 16 0 0 0-9-3') }
+      ],
+      mobileBoards: [
+        { name: 'Redesign Aplikacji', tasks: 58, c: 'linear-gradient(140deg,#7C5CFF,#D247B5)', init: 'RA' },
+        { name: 'Marketing Q3', tasks: 34, c: 'linear-gradient(140deg,#34BEF8,#0EA5E9)', init: 'MQ' },
+        { name: 'Onboarding DANIELOS', tasks: 21, c: 'linear-gradient(140deg,#10B981,#34BEF8)', init: 'OD' }
+      ],
+      bottomNav: [
+        { label: 'Home', c: primary, fw: 700, icon: this.navIcon(true, 'M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z') },
+        { label: 'Zadania', c: '#6B6478', fw: 500, icon: this.navIcon(false, 'M9 11l3 3L22 4', 'M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11') },
+        { label: 'TODO', c: '#6B6478', fw: 500, icon: this.navIcon(false, 'M11 12H3M16 6H3M16 18H3M18 9v6M21 12h-6') },
+        { label: 'Inbox', c: '#6B6478', fw: 500, icon: this.navIcon(false, 'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9', 'M13.7 21a2 2 0 0 1-3.4 0') },
+        { label: 'Konto', c: '#6B6478', fw: 500, icon: this.navIcon(false, 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2', 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8') }
+      ],
+      drawerNav: [
+        { label: 'Tablice', row: 'linear-gradient(135deg, rgba(124,92,255,.28), rgba(210,71,181,.2))', c: '#fff', fw: 600, icon: this.drawerIcon(true, 'M4 4h6v6H4z', 'M14 4h6v6h-6z', 'M14 14h6v6h-6z', 'M4 14h6v6H4z') },
+        { label: 'Moje zadania', row: 'transparent', c: '#A9A1B8', fw: 500, icon: this.drawerIcon(false, 'M9 11l3 3L22 4', 'M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11') },
+        { label: 'TO DO', row: 'transparent', c: '#A9A1B8', fw: 500, icon: this.drawerIcon(false, 'M11 12H3M16 6H3M16 18H3M18 9v6M21 12h-6') },
+        { label: 'Wiki', row: 'transparent', c: '#A9A1B8', fw: 500, icon: this.drawerIcon(false, 'M12 7v14', 'M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z') },
+        { label: 'Kontakty', row: 'transparent', c: '#A9A1B8', fw: 500, icon: this.drawerIcon(false, 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2', 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8') },
+        { label: 'Deale', row: 'transparent', c: '#A9A1B8', fw: 500, icon: this.drawerIcon(false, 'M22 7 13.5 15.5l-5-5L2 17', 'M16 7h6v6') }
+      ],
+      bulkItems: [
+        { title: 'Finalizacja liquid glass sidebar', meta: '#42 · W toku', row: 'rgba(124,92,255,.12)', bd: 'rgba(124,92,255,.3)', fill: primary, ring: primary, check: this.check() },
+        { title: 'Audyt kontrastu WCAG AA', meta: '#37 · Review', row: 'rgba(124,92,255,.12)', bd: 'rgba(124,92,255,.3)', fill: primary, ring: primary, check: this.check() },
+        { title: 'Refraction borders na kartach', meta: '#48 · W toku', row: 'rgba(255,255,255,.04)', bd: 'rgba(255,255,255,.08)', fill: 'transparent', ring: '#4B4359', check: '' },
+        { title: 'Eksport tokenów do Tailwind', meta: '#54 · To Do', row: 'rgba(255,255,255,.04)', bd: 'rgba(255,255,255,.08)', fill: 'transparent', ring: '#4B4359', check: '' },
+        { title: 'Spring easing dla animacji', meta: '#56 · To Do', row: 'rgba(255,255,255,.04)', bd: 'rgba(255,255,255,.08)', fill: 'transparent', ring: '#4B4359', check: '' }
+      ],
+      mobileKanban: [
+        { id: '#42', title: 'Finalizacja liquid glass sidebar', prio: 'P0', pc: '#FB7185', pbg: 'rgba(244,63,94,.14)', av: 'linear-gradient(140deg,#7C5CFF,#D247B5)', ini: 'AD', due: 'dziś' },
+        { id: '#48', title: 'Refraction borders na kartach', prio: 'P2', pc: '#93C5FD', pbg: 'rgba(59,130,246,.14)', av: 'linear-gradient(140deg,#A78BFA,#34BEF8)', ini: 'TL', due: '19 cze' },
+        { id: '#51', title: 'Demo dla DANIELOS', prio: 'P1', pc: '#F6B65A', pbg: 'rgba(245,158,11,.14)', av: 'linear-gradient(140deg,#7C5CFF,#D247B5)', ini: 'AD', due: '18 cze' }
+      ],
+      calDows: ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'],
+      calDays: Array.from({ length: 30 }, (_, i) => {
+        const n = i + 1;
+        const sel = n === 18;
+        const hasEvent = [12, 16, 18, 23].includes(n);
+        return { n, bg: sel ? primary : 'transparent', fw: sel ? 700 : 500, c: sel ? '#fff' : '#C9C3D4', dot: (hasEvent && !sel) ? this.dot('#34BEF8') : (sel ? this.dot('#fff') : '') };
+      }),
+      calEvents: [
+        { title: 'Deadline #42 liquid glass', time: '15:00', c: '#F43F5E' },
+        { title: 'Demo dla DANIELOS', time: '18:00', c: '#7C5CFF' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

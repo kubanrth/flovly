@@ -7,10 +7,12 @@ type Theme = "light" | "dark";
 const KEY = "danielos:theme";
 
 function readInitial(): Theme {
-  if (typeof window === "undefined") return "light";
+  if (typeof window === "undefined") return "dark";
   const saved = window.localStorage.getItem(KEY);
   if (saved === "light" || saved === "dark") return saved;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  // v4: dark = default w app'ce (klient preferuje). User może
+  // przełączyć ręcznie — wybór persistuje w localStorage.
+  return "dark";
 }
 
 function applyTheme(theme: Theme) {
@@ -120,8 +122,8 @@ export const themeBootScript = `
     try {
       var k = '${KEY}';
       var s = window.localStorage.getItem(k);
-      var sys = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      var dark = s === 'dark' || (s !== 'light' && sys);
+      // v4: dark = default w app'ce. User może wybrać 'light' i wybór persistuje.
+      var dark = s !== 'light';
       if (dark) document.documentElement.classList.add('dark');
     } catch (e) {}
   })();

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+</style>
+</helmet>
+
+<div style="width: max-content; min-width: 100%; min-height: 100vh; box-sizing: border-box; padding: 56px 48px 110px; background: #ECE8F4; font-family: 'Inter', system-ui, sans-serif;">
+  <div style="display: flex; flex-direction: column; gap: 22px; width: 1496px; margin: 0 auto;">
+
+    <!-- COVER -->
+    <section style="position: relative; overflow: hidden; background: linear-gradient(150deg, #160F22 0%, #221334 50%, #2A1430 100%); border-radius: 28px; padding: 46px 50px; box-shadow: 0 30px 80px -30px rgba(40,16,48,.6);">
+      <div style="position: absolute; top: -110px; right: -50px; width: 480px; height: 480px; border-radius: 50%; background: radial-gradient(circle, rgba(210,71,181,.5), transparent 65%); filter: blur(40px); pointer-events: none;"></div>
+      <div style="position: absolute; bottom: -140px; left: 22%; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, rgba(52,190,248,.34), transparent 65%); filter: blur(46px); pointer-events: none;"></div>
+      <div style="position: relative; display: flex; align-items: center; gap: 20px;">
+        <div style="width: 60px; height: 60px; border-radius: 18px; background: linear-gradient(140deg, #7C5CFF, #D247B5); display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 30px -8px rgba(124,92,255,.6), inset 0 1px 0 rgba(255,255,255,.4);"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6.5 12 16l7-9.5" opacity="0.45"></path><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+        <div>
+          <div style="font-size: 38px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">Design System</div>
+          <div style="font-size: 16px; color: rgba(255,255,255,.6); margin-top: 2px;">FLOVLY v2 · Liquid Glass · tokens, motion, komponenty</div>
+        </div>
+        <div style="margin-left: auto; display: flex; gap: 10px;">
+          <div style="text-align: center; padding: 14px 18px; border-radius: 14px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);"><div style="font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; color: #fff;">#7C5CFF</div><div style="font-size: 11px; color: rgba(255,255,255,.5); margin-top: 2px;">Primary</div></div>
+          <div style="text-align: center; padding: 14px 18px; border-radius: 14px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);"><div style="font-size: 22px; font-weight: 700; color: #fff;">Inter</div><div style="font-size: 11px; color: rgba(255,255,255,.5); margin-top: 2px;">+ JetBrains Mono</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOGO + BRAND -->
+    <section style="background: #fff; border: 1px solid #ECE9F1; border-radius: 26px; padding: 32px 36px; box-shadow: 0 18px 40px -24px rgba(20,17,27,.16);">
+      <span style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #847B96; margin-bottom: 22px;">01 — Logo &amp; brand</span>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px;">
+        <div style="background: #FBFAFC; border: 1px solid #ECE9F1; border-radius: 18px; padding: 26px; text-align: center;">
+          <div style="font-size: 11px; color: #A9A1B8; margin-bottom: 18px; font-family: 'JetBrains Mono', monospace;">Wariant A · gradient V</div>
+          <div style="font-size: 34px; font-weight: 800; letter-spacing: -0.04em; display: flex; justify-content: center; color: #14111B;">FLO<span style="background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); -webkit-background-clip: text; background-clip: text; color: transparent;">V</span>LY</div>
+        </div>
+        <div style="background: #FBFAFC; border: 1px solid #ECE9F1; border-radius: 18px; padding: 26px; text-align: center;">
+          <div style="font-size: 11px; color: #A9A1B8; margin-bottom: 18px; font-family: 'JetBrains Mono', monospace;">Wariant B · chevron V</div>
+          <div style="font-size: 34px; font-weight: 800; letter-spacing: -0.04em; display: flex; align-items: center; justify-content: center; color: #14111B;">FLO<svg width="30" height="34" viewBox="0 0 24 30" fill="none" stroke="url(#vg)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="margin:0 -1px;"><defs><linearGradient id="vg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7C5CFF"></stop><stop offset="1" stop-color="#D247B5"></stop></linearGradient></defs><path d="M4 6 12 24l8-18"></path></svg>LY</div>
+        </div>
+        <div style="background: #FBFAFC; border: 1px solid #ECE9F1; border-radius: 18px; padding: 26px; text-align: center;">
+          <div style="font-size: 11px; color: #A9A1B8; margin-bottom: 18px; font-family: 'JetBrains Mono', monospace;">Wariant C · mark + wordmark</div>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 11px;"><div style="width: 36px; height: 36px; border-radius: 11px; background: linear-gradient(140deg, var(--p,#7C5CFF), var(--p2,#D247B5)); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px -5px rgba(124,92,255,.5);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div><span style="font-size: 30px; font-weight: 800; letter-spacing: -0.04em; color: #14111B;">FLOVLY</span></div>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+        <div style="background: #FBFAFC; border: 1px solid #ECE9F1; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 14px; align-items: center;">
+          <span style="align-self: flex-start; font-size: 10px; color: #A9A1B8; font-family: 'JetBrains Mono', monospace;">App icon 1024 → favicon 16</span>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 56px; height: 56px; border-radius: 15px; background: linear-gradient(140deg, var(--p,#7C5CFF), var(--p2,#D247B5)); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 18px -6px rgba(124,92,255,.5), inset 0 1px 0 rgba(255,255,255,.4);"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6.5 12 16l7-9.5" opacity="0.45"></path><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+            <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(140deg, var(--p,#7C5CFF), var(--p2,#D247B5)); display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+            <div style="width: 16px; height: 16px; border-radius: 5px; background: linear-gradient(140deg, var(--p,#7C5CFF), var(--p2,#D247B5));"></div>
+          </div>
+        </div>
+        <div style="background: #14111B; border-radius: 18px; padding: 22px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 22px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">FLOVLY</span></div>
+        <div style="background: #FBFAFC; border: 1px solid #ECE9F1; border-radius: 18px; padding: 22px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 22px; font-weight: 800; letter-spacing: -0.03em; color: #14111B;">FLOVLY</span></div>
+        <div style="background: linear-gradient(135deg, #FBFAFC, #F3EFFA); border: 1px solid #ECE9F1; border-radius: 18px; padding: 18px 22px; display: flex; flex-direction: column; justify-content: center; gap: 6px;">
+          <span style="font-size: 10px; color: #A9A1B8; font-family: 'JetBrains Mono', monospace;">Tagline — 3 opcje (PL)</span>
+          <span style="font-size: 13.5px; font-weight: 700; color: #14111B;">Workflow który płynie</span>
+          <span style="font-size: 13px; color: #655C77;">Praca w przepływie</span>
+          <span style="font-size: 13px; color: #655C77;">Każde zadanie w rytmie</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- COLORS -->
+    <section style="background: #fff; border: 1px solid #ECE9F1; border-radius: 26px; padding: 32px 36px; box-shadow: 0 18px 40px -24px rgba(20,17,27,.16);">
+      <span style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #847B96; margin-bottom: 22px;">02 — Color tokens · 50→950</span>
+      <sc-for list="{{ ramps }}" as="r" hint-placeholder-count="3">
+        <div style="margin-bottom: 18px;">
+          <div style="font-size: 13px; font-weight: 600; color: #221E2A; margin-bottom: 8px;">{{ r.name }}</div>
+          <div style="display: grid; grid-template-columns: repeat(11, 1fr); gap: 5px;">
+            <sc-for list="{{ r.shades }}" as="sw" hint-placeholder-count="11">
+              <div style="display: flex; flex-direction: column; gap: 5px;">
+                <div style="height: 50px; border-radius: 9px; background: {{ sw.hex }}; border: 1px solid rgba(20,17,27,.06);"></div>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #847B96; text-align: center;">{{ sw.s }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 6px;">
+        <sc-for list="{{ semantic }}" as="s" hint-placeholder-count="4">
+          <div style="border-radius: 14px; overflow: hidden; border: 1px solid #ECE9F1;">
+            <div style="display: flex; height: 44px;"><div style="flex: 1; background: {{ s.l }};"></div><div style="flex: 1.4; background: {{ s.b }};"></div><div style="flex: 1; background: {{ s.d }};"></div></div>
+            <div style="padding: 9px 12px; background: #FBFAFC;"><div style="font-size: 12.5px; font-weight: 600; color: #221E2A;">{{ s.n }}</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #847B96;">{{ s.b }}</div></div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 16px;">
+        <div style="flex: 1; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; background: #FBFAFC; border: 1px solid #ECE9F1;"><div style="width: 28px; height: 28px; border-radius: 8px; background: #fff; border: 1px solid #DEDAE6;"></div><div><div style="font-size: 12.5px; font-weight: 600; color: #221E2A;">Light surface</div><div style="font-size: 11px; color: #847B96;">canvas #ECE8F4 · card #FFFFFF</div></div></div>
+        <div style="flex: 1; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; background: #14111B; border: 1px solid #2A2438;"><div style="width: 28px; height: 28px; border-radius: 8px; background: #0C0A14; border: 1px solid rgba(255,255,255,.1);"></div><div><div style="font-size: 12.5px; font-weight: 600; color: #fff;">Dark surface</div><div style="font-size: 11px; color: #8B8398;">canvas #0B0912 · glass rgba(255,255,255,.05)</div></div></div>
+      </div>
+    </section>
+
+    <!-- TYPE + SPACING + RADIUS -->
+    <section style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px;">
+      <div style="background: #fff; border: 1px solid #ECE9F1; border-radius: 26px; padding: 32px 36px; box-shadow: 0 18px 40px -24px rgba(20,17,27,.16);">
+        <span style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #847B96; margin-bottom: 18px;">03 — Type scale</span>
+        <sc-for list="{{ typeScale }}" as="t" hint-placeholder-count="12">
+          <div style="display: flex; align-items: baseline; gap: 18px; padding: 9px 0; border-bottom: 1px solid #F5F3F8;">
+            <div style="width: 116px; flex: none;"><div style="font-size: 12.5px; font-weight: 600; color: #221E2A;">{{ t.n }}</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #A9A1B8;">{{ t.px }} · {{ t.tr }}</div></div>
+            <div style="flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: {{ t.size }}px; font-weight: {{ t.w }}; letter-spacing: {{ t.tr }}; line-height: 1.1; color: #14111B;">Flovly płynie</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 22px;">
+        <div style="background: #fff; border: 1px solid #ECE9F1; border-radius: 26px; padding: 28px 30px; box-shadow: 0 18px 40px -24px rgba(20,17,27,.16);">
+          <span style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #847B96; margin-bottom: 18px;">04 — Spacing</span>
+          <div style="display: flex; flex-direction: column; gap: 9px;">
+            <sc-for list="{{ spacing }}" as="sp" hint-placeholder-count="9">
+              <div style="display: flex; align-items: center; gap: 12px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #847B96; width: 34px;">{{ sp }}</span><div style="height: 12px; border-radius: 3px; background: linear-gradient(90deg, var(--p,#7C5CFF), var(--p2,#D247B5)); width: {{ sp }}px;"></div></div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background: #fff; border: 1px solid #ECE9F1; border-radius: 26px; padding: 28px 30px; box-shadow: 0 18px 40px -24px rgba(20,17,27,.16);">
+          <span style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #847B96; margin-bottom: 18px;">05 — Radius</span>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <sc-for list="{{ radii }}" as="rd" hint-placeholder-count="6">
+              <div style="display: flex; flex-direction: column; align-items: center; gap: 6px;"><div style="width: 52px; height: 52px; background: linear-gradient(140deg, rgba(124,92,255,.18), rgba(210,71,181,.14)); border: 1.5px solid var(--p,#7C5CFF); border-radius: {{ rd.v }};"></div><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #847B96;">{{ rd.n }}</span></div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SHADOWS + MOTION -->
+    <section style="display: grid; grid-template-columns: 1fr 1fr; gap: 22px;">
+      <div style="background: #F4F1FA; border: 1px solid #ECE9F1; border-radius: 26px; padding: 32px 36px;">
+        <span style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #847B96; margin-bottom: 24px;">06 — Shadows (brand-tinted)</span>
+        <div style="display: flex; gap: 18px; flex-wrap: wrap;">
+          <sc-for list="{{ shadows }}" as="sh" hint-placeholder-count="5">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;"><div style="width: 70px; height: 70px; border-radius: 16px; background: #fff; box-shadow: {{ sh.v }};"></div><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #847B96;">{{ sh.n }}</span></div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #ECE9F1; border-radius: 26px; padding: 32px 36px; box-shadow: 0 18px 40px -24px rgba(20,17,27,.16);">
+        <span style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #847B96; margin-bottom: 18px;">07 — Motion</span>
+        <div style="display: flex; flex-direction: column; gap: 9px;">
+          <sc-for list="{{ motion }}" as="m" hint-placeholder-count="4">
+            <div style="display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 12px; background: #FBFAFC; border: 1px solid #ECE9F1;">
+              <span style="font-size: 13px; font-weight: 700; color: #221E2A; width: 78px;">{{ m.n }}</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; color: #6A24DC; width: 56px;">{{ m.d }}</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: #847B96; flex: 1;">{{ m.e }}</span>
+            </div>
+          </sc-for>
+          <div style="font-size: 12.5px; color: #655C77; margin-top: 4px; line-height: 1.5;">Per-interakcja: <strong style="color:#221E2A;">hover</strong> 200ms quick · <strong style="color:#221E2A;">focus</strong> 100ms · <strong style="color:#221E2A;">press</strong> 100ms scale .97 · <strong style="color:#221E2A;">page</strong> 350ms smooth spring.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMPONENT LIBRARY -->
+    <section style="background: #fff; border: 1px solid #ECE9F1; border-radius: 26px; padding: 32px 36px; box-shadow: 0 18px 40px -24px rgba(20,17,27,.16);">
+      <span style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #847B96; margin-bottom: 24px;">08 — Component library</span>
+
+      <!-- buttons -->
+      <div style="font-size: 13px; font-weight: 600; color: #221E2A; margin-bottom: 12px;">Buttons — primary / secondary / ghost / destructive</div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
+        <span style="padding: 11px 20px; border-radius: 12px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); color: #fff; font-size: 14px; font-weight: 600; box-shadow: 0 8px 20px -8px rgba(124,92,255,.5);">Primary</span>
+        <span style="padding: 11px 20px; border-radius: 12px; background: #F1EEFF; color: #5A33D6; font-size: 14px; font-weight: 600;">Secondary</span>
+        <span style="padding: 11px 20px; border-radius: 12px; color: #655C77; font-size: 14px; font-weight: 600;">Ghost</span>
+        <span style="padding: 11px 20px; border-radius: 12px; background: #FFF1F3; color: #E11D48; font-size: 14px; font-weight: 600;">Destructive</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 26px;">
+        <span style="padding: 5px 11px; border-radius: 8px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); color: #fff; font-size: 11px; font-weight: 600;">xs</span>
+        <span style="padding: 7px 14px; border-radius: 10px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); color: #fff; font-size: 12.5px; font-weight: 600;">sm</span>
+        <span style="padding: 10px 18px; border-radius: 11px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); color: #fff; font-size: 14px; font-weight: 600;">md</span>
+        <span style="padding: 13px 24px; border-radius: 13px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); color: #fff; font-size: 15px; font-weight: 600;">lg</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-bottom: 26px;">
+        <!-- inputs -->
+        <div>
+          <div style="font-size: 13px; font-weight: 600; color: #221E2A; margin-bottom: 12px;">Inputs — default / focus / error / disabled</div>
+          <div style="display: flex; flex-direction: column; gap: 9px;">
+            <div style="padding: 11px 13px; border-radius: 11px; background: #FBFAFC; border: 1px solid #DEDAE6; font-size: 13.5px; color: #221E2A;">Tytuł zadania</div>
+            <div style="padding: 11px 13px; border-radius: 11px; background: #fff; border: 1.5px solid var(--p,#7C5CFF); box-shadow: 0 0 0 4px rgba(124,92,255,.18); font-size: 13.5px; color: #221E2A;">Tytuł zadania<span style="display:inline-block; width:2px; height:15px; background:#34BEF8; vertical-align:middle; margin-left:1px;"></span></div>
+            <div style="padding: 11px 13px; border-radius: 11px; background: #fff; border: 1.5px solid #F43F5E; box-shadow: 0 0 0 4px rgba(244,63,94,.14); font-size: 13.5px; color: #E11D48;">Pole wymagane</div>
+            <div style="padding: 11px 13px; border-radius: 11px; background: #F5F3F8; border: 1px solid #ECE9F1; font-size: 13.5px; color: #A9A1B8;">Zablokowane</div>
+          </div>
+        </div>
+        <!-- cards -->
+        <div>
+          <div style="font-size: 13px; font-weight: 600; color: #221E2A; margin-bottom: 12px;">Cards — glass / solid / outlined</div>
+          <div style="display: flex; gap: 10px;">
+            <div style="flex: 1; height: 92px; border-radius: 14px; background: linear-gradient(135deg, rgba(124,92,255,.5), rgba(210,71,181,.4)); display: flex; align-items: flex-end; padding: 10px;"><div style="width: 100%; padding: 8px; border-radius: 9px; background: rgba(255,255,255,.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font-size: 11px; font-weight: 600; color: #14111B;">Glass</div></div>
+            <div style="flex: 1; height: 92px; border-radius: 14px; background: #fff; box-shadow: 0 8px 22px -10px rgba(20,17,27,.2); display: flex; align-items: flex-end; padding: 12px; font-size: 11px; font-weight: 600; color: #221E2A;">Solid</div>
+            <div style="flex: 1; height: 92px; border-radius: 14px; border: 1.5px solid #DEDAE6; display: flex; align-items: flex-end; padding: 12px; font-size: 11px; font-weight: 600; color: #655C77;">Outlined</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 26px; margin-bottom: 26px;">
+        <!-- pills/badges -->
+        <div>
+          <div style="font-size: 13px; font-weight: 600; color: #221E2A; margin-bottom: 12px;">Pills — status / priority</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
+            <span style="display:inline-flex; align-items:center; gap:5px; padding: 4px 10px; border-radius: 999px; background: rgba(245,158,11,.14); font-size: 12px; font-weight: 600; color: #B45309;"><span style="width:7px;height:7px;border-radius:50%;background:#F59E0B;"></span>W toku</span>
+            <span style="display:inline-flex; align-items:center; gap:5px; padding: 4px 10px; border-radius: 999px; background: rgba(16,185,129,.14); font-size: 12px; font-weight: 600; color: #047857;"><span style="width:7px;height:7px;border-radius:50%;background:#10B981;"></span>Gotowe</span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <span style="padding: 4px 10px; border-radius: 999px; background: rgba(244,63,94,.12); font-size: 12px; font-weight: 700; color: #E11D48;">P0</span>
+            <span style="padding: 4px 10px; border-radius: 999px; background: rgba(245,158,11,.12); font-size: 12px; font-weight: 700; color: #B45309;">P1</span>
+            <span style="padding: 4px 10px; border-radius: 999px; background: rgba(59,130,246,.12); font-size: 12px; font-weight: 700; color: #2563EB;">P2</span>
+            <span style="padding: 4px 10px; border-radius: 999px; background: rgba(148,163,184,.14); font-size: 12px; font-weight: 700; color: #64748B;">P3</span>
+          </div>
+        </div>
+        <!-- tabs -->
+        <div>
+          <div style="font-size: 13px; font-weight: 600; color: #221E2A; margin-bottom: 12px;">Tabs — liquid glass / segmented</div>
+          <div style="display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; background: rgba(124,92,255,.07); margin-bottom: 10px;"><span style="padding: 7px 14px; border-radius: 9px; background: linear-gradient(135deg, var(--p,#7C5CFF), var(--p2,#D247B5)); font-size: 12.5px; font-weight: 600; color: #fff;">Tabela</span><span style="padding: 7px 14px; border-radius: 9px; font-size: 12.5px; color: #655C77;">Kanban</span></div>
+          <div style="display: inline-flex; padding: 3px; border-radius: 10px; background: #F5F3F8; border: 1px solid #ECE9F1;"><span style="padding: 6px 13px; border-radius: 8px; background: #fff; font-size: 12.5px; font-weight: 600; color: #221E2A; box-shadow: 0 1px 3px rgba(0,0,0,.08);">Komfort</span><span style="padding: 6px 13px; font-size: 12.5px; color: #847B96;">Kompakt</span></div>
+        </div>
+        <!-- tooltip + toast -->
+        <div>
+          <div style="font-size: 13px; font-weight: 600; color: #221E2A; margin-bottom: 12px;">Tooltip / Toast</div>
+          <div style="display: inline-flex; align-items: center; padding: 7px 11px; border-radius: 9px; background: #14111B; color: #fff; font-size: 12px; margin-bottom: 10px;">Przypisz osobę ⌘K</div>
+          <div style="display: flex; align-items: center; gap: 9px; padding: 10px 13px; border-radius: 12px; background: #fff; border: 1px solid #ECE9F1; box-shadow: 0 10px 26px -12px rgba(20,17,27,.25);"><span style="width: 22px; height: 22px; border-radius: 7px; background: rgba(16,185,129,.14); display: flex; align-items: center; justify-content: center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.6" stroke-linecap="round"><path d="M20 6 9 17l-5-5"></path></svg></span><span style="font-size: 12.5px; color: #221E2A;">Zadanie zapisane</span></div>
+        </div>
+      </div>
+
+      <!-- modals + popover -->
+      <div style="font-size: 13px; font-weight: 600; color: #221E2A; margin-bottom: 12px;">Modals — small / medium / large · Popover</div>
+      <div style="display: flex; align-items: flex-end; gap: 14px;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 7px;"><div style="width: 120px; height: 80px; border-radius: 12px; background: #FBFAFC; border: 1px solid #ECE9F1; box-shadow: 0 12px 28px -14px rgba(20,17,27,.25); display: flex; align-items: center; justify-content: center; font-size: 11px; color: #847B96;">320px</div><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #A9A1B8;">small</span></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 7px;"><div style="width: 170px; height: 100px; border-radius: 14px; background: #FBFAFC; border: 1px solid #ECE9F1; box-shadow: 0 16px 34px -16px rgba(20,17,27,.28); display: flex; align-items: center; justify-content: center; font-size: 11px; color: #847B96;">480px</div><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #A9A1B8;">medium</span></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 7px;"><div style="width: 230px; height: 120px; border-radius: 16px; background: #FBFAFC; border: 1px solid #ECE9F1; box-shadow: 0 22px 44px -18px rgba(20,17,27,.3); display: flex; align-items: center; justify-content: center; font-size: 11px; color: #847B96;">680px</div><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #A9A1B8;">large</span></div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 7px;"><div style="width: 130px; border-radius: 14px; background: rgba(20,17,30,.92); padding: 9px; box-shadow: 0 18px 40px -18px rgba(0,0,0,.5);"><div style="padding: 6px 8px; border-radius: 8px; background: rgba(124,92,255,.18); font-size: 11px; color: #C9B6F7; margin-bottom: 3px;">W toku</div><div style="padding: 6px 8px; font-size: 11px; color: #C9C3D4;">Gotowe</div></div><span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #A9A1B8;">popover</span></div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1600, &quot;height&quot;: 1000}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      ramps: [
+        { name: 'Brand Primary (violet)', shades: [
+          { s: '50', hex: '#F1EEFF' }, { s: '100', hex: '#E5DEFF' }, { s: '200', hex: '#CDC0FF' }, { s: '300', hex: '#B0A0FF' }, { s: '400', hex: '#9580FF' }, { s: '500', hex: '#7C5CFF' }, { s: '600', hex: '#6B45F0' }, { s: '700', hex: '#5A33D6' }, { s: '800', hex: '#4727A8' }, { s: '900', hex: '#36207E' }, { s: '950', hex: '#221356' }
+        ] },
+        { name: 'Brand Accent (sky)', shades: [
+          { s: '50', hex: '#E6F7FE' }, { s: '100', hex: '#C6ECFD' }, { s: '200', hex: '#94DDFB' }, { s: '300', hex: '#5BCBFA' }, { s: '400', hex: '#34BEF8' }, { s: '500', hex: '#14A6E4' }, { s: '600', hex: '#0E8AC4' }, { s: '700', hex: '#0E6E9C' }, { s: '800', hex: '#11587C' }, { s: '900', hex: '#134965' }, { s: '950', hex: '#0A2F44' }
+        ] },
+        { name: 'Neutral (warm gray)', shades: [
+          { s: '50', hex: '#FBFAFC' }, { s: '100', hex: '#F5F3F8' }, { s: '200', hex: '#ECE9F1' }, { s: '300', hex: '#DEDAE6' }, { s: '400', hex: '#C9C3D4' }, { s: '500', hex: '#A9A1B8' }, { s: '600', hex: '#847B96' }, { s: '700', hex: '#655C77' }, { s: '800', hex: '#4B4359' }, { s: '900', hex: '#221E2A' }, { s: '950', hex: '#14111B' }
+        ] }
+      ],
+      semantic: [
+        { n: 'Success', l: '#D1FAE5', b: '#10B981', d: '#047857' },
+        { n: 'Warning', l: '#FEF3C7', b: '#F59E0B', d: '#B45309' },
+        { n: 'Danger', l: '#FFE4E6', b: '#F43F5E', d: '#E11D48' },
+        { n: 'Info', l: '#E0F2FE', b: '#0EA5E9', d: '#0369A1' }
+      ],
+      typeScale: [
+        { n: 'Display XL', px: '64px', size: '52', w: '800', tr: '-0.03em' },
+        { n: 'Display', px: '48px', size: '42', w: '800', tr: '-0.025em' },
+        { n: 'Heading 1', px: '36px', size: '34', w: '700', tr: '-0.02em' },
+        { n: 'Heading 2', px: '28px', size: '28', w: '700', tr: '-0.015em' },
+        { n: 'Heading 3', px: '22px', size: '22', w: '600', tr: '-0.01em' },
+        { n: 'Heading 4', px: '18px', size: '18', w: '600', tr: '-0.005em' },
+        { n: 'Body Large', px: '17px', size: '17', w: '400', tr: '0' },
+        { n: 'Body', px: '15px', size: '15', w: '400', tr: '0' },
+        { n: 'Body Small', px: '14px', size: '14', w: '400', tr: '0' },
+        { n: 'Caption', px: '13px', size: '13', w: '500', tr: '0.005em' },
+        { n: 'Label', px: '12px', size: '12', w: '600', tr: '0.02em' },
+        { n: 'Mono', px: '13px', size: '13', w: '500', tr: '0' }
+      ],
+      spacing: ['4', '8', '12', '16', '24', '32', '48', '64', '96'],
+      radii: [
+        { n: 'sm 8', v: '8px' }, { n: 'md 12', v: '12px' }, { n: 'lg 16', v: '16px' }, { n: 'xl 22', v: '22px' }, { n: '2xl 28', v: '28px' }, { n: 'full', v: '999px' }
+      ],
+      shadows: [
+        { n: 'sm', v: '0 1px 2px rgba(46,19,52,.08)' },
+        { n: 'md', v: '0 4px 12px -4px rgba(46,19,52,.14)' },
+        { n: 'lg', v: '0 10px 26px -10px rgba(46,19,52,.2)' },
+        { n: 'xl', v: '0 18px 40px -16px rgba(76,29,149,.26)' },
+        { n: '2xl', v: '0 30px 70px -24px rgba(76,29,149,.34)' }
+      ],
+      motion: [
+        { n: 'Instant', d: '100ms', e: 'ease-out' },
+        { n: 'Quick', d: '200ms', e: 'cubic-bezier(.4,0,.2,1)' },
+        { n: 'Smooth', d: '350ms', e: 'cubic-bezier(.34,1.56,.64,1)' },
+        { n: 'Dramatic', d: '500ms', e: 'cubic-bezier(.16,1,.3,1)' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  @keyframes fl-drift { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(18px,-22px) scale(1.08); } }
+</style>
+</helmet>
+
+<div style="--p: {{ primary }}; --p2: {{ primary2 }}; width: max-content; min-width: 100%; min-height: 100vh; box-sizing: border-box; padding: 56px 48px 110px; background: #0B0912; font-family: 'Inter', system-ui, sans-serif; position: relative; overflow: hidden;">
+  <div style="position: absolute; top: -160px; left: -100px; width: 760px; height: 760px; border-radius: 50%; background: radial-gradient(circle, rgba(122,51,236,.3), transparent 65%); filter: blur(60px); animation: fl-drift 24s ease-in-out infinite; pointer-events: none;"></div>
+
+  <div style="position: relative; display: flex; flex-direction: column; gap: 44px; width: max-content; margin: 0 auto;">
+
+    <div style="display: flex; align-items: center; gap: 18px;">
+      <div style="width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(140deg, var(--p,#7A33EC), var(--p2,#E1318F)); display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 10px 26px -8px rgba(122,51,236,.7);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11 12 20.5l7-9.5"></path></svg></div>
+      <div><div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #fff;">FLOVLY — Roadmap · Gantt · Kalendarz</div><div style="font-size: 14px; color: #8B8398; margin-top: 2px;">Widoki czasowe · dark + light</div></div>
+    </div>
+
+    <!-- ===== ROADMAP ===== -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Roadmap · timeline poziomy · milestone bubbles</div>
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="flex: none; width: 1080px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">{{ f.label }}</div>
+            <div style="position: relative; overflow: hidden; height: 440px; border-radius: 22px; background: {{ f.bg }}; border: 1px solid {{ f.border }}; box-shadow: 0 30px 70px -30px rgba(0,0,0,.6); display: flex; flex-direction: column;">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 16px 20px; background: {{ f.header }}; border-bottom: 1px solid {{ f.border }};">
+                <span style="font-size: 14px; font-weight: 700; color: {{ f.fg }};">Roadmapa produktu</span>
+                <span style="margin-left: auto; display: flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: 10px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); color: #fff; font-size: 12.5px; font-weight: 600;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Milestone</span>
+              </div>
+              <div style="display: flex; padding: 12px 24px 8px; border-bottom: 1px solid {{ f.border }};">
+                <sc-for list="{{ months }}" as="m" hint-placeholder-count="4"><div style="flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: {{ f.muted }}; border-left: 1px solid {{ f.grid }}; padding-left: 8px;">{{ m }}</div></sc-for>
+              </div>
+              <div style="flex: 1; padding: 16px 24px; position: relative; display: flex; flex-direction: column; gap: 14px;">
+                <sc-for list="{{ gridPcts }}" as="g" hint-placeholder-count="3"><div style="position: absolute; top: 0; bottom: 0; width: 1px; background: {{ f.grid }}; left: {{ g }};"></div></sc-for>
+                <sc-for list="{{ milestones }}" as="ms" hint-placeholder-count="4">
+                  <div style="position: relative; height: 46px;">
+                    <div style="position: absolute; left: {{ ms.left }}; width: {{ ms.width }}; height: 46px; border-radius: 13px; background: {{ ms.grad }}; box-shadow: 0 8px 20px -8px {{ ms.shadow }}, inset 0 1px 0 rgba(255,255,255,.35); display: flex; align-items: center; gap: 9px; padding: 0 14px; overflow: hidden;">
+                      <div style="width: 24px; height: 24px; border-radius: 8px; background: rgba(255,255,255,.25); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; flex: none;"><span style="font-size: 12px;">{{ ms.emoji }}</span></div>
+                      <div style="min-width: 0;"><div style="font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ ms.name }}</div><div style="font-size: 10.5px; color: rgba(255,255,255,.82);">{{ ms.range }} · {{ ms.tasks }} zadań</div></div>
+                      <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #fff; flex: none;">{{ ms.progress }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ===== GANTT ===== -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Gantt · task bars · subtask nesting · dependencies · today line</div>
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="flex: none; width: 1080px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">{{ f.label }}</div>
+            <div style="position: relative; overflow: hidden; height: 470px; border-radius: 22px; background: {{ f.bg }}; border: 1px solid {{ f.border }}; box-shadow: 0 30px 70px -30px rgba(0,0,0,.6); display: flex; flex-direction: column;">
+              <div style="display: flex; align-items: center; gap: 10px; padding: 14px 20px; background: {{ f.header }}; border-bottom: 1px solid {{ f.border }};"><span style="font-size: 14px; font-weight: 700; color: {{ f.fg }};">Harmonogram · Gantt</span></div>
+              <div style="flex: 1; display: flex; min-height: 0;">
+                <div style="flex: none; width: 280px; border-right: 1px solid {{ f.border }};">
+                  <div style="display: flex; align-items: center; padding: 9px 16px; border-bottom: 1px solid {{ f.grid }}; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: {{ f.muted }};">Zadanie</div>
+                  <sc-for list="{{ f.rows }}" as="r" hint-placeholder-count="6">
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 0 16px 0 {{ r.indent }}; height: 42px; border-bottom: 1px solid {{ f.grid }};">{{ r.caret }}<span style="width: 7px; height: 7px; border-radius: 50%; background: {{ r.dot }}; flex: none;"></span><span style="font-size: 12.5px; font-weight: {{ r.fw }}; color: {{ r.nameC }}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ r.name }}</span></div>
+                  </sc-for>
+                </div>
+                <div style="flex: 1; min-width: 0; position: relative; overflow: hidden;">
+                  <div style="display: flex; border-bottom: 1px solid {{ f.grid }};">
+                    <sc-for list="{{ ganttWeeks }}" as="w" hint-placeholder-count="6"><div style="flex: 1; padding: 9px 0 9px 8px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: {{ f.muted }}; border-left: 1px solid {{ f.grid }};">{{ w }}</div></sc-for>
+                  </div>
+                  <div style="position: absolute; top: 34px; bottom: 0; left: 46%; width: 2px; background: {{ f.today }}; z-index: 2;"><div style="position: absolute; top: -3px; left: -4px; width: 10px; height: 10px; border-radius: 50%; background: {{ f.today }};"></div></div>
+                  <div style="position: relative;">
+                    <sc-for list="{{ f.rows }}" as="r" hint-placeholder-count="6">
+                      <div style="position: relative; height: 42px; border-bottom: 1px solid {{ f.grid }};"><div style="position: absolute; top: 11px; left: {{ r.left }}; width: {{ r.width }}; height: 20px; border-radius: 7px; background: {{ r.bar }}; box-shadow: 0 4px 10px -4px {{ r.barShadow }}; display: flex; align-items: center; padding: 0 8px;"><span style="font-size: 10.5px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ r.barLabel }}</span></div></div>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ===== KALENDARZ ===== -->
+    <section style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #9A91AB;">Kalendarz · 7×6 · event pills · today · weekend tint</div>
+      <div style="display: flex; gap: 28px; align-items: flex-start;">
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+          <div style="flex: none; width: 1080px;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #6B6478; margin-bottom: 10px;">{{ f.label }}</div>
+            <div style="position: relative; overflow: hidden; height: 620px; border-radius: 22px; background: {{ f.bg }}; border: 1px solid {{ f.border }}; box-shadow: 0 30px 70px -30px rgba(0,0,0,.6); display: flex; flex-direction: column;">
+              <div style="display: flex; align-items: center; gap: 12px; padding: 16px 20px; background: {{ f.header }}; border-bottom: 1px solid {{ f.border }};">
+                <span style="font-size: 17px; font-weight: 700; letter-spacing: -0.01em; color: {{ f.fg }};">Czerwiec 2026</span>
+                <div style="display: flex; gap: 4px;"><span style="width: 30px; height: 30px; border-radius: 9px; background: {{ f.btn }}; display: flex; align-items: center; justify-content: center; color: {{ f.muted }};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg></span><span style="padding: 0 13px; height: 30px; border-radius: 9px; background: {{ f.btn }}; display: flex; align-items: center; font-size: 12.5px; font-weight: 600; color: {{ f.fg }};">Dziś</span><span style="width: 30px; height: 30px; border-radius: 9px; background: {{ f.btn }}; display: flex; align-items: center; justify-content: center; color: {{ f.muted }};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"></path></svg></span></div>
+                <div style="margin-left: auto; display: flex; gap: 3px; padding: 3px; border-radius: 10px; background: {{ f.toggle }};"><span style="padding: 6px 12px; border-radius: 7px; font-size: 12px; color: {{ f.muted }};">Dzień</span><span style="padding: 6px 12px; border-radius: 7px; font-size: 12px; color: {{ f.muted }};">Tydzień</span><span style="padding: 6px 12px; border-radius: 7px; background: linear-gradient(135deg, var(--p,#7A33EC), var(--p2,#E1318F)); font-size: 12px; font-weight: 600; color: #fff;">Miesiąc</span></div>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid {{ f.grid }};">
+                <sc-for list="{{ calDows }}" as="d" hint-placeholder-count="7"><div style="padding: 8px 0; text-align: center; font-size: 11px; font-weight: 600; color: {{ f.muted }};">{{ d }}</div></sc-for>
+              </div>
+              <div style="flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(6, 1fr);">
+                <sc-for list="{{ f.cells }}" as="c" hint-placeholder-count="42">
+                  <div style="border-right: 1px solid {{ f.grid }}; border-bottom: 1px solid {{ f.grid }}; padding: 6px 7px; background: {{ c.weekend }}; display: flex; flex-direction: column; gap: 3px; overflow: hidden; min-width: 0;">
+                    <span style="font-size: 11.5px; font-weight: {{ c.fw }}; color: {{ c.numC }}; align-self: flex-start;">{{ c.numEl }}</span>
+                    {{ c.events }}
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1600, &quot;height&quot;: 1000}, &quot;primary&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#7A33EC&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;primary2&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#E1318F&quot;, &quot;tsType&quot;: &quot;string&quot;}}">
+class Component extends DCLogic {
+  caret(stroke, show) {
+    if (!show) return React.createElement('span', { style: { width: '12px', flex: 'none' } });
+    return React.createElement('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke, strokeWidth: 2.4, style: { flex: 'none' } }, React.createElement('path', { d: 'm6 9 6 6 6-6' }));
+  }
+  numEl(n, today) {
+    if (!n) return '';
+    if (!today) return String(n);
+    return React.createElement('span', { style: { background: 'linear-gradient(135deg,#7A33EC,#E1318F)', color: '#fff', width: '22px', height: '22px', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11.5px', fontWeight: 700 } }, n);
+  }
+  events(items, dark, moreCount) {
+    if (!items) return '';
+    const els = items.map((e, i) => React.createElement('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: '4px', padding: '2px 5px', borderRadius: '5px', background: dark ? e.bgD : e.bgL, overflow: 'hidden' } },
+      React.createElement('span', { style: { width: '3px', height: '10px', borderRadius: '2px', background: e.c, flex: 'none' } }),
+      React.createElement('span', { style: { fontSize: '10px', fontWeight: 500, color: dark ? e.tcD : e.tcL, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, e.t)));
+    if (moreCount) els.push(React.createElement('span', { key: 'more', style: { fontSize: '9.5px', color: dark ? '#8B8398' : '#847B96', paddingLeft: '4px' } }, `+${moreCount} więcej`));
+    return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '2px' } }, els);
+  }
+  buildRows(theme) {
+    const groupC = theme.fg, subC = theme.muted, caretStroke = theme.muted;
+    const defs = [
+      { name: 'Design System', group: true, indent: '16px', dot: '#7A33EC', left: '2%', width: '30%', bar: 'linear-gradient(90deg,#7A33EC,#9B6BF2)', barShadow: '#7A33EC', barLabel: 'Epik' },
+      { name: 'Paleta + tokeny', indent: '34px', dot: '#10B981', left: '2%', width: '14%', bar: '#10B981', barShadow: '#10B981', barLabel: 'Gotowe' },
+      { name: 'Komponenty', indent: '34px', dot: '#F59E0B', left: '17%', width: '20%', bar: '#F59E0B', barShadow: '#F59E0B', barLabel: 'W toku' },
+      { name: 'Board Views', group: true, indent: '16px', dot: '#34BEF8', left: '34%', width: '38%', bar: 'linear-gradient(90deg,#34BEF8,#7A33EC)', barShadow: '#34BEF8', barLabel: 'Epik' },
+      { name: 'Tabela + Kanban', indent: '34px', dot: '#F59E0B', left: '34%', width: '18%', bar: '#F59E0B', barShadow: '#F59E0B', barLabel: 'W toku' },
+      { name: 'Gantt + Roadmap', indent: '34px', dot: '#3B82F6', left: '53%', width: '19%', bar: '#3B82F6', barShadow: '#3B82F6', barLabel: 'To Do' }
+    ];
+    return defs.map(d => ({
+      ...d, fw: d.group ? 700 : 500, nameC: d.group ? groupC : subC,
+      caret: this.caret(caretStroke, !!d.group)
+    }));
+  }
+  buildCells(dark) {
+    const eDesign = { c: '#7A33EC', t: 'Glass sidebar', bgD: 'rgba(122,51,236,.16)', bgL: 'rgba(122,51,236,.1)', tcD: '#C9B6F7', tcL: '#6A24DC' };
+    const eA11y = { c: '#F43F5E', t: 'Audyt WCAG', bgD: 'rgba(244,63,94,.16)', bgL: 'rgba(244,63,94,.1)', tcD: '#FB7185', tcL: '#E11D48' };
+    const eDemo = { c: '#34BEF8', t: 'Demo DANIELOS', bgD: 'rgba(52,190,248,.16)', bgL: 'rgba(52,190,248,.1)', tcD: '#93D7F5', tcL: '#0E7490' };
+    const eRev = { c: '#10B981', t: 'Review sprintu', bgD: 'rgba(16,185,129,.16)', bgL: 'rgba(16,185,129,.1)', tcD: '#6EE7C7', tcL: '#047857' };
+    const map = { 10: { items: [eDesign] }, 12: { items: [eA11y] }, 16: { items: [eDesign, eA11y] }, 18: { items: [eDemo, eDesign], more: 1 }, 23: { items: [eRev] }, 25: { items: [eDemo] }, 30: { items: [eRev] } };
+    const inMonthC = dark ? '#C9C3D4' : '#221E2A';
+    const weekendBg = dark ? 'rgba(122,51,236,.06)' : 'rgba(122,51,236,.05)';
+    return Array.from({ length: 42 }, (_, i) => {
+      const dayNum = i + 1;
+      const inMonth = dayNum >= 1 && dayNum <= 30;
+      const dow = i % 7;
+      const weekend = (dow === 5 || dow === 6);
+      const today = dayNum === 18;
+      const ev = inMonth ? map[dayNum] : null;
+      return {
+        numEl: this.numEl(inMonth ? dayNum : '', today),
+        fw: today ? 700 : 500,
+        numC: inMonth ? inMonthC : 'transparent',
+        weekend: (weekend && inMonth) ? weekendBg : 'transparent',
+        events: ev ? this.events(ev.items, dark, ev.more) : ''
+      };
+    });
+  }
+  renderVals() {
+    const p = this.props || {};
+    const primary = p.primary || '#7A33EC';
+    const primary2 = p.primary2 || '#E1318F';
+
+    const darkT = { label: 'Dark', dark: true, bg: '#0C0A14', border: 'rgba(255,255,255,.08)', header: 'rgba(255,255,255,.04)', fg: '#fff', muted: '#8B8398', grid: 'rgba(255,255,255,.06)', btn: 'rgba(255,255,255,.05)', toggle: 'rgba(255,255,255,.05)', today: '#E1318F' };
+    const lightT = { label: 'Light', dark: false, bg: '#ECE7F4', border: 'rgba(255,255,255,.7)', header: 'rgba(255,255,255,.55)', fg: '#14111B', muted: '#847B96', grid: 'rgba(20,17,27,.07)', btn: 'rgba(255,255,255,.7)', toggle: 'rgba(122,51,236,.07)', today: '#E1318F' };
+
+    const frames = [darkT, lightT].map(t => ({ ...t, rows: this.buildRows(t), cells: this.buildCells(t.dark) }));
+
+    return {
+      primary, primary2, frames,
+      months: ['Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień'],
+      gridPcts: ['25%', '50%', '75%'],
+      milestones: [
+        { name: 'Brand & Design System', range: '1–20 cze', tasks: 24, progress: '85%', emoji: '🎨', left: '0%', width: '34%', grad: 'linear-gradient(135deg,#7A33EC,#E1318F)', shadow: 'rgba(122,51,236,.6)' },
+        { name: 'Board Views', range: '15 cze–10 lip', tasks: 38, progress: '60%', emoji: '📊', left: '20%', width: '40%', grad: 'linear-gradient(135deg,#34BEF8,#7A33EC)', shadow: 'rgba(52,190,248,.5)' },
+        { name: 'CRM & Deals', range: '1–25 lip', tasks: 19, progress: '20%', emoji: '💼', left: '50%', width: '35%', grad: 'linear-gradient(135deg,#10B981,#34BEF8)', shadow: 'rgba(16,185,129,.5)' },
+        { name: 'Launch Enterprise', range: '20 sie–15 wrz', tasks: 12, progress: '0%', emoji: '🚀', left: '74%', width: '24%', grad: 'linear-gradient(135deg,#F59E0B,#E1318F)', shadow: 'rgba(245,158,11,.5)' }
+      ],
+      ganttWeeks: ['T24', 'T25', 'T26', 'T27', 'T28', 'T29'],
+      calDows: ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nd']
+    };
+  }
+}
+</script>
+</body>
+</html>
