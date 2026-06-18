@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import { db } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/admin-guard";
 import { writeAdminAudit } from "@/lib/admin-audit";
+import type { BulkActionResult } from "./types";
 
 // Bcrypt cost 12 — matches invite signup and password reset. Lower cost = faster brute-force.
 const BCRYPT_COST = 12;
@@ -245,11 +246,8 @@ export async function toggleSuperAdminAction(formData: FormData) {
 }
 
 // ── Bulk user actions (F7-tails: panel admin desktop) ─────────────
-// Shared result envelope so the client knows how many rows the server
-// actually touched (self-act, soft-deleted, etc. are filtered out).
-export type BulkActionResult = { ok: boolean; affected: number; error?: string };
-
-export const bulkUserActionResultZero: BulkActionResult = { ok: true, affected: 0 };
+// Result envelope (BulkActionResult) i zero const w `./types.ts` —
+// "use server" pliki mogą exportować tylko async functions w Next.js 16.
 
 // Toggle ban on N users at once. `ban=true` blocks accounts + kills sessions;
 // `ban=false` lifts the ban (sessions stay dead from the original ban).

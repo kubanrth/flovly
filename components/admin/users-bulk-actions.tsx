@@ -34,9 +34,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   bulkSetSuperAdminAction,
   bulkToggleBanAction,
+} from "@/app/(admin)/admin/actions";
+import {
   bulkUserActionResultZero,
   type BulkActionResult,
-} from "@/app/(admin)/admin/actions";
+} from "@/app/(admin)/admin/types";
 
 interface SelectionContextValue {
   selected: Set<string>;
@@ -293,7 +295,7 @@ function BulkButton({
   );
 }
 
-// Re-exported so server pages can also reach the result shape if needed.
-export { bulkUserActionResultZero };
+// Note: bulkUserActionResultZero importujesz teraz bezpośrednio z @/app/(admin)/admin/types
+// (został wyciągnięty z actions.ts żeby spełnić Next.js 16 "use server" rule).
 // Used to gesture toward the bottom bar from the bulk-checked count UI.
 export const BulkBarArrow = ChevronsRight;

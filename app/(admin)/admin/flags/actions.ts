@@ -13,11 +13,7 @@ import { db } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/admin-guard";
 import { writeAdminAudit } from "@/lib/admin-audit";
 import { SYSTEM_FLAGS, type SystemFlagKey } from "@/lib/system-flags";
-
-export interface UpdateSystemFlagResult {
-  ok: boolean;
-  error?: string;
-}
+import type { UpdateSystemFlagResult } from "../types";
 
 export async function updateSystemFlagAction(
   key: string,
