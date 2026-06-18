@@ -60,6 +60,7 @@ import {
   TableFiltersToolbar,
   type ToolbarColumnRef,
 } from "@/components/table/table-filters-toolbar";
+import { MobileFiltersDrawer } from "@/components/table/mobile-filters-drawer";
 import {
   compareValues,
   matchesFilter,
@@ -733,23 +734,44 @@ export function BoardTable({
         </div>
       )}
 
-      {/* v4 .tbl-controls — pasek nad tabelą: filtr/sort/grupuj z lewej, kolumny z prawej. */}
+      {/* v4 .tbl-controls — pasek nad tabelą: filtr/sort/grupuj z lewej, kolumny z prawej.
+          Mobile v4 (B11 — Filter drawer): inline toolbar collapses into a bottom-sheet
+          on max-md, triggered by a "Filtry" pill. Desktop unchanged. */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <TableFiltersToolbar
-          workspaceId={workspaceId}
-          boardId={boardId}
-          columns={toolbarColumns}
-          groupPresets={GROUP_PRESETS.map((p) => ({ id: p.id, label: p.label }))}
-          filters={filters}
-          sort={tableSort}
-          groupBy={groupBy}
-          canEdit={canManagePrefs}
-          onChange={(next) => {
-            setFilters(next.filters);
-            setTableSort(next.sort);
-            setGroupBy(next.groupBy);
-          }}
-        />
+        <div className="hidden md:block">
+          <TableFiltersToolbar
+            workspaceId={workspaceId}
+            boardId={boardId}
+            columns={toolbarColumns}
+            groupPresets={GROUP_PRESETS.map((p) => ({ id: p.id, label: p.label }))}
+            filters={filters}
+            sort={tableSort}
+            groupBy={groupBy}
+            canEdit={canManagePrefs}
+            onChange={(next) => {
+              setFilters(next.filters);
+              setTableSort(next.sort);
+              setGroupBy(next.groupBy);
+            }}
+          />
+        </div>
+        <div className="md:hidden">
+          <MobileFiltersDrawer
+            workspaceId={workspaceId}
+            boardId={boardId}
+            columns={toolbarColumns}
+            groupPresets={GROUP_PRESETS.map((p) => ({ id: p.id, label: p.label }))}
+            filters={filters}
+            sort={tableSort}
+            groupBy={groupBy}
+            canEdit={canManagePrefs}
+            onChange={(next) => {
+              setFilters(next.filters);
+              setTableSort(next.sort);
+              setGroupBy(next.groupBy);
+            }}
+          />
+        </div>
         {canManagePrefs && (
           <ColumnSettings
             workspaceId={workspaceId}
@@ -910,7 +932,7 @@ export function BoardTable({
                           // tracking 0.03em, uppercase, color faint.
                           // Active sort column → brand-light tint + arrow (handled
                           // w TableHeaderCell, ten div tylko hostuje).
-                          className={`group/th relative sticky top-0 h-11 px-[18px] text-left font-mono text-[0.69rem] font-bold uppercase tracking-[0.03em] ${
+                          className={`group/th relative sticky top-0 h-11 px-[18px] text-left font-mono text-[0.69rem] font-bold uppercase tracking-[0.03em] max-md:px-3 ${
                             sortDir
                               ? "text-brand-300 dark:text-brand-300"
                               : "text-muted-foreground/80"
@@ -1124,7 +1146,10 @@ export function BoardTable({
                                     onFocus={() => setActiveCell({ row: visibleRowIdx, col: cIdx })}
                                     // v4 spec (linia 47): padding 10/18 + border-bottom hairline.
                                     // Border line jest na <tr>, tu mamy padding + sticky bg dla pinned.
-                                    className={`px-[18px] py-[10px] align-middle outline-none transition-colors ${
+                                    // Mobile (spec linia 56): kompaktowy padding 12/8 — więcej
+                                    // wierszy w viewport bez ścinania content'u (status/prio pille
+                                    // i tak są małe).
+                                    className={`px-[18px] py-[10px] align-middle outline-none transition-colors max-md:px-3 max-md:py-2 ${
                                       isPinned
                                         ? "sticky z-10 bg-card shadow-[1px_0_0_0_var(--border)] max-md:!static max-md:!bg-transparent max-md:!shadow-none"
                                         : ""
@@ -1173,6 +1198,11 @@ export function BoardTable({
               M
             </kbd>{" "}
             aby przypisać
+          </span>
+          {/* Mobile: h-scroll hint zamiast keyboard hint'a. Mirror v4 spec linia 61
+              ("← przesuń w bok aby zobaczyć kolumny"). */}
+          <span className="hidden font-mono text-[0.62rem] uppercase tracking-[0.1em] text-muted-foreground/80 max-md:inline">
+            ← przesuń w bok
           </span>
         </div>
       </div>
@@ -1260,21 +1290,23 @@ function BulkActionsBar({
     // v4 bulk toolbar (linia 62): rounded-[14px], padding 9/15, gap 12, glass
     // backdrop-blur(30px) + brand-tinted shadow `0 16px 36px -16px rgba(0,0,0,.6)`.
     // Counter badge to mała kwadratowa pill 22x22 z brand-gradient.
-    <div className="fixed bottom-6 left-1/2 z-50 flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-3 rounded-[14px] border border-white/10 bg-popover/85 px-[15px] py-[9px] shadow-[0_16px_36px_-16px_rgba(0,0,0,0.6),0_30px_70px_-30px_rgba(122,51,236,0.4)] backdrop-blur-[30px] backdrop-saturate-[160%]">
-      <span className="inline-flex h-[22px] w-[22px] items-center justify-center rounded-[7px] bg-brand-gradient text-[11px] font-bold text-white">
+    <div className="fixed z-50 flex items-center border border-white/10 bg-popover/85 shadow-[0_16px_36px_-16px_rgba(0,0,0,0.6),0_30px_70px_-30px_rgba(122,51,236,0.4)] backdrop-blur-[30px] backdrop-saturate-[160%] max-md:inset-x-0 max-md:bottom-0 max-md:gap-1.5 max-md:rounded-t-[18px] max-md:border-x-0 max-md:border-b-0 max-md:px-3 max-md:pt-2 max-md:pb-safe-bottom md:bottom-6 md:left-1/2 md:max-w-[calc(100vw-24px)] md:-translate-x-1/2 md:gap-3 md:rounded-[14px] md:px-[15px] md:py-[9px]">
+      {/* Counter pill — na mobile w odrębnej "header" rzeczy. Tu rendrujemy
+          ją absolutnie na top mobile sheet'a + jako pierwszy element desktopu. */}
+      <span className="inline-flex h-[22px] w-[22px] items-center justify-center rounded-[7px] bg-brand-gradient text-[11px] font-bold text-white max-md:absolute max-md:-top-2.5 max-md:left-1/2 max-md:-translate-x-1/2 max-md:rounded-full max-md:h-[26px] max-md:w-auto max-md:px-2.5 max-md:text-[12px] max-md:shadow-brand">
         {selectedIds.length}
       </span>
-      <span className="text-[12.5px] font-semibold text-foreground">zaznaczone</span>
-      <span className="h-4 w-px bg-white/15" />
+      <span className="text-[12.5px] font-semibold text-foreground max-md:hidden">zaznaczone</span>
+      <span className="h-4 w-px bg-white/15 max-md:hidden" />
 
       {/* Zmień status */}
-      <div className="relative">
+      <div className="relative max-md:flex-1">
         <button
           type="button"
           onClick={() => setActiveMenu((m) => (m === "status" ? null : "status"))}
-          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.78rem] font-medium text-foreground transition-colors hover:bg-accent"
+          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.78rem] font-medium text-foreground transition-colors hover:bg-accent max-md:flex max-md:min-h-[52px] max-md:w-full max-md:flex-col max-md:items-center max-md:gap-1 max-md:rounded-[10px] max-md:bg-white/5 max-md:px-1 max-md:py-1.5 max-md:text-[10.5px]"
         >
-          <span className="h-2 w-2 rounded-full bg-amber-500" />
+          <span className="h-2 w-2 rounded-full bg-amber-500 max-md:h-2.5 max-md:w-2.5" />
           Status
         </button>
         {activeMenu === "status" && (
@@ -1306,14 +1338,15 @@ function BulkActionsBar({
       </div>
 
       {/* F12-K75: Zmień priorytet */}
-      <div className="relative">
+      <div className="relative max-md:flex-1">
         <button
           type="button"
           onClick={() => setActiveMenu((m) => (m === "priority" ? null : "priority"))}
-          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.78rem] font-medium text-foreground transition-colors hover:bg-accent"
+          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.78rem] font-medium text-foreground transition-colors hover:bg-accent max-md:flex max-md:min-h-[52px] max-md:w-full max-md:flex-col max-md:items-center max-md:gap-1 max-md:rounded-[10px] max-md:bg-white/5 max-md:px-1 max-md:py-1.5 max-md:text-[10.5px]"
         >
-          <span className="h-2 w-2 rounded-full bg-rose-500" />
-          Priorytet
+          <span className="h-2 w-2 rounded-full bg-rose-500 max-md:h-2.5 max-md:w-2.5" />
+          <span className="max-md:hidden">Priorytet</span>
+          <span className="hidden max-md:inline">Prio</span>
         </button>
         {activeMenu === "priority" && (
           <div className="absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 rounded-xl border border-border/70 bg-popover/95 p-1 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)] backdrop-blur-md">
@@ -1353,11 +1386,11 @@ function BulkActionsBar({
       </div>
 
       {/* F12-K76: Przypisz osobę */}
-      <div className="relative">
+      <div className="relative max-md:flex-1">
         <button
           type="button"
           onClick={() => setActiveMenu((m) => (m === "assign" ? null : "assign"))}
-          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.78rem] font-medium text-foreground transition-colors hover:bg-accent"
+          className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.78rem] font-medium text-foreground transition-colors hover:bg-accent max-md:flex max-md:min-h-[52px] max-md:w-full max-md:flex-col max-md:items-center max-md:gap-1 max-md:rounded-[10px] max-md:bg-white/5 max-md:px-1 max-md:py-1.5 max-md:text-[10.5px]"
         >
           <svg
             width="13"
@@ -1406,11 +1439,11 @@ function BulkActionsBar({
         )}
       </div>
 
-      <span className="h-4 w-px bg-white/15" />
+      <span className="h-4 w-px bg-white/15 max-md:hidden" />
       <button
         type="button"
         onClick={submitDelete}
-        className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.78rem] font-medium text-rose-500 transition-colors hover:bg-rose-500/10"
+        className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[0.78rem] font-medium text-rose-500 transition-colors hover:bg-rose-500/10 max-md:flex max-md:min-h-[52px] max-md:flex-1 max-md:flex-col max-md:items-center max-md:gap-1 max-md:rounded-[10px] max-md:bg-rose-500/10 max-md:px-1 max-md:py-1.5 max-md:text-[10.5px]"
       >
         <svg
           width="13"
@@ -1425,14 +1458,16 @@ function BulkActionsBar({
         </svg>
         Usuń
       </button>
-      <span className="h-4 w-px bg-white/15" />
+      <span className="h-4 w-px bg-white/15 max-md:hidden" />
+      {/* Mobile: close X przyklejony absolutnie do prawego rogu sticky bar'a,
+          desktop: inline ostatni element. */}
       <button
         type="button"
         onClick={onClear}
         aria-label="Wyczyść zaznaczenie"
-        className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground max-md:absolute max-md:right-2 max-md:top-2 max-md:h-8 max-md:w-8 max-md:rounded-full max-md:bg-white/10"
       >
-        <X size={12} />
+        <X size={12} className="max-md:size-[14px]" />
       </button>
     </div>,
     document.body,

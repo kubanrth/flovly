@@ -405,6 +405,47 @@
     animation: pop-in 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
     transform-origin: top left;
   }
+
+  /* ─── v4 mobile bottom-sheet surface ───
+   * Mobile bottom sheets (Status / Date / Create task / Bulk toolbar / Ateron):
+   *   - rounded-t-[24px], glass blur 40px (więcej niż popover bo viewport full-bleed)
+   *   - brand-tinted shadow ku górze (negative y) — symuluje że płyta wystaje z dołu
+   *   - safe-area-inset-bottom padding już aplikujemy inline (calc(... + env(safe-area-inset-bottom)))
+   * Reusable żeby Status/Date/Create task/Bulk sheet wyglądały spójnie.
+   */
+  .sheet-mobile-surface {
+    background: color-mix(in oklch, var(--popover) 96%, transparent);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    backdrop-filter: blur(40px) saturate(180%);
+    border-top: 1px solid var(--border);
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    box-shadow:
+      0 -20px 50px -20px rgba(122, 51, 236, 0.32),
+      0 -8px 24px -8px rgba(0, 0, 0, 0.35);
+  }
+  .dark .sheet-mobile-surface {
+    box-shadow:
+      0 -20px 50px -20px rgba(122, 51, 236, 0.55),
+      0 -8px 24px -8px rgba(0, 0, 0, 0.7);
+  }
+
+  /* Drag handle 36×4 — visual cue dla swipe-to-dismiss. Bez logiki swipe'u
+   * (Base UI Dialog ma kliknij-poza/Escape) — handle to czysto wizualne
+   * affordance znane z iOS sheet'ów. */
+  .sheet-drag-handle {
+    width: 36px;
+    height: 4px;
+    border-radius: 9999px;
+    background: color-mix(in oklch, var(--muted-foreground) 35%, transparent);
+    margin: 0 auto 8px auto;
+  }
+
+  /* Safe-area bottom padding — kompozycyjny utility dla sticky footerów
+   * w bottom sheet'ach. Dodaje 16px + env(safe-area-inset-bottom). */
+  .pb-safe-bottom {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 @keyframes pop-in {
@@ -774,4 +815,15 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+ * MOBILE — safe-area utilities for sticky bottom toolbars/sheets/FABs.
+ * iOS home-indicator overlaps the bottom edge; this adds env() padding.
+ * ──────────────────────────────────────────────────────────────────────── */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.safe-bottom-plus-3 {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem);
 }

@@ -52,10 +52,21 @@ export function CreateWorkspaceDialog() {
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-2xl border-border bg-card shadow-aura sm:max-w-[560px]">
+        {/* Mobile v4 (B2): bottom-sheet pattern — pinned to bottom, full-width,
+            rounded-top, h max 80dvh, safe-area-inset-bottom. Glass surface
+            (bg-card/96 + backdrop-blur). Drag handle u góry.
+            Desktop (sm+): klasyczny centered dialog z oryginalnym lookiem. */}
+        <DialogContent
+          className="max-md:fixed max-md:bottom-0 max-md:left-0 max-md:top-auto max-md:max-h-[85dvh] max-md:w-full max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:overflow-y-auto max-md:rounded-b-none max-md:rounded-t-3xl max-md:border-t max-md:bg-card/95 max-md:pt-3 max-md:pb-[max(1.25rem,calc(env(safe-area-inset-bottom)+1rem))] max-md:shadow-[0_-20px_50px_-20px_rgba(0,0,0,.7)] max-md:backdrop-blur-xl max-md:data-open:slide-in-from-bottom-12 sm:max-w-[560px] sm:rounded-2xl sm:border-border sm:bg-card sm:shadow-aura"
+        >
+          {/* Drag handle indicator (mobile-only) — sygnatura bottom-sheet'u */}
+          <div
+            aria-hidden
+            className="mx-auto mb-2 h-[5px] w-10 rounded-full bg-foreground/15 md:hidden"
+          />
           <DialogHeader>
             <span className="eyebrow">Nowa przestrzeń robocza</span>
-            <DialogTitle className="font-display text-[1.65rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">
+            <DialogTitle className="font-display text-[1.45rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground md:text-[1.65rem]">
               Jak nazwiemy tę <span className="text-brand-gradient">przestrzeń?</span>
             </DialogTitle>
             <DialogDescription className="text-[0.92rem] leading-[1.55] text-muted-foreground">
@@ -96,18 +107,21 @@ export function CreateWorkspaceDialog() {
               </p>
             )}
 
-            <div className="mt-2 flex items-center justify-end gap-3">
+            {/* Mobile: pełna szerokość submit jako prymarna CTA siedząca w dole
+                sheet'u; "Anuluj" jako ghost ponad nim. Desktop: oryginalny
+                row z right-aligned actions. */}
+            <div className="mt-2 flex flex-col-reverse gap-2.5 md:flex-row md:items-center md:justify-end md:gap-3">
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground focus-visible:text-foreground"
+                className="inline-flex h-[52px] items-center justify-center rounded-lg border border-border bg-background/40 px-6 font-sans text-[0.92rem] font-semibold text-foreground transition-colors hover:bg-background/60 md:h-auto md:border-0 md:bg-transparent md:px-0 md:font-mono md:text-[0.72rem] md:font-normal md:uppercase md:tracking-[0.14em] md:text-muted-foreground md:hover:bg-transparent md:hover:text-foreground"
               >
                 Anuluj
               </button>
               <button
                 type="submit"
                 disabled={pending}
-                className="inline-flex h-11 items-center justify-center rounded-lg bg-brand-gradient px-6 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-0 disabled:opacity-60"
+                className="inline-flex h-[52px] w-full items-center justify-center rounded-lg bg-brand-gradient px-6 font-sans text-[0.95rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-0 disabled:opacity-60 md:h-11 md:w-auto md:text-[0.9rem]"
               >
                 {pending ? "Tworzę…" : "Utwórz przestrzeń"}
               </button>
@@ -205,8 +219,11 @@ function Field({
     maxLength,
     placeholder,
     "aria-invalid": !!error,
+    // Mobile v4: text-[16px] = no iOS auto-zoom przy focusie. Desktop wraca do
+    // [1rem] = ~16px ale przez tailwind specyfikator (md:text-[1rem]) by mieć
+    // spójność z resztą formów.
     className:
-      "bg-transparent pb-1 text-[1rem] font-sans outline-none placeholder:text-muted-foreground/60 focus:border-primary aria-[invalid=true]:border-destructive",
+      "bg-transparent pb-1 text-[16px] font-sans outline-none placeholder:text-muted-foreground/60 focus:border-primary aria-[invalid=true]:border-destructive md:text-[1rem]",
   };
   return (
     <label className="flex flex-col gap-2">
@@ -218,7 +235,8 @@ function Field({
           className={`${common.className} min-h-[3rem] resize-none border-b border-border`}
         />
       ) : (
-        <input {...common} type={type} className={`${common.className} h-10 border-b border-border`} />
+        // Mobile: h-[52px] touch comfort (WCAG 2.2 2.5.8). Desktop: h-10 jak v4.
+        <input {...common} type={type} className={`${common.className} h-[52px] border-b border-border md:h-10`} />
       )}
       {error && (
         <span className="font-mono text-[0.68rem] text-destructive">{error}</span>

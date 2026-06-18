@@ -179,21 +179,35 @@ function TaskRow({
     // 2) StatusPicker NAD Link'iem (poza nim), żeby klik w picker nie
     //    nawigował do task'a. Zostawiamy hover-state na całym wierszu
     //    przez `<div className="group ...">`.
+    // Mobile (max-md): pełnoekranowy row, min-h 44px, większy title 15px,
+    // due date 12px pod tytułem, status pill po prawej. Padding px-4 py-3.
     <div
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className="group flex items-center gap-3 rounded-[13px] border border-white/60 bg-white/70 px-3.5 py-3 transition-all hover:-translate-y-[1px] hover:border-primary/40 hover:bg-white hover:shadow-[0_8px_20px_-12px_rgba(122,51,236,0.25)] dark:border-white/[0.08] dark:bg-white/[0.04] dark:hover:bg-white/[0.06]"
+      className="group flex items-center gap-3 rounded-[13px] border border-white/60 bg-white/70 px-3.5 py-3 transition-all hover:-translate-y-[1px] hover:border-primary/40 hover:bg-white hover:shadow-[0_8px_20px_-12px_rgba(122,51,236,0.25)] dark:border-white/[0.08] dark:bg-white/[0.04] dark:hover:bg-white/[0.06] max-md:min-h-[56px] max-md:items-start max-md:gap-2.5 max-md:px-4 max-md:py-3"
     >
-      <span className="shrink-0 font-mono text-[0.7rem] font-semibold text-brand-400">
+      <span className="shrink-0 font-mono text-[0.7rem] font-semibold text-brand-400 max-md:pt-0.5 max-md:text-[0.72rem]">
         {displayId}
       </span>
       <Link
         href={`/w/${row.workspaceId}/t/${row.id}?from=${encodeURIComponent("/my-tasks")}`}
-        className="min-w-0 flex-1 truncate text-[0.88rem] font-medium leading-tight tracking-[-0.005em] transition-colors hover:text-primary focus-visible:text-primary focus-visible:outline-none"
+        className="min-w-0 flex-1 truncate text-[0.88rem] font-medium leading-tight tracking-[-0.005em] transition-colors hover:text-primary focus-visible:text-primary focus-visible:outline-none max-md:flex max-md:min-h-[44px] max-md:flex-col max-md:items-start max-md:gap-1 max-md:overflow-hidden max-md:whitespace-normal max-md:text-[0.9375rem] max-md:leading-[1.3]"
       >
-        {row.title}
+        <span className="max-md:line-clamp-2 max-md:w-full">{row.title}</span>
+        {row.stopAt && (
+          <span
+            className={`hidden max-md:inline max-md:text-[0.75rem] max-md:font-normal ${
+              overdue ? "max-md:text-rose-500" : "max-md:text-muted-foreground"
+            }`}
+          >
+            {new Date(row.stopAt).toLocaleDateString("pl-PL", {
+              day: "numeric",
+              month: "short",
+            })}
+          </span>
+        )}
       </Link>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2 max-md:flex-col max-md:items-end max-md:gap-1.5">
         {row.boardStatusColumns.length > 0 ? (
           <StatusPicker
             taskId={row.id}
@@ -240,7 +254,7 @@ function TaskRow({
         )}
         {row.stopAt && (
           <span
-            className={`w-16 shrink-0 text-right text-[0.75rem] font-medium ${
+            className={`w-16 shrink-0 text-right text-[0.75rem] font-medium max-md:hidden ${
               overdue ? "text-rose-500" : "text-muted-foreground"
             }`}
           >

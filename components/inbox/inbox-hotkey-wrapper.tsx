@@ -148,8 +148,9 @@ export function InboxHotkeyList({
           ))}
         </div>
 
-        {/* v4 footer: bulk akcja "Oznacz wszystkie jako przeczytane" + bulk delete. */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/50 bg-white/30 px-5 py-3 dark:border-white/[0.06] dark:bg-white/[0.02]">
+        {/* v4 footer: bulk akcja "Oznacz wszystkie jako przeczytane" + bulk delete.
+            Mobile: sticky-bottom z safe-area, full-width row. */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/50 bg-white/30 px-5 py-3 dark:border-white/[0.06] dark:bg-white/[0.02] max-md:sticky max-md:bottom-0 max-md:z-10 max-md:px-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:backdrop-blur-xl">
           <span className="font-mono text-[0.68rem] text-muted-foreground/80">
             {unread.length > 0
               ? `${unread.length} nieprzeczytan${unread.length === 1 ? "a" : "ych"} · ${read.length} przeczytan${read.length === 1 ? "a" : "ych"}`
@@ -366,10 +367,10 @@ function NotificationRow({
     <div
       data-unread={unread ? "true" : "false"}
       {...(hotkeyProps ?? {})}
-      className="group flex items-start gap-3 rounded-[13px] border border-transparent px-3.5 py-3 transition-all hover:border-white/60 hover:bg-white/60 data-[unread=true]:bg-primary/[0.06] dark:hover:border-white/[0.08] dark:hover:bg-white/[0.04]"
+      className="group flex items-start gap-3 rounded-[13px] border border-transparent px-3.5 py-3 transition-all hover:border-white/60 hover:bg-white/60 data-[unread=true]:bg-primary/[0.06] dark:hover:border-white/[0.08] dark:hover:bg-white/[0.04] max-md:gap-3 max-md:px-3 max-md:py-3.5"
     >
       <span
-        className={`relative grid h-9 w-9 shrink-0 place-items-center rounded-[10px] text-white ${
+        className={`relative grid h-9 w-9 shrink-0 place-items-center rounded-[10px] text-white max-md:h-10 max-md:w-10 ${
           isPoll
             ? "bg-gradient-to-br from-amber-400 to-rose-500"
             : isAssigned || isSupportResolved
@@ -458,8 +459,9 @@ function NotificationRow({
         )}
       </div>
 
-      {/* F12-K35: action toolbar — edit-note / toggle read / delete */}
-      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+      {/* F12-K35: action toolbar — edit-note / toggle read / delete.
+          Mobile: always-visible (no hover), wrap below content. */}
+      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 max-md:opacity-100">
         {!editing && (
           <button
             type="button"

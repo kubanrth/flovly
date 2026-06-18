@@ -13,6 +13,8 @@ import {
   toggleAssigneeAction,
   toggleTagAction,
 } from "@/app/(app)/w/[workspaceId]/t/actions";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
 export interface PickerMember {
   id: string;
@@ -73,6 +75,7 @@ export function AssigneePickerCell({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
   const [coords, setCoords] = useState<Coords | null>(null);
   const [query, setQuery] = useState("");
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -96,13 +99,19 @@ export function AssigneePickerCell({
       close();
       return;
     }
+    if (isMobile) {
+      // Mobile: Sheet sam pozycjonuje, pomijamy computeCoords.
+      setOpen(true);
+      return;
+    }
     if (!triggerRef.current) return;
     setCoords(computeCoords(triggerRef.current, 280, 360));
     setOpen(true);
   };
 
   useEffect(() => {
-    if (!open) return;
+    // Mobile: Sheet ma własny outside-click/Escape.
+    if (!open || isMobile) return;
     const onDoc = (e: MouseEvent) => {
       if (popRef.current?.contains(e.target as Node)) return;
       if (triggerRef.current?.contains(e.target as Node)) return;
@@ -123,7 +132,7 @@ export function AssigneePickerCell({
       window.removeEventListener("resize", onReflow);
       window.removeEventListener("scroll", onReflow, true);
     };
-  }, [open]);
+  }, [open, isMobile]);
 
   const assignedIds = new Set(current.map((m) => m.id));
   const q = query.trim().toLowerCase();
@@ -182,7 +191,7 @@ export function AssigneePickerCell({
           </span>
         )}
       </button>
-      {open && coords && typeof document !== "undefined" &&
+      {open && coords && !isMobile && typeof document !== "undefined" &&
         createPortal(
           <div
             ref={popRef}
@@ -284,6 +293,104 @@ export function AssigneePickerCell({
           </div>,
           document.body,
         )}
+
+      {/* Mobile: bottom sheet — przypisz osobę. Search input + lista 48px rows + sticky footer. */}
+      {isMobile && (
+        <Sheet open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
+          <SheetContent
+            side="bottom"
+            showCloseButton={false}
+            className="sheet-mobile-surface max-h-[85dvh] gap-0 p-0"
+          >
+            <div className="flex max-h-[85dvh] flex-col">
+              <div className="pt-3">
+                <div className="sheet-drag-handle" aria-hidden="true" />
+              </div>
+              <div className="flex shrink-0 flex-col gap-2 px-4 pb-2">
+                <SheetTitle className="text-base font-bold text-foreground">
+                  Przypisz osobę
+                </SheetTitle>
+                <div className="flex items-center gap-2 rounded-[10px] border border-border bg-card/60 px-2.5 py-2">
+                  <Search size={13} className="text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Szukaj osoby…"
+                    className="flex-1 bg-transparent text-[0.875rem] outline-none placeholder:text-muted-foreground/60"
+                  />
+                </div>
+              </div>
+              <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-2">
+                {filtered.length === 0 && (
+                  <li className="px-2 py-4 text-center font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
+                    Brak dopasowań
+                  </li>
+                )}
+                {filtered.map((m) => {
+                  const active = assignedIds.has(m.id);
+                  return (
+                    <li key={m.id}>
+                      <button
+                        type="button"
+                        onClick={() => toggle(m.id)}
+                        data-active={active}
+                        className="flex min-h-[48px] w-full items-center gap-3 rounded-[12px] px-3 text-left transition-colors active:bg-primary/15 data-[active=true]:bg-primary/10"
+                      >
+                        <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-[8px] bg-brand-gradient font-display text-[11px] font-bold text-white">
+                          {m.avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={m.avatarUrl} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            (m.name ?? m.email).slice(0, 2).toUpperCase()
+                          )}
+                        </span>
+                        <span className="flex min-w-0 flex-1 flex-col leading-tight">
+                          <span className="truncate text-[14px] font-medium text-foreground">
+                            {m.name ?? m.email.split("@")[0]}
+                          </span>
+                          <span className="truncate font-mono text-[11px] text-muted-foreground/80">
+                            @{m.email.split("@")[0]}
+                          </span>
+                        </span>
+                        {active && (
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.6"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="shrink-0 text-primary"
+                            aria-hidden="true"
+                          >
+                            <path d="M20 6 9 17l-5-5" />
+                          </svg>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              {current.length > 0 && (
+                <div className="shrink-0 border-t border-border/60 px-3 pt-2 pb-safe-bottom">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      current.forEach((m) => toggle(m.id));
+                    }}
+                    className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[10px] text-[14px] font-medium text-destructive transition-colors active:bg-destructive/15"
+                  >
+                    Zdejmij przypisanie
+                  </button>
+                </div>
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
     </>
   );
 }
@@ -305,6 +412,7 @@ export function TagPickerCell({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
   const [coords, setCoords] = useState<Coords | null>(null);
   const [query, setQuery] = useState("");
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -328,13 +436,17 @@ export function TagPickerCell({
       close();
       return;
     }
+    if (isMobile) {
+      setOpen(true);
+      return;
+    }
     if (!triggerRef.current) return;
     setCoords(computeCoords(triggerRef.current, 280, 360));
     setOpen(true);
   };
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || isMobile) return;
     const onDoc = (e: MouseEvent) => {
       if (popRef.current?.contains(e.target as Node)) return;
       if (triggerRef.current?.contains(e.target as Node)) return;
@@ -355,7 +467,7 @@ export function TagPickerCell({
       window.removeEventListener("resize", onReflow);
       window.removeEventListener("scroll", onReflow, true);
     };
-  }, [open]);
+  }, [open, isMobile]);
 
   const tagIds = new Set(current.map((t) => t.id));
   const q = query.trim().toLowerCase();
@@ -404,7 +516,7 @@ export function TagPickerCell({
           </span>
         )}
       </button>
-      {open && coords && typeof document !== "undefined" &&
+      {open && coords && !isMobile && typeof document !== "undefined" &&
         createPortal(
           <div
             ref={popRef}
@@ -511,6 +623,85 @@ export function TagPickerCell({
           </div>,
           document.body,
         )}
+
+      {/* Mobile: bottom sheet — tagi. */}
+      {isMobile && (
+        <Sheet open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
+          <SheetContent
+            side="bottom"
+            showCloseButton={false}
+            className="sheet-mobile-surface max-h-[85dvh] gap-0 p-0"
+          >
+            <div className="flex max-h-[85dvh] flex-col">
+              <div className="pt-3">
+                <div className="sheet-drag-handle" aria-hidden="true" />
+              </div>
+              <div className="flex shrink-0 flex-col gap-2 px-4 pb-2">
+                <SheetTitle className="text-base font-bold text-foreground">
+                  Tagi
+                </SheetTitle>
+                <div className="flex items-center gap-2 rounded-[10px] border border-border bg-card/60 px-2.5 py-2">
+                  <Search size={13} className="text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Szukaj tagu…"
+                    className="flex-1 bg-transparent text-[0.875rem] outline-none placeholder:text-muted-foreground/60"
+                  />
+                </div>
+              </div>
+              <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-safe-bottom">
+                {filtered.length === 0 && (
+                  <li className="px-2 py-4 text-center font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
+                    {allTags.length === 0
+                      ? "Brak tagów — utwórz przez modal zadania"
+                      : "Brak dopasowań"}
+                  </li>
+                )}
+                {filtered.map((t) => {
+                  const active = tagIds.has(t.id);
+                  return (
+                    <li key={t.id}>
+                      <button
+                        type="button"
+                        onClick={() => toggle(t.id)}
+                        data-active={active}
+                        className="flex min-h-[48px] w-full items-center gap-3 rounded-[12px] px-3 text-left transition-colors active:bg-primary/15 data-[active=true]:bg-primary/10"
+                      >
+                        <span
+                          className="h-3 w-3 shrink-0 rounded-full"
+                          style={{ background: t.colorHex }}
+                          aria-hidden="true"
+                        />
+                        <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-foreground">
+                          {t.name}
+                        </span>
+                        {active && (
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.6"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="shrink-0 text-primary"
+                            aria-hidden="true"
+                          >
+                            <path d="M20 6 9 17l-5-5" />
+                          </svg>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
     </>
   );
 }

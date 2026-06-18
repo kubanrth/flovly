@@ -125,8 +125,10 @@ export function RoadmapView({
     <div className="flex flex-col gap-5">
       {/* v4 card — one rounded-[22px] glass surface with brand-tinted shadow.
           Inside: toolbar (top) + month axis + swimlanes/markers + hint footer.
-          BoardHeader stays OUTSIDE this card (renderowany przez page.tsx). */}
-      <div className="relative overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_30px_70px_-30px_rgba(122,92,255,0.4)]">
+          BoardHeader stays OUTSIDE this card (renderowany przez page.tsx).
+          Mobile (max-md): chart body chowamy — zastępujemy go vertical
+          timeline pod kartą. Toolbar zostaje (counter/aggregator/create). */}
+      <div className="relative overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_30px_70px_-30px_rgba(122,92,255,0.4)] max-md:[&_[data-roadmap-chart]]:hidden">
         {/* Toolbar row — counter + aggregator badge/toggle + create button */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card/60 px-[18px] py-[14px] backdrop-blur-xl">
           <div className="flex items-center gap-3">
@@ -172,8 +174,8 @@ export function RoadmapView({
         </div>
 
         {/* Month axis — v4: padding-left 150px aligns with swimlane label column.
-            Mono, uppercase, muted. */}
-        <div className="flex border-b border-border bg-card/40 py-[10px] pl-[150px] pr-[18px] backdrop-blur-xl">
+            Mono, uppercase, muted. Mobile: ukrywamy razem z chart body. */}
+        <div data-roadmap-chart className="flex border-b border-border bg-card/40 py-[10px] pl-[150px] pr-[18px] backdrop-blur-xl">
           {range.ticks.map((t) => (
             <div
               key={t.ts}
@@ -184,8 +186,9 @@ export function RoadmapView({
           ))}
         </div>
 
-        {/* Chart body — relative, today line spans full height */}
-        <div className="relative">
+        {/* Chart body — relative, today line spans full height.
+            data-roadmap-chart → ukrywany na max-md (zastąpiony mobile vertical timeline poniżej). */}
+        <div data-roadmap-chart className="relative">
           {todayInRange && (
             <>
               <div
@@ -224,28 +227,74 @@ export function RoadmapView({
           )}
         </div>
 
-        {/* Hint footer — per v4 spec */}
-        <div className="border-t border-border bg-card/40 px-[18px] py-[10px]">
+        {/* Hint footer — per v4 spec. Mobile: ukrywamy (chart też jest schowany,
+            mobilna lista pod kartą ma własne afordancje tap-to-expand). */}
+        <div data-roadmap-chart className="border-t border-border bg-card/40 px-[18px] py-[10px]">
           <span className="text-[0.72rem] text-muted-foreground">
             Hint · najedź na pasek aby zobaczyć podgląd postępu
           </span>
         </div>
+        {/* Mobile-only hint inside the toolbar card — gdy chart schowany, user
+            ma być pewien, że dostaje pełną zawartość niżej w stack-cards. */}
+        <div className="hidden border-t border-border bg-card/40 px-4 py-[10px] max-md:block">
+          <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+            Lista milestonów ↓
+          </span>
+        </div>
       </div>
 
-      {/* Per-milestone card list with expandable tasks */}
+      {/* Per-milestone card list with expandable tasks.
+          Mobile (v4 spec lines 65-80): vertical timeline — dot+line po lewej,
+          progress bar wewnątrz karty. Wszystko via max-md:/md: variants —
+          desktop UX bez zmian. */}
       {milestones.length > 0 && (
-        <ul className="flex flex-col gap-2">
-          {milestones.map((m) => {
+        <ul className="flex flex-col gap-2 max-md:gap-0">
+          {milestones.map((m, mIdx) => {
             const isOpen = expanded.has(m.id);
             const color = colorFor(m.id);
+            // Mobile progress: % przedziału czasowego, który już minął.
+            // 0% = nie zaczęte; 100% = po stopAt. Wizualizacja zgodna z v4
+            // mockupem (linia 74 — bar nad procentem).
+            const ms = new Date(m.startAt).getTime();
+            const me = new Date(m.stopAt).getTime();
+            const progressPct = (() => {
+              if (Number.isNaN(ms) || Number.isNaN(me) || me <= ms) return 0;
+              if (now <= ms) return 0;
+              if (now >= me) return 100;
+              return Math.round(((now - ms) / (me - ms)) * 100);
+            })();
+            const isLast = mIdx === milestones.length - 1;
             return (
               <li
                 key={m.id}
-                className="overflow-hidden rounded-lg border border-border bg-card"
+                // Mobile: wrap dot-column + card horizontally. Desktop: zwykła karta.
+                className="overflow-hidden rounded-lg border border-border bg-card max-md:flex max-md:items-stretch max-md:gap-3 max-md:rounded-none max-md:border-0 max-md:border-transparent max-md:bg-transparent"
               >
+                {/* Mobile timeline dot+line column (hidden on md+). */}
+                <div className="hidden w-4 shrink-0 flex-col items-center pt-3 max-md:flex">
+                  <span
+                    className="h-3.5 w-3.5 shrink-0 rounded-full ring-4"
+                    style={{
+                      background: color,
+                      // brand-tint glow per v4 (linia 73: box-shadow 0 0 0 4px glow).
+                      // ring-color via inline z color-mix dla brand vibe.
+                      boxShadow: `0 0 0 4px color-mix(in oklch, ${color} 28%, transparent)`,
+                    }}
+                    aria-hidden
+                  />
+                  {!isLast && (
+                    <span
+                      className="mt-1 w-0.5 flex-1 bg-border/60"
+                      aria-hidden
+                    />
+                  )}
+                </div>
+
+                {/* Card body */}
+                <div className="flex-1 max-md:overflow-hidden max-md:rounded-[13px] max-md:border max-md:border-border max-md:bg-card max-md:shadow-[0_8px_18px_-8px_color-mix(in_oklch,var(--brand-500)_22%,transparent)] max-md:mb-4">
                 <div className="flex items-center gap-3 px-4 py-3">
                   <span
-                    className="h-6 w-1.5 shrink-0 rounded-full"
+                    className="h-6 w-1.5 shrink-0 rounded-full max-md:hidden"
                     style={{ background: color }}
                     aria-hidden
                   />
@@ -259,13 +308,29 @@ export function RoadmapView({
                     {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   </button>
                   <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate font-display text-[0.98rem] font-semibold tracking-[-0.01em]">
+                    <span className="truncate font-display text-[0.98rem] font-semibold tracking-[-0.01em] max-md:text-[0.92rem]">
                       {m.title}
                     </span>
                     <span className="font-mono text-[0.64rem] uppercase tracking-[0.12em] text-muted-foreground">
                       {formatDateRange(m.startAt, m.stopAt)} · {m.taskCount}{" "}
                       {taskPl(m.taskCount)}
                     </span>
+                    {/* Mobile progress bar — pokazuje % upłynięty z zakresu
+                        startAt..stopAt. Mirror v4 spec line 74. */}
+                    <div className="mt-2 hidden items-center gap-2 max-md:flex">
+                      <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${progressPct}%`,
+                            background: `linear-gradient(90deg, ${color}, color-mix(in oklch, ${color} 60%, white))`,
+                          }}
+                        />
+                      </div>
+                      <span className="font-mono text-[0.62rem] font-bold text-muted-foreground">
+                        {progressPct}%
+                      </span>
+                    </div>
                   </div>
                   {m.assignee && (
                     <span
@@ -349,6 +414,7 @@ export function RoadmapView({
                     )}
                   </div>
                 )}
+                </div>
               </li>
             );
           })}

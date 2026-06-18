@@ -132,20 +132,43 @@ function EnrollFlow() {
             <p className="text-[0.78rem] text-muted-foreground">
               Po zeskanowaniu wpisz bieżący 6-cyfrowy kod:
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <input
                 value={token}
-                onChange={(e) => setToken(e.target.value.replace(/\s+/g, "").slice(0, 6))}
+                onChange={(e) => {
+                  const next = e.target.value.replace(/\D+/g, "").slice(0, 6);
+                  setToken(next);
+                  // Mobile UX v4: po wpisaniu 6 cyfr — auto-submit.
+                  if (next.length === 6 && !pending) {
+                    startTransition(async () => {
+                      const res = await completeTotpEnrollmentAction({ token: next });
+                      if (!res.ok) {
+                        setError(res.error);
+                        return;
+                      }
+                      setStep({ kind: "done", recoveryCodes: res.recoveryCodes });
+                    });
+                  }
+                }}
+                // Mobile v4 spec: natywna numeric keypad + one-time-code autofill
+                // (iOS przyciąga kod z SMS / authenticator app autofill).
                 inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="one-time-code"
+                maxLength={6}
                 placeholder="123 456"
                 aria-label="6-cyfrowy kod"
-                className="h-10 w-[140px] rounded-md border border-border bg-background px-3 font-mono text-[1.1rem] tracking-[0.2em] outline-none focus:border-primary"
+                // Mobile: h-[52px] + text-[22px] mono center (zgodnie z v4 mobile
+                // 2FA cells: 52px tall, 22px font, monospace, center). Desktop
+                // zostaje przy oryginalnej wadze (h-10), ale font już mono large.
+                className="h-[52px] w-[180px] rounded-md border border-border bg-background px-3 text-center font-mono text-[22px] tracking-[0.25em] outline-none focus:border-primary md:h-10 md:w-[140px] md:text-[1.1rem] md:tracking-[0.2em]"
               />
               <button
                 type="button"
                 onClick={verify}
                 disabled={pending || token.length !== 6}
-                className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-gradient px-4 font-sans text-[0.88rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] disabled:opacity-60"
+                // Mobile: 52px tall touch target. Desktop: h-10 jak było.
+                className="inline-flex h-[52px] items-center justify-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.88rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] disabled:opacity-60 md:h-10 md:px-4"
               >
                 {pending ? "Sprawdzam…" : "Potwierdź"}
               </button>
@@ -246,7 +269,8 @@ function DisableFlow() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
-          className="h-9 rounded-md border border-border bg-background px-3 outline-none focus:border-primary"
+          // Mobile: h-[52px] + text-[16px] (no iOS zoom). Desktop: h-9.
+          className="h-[52px] rounded-md border border-border bg-background px-3 text-[16px] outline-none focus:border-primary md:h-9 md:text-[0.95rem]"
         />
       </label>
       <label className="flex flex-col gap-1">
@@ -254,9 +278,14 @@ function DisableFlow() {
         <input
           type="text"
           value={token}
-          onChange={(e) => setToken(e.target.value.replace(/\s+/g, "").slice(0, 6))}
+          onChange={(e) => setToken(e.target.value.replace(/\D+/g, "").slice(0, 6))}
+          // Mobile v4: numeric keypad + one-time-code autofill.
           inputMode="numeric"
-          className="h-9 w-[140px] rounded-md border border-border bg-background px-3 font-mono tracking-[0.2em] outline-none focus:border-primary"
+          pattern="[0-9]*"
+          autoComplete="one-time-code"
+          maxLength={6}
+          // Mobile: 52px touch target + text-[16px] (no iOS zoom). Desktop: h-9.
+          className="h-[52px] w-[180px] rounded-md border border-border bg-background px-3 font-mono text-[16px] tracking-[0.2em] outline-none focus:border-primary md:h-9 md:w-[140px] md:text-[0.95rem]"
         />
       </label>
       {error && <ErrorLine message={error} />}

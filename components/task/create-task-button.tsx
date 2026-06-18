@@ -95,8 +95,13 @@ export function CreateTaskButton({
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-2xl border-border bg-card shadow-aura sm:max-w-[520px]">
-          <DialogHeader>
+        {/* Mobile: full-screen bottom sheet (spec v4 linie 132-152) — Dialog
+            renderowany na całą wysokość 100dvh, sticky submit przyklejony
+            do dołu z safe-area-inset-bottom. Desktop: bez zmian. */}
+        <DialogContent className="flex max-h-[100dvh] flex-col gap-0 overflow-hidden border-border bg-card shadow-aura max-md:!inset-x-0 max-md:!bottom-0 max-md:!top-auto max-md:!left-0 max-md:h-[100dvh] max-md:w-screen max-md:max-w-none max-md:!translate-x-0 max-md:!translate-y-0 max-md:rounded-t-[24px] max-md:rounded-b-none md:max-h-none md:rounded-2xl md:sm:max-w-[520px]">
+          <DialogHeader className="shrink-0 max-md:px-1 max-md:pt-2">
+            {/* Mobile drag handle visual cue */}
+            <div className="sheet-drag-handle md:hidden" aria-hidden="true" />
             <span className="eyebrow">Nowe zadanie</span>
             <DialogTitle className="font-display text-[1.5rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">
               Co trzeba <span className="text-brand-gradient">zrobić?</span>
@@ -108,7 +113,7 @@ export function CreateTaskButton({
 
           <form
             action={(fd) => startTransition(() => formAction(fd))}
-            className="mt-2 flex flex-col gap-6"
+            className="mt-2 flex min-h-0 flex-1 flex-col gap-6 max-md:overflow-y-auto"
           >
             <input type="hidden" name="workspaceId" value={workspaceId} />
             <input type="hidden" name="boardId" value={boardId} />
@@ -179,18 +184,21 @@ export function CreateTaskButton({
               </div>
             </div>
 
-            <div className="mt-2 flex items-center justify-end gap-3">
+            {/* Mobile: sticky bottom footer z brand gradient submit + safe-area.
+                Desktop: inline justify-end. mt-auto na mobile pcha footer na sam dół
+                gdy formularz jest krótki. */}
+            <div className="mt-2 flex items-center justify-end gap-3 max-md:mt-auto max-md:-mx-6 max-md:flex-col-reverse max-md:items-stretch max-md:gap-2 max-md:border-t max-md:border-border/60 max-md:bg-card/95 max-md:px-6 max-md:pt-3 max-md:pb-safe-bottom max-md:backdrop-blur-md">
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+                className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground max-md:min-h-[44px] max-md:text-[0.8rem]"
               >
                 Anuluj
               </button>
               <button
                 type="submit"
                 disabled={pending}
-                className="inline-flex h-11 items-center justify-center rounded-lg bg-brand-gradient px-6 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
+                className="inline-flex h-11 items-center justify-center rounded-lg bg-brand-gradient px-6 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60 max-md:min-h-[48px] max-md:w-full max-md:text-[0.95rem]"
               >
                 {pending ? "Tworzę…" : "Utwórz zadanie"}
               </button>

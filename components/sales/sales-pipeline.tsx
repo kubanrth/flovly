@@ -28,6 +28,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { moveDealAction } from "@/app/(app)/w/[workspaceId]/sales/actions";
+import { SalesPipelineMobile } from "@/components/sales/sales-pipeline-mobile";
 
 export interface PipelineStage {
   id: string;
@@ -223,40 +224,51 @@ export function SalesPipeline({
   const sortedStages = [...stages].sort((a, b) => a.order - b.order);
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={collisionDetection}
-      // Re-measure droppable rects on every layout change — columns reflow
-      // when deals enter/leave so stale rects caused drops to miss the new
-      // target column.
-      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
-      onDragEnd={onDragEnd}
-    >
-      {/* Mobile: vertical stack (max-md:flex-col + większy gap) — klient:
-          poziomy scroll po 280px-szerokich kolumnach na 380-410px viewportcie
-          mobile był koszmarem. Desktop: oryginalny horizontal flex z chevron
-          headerami. */}
-      <div className="flex gap-1 pb-4 max-md:flex-col max-md:gap-3 md:overflow-x-auto">
-        {sortedStages.map((stage, idx) => {
-          const colDeals = dealsByStage.get(stage.id) ?? [];
-          const totals = totalsByStage.get(stage.id) ?? {};
-          return (
-            <StageColumn
-              key={stage.id}
-              workspaceId={workspaceId}
-              stage={stage}
-              deals={colDeals}
-              totals={totals}
-              activeId={activeId}
-              isFirst={idx === 0}
-              isLast={idx === sortedStages.length - 1}
-            />
-          );
-        })}
-      </div>
-    </DndContext>
+    <>
+      {/* Mobile (B6 spec): single-stage swipe view — jeden etap na raz,
+          swipe / chevron przełącza. DnD nie ma sensu na mobile (kolumny nie
+          mieszczą się obok siebie), więc nawigacja po stage'ach + tap na
+          dealu → karta → "Zmień stage". */}
+      <SalesPipelineMobile
+        workspaceId={workspaceId}
+        stages={stages}
+        deals={deals}
+      />
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={collisionDetection}
+        // Re-measure droppable rects on every layout change — columns reflow
+        // when deals enter/leave so stale rects caused drops to miss the new
+        // target column.
+        measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDragEnd={onDragEnd}
+      >
+        {/* Desktop: oryginalny horizontal flex z chevron headerami. Mobile
+            wyłączony (max-md:hidden) — zastąpiony przez SalesPipelineMobile
+            powyżej. */}
+        <div className="flex gap-1 pb-4 max-md:hidden md:overflow-x-auto">
+          {sortedStages.map((stage, idx) => {
+            const colDeals = dealsByStage.get(stage.id) ?? [];
+            const totals = totalsByStage.get(stage.id) ?? {};
+            return (
+              <StageColumn
+                key={stage.id}
+                workspaceId={workspaceId}
+                stage={stage}
+                deals={colDeals}
+                totals={totals}
+                activeId={activeId}
+                isFirst={idx === 0}
+                isLast={idx === sortedStages.length - 1}
+              />
+            );
+          })}
+        </div>
+      </DndContext>
+    </>
   );
 }
 

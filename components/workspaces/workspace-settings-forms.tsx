@@ -118,7 +118,7 @@ export function DeleteWorkspaceForm({
           required
           autoComplete="off"
           autoFocus
-          className="h-10 border-b border-border bg-transparent pb-1 font-mono text-[0.95rem] outline-none focus:border-destructive"
+          className="h-12 border-b border-border bg-transparent pb-1 font-mono text-[16px] outline-none focus:border-destructive md:h-10 md:text-[0.95rem]"
         />
         {fieldError && (
           <span className="font-mono text-[0.68rem] text-destructive">{fieldError}</span>
@@ -174,7 +174,8 @@ function TextInput({
         required={required}
         maxLength={maxLength}
         aria-invalid={!!error}
-        className="h-10 border-b border-border bg-transparent pb-1 text-[1rem] outline-none focus:border-primary aria-[invalid=true]:border-destructive"
+        // Mobile v4: 48px tap target + 16px text prevents iOS auto-zoom.
+        className="h-12 border-b border-border bg-transparent pb-1 text-[16px] outline-none focus:border-primary aria-[invalid=true]:border-destructive md:h-10 md:text-[1rem]"
       />
       {error && (
         <span className="font-mono text-[0.68rem] text-destructive">{error}</span>
@@ -205,7 +206,7 @@ function TextArea({
         defaultValue={defaultValue}
         maxLength={maxLength}
         aria-invalid={!!error}
-        className="min-h-[3rem] resize-none border-b border-border bg-transparent pb-1 text-[1rem] outline-none focus:border-primary aria-[invalid=true]:border-destructive"
+        className="min-h-[3.5rem] resize-none border-b border-border bg-transparent pb-1 text-[16px] outline-none focus:border-primary aria-[invalid=true]:border-destructive md:min-h-[3rem] md:text-[1rem]"
       />
       {error && (
         <span className="font-mono text-[0.68rem] text-destructive">{error}</span>

@@ -29,6 +29,12 @@ import {
   updateStatusColumnAction,
 } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
 import { patchTaskAction } from "@/app/(app)/w/[workspaceId]/t/actions";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 export interface StatusOption {
   id: string;
@@ -58,6 +64,7 @@ export function StatusPicker({
   canManageBoard: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
   // Either `top` (opening downward) or `bottom` (opening upward) is set, never
   // both. Anchoring by `bottom` when above keeps a short list glued to the cell.
   const [coords, setCoords] = useState<{
@@ -106,6 +113,11 @@ export function StatusPicker({
   };
 
   const openPicker = () => {
+    // Mobile: bottom sheet — pomijamy computeCoords (Sheet sam pozycjonuje).
+    if (isMobile) {
+      setOpen(true);
+      return;
+    }
     const c = computeCoords();
     if (!c) return;
     setCoords(c);
@@ -121,7 +133,9 @@ export function StatusPicker({
   };
 
   useEffect(() => {
-    if (!open) return;
+    // Mobile: Base UI Sheet ma własny outside-click + Escape handling.
+    // Skip żeby nie podwajać close logic.
+    if (!open || isMobile) return;
     const onDoc = (e: MouseEvent) => {
       if (
         !popRef.current?.contains(e.target as Node) &&
@@ -153,7 +167,7 @@ export function StatusPicker({
       window.removeEventListener("resize", onReflow);
       window.removeEventListener("scroll", onReflow, true);
     };
-  }, [open]);
+  }, [open, isMobile]);
 
   const pick = (statusId: string) => {
     // Toggle off if clicking the current selection — feels more
@@ -203,7 +217,7 @@ export function StatusPicker({
         </span>
       </button>
 
-      {open && coords && typeof document !== "undefined" &&
+      {open && coords && !isMobile && typeof document !== "undefined" &&
         createPortal(
           <div
             ref={popRef}
@@ -271,6 +285,79 @@ export function StatusPicker({
           </div>,
           document.body,
         )}
+
+      {/* Mobile: bottom sheet zamiast popovera. Spec v4 linie 153-168:
+          glass surface rounded-t-24, drag handle, height-content, list status. */}
+      {isMobile && (
+        <Sheet
+          open={open}
+          onOpenChange={(o) => {
+            if (!o) close();
+            else setOpen(true);
+          }}
+        >
+          <SheetContent
+            side="bottom"
+            showCloseButton={false}
+            className="sheet-mobile-surface max-h-[85dvh] gap-0 p-0"
+          >
+            <div className="flex max-h-[85dvh] flex-col">
+              <div className="pt-3">
+                <div className="sheet-drag-handle" aria-hidden="true" />
+              </div>
+              <div className="flex shrink-0 flex-col gap-2 px-4 pb-2">
+                <SheetTitle className="text-base font-bold text-foreground">
+                  Status
+                </SheetTitle>
+                <div className="flex items-center gap-2 rounded-[10px] border border-border bg-card/60 px-2.5 py-2">
+                  <Search size={13} className="text-muted-foreground" />
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Szukaj statusu…"
+                    className="flex-1 bg-transparent text-[0.875rem] outline-none placeholder:text-muted-foreground/60"
+                  />
+                </div>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-2">
+                <ReorderableList
+                  options={options}
+                  filtered={filtered}
+                  workspaceId={workspaceId}
+                  boardId={boardId}
+                  currentId={current?.id ?? null}
+                  canManageBoard={canManageBoard}
+                  editingId={editingId}
+                  setEditingId={setEditingId}
+                  isFiltered={query.trim().length > 0}
+                  adding={adding}
+                  onPick={pick}
+                />
+              </div>
+              {canManageBoard && (
+                <div className="shrink-0 border-t border-border/60 px-3 pt-2 pb-safe-bottom">
+                  {adding ? (
+                    <AddRow
+                      workspaceId={workspaceId}
+                      boardId={boardId}
+                      onDone={() => setAdding(false)}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setAdding(true)}
+                      className="flex min-h-[44px] w-full items-center gap-2 rounded-[10px] px-3 text-left text-[0.875rem] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-primary/10"
+                    >
+                      <Plus size={15} strokeWidth={2} />
+                      <span>Dodaj status</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
     </>
   );
 }

@@ -44,16 +44,19 @@ export function AcceptInviteForm({
   const formError = !state?.ok ? state?.error : undefined;
 
   return (
+    // Mobile v4: flex-1 + CTA stack mt-auto → przyciski wpadają w dolną
+    // krawędź viewport'u (sticky-bottom feel). Desktop bez zmian.
     <form
       action={(fd) => startTransition(() => formAction(fd))}
-      className="flex flex-col gap-5"
+      className="flex flex-1 flex-col gap-4 md:gap-5"
     >
       <input type="hidden" name="token" value={token} />
 
-      {/* Email — readonly display, w wizualnym stylu pól input'owych v4 */}
+      {/* Email — readonly display, w wizualnym stylu pól input'owych v4.
+          h-[52px] na mobile dla zgodności z innymi polami auth. */}
       <div className="flex flex-col gap-1.5">
         <span className="eyebrow">Email</span>
-        <div className="flex h-12 items-center rounded-xl border border-border bg-background/20 px-4 font-mono text-[0.88rem] text-muted-foreground">
+        <div className="flex h-[52px] items-center rounded-xl border border-border bg-background/20 px-4 font-mono text-[0.88rem] text-muted-foreground md:h-12">
           {email}
         </div>
       </div>
@@ -108,12 +111,13 @@ export function AcceptInviteForm({
         </p>
       )}
 
-      {/* CTA stack: Akceptuj (primary gradient) + Odrzuć (ghost) — z v4 */}
-      <div className="mt-1 flex flex-col gap-2.5">
+      {/* CTA stack: Akceptuj (primary gradient) + Odrzuć (ghost) — z v4.
+          Mobile: mt-auto + h-[52px] (sticky-bottom + touch target). */}
+      <div className="mt-auto flex flex-col gap-2.5 md:mt-1">
         <button
           type="submit"
           disabled={pending}
-          className="group relative inline-flex h-12 w-full items-center justify-center overflow-hidden rounded-xl bg-brand-gradient px-6 text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+          className="group relative inline-flex h-[52px] w-full items-center justify-center overflow-hidden rounded-xl bg-brand-gradient px-6 text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 md:h-12"
         >
           <span className="relative z-10 font-sans text-[0.95rem] font-semibold tracking-wide">
             {pending ? "Dołączam…" : "Akceptuj zaproszenie"}
@@ -123,7 +127,7 @@ export function AcceptInviteForm({
           href="/"
           // "Odrzuć" — bez dedicated decline action, kierujemy usera poza flow.
           // Token zostaje aktywny do expiresAt, user może wrócić.
-          className="inline-flex h-12 w-full items-center justify-center rounded-xl border border-border bg-background/40 px-6 font-sans text-[0.92rem] font-semibold text-foreground transition-colors hover:bg-background/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="inline-flex h-[52px] w-full items-center justify-center rounded-xl border border-border bg-background/40 px-6 font-sans text-[0.92rem] font-semibold text-foreground transition-colors hover:bg-background/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:h-12"
         >
           Odrzuć
         </Link>
@@ -165,7 +169,8 @@ function FieldV4({
       <span className="eyebrow">{label}</span>
       <div
         className={
-          "flex h-12 items-center gap-2 rounded-xl border bg-background/40 px-4 transition-[border-color,box-shadow] " +
+          // Mobile: h-[52px] dla touch comfort. Desktop: h-12 jak w v4 desktop.
+          "flex h-[52px] items-center gap-2 rounded-xl border bg-background/40 px-4 transition-[border-color,box-shadow] md:h-12 " +
           (error
             ? "border-destructive focus-within:border-destructive focus-within:shadow-[0_0_0_4px_color-mix(in_oklch,var(--destructive)_18%,transparent)]"
             : "border-border focus-within:border-[var(--accent-brand)] focus-within:shadow-[0_0_0_4px_color-mix(in_oklch,var(--accent-brand)_18%,transparent)]")
@@ -181,7 +186,8 @@ function FieldV4({
           autoComplete={autoComplete}
           autoFocus={autoFocus}
           aria-invalid={!!error}
-          className="h-full w-full flex-1 bg-transparent text-[0.95rem] text-foreground outline-none placeholder:text-muted-foreground/55"
+          // text-[16px] na mobile = brak iOS auto-zoom przy focusie.
+          className="h-full w-full flex-1 bg-transparent text-[16px] text-foreground outline-none placeholder:text-muted-foreground/55 md:text-[0.95rem]"
         />
         {trailing}
       </div>

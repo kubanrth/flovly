@@ -16,7 +16,8 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <form action={formAction} className="flex flex-col gap-5">
+    // Mobile: gap-4 + flex-1 + submit pinned by mt-auto. Desktop: gap-5 jak v4.
+    <form action={formAction} className="flex flex-1 flex-col gap-4 md:gap-5">
       <input type="hidden" name="redirectTo" value={redirectTo ?? "/workspaces"} />
 
       <Field
@@ -24,6 +25,8 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
         name="email"
         type="email"
         autoComplete="username"
+        // Mobile v4: natywna email-keyboard z @ pod ręką.
+        inputMode="email"
         required
         placeholder="adam@studio.pl"
         error={state?.fieldErrors?.email}
@@ -55,9 +58,11 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
         name="totp"
         type="text"
         autoComplete="one-time-code"
+        // Mobile v4: iOS numeric keypad dla typowego TOTP flow. Recovery code
+        // (XXXX-XXXX-XXXX) wciąż da się wkleić — nie blokujemy pattern/maxLength,
+        // żeby nie złamać auth flow (long-press → paste działa nawet z numeric kbd).
+        inputMode="numeric"
         placeholder="123456 lub kod zapasowy"
-        // inputMode text (nie numeric) — żeby użytkownik mógł wpisać/wkleić
-        // XXXX-XXXX-XXXX recovery code w tym samym polu.
         error={state?.fieldErrors?.totp}
       />
 
@@ -93,8 +98,11 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
       <button
         type="submit"
         disabled={pending}
-        // Full-width primary gradient (140deg) z shadow-brand. h-12.
-        className="group relative mt-1 inline-flex h-12 w-full items-center justify-center overflow-hidden rounded-xl bg-brand-gradient px-6 text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+        // Full-width primary gradient (140deg) z shadow-brand.
+        // Mobile: 52px tall (większy touch target), mt-auto żeby siadał blisko
+        // dolnej krawędzi viewport'u (sticky-bottom feeling).
+        // Desktop: h-12 jak w v4 desktop card.
+        className="group relative mt-auto inline-flex h-[52px] w-full items-center justify-center overflow-hidden rounded-xl bg-brand-gradient px-6 text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 md:mt-1 md:h-12"
       >
         <span className="relative z-10 font-sans text-[0.95rem] font-semibold tracking-wide">
           {pending ? "Loguję…" : "Zaloguj się"}
@@ -113,6 +121,7 @@ function Field({
   name,
   type,
   autoComplete,
+  inputMode,
   required,
   placeholder,
   error,
@@ -122,6 +131,8 @@ function Field({
   name: string;
   type: string;
   autoComplete?: string;
+  // Mobile v4: pozwala na natywną numeric/email keyboard (iOS/Android).
+  inputMode?: "text" | "numeric" | "email" | "tel" | "url" | "search" | "decimal" | "none";
   required?: boolean;
   placeholder?: string;
   error?: string;
@@ -132,8 +143,10 @@ function Field({
       <span className="eyebrow">{label}</span>
       <div
         className={
-          // focus-within przesuwa border + dokłada glow ring w kolorze brand
-          "flex h-12 items-center gap-2 rounded-xl border bg-background/40 px-4 transition-[border-color,box-shadow] " +
+          // Mobile: h-[52px] żeby touch target ≥48px (WCAG 2.2 2.5.8 + iOS comfort).
+          // Desktop: h-12 jak w v4 desktop spec.
+          // focus-within przesuwa border + dokłada glow ring w kolorze brand.
+          "flex h-[52px] items-center gap-2 rounded-xl border bg-background/40 px-4 transition-[border-color,box-shadow] md:h-12 " +
           (error
             ? "border-destructive focus-within:border-destructive focus-within:shadow-[0_0_0_4px_color-mix(in_oklch,var(--destructive)_18%,transparent)]"
             : "border-border focus-within:border-[var(--accent-brand)] focus-within:shadow-[0_0_0_4px_color-mix(in_oklch,var(--accent-brand)_18%,transparent)]")
@@ -143,10 +156,12 @@ function Field({
           name={name}
           type={type}
           autoComplete={autoComplete}
+          inputMode={inputMode}
           required={required}
           placeholder={placeholder}
           aria-invalid={!!error}
-          className="h-full w-full flex-1 bg-transparent text-[0.95rem] text-foreground outline-none placeholder:text-muted-foreground/55"
+          // text-[16px] na mobile = NO iOS auto-zoom. md+ wraca do skali v4.
+          className="h-full w-full flex-1 bg-transparent text-[16px] text-foreground outline-none placeholder:text-muted-foreground/55 md:text-[0.95rem]"
         />
         {trailing}
       </div>

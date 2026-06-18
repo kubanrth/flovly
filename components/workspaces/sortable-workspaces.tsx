@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useState } from "react";
+import { startTransition, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   closestCenter,
@@ -19,9 +19,44 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowRight, GripVertical } from "lucide-react";
+import { ArrowRight, ChevronRight, GripVertical } from "lucide-react";
 import { reorderWorkspacesAction } from "@/app/(app)/workspaces/actions";
 import { boardPl } from "@/lib/pluralize";
+
+// =============================================================================
+// Mobile v4 spec (B2 · Workspaces): każdy workspace ma color identity —
+// 38x38 init badge + 3px top accent strip. Kolor wybrany deterministycznie
+// z hash'a workspace.id (FNV-1a 32-bit), żeby nie migało między renderami.
+// Lista swatchy z v4 hero (boards) — spójna paleta przez całą apkę.
+// =============================================================================
+
+const WORKSPACE_SWATCHES: { color: string; shadow: string }[] = [
+  { color: "#7A33EC", shadow: "rgba(122,51,236,.45)" }, // brand violet
+  { color: "#34BEF8", shadow: "rgba(52,190,248,.40)" }, // sky accent
+  { color: "#10B981", shadow: "rgba(16,185,129,.40)" }, // emerald
+  { color: "#F59E0B", shadow: "rgba(245,158,11,.40)" }, // amber
+  { color: "#E1318F", shadow: "rgba(225,49,143,.40)" }, // magenta brand-b
+  { color: "#0EA5E9", shadow: "rgba(14,165,233,.40)" }, // info deep
+];
+
+function swatchFor(id: string): { color: string; shadow: string } {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  const idx = (h >>> 0) % WORKSPACE_SWATCHES.length;
+  return WORKSPACE_SWATCHES[idx]!;
+}
+
+function initialsFor(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    return (words[0]![0]! + words[1]![0]!).toUpperCase();
+  }
+  const single = words[0] ?? "??";
+  return single.slice(0, 2).toUpperCase();
+}
 
 // Drag-and-drop reorder workspace'ów (zamiast strzałek).
 // Pattern jak w kanban-board: DndContext + SortableContext + useSortable.
@@ -84,6 +119,12 @@ function SortableWorkspaceCard({ workspace: w }: { workspace: WorkspaceRow }) {
     zIndex: isDragging ? 10 : "auto",
   } as const;
 
+  // Mobile v4 spec B2: każda karta dostaje workspace color identity (init badge
+  // 38x38 + 3px accent strip). Hash stabilny per id — kolor nie zmienia się
+  // między renderami i reorderami.
+  const swatch = useMemo(() => swatchFor(w.id), [w.id]);
+  const initials = useMemo(() => initialsFor(w.name), [w.name]);
+
   return (
     <div
       ref={setNodeRef}
@@ -92,21 +133,55 @@ function SortableWorkspaceCard({ workspace: w }: { workspace: WorkspaceRow }) {
     >
       <Link
         href={`/w/${w.id}`}
-        className="flex min-h-[180px] flex-col gap-4 rounded-xl border border-border bg-card p-6 pl-12 shadow-[0_1px_2px_rgba(46,19,52,0.08)] transition-all hover:-translate-y-[2px] hover:border-primary/30 hover:shadow-[0_12px_32px_-16px_rgba(123,104,238,0.35)] focus-visible:-translate-y-[2px] focus-visible:border-primary focus-visible:outline-none"
+        // Mobile v4: full-width card z accent strip + init badge; klikalna całość.
+        // Desktop: oryginalny layout z pl-12 (miejsce pod drag handle).
+        className="relative flex min-h-[120px] flex-col gap-3 overflow-hidden rounded-xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(46,19,52,0.08)] transition-all hover:-translate-y-[2px] hover:border-primary/30 hover:shadow-[0_12px_32px_-16px_rgba(123,104,238,0.35)] focus-visible:-translate-y-[2px] focus-visible:border-primary focus-visible:outline-none md:min-h-[180px] md:gap-4 md:p-6 md:pl-12"
       >
-        <div className="flex items-center justify-between">
+        {/* 3px top accent strip — mobile-only sygnatura workspace color identity */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-[3px] md:hidden"
+          style={{ background: swatch.color }}
+        />
+
+        {/* Mobile row: init badge 38x38 + name + meta + chevron. Desktop: ten row
+            jest ukryty, layout idzie do oryginalnego pionowego stosu poniżej. */}
+        <div className="flex items-center gap-3 md:hidden">
+          <span
+            aria-hidden
+            className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-xl font-display text-[0.82rem] font-bold text-white"
+            style={{
+              background: swatch.color,
+              boxShadow: `0 6px 14px -5px ${swatch.shadow}`,
+            }}
+          >
+            {initials}
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="truncate text-[16px] font-bold leading-tight tracking-[-0.01em] text-foreground">
+              {w.name}
+            </span>
+            <span className="truncate font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
+              {w.boardCount} {boardPl(w.boardCount)} · {w.role.toLowerCase()}
+            </span>
+          </div>
+          <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
+        </div>
+
+        {/* Desktop-only original head — eyebrow + slug, h2 nazwy, opcjonalny opis */}
+        <div className="hidden items-center justify-between md:flex">
           <span className="eyebrow">{w.role.toLowerCase()}</span>
           <span className="font-mono text-[0.68rem] text-muted-foreground">/{w.slug}</span>
         </div>
-        <h2 className="font-display text-[1.5rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">
+        <h2 className="hidden font-display text-[1.5rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground md:block">
           {w.name}
         </h2>
         {w.description && (
-          <p className="line-clamp-2 text-[0.9rem] leading-[1.55] text-muted-foreground">
+          <p className="line-clamp-2 text-[0.9rem] leading-[1.55] text-muted-foreground max-md:hidden">
             {w.description}
           </p>
         )}
-        <div className="mt-auto flex items-center justify-between pt-4">
+        <div className="mt-auto hidden items-center justify-between pt-4 md:flex">
           <span className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">
             {w.boardCount} {boardPl(w.boardCount)}
           </span>
@@ -116,14 +191,16 @@ function SortableWorkspaceCard({ workspace: w }: { workspace: WorkspaceRow }) {
         </div>
       </Link>
 
-      {/* Drag handle — przesunięty na lewą krawędź karty */}
+      {/* Drag handle — przesunięty na lewą krawędź karty. Mobile: chowamy
+          (na touch device reorder via long-press na grip pogarsza UX —
+          klient woli swap przez "edit mode" w przyszłej iteracji). */}
       <button
         type="button"
         {...attributes}
         {...listeners}
         aria-label="Przeciągnij aby zmienić kolejność"
         title="Przeciągnij aby zmienić kolejność"
-        className="absolute left-3 top-1/2 grid h-8 w-8 -translate-y-1/2 cursor-grab place-items-center rounded-md text-muted-foreground/50 transition-colors hover:bg-accent hover:text-foreground active:cursor-grabbing"
+        className="absolute left-3 top-1/2 hidden h-8 w-8 -translate-y-1/2 cursor-grab place-items-center rounded-md text-muted-foreground/50 transition-colors hover:bg-accent hover:text-foreground active:cursor-grabbing md:grid"
       >
         <GripVertical size={16} />
       </button>

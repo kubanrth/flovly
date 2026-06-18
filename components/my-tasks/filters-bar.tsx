@@ -154,18 +154,20 @@ export function FiltersBar({
   // v4 segmented pill control — Dziś (active = brand gradient) / Tydzień / Zaległe / Wszystkie.
   // Filtry te są wizualne (chipy w v4 są ozdobne — nie zmieniamy props/funkcji),
   // więc używamy ich jako visual section divider nad search/sort/boards.
+  // Mobile (max-md): horizontal scrollable tabs (snap-x), pełna szerokość ekranu, whitespace-nowrap.
+  // Desktop: kompaktowy segmented control bez scrolla.
   const pillRow = (
-    <div className="flex items-center gap-1.5 rounded-[14px] border border-white/60 bg-white/55 p-1 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04]">
-      <span className="rounded-[11px] bg-brand-gradient px-3 py-1.5 text-[0.75rem] font-semibold text-white shadow-brand">
+    <div className="flex items-center gap-1.5 rounded-[14px] border border-white/60 bg-white/55 p-1 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] max-md:gap-2 max-md:overflow-x-auto max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:p-0 max-md:[-webkit-overflow-scrolling:touch] max-md:[scrollbar-width:none] max-md:snap-x max-md:snap-mandatory max-md:[&::-webkit-scrollbar]:hidden">
+      <span className="rounded-[11px] bg-brand-gradient px-3 py-1.5 text-[0.75rem] font-semibold text-white shadow-brand max-md:shrink-0 max-md:snap-start max-md:whitespace-nowrap max-md:px-3.5 max-md:py-2 max-md:text-[0.81rem]">
         Dziś
       </span>
-      <span className="rounded-[11px] border border-white/60 bg-white/40 px-3 py-1.5 text-[0.75rem] font-medium text-muted-foreground dark:border-white/10 dark:bg-white/[0.05]">
+      <span className="rounded-[11px] border border-white/60 bg-white/40 px-3 py-1.5 text-[0.75rem] font-medium text-muted-foreground dark:border-white/10 dark:bg-white/[0.05] max-md:shrink-0 max-md:snap-start max-md:whitespace-nowrap max-md:px-3.5 max-md:py-2 max-md:text-[0.81rem]">
         Tydzień
       </span>
-      <span className="rounded-[11px] border border-white/60 bg-white/40 px-3 py-1.5 text-[0.75rem] font-medium text-rose-500 dark:border-white/10 dark:bg-white/[0.05]">
+      <span className="rounded-[11px] border border-white/60 bg-white/40 px-3 py-1.5 text-[0.75rem] font-medium text-rose-500 dark:border-white/10 dark:bg-white/[0.05] max-md:shrink-0 max-md:snap-start max-md:whitespace-nowrap max-md:px-3.5 max-md:py-2 max-md:text-[0.81rem]">
         Zaległe
       </span>
-      <span className="rounded-[11px] border border-white/60 bg-white/40 px-3 py-1.5 text-[0.75rem] font-medium text-muted-foreground dark:border-white/10 dark:bg-white/[0.05]">
+      <span className="rounded-[11px] border border-white/60 bg-white/40 px-3 py-1.5 text-[0.75rem] font-medium text-muted-foreground dark:border-white/10 dark:bg-white/[0.05] max-md:shrink-0 max-md:snap-start max-md:whitespace-nowrap max-md:px-3.5 max-md:py-2 max-md:text-[0.81rem]">
         Wszystkie
       </span>
     </div>
@@ -185,7 +187,7 @@ export function FiltersBar({
             onChange={(e) => setSearch(e.target.value)}
             type="search"
             placeholder="Szukaj po tytule…"
-            className="h-9 w-full rounded-[11px] border border-white/60 bg-white/60 pl-8 pr-3 text-[0.9rem] outline-none backdrop-blur-xl placeholder:text-muted-foreground/60 focus:border-primary/60 dark:border-white/10 dark:bg-white/[0.04]"
+            className="h-9 w-full rounded-[11px] border border-white/60 bg-white/60 pl-8 pr-3 text-[0.9rem] outline-none backdrop-blur-xl placeholder:text-muted-foreground/60 focus:border-primary/60 dark:border-white/10 dark:bg-white/[0.04] max-md:h-11 max-md:text-[0.95rem]"
           />
         </div>
 
@@ -203,8 +205,8 @@ export function FiltersBar({
       </div>
 
       {boards.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-1.5 max-md:flex-nowrap max-md:overflow-x-auto max-md:[-webkit-overflow-scrolling:touch] max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
+          <span className="mr-1 shrink-0 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
             Tablica:
           </span>
           {boards.map((b) => {
@@ -215,7 +217,7 @@ export function FiltersBar({
                 type="button"
                 onClick={() => toggleBoard(b.id)}
                 data-on={on ? "true" : "false"}
-                className="inline-flex h-7 items-center gap-1 rounded-full border border-white/60 px-3 font-mono text-[0.68rem] uppercase tracking-[0.1em] text-muted-foreground transition-colors data-[on=true]:border-primary data-[on=true]:bg-primary/10 data-[on=true]:text-foreground hover:border-primary/40 dark:border-white/10"
+                className="inline-flex h-7 items-center gap-1 rounded-full border border-white/60 px-3 font-mono text-[0.68rem] uppercase tracking-[0.1em] text-muted-foreground transition-colors data-[on=true]:border-primary data-[on=true]:bg-primary/10 data-[on=true]:text-foreground hover:border-primary/40 dark:border-white/10 max-md:h-11 max-md:shrink-0 max-md:whitespace-nowrap max-md:text-[0.72rem]"
               >
                 <span className="truncate max-w-[140px]">{b.name}</span>
                 <span className="text-muted-foreground/60 normal-case tracking-normal">
@@ -267,7 +269,7 @@ function SortDropdown({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-background px-3.5 text-[0.86rem] text-foreground transition-colors hover:border-primary/60 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
+        className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-background px-3.5 text-[0.86rem] text-foreground transition-colors hover:border-primary/60 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary max-md:h-11"
       >
         <ArrowUpDown size={13} className="text-muted-foreground" />
         <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">

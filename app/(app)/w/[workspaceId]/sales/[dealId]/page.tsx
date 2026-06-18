@@ -6,6 +6,7 @@ import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { deleteDealAction } from "@/app/(app)/w/[workspaceId]/sales/actions";
 import { DealForm } from "@/components/sales/deal-form";
+import { DealMobileActions } from "@/components/sales/deal-mobile-actions";
 import type { RichTextDoc } from "@/components/task/rich-text-editor";
 import {
   DealTimeline,
@@ -33,7 +34,8 @@ export default async function DealDetailPage({
       where: { workspaceId, deletedAt: null },
       orderBy: { order: "asc" },
       // colorHex potrzebny do swatch'a w SearchableDropdown.
-      select: { id: true, name: true, colorHex: true },
+      // closedKind dla mobile sticky-bottom won/lost button'ów (DealMobileActions).
+      select: { id: true, name: true, colorHex: true, closedKind: true },
     }),
     // Stage palette for the timeline pills — we want colorHex too.
     db.dealStage.findMany({
@@ -110,6 +112,29 @@ export default async function DealDetailPage({
 
   const canEdit = can(ctx.role, "deal.update");
   const canDelete = can(ctx.role, "deal.delete");
+
+  // Mobile sticky bottom actions (spec B6): "Zmień stage + Zamknij wygrane/
+  // przegrane". Pokazujemy tylko gdy user może zmieniać deala — bez tego
+  // shortcut'y są wprowadzające w błąd.
+  // Explicit cast bo Prisma zwraca `closedKind: string | null` — narrowing
+  // ternarią nie zachowuje literalnego typu w mapie. Bezpieczne — sprawdzamy
+  // dokładnie te dwie wartości.
+  const mobileStages: {
+    id: string;
+    name: string;
+    colorHex: string;
+    closedKind: "won" | "lost" | null;
+  }[] = stages.map((s) => ({
+    id: s.id,
+    name: s.name,
+    colorHex: s.colorHex,
+    closedKind:
+      s.closedKind === "won"
+        ? ("won" as const)
+        : s.closedKind === "lost"
+          ? ("lost" as const)
+          : null,
+  }));
 
   return (
     <main className="flex-1 px-4 py-6 md:px-14 md:py-14">
@@ -195,6 +220,15 @@ export default async function DealDetailPage({
           contacts={contactLookup}
         />
       </div>
+
+      {canEdit && (
+        <DealMobileActions
+          workspaceId={workspaceId}
+          dealId={deal.id}
+          currentStageId={deal.stageId}
+          stages={mobileStages}
+        />
+      )}
     </main>
   );
 }

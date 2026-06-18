@@ -9,6 +9,8 @@ import { Calendar as CalendarIcon, ChevronDown, ChevronUp, X } from "lucide-reac
 import { DayPicker } from "react-day-picker";
 import { pl } from "date-fns/locale";
 import "react-day-picker/style.css";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
 export interface DateTimePickerProps {
   name: string;
@@ -62,6 +64,7 @@ export function DateTimePicker({
 }: DateTimePickerProps) {
   const [date, setDate] = useState<Date | null>(() => isoToDate(defaultValue));
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
   const [coords, setCoords] = useState<{
     top: number;
     left: number;
@@ -119,12 +122,19 @@ export function DateTimePicker({
       setOpen(false);
       return;
     }
+    // Mobile: bottom sheet — pomijamy recompute (Sheet sam pozycjonuje).
+    if (isMobile) {
+      setOpen(true);
+      return;
+    }
     recompute();
     setOpen(true);
   };
 
   useEffect(() => {
-    if (!open) return;
+    // Mobile: Base UI Sheet ma własny outside-click/Escape. Skip żeby
+    // uniknąć podwojonych close'ów.
+    if (!open || isMobile) return;
     const onDoc = (e: MouseEvent) => {
       if (popRef.current?.contains(e.target as Node)) return;
       if (triggerRef.current?.contains(e.target as Node)) return;
@@ -144,7 +154,7 @@ export function DateTimePicker({
       window.removeEventListener("resize", onReflow);
       window.removeEventListener("scroll", onReflow, true);
     };
-  }, [open]);
+  }, [open, isMobile]);
 
   const onDaySelect = (day: Date | undefined) => {
     if (!day) {
@@ -250,7 +260,7 @@ export function DateTimePicker({
       </button>
       <input type="hidden" name={name} value={isoForForm} form={form} />
 
-      {open && coords && typeof document !== "undefined" &&
+      {open && coords && !isMobile && typeof document !== "undefined" &&
         createPortal(
           <div
             ref={popRef}
@@ -356,6 +366,115 @@ export function DateTimePicker({
           </div>,
           document.body,
         )}
+
+      {/* Mobile: bottom sheet — spec v4 linie 169-183. Presets horizontal scroll
+          chips + DayPicker + TimeStepper + sticky footer Wyczyść/Gotowe. */}
+      {isMobile && (
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetContent
+            side="bottom"
+            showCloseButton={false}
+            className="sheet-mobile-surface max-h-[90dvh] gap-0 p-0"
+          >
+            <div className="flex max-h-[90dvh] flex-col">
+              <div className="pt-3">
+                <div className="sheet-drag-handle" aria-hidden="true" />
+              </div>
+              <SheetTitle className="sr-only">
+                {label ?? placeholder}
+              </SheetTitle>
+              {/* Presets — horizontal scroll na mobile (spec v4) */}
+              <div className="-mx-1 flex shrink-0 items-center gap-2 overflow-x-auto px-4 pb-3 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <button
+                  type="button"
+                  onClick={setToday}
+                  className="min-h-[36px] shrink-0 rounded-full bg-muted/60 px-3.5 text-[13px] font-medium text-foreground transition-colors active:bg-primary/15"
+                >
+                  Dzisiaj
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const t = new Date();
+                    t.setDate(t.getDate() + 1);
+                    if (dateOnly) t.setHours(0, 0, 0, 0);
+                    else t.setHours(9, 0, 0, 0);
+                    setDate(t);
+                  }}
+                  className="min-h-[36px] shrink-0 rounded-full bg-muted/60 px-3.5 text-[13px] font-medium text-foreground transition-colors active:bg-primary/15"
+                >
+                  Jutro
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const t = new Date();
+                    t.setDate(t.getDate() + 7);
+                    if (dateOnly) t.setHours(0, 0, 0, 0);
+                    else t.setHours(9, 0, 0, 0);
+                    setDate(t);
+                  }}
+                  className="min-h-[36px] shrink-0 rounded-full bg-muted/60 px-3.5 text-[13px] font-medium text-foreground transition-colors active:bg-primary/15"
+                >
+                  W tygodniu
+                </button>
+              </div>
+              <div className="rdp-host min-h-0 flex-1 overflow-y-auto px-3">
+                <DayPicker
+                  mode="single"
+                  selected={date ?? undefined}
+                  onSelect={onDaySelect}
+                  locale={pl}
+                  weekStartsOn={1}
+                  showOutsideDays
+                  captionLayout="label"
+                />
+              </div>
+              {!dateOnly && (
+                <div className="flex shrink-0 items-center gap-3 border-t border-border/60 bg-muted/30 px-4 py-3">
+                  <span className="eyebrow text-[0.7rem]">Godzina</span>
+                  <div className="ml-auto flex items-stretch gap-2">
+                    <TimeStepper
+                      value={date?.getHours() ?? 9}
+                      min={0}
+                      max={23}
+                      ariaLabel="Godzina"
+                      onChange={(v) => setTime(v, date?.getMinutes() ?? 0)}
+                    />
+                    <span className="grid place-items-center font-mono text-[1.1rem] font-bold text-muted-foreground">
+                      :
+                    </span>
+                    <TimeStepper
+                      value={date?.getMinutes() ?? 0}
+                      min={0}
+                      max={59}
+                      step={5}
+                      ariaLabel="Minuty"
+                      onChange={(v) => setTime(date?.getHours() ?? 9, v)}
+                    />
+                  </div>
+                </div>
+              )}
+              <div className="flex shrink-0 items-center justify-between gap-2 border-t border-border/60 px-4 pt-3 pb-safe-bottom">
+                <button
+                  type="button"
+                  onClick={clear}
+                  className="min-h-[44px] rounded-[10px] px-3 text-[14px] font-medium text-destructive transition-colors active:bg-destructive/10"
+                >
+                  Wyczyść
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-[10px] bg-brand-gradient px-5 text-[14px] font-semibold text-white shadow-brand transition-opacity active:opacity-85"
+                >
+                  Gotowe
+                </button>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
     </div>
   );
 }

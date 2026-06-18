@@ -13,6 +13,8 @@ import {
   type TaskPriorityValue,
 } from "@/lib/task-priority";
 import { setTaskPriorityAction } from "@/app/(app)/w/[workspaceId]/t/actions";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
 export function PriorityPickerCell({
   taskId,
@@ -31,10 +33,12 @@ export function PriorityPickerCell({
   const [open, setOpen] = useState(false);
   const [, startTransition] = useTransition();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const isMobile = useIsMobile();
 
-  // Close on outside click / Escape.
+  // Close on outside click / Escape. Mobile: Sheet (Base UI Dialog) ma własny
+  // outside-click/Escape handling — skip żeby uniknąć podwojonych close'ów.
   useEffect(() => {
-    if (!open) return;
+    if (!open || isMobile) return;
     const onPointer = (e: PointerEvent) => {
       if (!wrapperRef.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -47,7 +51,7 @@ export function PriorityPickerCell({
       document.removeEventListener("pointerdown", onPointer);
       document.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, isMobile]);
 
   const handlePick = (next: TaskPriorityValue) => {
     setOpen(false);
@@ -102,7 +106,7 @@ export function PriorityPickerCell({
         )}
       </button>
 
-      {open && (
+      {open && !isMobile && (
         <div
           role="menu"
           className="popover-glass popover-enter shadow-aura absolute left-0 top-full z-40 mt-1 flex w-[220px] flex-col gap-1 p-[7px]"
@@ -149,6 +153,67 @@ export function PriorityPickerCell({
             );
           })}
         </div>
+      )}
+
+      {/* Mobile: bottom sheet zamiast popovera. 5 priorytetów jako duże rows
+          z 44px touch target, drag handle, glass surface. */}
+      {isMobile && (
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetContent
+            side="bottom"
+            showCloseButton={false}
+            className="sheet-mobile-surface gap-0 p-0"
+          >
+            <div className="pt-3">
+              <div className="sheet-drag-handle" aria-hidden="true" />
+            </div>
+            <SheetTitle className="px-4 pb-3 text-base font-bold text-foreground">
+              Priorytet
+            </SheetTitle>
+            <div className="flex flex-col gap-1 px-3 pb-safe-bottom">
+              {PRIORITY_VALUES.map((value) => {
+                const meta = PRIORITY_META[value];
+                const active = value === optimistic;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={active}
+                    onClick={() => handlePick(value)}
+                    data-active={active}
+                    className="flex min-h-[48px] items-center gap-3 rounded-[12px] px-3 text-left transition-colors active:bg-primary/15 data-[active=true]:bg-primary/10"
+                  >
+                    <span
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{
+                        background:
+                          value === "NONE" ? "transparent" : meta.dotColor,
+                        border:
+                          value === "NONE"
+                            ? "1px dashed currentColor"
+                            : undefined,
+                      }}
+                      aria-hidden="true"
+                    />
+                    <span
+                      className={`flex-1 truncate text-[15px] font-medium ${
+                        value === "NONE"
+                          ? "text-muted-foreground"
+                          : "text-foreground"
+                      }`}
+                    >
+                      {meta.label}
+                    </span>
+                    <span className="ml-auto rounded-[6px] bg-muted/60 px-2 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                      {meta.shortCode}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </SheetContent>
+        </Sheet>
       )}
     </div>
   );

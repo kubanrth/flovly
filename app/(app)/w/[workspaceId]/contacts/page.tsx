@@ -7,6 +7,7 @@ import {
   ContactsTable,
   type ContactsTableRow,
 } from "@/components/contacts/contacts-table";
+import { ContactsMobileList } from "@/components/contacts/contacts-mobile-list";
 
 export default async function ContactsListPage({
   params,
@@ -133,11 +134,17 @@ export default async function ContactsListPage({
           </div>
         </div>
 
-        <ContactsTable
-          workspaceId={workspaceId}
-          rows={rows}
-          canDelete={canDelete}
-        />
+        {/* Mobile: single-col 64px tile list (spec B6). Desktop: full table.
+            Renderujemy obydwa, widoczność toguje Tailwind (md:hidden / hidden md:block)
+            żeby uniknąć client-side viewport detection (CLS, hydration). */}
+        <ContactsMobileList workspaceId={workspaceId} rows={rows} />
+        <div className="hidden md:block">
+          <ContactsTable
+            workspaceId={workspaceId}
+            rows={rows}
+            canDelete={canDelete}
+          />
+        </div>
       </div>
     </main>
   );

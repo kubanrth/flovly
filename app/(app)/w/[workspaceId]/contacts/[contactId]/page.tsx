@@ -22,6 +22,7 @@ import {
   type ContactMessageRow,
 } from "@/components/contacts/contact-conversation";
 import { ContactTaskLinker } from "@/components/contacts/contact-task-linker";
+import { ContactMobileTabs } from "@/components/contacts/contact-mobile-tabs";
 import { ensureDefaultStages } from "@/app/(app)/w/[workspaceId]/sales/actions";
 import { auth } from "@/lib/auth";
 
@@ -206,6 +207,20 @@ export default async function ContactDetailPage({
     senderName: m.sender?.name ?? m.sender?.email ?? null,
   }));
 
+  // Inicjały do mobile avatar'a (80×80 gradient header per B6 spec).
+  const initialsSource =
+    contact.companyName ??
+    [contact.firstName, contact.lastName].filter(Boolean).join(" ") ??
+    contact.email ??
+    "?";
+  const mobileInitials = initialsSource
+    .replace(/[^a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ ]/g, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase() ?? "")
+    .join("") || "?";
+
   return (
     <main className="flex-1 px-4 py-6 md:px-14 md:py-14">
       {/* Wyrównanie szerokości do listy kontaktów (max-w-6xl). Wcześniej
@@ -220,7 +235,31 @@ export default async function ContactDetailPage({
           >
             <ArrowLeft size={11} /> Wszystkie kontakty
           </Link>
-          <div className="flex flex-wrap items-start justify-between gap-3">
+
+          {/* Mobile-only avatar header (B6 spec): 80×80 brand-gradient block
+              + name + subtitle wyśrodkowane. Desktop: zostaje row layout
+              poniżej (hidden md:flex / flex md:hidden). */}
+          <div className="flex flex-col items-center gap-2 pt-2 text-center md:hidden">
+            <span
+              className="grid h-20 w-20 place-items-center overflow-hidden rounded-2xl bg-brand-gradient font-display text-[1.5rem] font-bold text-white shadow-brand"
+              aria-hidden
+            >
+              {mobileInitials}
+            </span>
+            <span className="eyebrow">Kontrahent</span>
+            <h1 className="font-display text-[1.4rem] font-bold leading-[1.15] tracking-[-0.02em]">
+              {headline || "—"}
+            </h1>
+            {contact.companyName &&
+              (contact.firstName || contact.lastName) && (
+                <p className="text-[0.88rem] text-muted-foreground">
+                  {[contact.firstName, contact.lastName].filter(Boolean).join(" ")}
+                  {contact.position ? ` · ${contact.position}` : ""}
+                </p>
+              )}
+          </div>
+
+          <div className="hidden flex-wrap items-start justify-between gap-3 md:flex">
             <div className="flex min-w-0 flex-col gap-1">
               <span className="eyebrow">Kontrahent</span>
               <h1 className="truncate font-display text-[1.5rem] font-bold leading-[1.1] tracking-[-0.03em] md:text-[2rem]">
@@ -251,7 +290,15 @@ export default async function ContactDetailPage({
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
+        {/* Mobile-only sticky tabs (B6 spec): horizontal scrollable pills,
+            anchor-link nav do sekcji poniżej, IntersectionObserver podświetla
+            aktywną. Hidden na md+. */}
+        <ContactMobileTabs />
+
+        {/* scroll-mt-32 daje 128px offset'u od top'u przy `scrollIntoView` żeby
+            section nie wjeżdżał pod sticky AppShell header + mobile tabs.
+            Każda sekcja ma ID matching TABS w ContactMobileTabs. */}
+        <div id="contact-deals" className="flex scroll-mt-32 flex-col gap-3">
           <div className="flex items-baseline gap-3">
             <span className="eyebrow">Plan sprzedaży tego kontaktu</span>
             <span className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
@@ -266,63 +313,71 @@ export default async function ContactDetailPage({
           />
         </div>
 
-        <ContactConversation
-          workspaceId={workspaceId}
-          contactId={contact.id}
-          contactEmail={contact.email}
-          contactLabel={headline}
-          messages={messageRows}
-          senderCandidates={senderCandidates}
-          defaultSenderEmail={defaultSenderEmail}
-          canSend={canEdit}
-        />
-
-        <ContactTasksTile
-          workspaceId={workspaceId}
-          contactId={contact.id}
-          tasks={contactTasks}
-          linkableTasks={linkableTasks.map((t) => ({
-            id: t.id,
-            label: `#${t.displayId} · ${t.title}`,
-            sublabel: t.board.name,
-          }))}
-        />
-
-        <ContactTimeline
-          workspaceId={workspaceId}
-          contactId={contact.id}
-          activities={timelineActivities}
-          users={userLookup}
-          canEdit={canEdit}
-        />
-
-        {canEdit ? (
-          <ContactForm
-            mode="edit"
+        <div id="contact-messages" className="scroll-mt-32">
+          <ContactConversation
             workspaceId={workspaceId}
-            initial={{
-              id: contact.id,
-              firstName: contact.firstName,
-              lastName: contact.lastName,
-              position: contact.position,
-              email: contact.email,
-              phone: contact.phone,
-              companyName: contact.companyName,
-              nip: contact.nip,
-              regon: contact.regon,
-              vatNumber: contact.vatNumber,
-              website: contact.website,
-              street: contact.street,
-              city: contact.city,
-              postalCode: contact.postalCode,
-              country: contact.country,
-              ownerId: contact.ownerId,
-            }}
-            members={memberships.map((m) => m.user)}
+            contactId={contact.id}
+            contactEmail={contact.email}
+            contactLabel={headline}
+            messages={messageRows}
+            senderCandidates={senderCandidates}
+            defaultSenderEmail={defaultSenderEmail}
+            canSend={canEdit}
           />
-        ) : (
-          <ReadOnlyView contact={contact} />
-        )}
+        </div>
+
+        <div id="contact-tasks" className="scroll-mt-32">
+          <ContactTasksTile
+            workspaceId={workspaceId}
+            contactId={contact.id}
+            tasks={contactTasks}
+            linkableTasks={linkableTasks.map((t) => ({
+              id: t.id,
+              label: `#${t.displayId} · ${t.title}`,
+              sublabel: t.board.name,
+            }))}
+          />
+        </div>
+
+        <div id="contact-activity" className="scroll-mt-32">
+          <ContactTimeline
+            workspaceId={workspaceId}
+            contactId={contact.id}
+            activities={timelineActivities}
+            users={userLookup}
+            canEdit={canEdit}
+          />
+        </div>
+
+        <div id="contact-info" className="scroll-mt-32">
+          {canEdit ? (
+            <ContactForm
+              mode="edit"
+              workspaceId={workspaceId}
+              initial={{
+                id: contact.id,
+                firstName: contact.firstName,
+                lastName: contact.lastName,
+                position: contact.position,
+                email: contact.email,
+                phone: contact.phone,
+                companyName: contact.companyName,
+                nip: contact.nip,
+                regon: contact.regon,
+                vatNumber: contact.vatNumber,
+                website: contact.website,
+                street: contact.street,
+                city: contact.city,
+                postalCode: contact.postalCode,
+                country: contact.country,
+                ownerId: contact.ownerId,
+              }}
+              members={memberships.map((m) => m.user)}
+            />
+          ) : (
+            <ReadOnlyView contact={contact} />
+          )}
+        </div>
       </div>
     </main>
   );

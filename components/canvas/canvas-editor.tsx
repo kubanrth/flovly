@@ -3045,7 +3045,10 @@ function MobileCanvasToolbar({
           ekranu nad fullscreen button'em. Mirror desktop'owej pen options
           row, ale w kompaktowej formie horizontal. */}
       {toolMode === "pen" && (
-        <div className="pointer-events-auto absolute bottom-3 left-1/2 z-20 flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border border-white/10 bg-neutral-900/95 px-2 py-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:hidden">
+        <div
+          style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+          className="pointer-events-auto absolute left-1/2 z-20 flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border border-white/10 bg-neutral-900/95 px-2 py-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:hidden"
+        >
           {PEN_COLORS.map((c) => (
             <button
               key={c}
@@ -3170,7 +3173,9 @@ function MobileFullscreenToggle({
       onClick={toggle}
       aria-label={isFullscreen ? "Wyjdź z trybu pełnoekranowego" : "Tryb pełnoekranowy"}
       title={isFullscreen ? "Wyjdź z full screen" : "Full screen"}
-      className="pointer-events-auto absolute bottom-3 right-3 z-20 grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-neutral-900/95 text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)] backdrop-blur transition-all hover:bg-neutral-800 active:scale-95 md:hidden"
+      // safe-bottom — pod home indicator FAB powinien być wyżej żeby nie chwytać dotyku.
+      style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+      className="pointer-events-auto absolute right-3 z-20 grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-neutral-900/95 text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)] backdrop-blur transition-all hover:bg-neutral-800 active:scale-95 md:hidden"
     >
       {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
     </button>

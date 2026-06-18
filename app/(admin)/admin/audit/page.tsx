@@ -68,7 +68,8 @@ export default async function AdminAuditPage({
               name="action"
               defaultValue={params.action ?? ""}
               placeholder="np. task.updated"
-              className="h-9 w-full rounded-md border border-border bg-background px-3 text-[0.86rem] outline-none focus:border-primary md:w-[220px]"
+              // Mobile v4: 48px tap target + 16px text to suppress iOS auto-zoom on focus.
+              className="h-12 w-full rounded-md border border-border bg-background px-3 text-[16px] outline-none focus:border-primary md:h-9 md:text-[0.86rem] md:w-[220px]"
             />
           </label>
           <label className="flex flex-col gap-1">
@@ -79,7 +80,7 @@ export default async function AdminAuditPage({
               name="actor"
               defaultValue={params.actor ?? ""}
               placeholder="email / imię"
-              className="h-9 w-full rounded-md border border-border bg-background px-3 text-[0.86rem] outline-none focus:border-primary md:w-[220px]"
+              className="h-12 w-full rounded-md border border-border bg-background px-3 text-[16px] outline-none focus:border-primary md:h-9 md:text-[0.86rem] md:w-[220px]"
             />
           </label>
           <label className="flex flex-col gap-1">
@@ -89,7 +90,7 @@ export default async function AdminAuditPage({
             <select
               name="days"
               defaultValue={params.days ?? ""}
-              className="h-9 rounded-md border border-border bg-background px-3 font-mono text-[0.78rem] uppercase tracking-[0.12em] outline-none focus:border-primary"
+              className="h-12 rounded-md border border-border bg-background px-3 font-mono text-[16px] uppercase tracking-[0.12em] outline-none focus:border-primary md:h-9 md:text-[0.78rem]"
             >
               <option value="">wszystko</option>
               <option value="1">24 h</option>
@@ -100,13 +101,15 @@ export default async function AdminAuditPage({
           </label>
           <button
             type="submit"
-            className="inline-flex h-9 items-center rounded-md border border-border bg-background px-3 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+            className="inline-flex h-12 items-center justify-center rounded-md border border-border bg-background px-4 font-mono text-[0.74rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground md:h-9 md:text-[0.7rem]"
           >
             Zastosuj
           </button>
         </form>
 
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
+        {/* Desktop: table view. Mobile (max-md): stacked cards per spec — actor at top
+            with avatar initial, action badge, target mono, timestamp right. */}
+        <div className="hidden overflow-hidden rounded-xl border border-border bg-card md:block">
           <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-left">
             <thead className="border-b border-border bg-muted/50">
@@ -131,8 +134,67 @@ export default async function AdminAuditPage({
             </p>
           )}
         </div>
+
+        {/* Mobile-only stacked cards. Hidden on md+. */}
+        <ul className="flex flex-col gap-2 md:hidden">
+          {entries.length === 0 && (
+            <li className="rounded-xl border border-border bg-card px-4 py-6 text-center text-[0.88rem] text-muted-foreground">
+              Brak wpisów.
+            </li>
+          )}
+          {entries.map((e) => (
+            <AuditCardMobile key={e.id} entry={e} />
+          ))}
+        </ul>
       </div>
     </main>
+  );
+}
+
+// Mobile v4 (B7 — Audit logs full-screen): each entry becomes a stacked card.
+// Actor + avatar initial top, action badge with target mono code under, timestamp right.
+function AuditCardMobile({ entry }: { entry: AuditRow }) {
+  const actorLabel = entry.actor?.name ?? entry.actor?.email ?? "—";
+  const initials = (entry.actor?.name ?? entry.actor?.email ?? "?")
+    .split(/\s+/)
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  return (
+    <li className="rounded-xl border border-border bg-card p-3">
+      <div className="flex items-center gap-2.5">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-brand-gradient font-mono text-[0.62rem] font-bold text-white">
+          {initials || "?"}
+        </span>
+        <span className="min-w-0 flex-1 truncate text-[0.86rem] font-semibold text-foreground">
+          {actorLabel}
+        </span>
+        <span className="shrink-0 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-muted-foreground">
+          {new Date(entry.createdAt).toLocaleString("pl-PL", {
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
+      </div>
+      <div className="mt-2.5 flex items-center gap-2">
+        <code className="inline-flex h-6 items-center rounded-md bg-primary/12 px-2 font-mono text-[0.7rem] font-semibold text-primary">
+          {entry.action}
+        </code>
+        <span className="truncate font-mono text-[0.72rem] text-muted-foreground">
+          {entry.objectType}·{entry.objectId.slice(-6)}
+        </span>
+      </div>
+      {entry.workspace && (
+        <div className="mt-1.5 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-muted-foreground/80">
+          /{entry.workspace.slug}
+        </div>
+      )}
+    </li>
   );
 }
 

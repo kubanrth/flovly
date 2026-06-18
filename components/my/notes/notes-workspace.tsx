@@ -438,7 +438,7 @@ function NotesListColumn({
         <Link
           href="/my/notes"
           aria-label="Wróć do folderów"
-          className="flex items-center gap-1 rounded-md px-1 py-1 text-primary transition-colors hover:bg-accent"
+          className="inline-flex min-h-[44px] items-center gap-1 rounded-md px-2 py-2 text-primary transition-colors hover:bg-accent"
         >
           <ChevronLeft size={22} />
           <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em]">
@@ -703,7 +703,7 @@ function NoteEditor({
         <Link
           href={backHref}
           aria-label="Wróć do listy notatek"
-          className="flex items-center gap-1 rounded-md px-1 py-1 text-primary transition-colors hover:bg-accent"
+          className="inline-flex min-h-[44px] items-center gap-1 rounded-md px-2 py-2 text-primary transition-colors hover:bg-accent"
         >
           <ChevronLeft size={22} />
           <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em]">

@@ -69,8 +69,8 @@ export default async function InvitePage({
     }[invalidState as "not-found" | "workspace-deleted" | "already-used" | "expired"];
 
     return (
-      <div className="relative isolate flex min-h-dvh items-center justify-center overflow-hidden bg-aura px-6 py-12">
-        <div className="glass-surface relative w-full max-w-[420px] rounded-2xl p-8 text-center md:p-10">
+      <div className="relative isolate flex min-h-dvh items-stretch justify-center overflow-hidden bg-aura px-0 py-0 md:items-center md:px-6 md:py-12">
+        <div className="glass-surface relative flex w-full flex-col items-center justify-center px-6 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] text-center max-md:min-h-dvh max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:shadow-none max-md:backdrop-blur-none md:max-w-[420px] md:rounded-2xl md:p-10">
           <div className="mb-6 flex justify-center">
             <FlovlySignature size="md" />
           </div>
@@ -97,7 +97,7 @@ export default async function InvitePage({
   const inviterInitials = getInitials(inviterName);
 
   return (
-    <div className="relative isolate flex min-h-dvh items-center justify-center overflow-hidden bg-aura px-6 py-12">
+    <div className="relative isolate flex min-h-dvh items-stretch justify-center overflow-hidden bg-aura px-0 py-0 md:items-center md:px-6 md:py-12">
       {/* Niebieski blob u góry-prawej — z referencji v4 (invite ma niebieską aurę) */}
       <div
         aria-hidden
@@ -116,7 +116,9 @@ export default async function InvitePage({
         }}
       />
 
-      <main className="glass-surface relative w-full max-w-[440px] rounded-2xl p-8 md:p-10">
+      {/* Mobile: full-bleed (no card chrome). Desktop: glass card 440px.
+          Role badge zostaje prominently na górze. CTA stack na dole. */}
+      <main className="glass-surface relative flex w-full flex-col px-6 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] max-md:min-h-dvh max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:shadow-none max-md:backdrop-blur-none md:max-w-[440px] md:rounded-2xl md:p-10">
         {/* Top — brand mark + intro */}
         <div className="mb-6 flex flex-col items-center text-center">
           <FlovlySignature size="md" />

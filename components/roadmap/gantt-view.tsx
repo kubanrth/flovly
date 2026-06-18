@@ -105,6 +105,22 @@ export function GanttView({
 
   const chartHeight = flatRows.length * ROW_HEIGHT;
 
+  // Deadline pill helper — "za X dni" / "X dni temu" / "dziś" / "jutro".
+  // Mobile-only (lista zastępuje timeline) — pill rounded-full po prawej stronie
+  // wiersza task'a. Spec linia 91. Klasa tła ustalana semantycznie:
+  // overdue=destructive, urgent (<=3d)=warning, normal=brand.
+  const deadlinePill = (stopIso: string): { label: string; tone: "danger" | "warn" | "normal" | "done" } => {
+    const stop = new Date(stopIso).getTime();
+    const diffMs = stop - now;
+    const dayMs = 86_400_000;
+    const days = Math.round(diffMs / dayMs);
+    if (days < 0) return { label: `${Math.abs(days)} dni temu`, tone: "danger" };
+    if (days === 0) return { label: "dziś", tone: "warn" };
+    if (days === 1) return { label: "jutro", tone: "warn" };
+    if (days <= 3) return { label: `za ${days} dni`, tone: "warn" };
+    return { label: `za ${days} dni`, tone: "normal" };
+  };
+
   const toggleGroup = (name: string) =>
     setCollapsedGroups((prev) => {
       const next = new Set(prev);
@@ -117,12 +133,14 @@ export function GanttView({
     <div className="flex flex-col gap-5">
       {/* v4 card — single rounded-[22px] glass surface with brand shadow.
           Inside: column header (Zadanie + Tydz./Mies. pill switcher) + body
-          (left task list, right timeline) + hint footer. */}
+          (left task list, right timeline) + hint footer.
+          Mobile (spec lines 81-96): hide timeline, list zajmuje 100% szerokości,
+          pillsy deadline po prawej zamiast bars. */}
       <div className="relative overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_30px_70px_-30px_rgba(122,92,255,0.4)]">
         <div className="flex">
           {/* ── LEFT: Task list column ───────────────────────────────── */}
           <div
-            className="flex-none border-r border-border"
+            className="flex-none border-r border-border max-md:!w-full max-md:!border-r-0"
             style={{ width: TASK_COL_W }}
           >
             {/* Column header */}
@@ -130,8 +148,9 @@ export function GanttView({
               <span className="font-mono text-[0.7rem] font-bold uppercase tracking-[0.04em] text-muted-foreground">
                 Zadanie
               </span>
-              {/* Zoom switcher — segmented control rounded-[8px] padding-[2px] gap-[3px] */}
-              <div className="flex gap-[3px] rounded-lg bg-muted/40 p-[2px]">
+              {/* Zoom switcher — segmented control rounded-[8px] padding-[2px] gap-[3px].
+                  Mobile: ukrywamy (timeline schowany, scale nieistotny). */}
+              <div className="flex gap-[3px] rounded-lg bg-muted/40 p-[2px] max-md:hidden">
                 <button
                   type="button"
                   onClick={() => setZoom("week")}
@@ -186,25 +205,40 @@ export function GanttView({
               const initials = t.assignee
                 ? (t.assignee.name ?? t.assignee.email).slice(0, 2).toUpperCase()
                 : null;
+              const pill = deadlinePill(t.stopAt);
+              const pillToneClass =
+                pill.tone === "danger"
+                  ? "bg-destructive/15 text-destructive"
+                  : pill.tone === "warn"
+                    ? "bg-amber-500/15 text-amber-600 dark:text-amber-300"
+                    : "bg-primary/12 text-primary";
               return (
                 <Link
                   key={`t-${t.id}`}
                   href={`/w/${workspaceId}/t/${t.id}`}
                   style={{ height: ROW_HEIGHT }}
-                  className="flex items-center gap-2 border-b border-border/60 px-4 transition-colors hover:bg-muted/30"
+                  className="flex items-center gap-2 border-b border-border/60 px-4 transition-colors hover:bg-muted/30 max-md:gap-2.5 max-md:px-3 max-md:py-2"
                   title={`${t.title} · ${formatDateRange(t.startAt, t.stopAt)}${t.statusName ? ` · ${t.statusName}` : ""}`}
                 >
                   <span
-                    className="h-[7px] w-[7px] shrink-0 rounded-full"
+                    className="h-[7px] w-[7px] shrink-0 rounded-full max-md:h-[10px] max-md:w-[3px] max-md:rounded-sm"
                     style={{ background: t.statusColor }}
                     aria-hidden
                   />
-                  <span className="truncate text-[0.78rem] font-medium text-foreground">
+                  <span className="truncate text-[0.78rem] font-medium text-foreground max-md:text-[0.84rem]">
                     {t.title}
+                  </span>
+                  {/* Mobile-only deadline pill — v4 spec linia 91 (rounded-full,
+                      small, "za X dni" / "dziś" / "X dni temu"). Desktop nie potrzebuje —
+                      ma timeline po prawej. */}
+                  <span
+                    className={`ml-auto hidden shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 font-mono text-[0.62rem] font-semibold max-md:inline-flex ${pillToneClass}`}
+                  >
+                    {pill.label}
                   </span>
                   {initials && (
                     <span
-                      className="ml-auto grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.54rem] font-bold text-white"
+                      className="ml-auto grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.54rem] font-bold text-white max-md:hidden"
                       aria-label={t.assignee?.name ?? t.assignee?.email}
                     >
                       {t.assignee?.avatarUrl ? (
@@ -224,8 +258,10 @@ export function GanttView({
             })}
           </div>
 
-          {/* ── RIGHT: Timeline column ───────────────────────────────── */}
-          <div className="relative min-w-0 flex-1 overflow-hidden">
+          {/* ── RIGHT: Timeline column ─────────────────────────────────
+              Mobile: ukryta — task list dostaje pełną szerokość + deadline pille
+              renderowane bezpośrednio w wierszach po lewej (poniżej w pętli). */}
+          <div className="relative min-w-0 flex-1 overflow-hidden max-md:hidden">
             {/* Tick header (week labels) */}
             <div className="flex border-b border-border bg-card/60 backdrop-blur-xl">
               {range.ticks.map((t) => (
@@ -323,10 +359,14 @@ export function GanttView({
           </div>
         </div>
 
-        {/* Hint footer — v4 spec: drag bar + diamond=milestone */}
+        {/* Hint footer — v4 spec: drag bar + diamond=milestone.
+            Mobile: copy zmieniony, bo timeline schowany. */}
         <div className="border-t border-border bg-card/40 px-[18px] py-[10px]">
-          <span className="text-[0.72rem] text-muted-foreground">
+          <span className="text-[0.72rem] text-muted-foreground max-md:hidden">
             Hint · przeciągnij pasek aby zmienić daty · romb = milestone
+          </span>
+          <span className="hidden text-[0.72rem] text-muted-foreground max-md:inline">
+            Hint · tap zadania aby zmienić daty
           </span>
         </div>
       </div>

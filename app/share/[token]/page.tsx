@@ -96,27 +96,32 @@ export default async function ShareViewerPage({ params }: { params: Params }) {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Minimal brand header */}
-      <header className="border-b border-border bg-card/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
-          <div className="flex items-center gap-3">
-            <FlovlyMark size={36} className="shadow-brand rounded-[10px]" />
-            <div className="flex flex-col">
-              <span className="eyebrow">{board.workspace.name}</span>
-              <h1 className="font-display text-[1.15rem] font-bold leading-none tracking-[-0.02em] text-foreground">
+    // Mobile v4 (B10 — Public viewer): pb-16 so sticky watermark doesn't overlap content.
+    <div className="min-h-screen bg-background pb-16 text-foreground md:pb-0">
+      {/* Minimal brand header. Mobile: sticky w/ view-only badge top per spec. */}
+      <header className="sticky top-0 z-10 border-b border-border bg-card/85 backdrop-blur md:static md:bg-card/80">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 md:gap-4 md:px-6 md:py-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <FlovlyMark size={32} className="shadow-brand rounded-[10px] md:h-9 md:w-9" />
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate font-mono text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground md:text-[0.62rem]">
+                {board.workspace.name}
+              </span>
+              <h1 className="truncate font-display text-[1rem] font-bold leading-tight tracking-[-0.02em] text-foreground md:text-[1.15rem] md:leading-none">
                 {board.name}
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-2 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
+          {/* Read-only badge — pill on mobile (>=44px touch even though non-interactive). */}
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 font-mono text-[0.58rem] font-semibold uppercase tracking-[0.14em] text-primary md:border-transparent md:bg-transparent md:px-0 md:py-0 md:font-normal md:text-muted-foreground">
             <Eye size={11} />
-            <span>Podgląd · read-only</span>
-          </div>
+            <span className="hidden sm:inline">Podgląd · read-only</span>
+            <span className="sm:hidden">Read-only</span>
+          </span>
         </div>
         {board.description && (
-          <div className="mx-auto max-w-7xl px-6 pb-4">
-            <p className="max-w-[64ch] text-[0.92rem] leading-[1.55] text-muted-foreground">
+          <div className="mx-auto max-w-7xl px-4 pb-3 md:px-6 md:pb-4">
+            <p className="max-w-[64ch] text-[0.86rem] leading-[1.55] text-muted-foreground md:text-[0.92rem]">
               {board.description}
             </p>
           </div>
@@ -124,7 +129,7 @@ export default async function ShareViewerPage({ params }: { params: Params }) {
       </header>
 
       {/* Tasks grouped by status (kanban-like) */}
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
         {board.tasks.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-card/50 px-6 py-12 text-center">
             <p className="font-display text-[1.05rem] font-semibold text-foreground">
@@ -159,8 +164,8 @@ export default async function ShareViewerPage({ params }: { params: Params }) {
         )}
       </main>
 
-      {/* Powered by Flovly footer */}
-      <footer className="mx-auto mt-8 max-w-7xl px-6 py-6 text-center">
+      {/* Desktop: inline footer. Mobile: sticky bottom watermark per Mobile v4 (B10). */}
+      <footer className="mx-auto mt-8 hidden max-w-7xl px-6 py-6 text-center md:block">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
@@ -169,6 +174,23 @@ export default async function ShareViewerPage({ params }: { params: Params }) {
           <ExternalLink size={10} />
         </Link>
       </footer>
+
+      {/* Mobile sticky watermark — fixed bottom strip with brand mark. Read-only signal. */}
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/90 backdrop-blur md:hidden">
+        <div
+          className="flex items-center justify-center gap-1.5 px-4"
+          style={{ minHeight: "48px", paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Udostępnione przez{" "}
+            <span className="text-brand-gradient font-semibold">FLOVLY</span>
+            <ExternalLink size={10} />
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

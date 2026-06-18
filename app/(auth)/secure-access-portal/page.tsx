@@ -18,7 +18,7 @@ export default async function SecureAccessPortalPage({
   const { redirect } = await searchParams;
 
   return (
-    <div className="relative isolate flex min-h-dvh items-center justify-center overflow-hidden bg-aura px-6 py-12">
+    <div className="relative isolate flex min-h-dvh items-stretch justify-center overflow-hidden bg-aura px-0 py-0 md:items-center md:px-6 md:py-12">
       {/* Dodatkowe radial blob'y nad bg-aura — wzmacniają hero feel z referencji.
           Pointer-events none, czysty dekor. */}
       <div
@@ -38,7 +38,9 @@ export default async function SecureAccessPortalPage({
         }}
       />
 
-      <main className="glass-surface relative w-full max-w-[420px] rounded-2xl p-8 md:p-10">
+      {/* Mobile: full-bleed (no card chrome, min-h-dvh, safe-area padding).
+          Desktop (md+): centered glass card 420px. v4 spec B1 · Auth mobile. */}
+      <main className="glass-surface relative flex w-full flex-col px-6 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] max-md:min-h-dvh max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:shadow-none max-md:backdrop-blur-none md:max-w-[420px] md:rounded-2xl md:p-10">
         {/* Brand mark + wordmark + tagline, jak na referencji v4 (logo nad heading'em) */}
         <div className="mb-8 flex flex-col items-center text-center">
           <FlovlySignature size="md" />

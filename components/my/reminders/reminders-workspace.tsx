@@ -51,10 +51,10 @@ export function RemindersWorkspace({
   oldReceivedCount: number;
 }) {
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 max-md:gap-6 max-md:pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))]">
       <div className="flex flex-col gap-2">
         <span className="eyebrow">Prywatne</span>
-        <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
+        <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em] max-md:text-[1.7rem]">
           Twoje <span className="text-brand-gradient">przypomnienia</span>.
         </h1>
         <p className="max-w-[60ch] text-[0.95rem] leading-[1.55] text-muted-foreground">
@@ -154,13 +154,15 @@ function NewReminderForm({
   const [recipientId, setRecipientId] = useState(currentUserId);
 
   if (!open) {
+    // Mobile: fixed sticky-bottom full-width button z safe-area inset.
+    // Desktop: inline button na flow.
     return (
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 w-fit items-center gap-2 rounded-lg bg-brand-gradient px-4 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px]"
+        className="inline-flex h-10 w-fit items-center gap-2 rounded-lg bg-brand-gradient px-4 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px] max-md:fixed max-md:inset-x-4 max-md:bottom-[max(1rem,env(safe-area-inset-bottom))] max-md:z-30 max-md:h-12 max-md:w-auto max-md:justify-center max-md:text-[0.95rem]"
       >
-        <Plus size={14} /> Dodaj przypomnienie
+        <Plus size={14} /> <span className="max-md:hidden">Dodaj przypomnienie</span><span className="hidden max-md:inline">Nowe przypomnienie</span>
       </button>
     );
   }
@@ -325,7 +327,8 @@ function ReminderRowCard({
   }
 
   return (
-    <li className="group flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0">
+    // Mobile: stacked layout (icon+content row, akcje pod spodem jako chip row).
+    <li className="group flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 max-md:flex-wrap max-md:items-start max-md:gap-2.5 max-md:py-3.5">
       <span
         className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
           dismissed
@@ -369,8 +372,9 @@ function ReminderRowCard({
       {/* F12-K20: actions teraz z widocznymi labelami zamiast samych
           ikon — klient zgłosił że 'brak edycji/usuwania', bo małe
           ikonki h-8 w-8 były niedostrzegalne. Każdy button ma teraz
-          tekst + ikonę, tło bg-background z border, kolorowany hover. */}
-      <div className="flex shrink-0 items-center gap-1.5">
+          tekst + ikonę, tło bg-background z border, kolorowany hover.
+          Mobile: wrap pod content, full-width row z snap-x scroll. */}
+      <div className="flex shrink-0 items-center gap-1.5 max-md:w-full max-md:flex-wrap max-md:gap-2 max-md:pl-12">
         {/* Recipient-only dismiss */}
         {isOwnRecipient && !dismissed && (
           <form
@@ -382,7 +386,7 @@ function ReminderRowCard({
               type="submit"
               aria-label="Schowaj"
               title="Schowaj (nie usuwa — twórca nadal widzi)"
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground max-md:h-11 max-md:px-3.5"
             >
               <BellOff size={12} /> Schowaj
             </button>
@@ -401,7 +405,7 @@ function ReminderRowCard({
               type="submit"
               aria-label="Ukryj z mojej listy"
               title="Ukrywa to przypomnienie z Twojej listy. Wysyłający nadal je widzi."
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground max-md:h-11 max-md:px-3.5"
             >
               <EyeOff size={12} /> Ukryj
             </button>
@@ -415,7 +419,7 @@ function ReminderRowCard({
             onClick={() => setEditing(true)}
             aria-label="Edytuj przypomnienie"
             title="Edytuj przypomnienie"
-            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground max-md:h-11 max-md:px-3.5"
           >
             <Pencil size={12} /> Edytuj
           </button>
@@ -432,7 +436,7 @@ function ReminderRowCard({
               type="submit"
               aria-label="Usuń przypomnienie"
               title="Usuń przypomnienie"
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive max-md:h-11 max-md:px-3.5"
             >
               <Trash2 size={12} /> Usuń
             </button>
