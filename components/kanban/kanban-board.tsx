@@ -368,7 +368,7 @@ function Column({
   return (
     <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
       <div
-        className="flex w-[280px] shrink-0 flex-col gap-2 rounded-xl border border-border bg-muted/40 p-3 md:w-[300px]"
+        className="flex w-[280px] shrink-0 flex-col gap-2 rounded-2xl border border-border/60 bg-card/40 p-3 backdrop-blur-sm md:w-[300px]"
       >
         <div className="flex items-center justify-between gap-2 px-1">
           <div className="flex items-center gap-1">
@@ -599,7 +599,7 @@ function CardShell({
   return (
     <article
       {...(hotkeyProps ?? {})}
-      className={`flex cursor-grab flex-col gap-2 rounded-lg border border-border bg-card p-3 shadow-[0_1px_2px_rgba(10,10,40,0.04)] transition-shadow hover:shadow-[0_6px_16px_-8px_rgba(123,104,238,0.35)] active:cursor-grabbing ${
+      className={`flex cursor-grab flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-[0_1px_2px_rgba(46,19,52,0.06)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_10px_26px_-10px_rgba(124,92,255,0.32)] active:cursor-grabbing ${
         dragging ? "ring-2 ring-primary/50 shadow-[0_20px_32px_-12px_rgba(123,104,238,0.45)]" : ""
       }`}
     >

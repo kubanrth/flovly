@@ -760,7 +760,7 @@ export function BoardTable({
         )}
       </div>
 
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_2px_rgba(10,10,40,0.04)]">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-[0_4px_12px_-4px_rgba(46,19,52,0.10),0_18px_40px_-16px_rgba(76,29,149,0.18)]">
       <div className="overflow-x-auto">
         <table
           ref={tableRef}
@@ -1612,7 +1612,7 @@ function AddColumnButton({
               width: 320,
               maxHeight: coords.maxHeight,
             }}
-            className="z-[60] flex flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+            className="z-[60] flex flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-[0_18px_40px_-16px_rgba(76,29,149,0.36)]"
           >
             <div className="shrink-0 border-b border-border px-3 py-2">
               <p className="eyebrow">Nowa kolumna</p>

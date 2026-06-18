@@ -48,6 +48,7 @@ import {
 import type { Role } from "@/lib/generated/prisma/enums";
 import { signOutAction } from "@/app/(app)/actions";
 import { reorderWorkspacesAction } from "@/app/(app)/workspaces/actions";
+import { FlovlyMark, FlovlyWordmark } from "@/components/brand/flovly-logo";
 import { reorderBoardsAction } from "@/app/(app)/w/[workspaceId]/b/actions";
 import { CreateBoardDialog } from "@/components/workspaces/create-board-dialog";
 import { DeleteBoardDialog } from "@/components/workspaces/delete-board-dialog";
@@ -209,7 +210,16 @@ export function Sidebar({
           żeby user nie był zamknięty w zagnieżdżonym scroll'u listy workspace'ów.
           Desktop: zewnętrzny overflow-hidden, wewnętrzna sekcja workspace'ów ma
           własny scroll bo header i footer mają trzymać się na top/bottom. */}
-      <div className="sidebar-glass relative flex h-full flex-col md:overflow-hidden max-md:overflow-y-auto backdrop-blur-[40px] backdrop-saturate-[1.8] md:rounded-[20px] max-md:rounded-none max-md:border-0">
+      <div className="sidebar-glass relative flex h-full flex-col md:overflow-hidden max-md:overflow-y-auto backdrop-blur-[40px] backdrop-saturate-[1.8] md:rounded-[22px] max-md:rounded-none max-md:border-0">
+      {/* v4: Brand mark u góry sidebar'a (FLOVLY logo). */}
+      <Link
+        href="/workspaces"
+        className="flex items-center gap-2 border-b border-black/5 dark:border-white/[0.05] px-3.5 py-3 transition-opacity hover:opacity-80 max-md:px-5 max-md:py-4"
+        title="Flovly — strona główna"
+      >
+        <FlovlyMark size={collapsed ? 28 : 24} />
+        {!collapsed && <FlovlyWordmark size="sm" gradientV={false} />}
+      </Link>
       {/* When collapsed, header stacks vertically so the chevron isn't clipped by overflow-hidden. */}
       <div
         className={`flex gap-2 border-b border-black/5 dark:border-white/[0.05] px-3 py-3 max-md:gap-3 max-md:px-4 max-md:py-4 ${

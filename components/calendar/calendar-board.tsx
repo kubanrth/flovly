@@ -215,7 +215,7 @@ export function CalendarBoard({
       </div>
 
       {/* Grid */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-[0_4px_12px_-4px_rgba(46,19,52,0.10),0_18px_40px_-16px_rgba(76,29,149,0.18)]">
         {/* Header z dniami tygodnia */}
         <div className="grid grid-cols-7 border-b border-border bg-muted/40">
           {POLISH_WEEKDAYS.map((d, i) => (
