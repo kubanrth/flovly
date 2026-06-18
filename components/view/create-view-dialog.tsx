@@ -115,7 +115,7 @@ export function CreateViewDialog({
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-xl border-border bg-card sm:max-w-[480px]">
+        <DialogContent className="rounded-2xl border-border bg-card shadow-aura sm:max-w-[480px]">
           <DialogHeader>
             <span className="eyebrow">Nowy widok</span>
             <DialogTitle className="font-display text-[1.45rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">

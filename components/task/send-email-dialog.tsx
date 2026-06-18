@@ -71,7 +71,7 @@ className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border bor
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-xl border-border bg-card sm:max-w-[540px]">
+        <DialogContent className="rounded-2xl border-border bg-card shadow-aura sm:max-w-[540px]">
           <DialogHeader>
             <span className="eyebrow">Wyślij zadanie</span>
             <DialogTitle className="font-display text-[1.45rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">

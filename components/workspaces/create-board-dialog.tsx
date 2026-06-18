@@ -87,7 +87,7 @@ export function CreateBoardDialog({
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-xl border-border bg-card sm:max-w-[480px]">
+        <DialogContent className="rounded-2xl border-border bg-card shadow-aura sm:max-w-[480px]">
           <DialogHeader>
             <span className="eyebrow">Nowa tablica</span>
             <DialogTitle className="font-display text-[1.5rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">

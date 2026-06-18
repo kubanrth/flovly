@@ -186,7 +186,7 @@ function ToastCard({
         // bezpieczne usunięcie. Enter-animacja nie ma ustawionego leaving.
         if (item.leaving) onRemove();
       }}
-      className="toast-card pointer-events-auto flex items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)] backdrop-blur"
+      className="toast-card pointer-events-auto flex items-start gap-3 rounded-2xl border border-border bg-card p-3 shadow-[0_18px_40px_-16px_rgba(76,29,149,0.32),0_10px_26px_-10px_rgba(124,92,255,0.20)] backdrop-blur"
     >
       <span
         className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${colorClass}`}

@@ -543,7 +543,7 @@ function ItemsList({
   showListChip: boolean;
 }) {
   return (
-    <ul className="flex flex-col rounded-xl border border-border bg-card overflow-hidden">
+    <ul className="flex flex-col rounded-2xl border border-border bg-card overflow-hidden shadow-[0_4px_12px_-4px_rgba(46,19,52,0.10),0_18px_40px_-16px_rgba(76,29,149,0.14)]">
       {items.map((item) => (
         <li key={item.id} className="border-b border-border last:border-b-0">
           <ItemRow

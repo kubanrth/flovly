@@ -94,7 +94,7 @@ export function BackgroundCustomizer({
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-xl border-border bg-card sm:max-w-[600px]">
+        <DialogContent className="rounded-2xl border-border bg-card shadow-aura sm:max-w-[600px]">
           <DialogHeader>
             <span className="eyebrow">Wygląd widoku</span>
             <DialogTitle className="font-display text-[1.5rem] font-bold leading-[1.15] tracking-[-0.02em]">
