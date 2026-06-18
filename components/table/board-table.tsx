@@ -18,6 +18,8 @@ import {
 } from "@tanstack/react-table";
 import { Plus, Search, X } from "lucide-react";
 import { TaskActivityHints } from "@/components/task/task-activity-hints";
+import { PRIORITY_WEIGHT, type TaskPriorityValue } from "@/lib/task-priority";
+import { PriorityPickerCell } from "@/components/table/priority-picker-cell";
 import {
   createTableColumnAction,
   saveTableColumnPrefsAction,
@@ -68,6 +70,8 @@ export interface BoardTableTask {
   id: string;
   title: string;
   statusColumnId: string | null;
+  // F12-K75: priorytet zadania. NONE = bez badge'a w kolumnie Priorytet.
+  priority: TaskPriorityValue;
   startAt: string | null;
   stopAt: string | null;
   // Needed by "Data dodania" preset grouping; server default(now) guarantees non-null.
@@ -117,6 +121,7 @@ function toLocalInput(iso: string | null): string {
 // Re-order these to change the factory-default layout for brand-new boards.
 const DEFAULT_COLUMN_ORDER: string[] = [
   "statusColumnId",
+  "priority",
   "title",
   "assignees",
   "tags",
@@ -128,6 +133,7 @@ const DEFAULT_COLUMN_ORDER: string[] = [
 // All columns are hideable; brand-new boards auto-create the built-ins.
 const COLUMN_DEFS: ColumnDef[] = [
   { id: "statusColumnId", label: "Status" },
+  { id: "priority", label: "Priorytet" },
   { id: "title", label: "Tytuł" },
   { id: "assignees", label: "Osoby" },
   { id: "tags", label: "Tagi" },
@@ -400,6 +406,23 @@ export function BoardTable({
           const bo = statusColumns.findIndex((c) => c.id === b.original.statusColumnId);
           return (ao === -1 ? 999 : ao) - (bo === -1 ? 999 : bo);
         },
+      }),
+      // F12-K75: kolumna priorytetu — sortowanie po PRIORITY_WEIGHT (URGENT
+      // najwyżej, NONE najniżej). Inline picker przez popover.
+      col.accessor("priority", {
+        header: "Priorytet",
+        size: 130,
+        minSize: 90,
+        cell: (info) => (
+          <PriorityPickerCell
+            taskId={info.row.original.id}
+            current={info.getValue()}
+            canEdit={canEdit}
+          />
+        ),
+        sortingFn: (a, b) =>
+          PRIORITY_WEIGHT[a.original.priority] -
+          PRIORITY_WEIGHT[b.original.priority],
       }),
       col.accessor("title", {
         header: "Tytuł",

@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState, startTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { AlertCircle, ArrowUp, ChevronDown, Minus, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,22 @@ import {
   createTaskAction,
   type CreateTaskState,
 } from "@/app/(app)/w/[workspaceId]/t/actions";
+import {
+  PRIORITY_META,
+  type TaskPriorityValue,
+} from "@/lib/task-priority";
+
+// Lokalna kolejność ikon dla priority pickera. Identyczne meta jak w
+// PriorityBadge, ale tutaj renderujemy jako wybór (radio-like pills).
+const PRIORITY_PICK_OPTIONS: {
+  value: TaskPriorityValue;
+  Icon: typeof Plus;
+}[] = [
+  { value: "URGENT", Icon: AlertCircle },
+  { value: "HIGH", Icon: ArrowUp },
+  { value: "MEDIUM", Icon: Minus },
+  { value: "LOW", Icon: ChevronDown },
+];
 
 export function CreateTaskButton({
   workspaceId,
@@ -25,6 +41,9 @@ export function CreateTaskButton({
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  // F12-K75: state w komponencie, bo radio input nie zachowuje wartości
+  // przy controlled form. Default "NONE" — większość tasków nie wymaga priorytetu.
+  const [priority, setPriority] = useState<TaskPriorityValue>("NONE");
   const [state, formAction, pending] = useActionState<CreateTaskState, FormData>(
     createTaskAction,
     null,
@@ -36,6 +55,11 @@ export function CreateTaskButton({
   // page intercepted route'a /w/[wid]/t/[tid] to overview.
   // Scoped po taskId: gdyby ten wpis "wisiał" (modal zamknięty nawigacją zamiast
   // X), edycja innego taska go nie skonsumuje i nie skoczy na złą tablicę.
+  // Reset priority gdy modal otwierany ponownie po wcześniejszym sukcesie.
+  useEffect(() => {
+    if (!open) setPriority("NONE");
+  }, [open]);
+
   useEffect(() => {
     if (state?.ok) {
       setOpen(false);
@@ -88,6 +112,9 @@ export function CreateTaskButton({
           >
             <input type="hidden" name="workspaceId" value={workspaceId} />
             <input type="hidden" name="boardId" value={boardId} />
+            {/* F12-K75: priority kontrolowany przez state, hidden field
+                spina go z form data (server odbiera w createTaskAction). */}
+            <input type="hidden" name="priority" value={priority} />
 
             <label className="flex flex-col gap-2">
               <span className="eyebrow">Tytuł</span>
@@ -107,6 +134,50 @@ export function CreateTaskButton({
                 </span>
               )}
             </label>
+
+            {/* F12-K75: priority picker — 4 pills (URGENT/HIGH/MEDIUM/LOW)
+                + "wyczyść". Brak priorytetu jest aktywny gdy nic nie wybrane. */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="eyebrow">Priorytet</span>
+                {priority !== "NONE" && (
+                  <button
+                    type="button"
+                    onClick={() => setPriority("NONE")}
+                    className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Wyczyść
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {PRIORITY_PICK_OPTIONS.map(({ value, Icon }) => {
+                  const meta = PRIORITY_META[value];
+                  const on = priority === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setPriority(value)}
+                      data-on={on ? "true" : "false"}
+                      className={`group inline-flex h-10 items-center gap-2 rounded-lg border bg-background px-3 font-sans text-[0.84rem] transition-all hover:-translate-y-px ${
+                        on
+                          ? `${meta.border} ${meta.bg} ${meta.color}`
+                          : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                      }`}
+                    >
+                      <Icon size={14} />
+                      <span className="font-medium">{meta.label}</span>
+                      <span
+                        className={`ml-auto font-mono text-[0.6rem] uppercase tracking-[0.1em] ${on ? "" : "text-muted-foreground/60"}`}
+                      >
+                        {meta.shortCode}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             <div className="mt-2 flex items-center justify-end gap-3">
               <button

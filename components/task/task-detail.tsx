@@ -41,6 +41,8 @@ import { Bell, Flag } from "lucide-react";
 
 // Tag palette moved to lib/colors.ts (BRAND_PALETTE).
 import { TAG_PALETTE as TAG_COLORS } from "@/lib/colors";
+import type { TaskPriorityValue } from "@/lib/task-priority";
+import { PriorityPickerCell } from "@/components/table/priority-picker-cell";
 
 export interface TaskDetailProps {
   workspaceId: string;
@@ -52,6 +54,8 @@ export interface TaskDetailProps {
     title: string;
     descriptionJson: RichTextDoc | null;
     statusColumnId: string | null;
+    // F12-K75: priorytet zadania (sterowany inline picker'em — bez submit form'a).
+    priority: TaskPriorityValue;
     milestoneId: string | null;
     startAt: string | null;
     stopAt: string | null;
@@ -282,7 +286,7 @@ export function TaskDetail({
           )}
         </label>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-4">
           <div className="flex flex-col gap-2">
             <span className="eyebrow">Status</span>
             <StatusPill
@@ -290,6 +294,16 @@ export function TaskDetail({
               statuses={statusColumns}
               defaultValue={task.statusColumnId}
               disabled={!canEdit}
+            />
+          </div>
+          {/* F12-K75: priority inline picker — zapisuje od razu via
+              setTaskPriorityAction, nie czeka na submit całego form'a. */}
+          <div className="flex flex-col gap-2">
+            <span className="eyebrow">Priorytet</span>
+            <PriorityPickerCell
+              taskId={task.id}
+              current={task.priority}
+              canEdit={canEdit}
             />
           </div>
           <div className="flex flex-col gap-2">

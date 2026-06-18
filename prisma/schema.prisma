@@ -490,6 +490,16 @@ model StatusColumn {
 // Tasks, Milestones, Tags
 // ─────────────────────────────────────────────────────────────────────────────
 
+// F12-K75: priority field na taskach.
+// Linear-style: NONE (default, brak badge'a), LOW/MEDIUM/HIGH/URGENT.
+enum TaskPriority {
+  NONE
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 model Task {
   id                    String    @id @default(cuid())
   workspaceId           String
@@ -498,6 +508,8 @@ model Task {
   // w UI zamiast obciętego cuid'a (np. 'CERDPC2S'). Backfill istniejących
   // wierszy w migracji — kolejność po createdAt.
   displayId             Int       @default(0)
+  // F12-K75: priorytet zadania (Linear-style). NONE = brak badge'a w UI.
+  priority              TaskPriority @default(NONE)
   statusColumnId        String?
   milestoneId           String?
   // F12-K67: opcjonalne powiązanie z kontaktem CRM. Pokazuje task'a w
@@ -566,6 +578,8 @@ model Task {
   @@index([reminderAt, reminderSentAt])
   // F11-17: cron query — find tasks with recurrence not spawned today.
   @@index([recurrenceLastSpawnAt])
+  // F12-K75: filter "tylko pilne" w widokach board'u.
+  @@index([boardId, priority])
 }
 
 // F11-22 (#22): kalendarz na poziomie workspace — pokazuje zadania

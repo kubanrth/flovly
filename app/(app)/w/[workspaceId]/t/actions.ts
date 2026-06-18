@@ -13,6 +13,7 @@ import { writeAudit } from "@/lib/audit";
 import {
   createTagSchema,
   createTaskSchema,
+  setTaskPrioritySchema,
   toggleAssigneeSchema,
   toggleTagSchema,
   updateTaskSchema,
@@ -71,6 +72,7 @@ export async function createTaskAction(
     boardId: formData.get("boardId"),
     title: formData.get("title"),
     statusColumnId: formData.get("statusColumnId") || undefined,
+    priority: formData.get("priority") || undefined,
   });
 
   if (!parsed.success) {
@@ -133,6 +135,9 @@ export async function createTaskAction(
       creatorId: ctx.userId,
       title: parsed.data.title,
       rowOrder: (firstTask?.rowOrder ?? 0) - 1,
+      // F12-K75: priorytet domyślnie NONE; jeśli user wybrał w dialogu,
+      // ustawiamy od razu — bez konieczności edycji po utworzeniu.
+      ...(parsed.data.priority ? { priority: parsed.data.priority } : {}),
     },
   });
 
@@ -168,6 +173,52 @@ export async function createTaskAction(
   });
 
   return { ok: true, taskId: task.id };
+}
+
+// F12-K75: dedykowana akcja ustawienia priorytetu zadania. Wywołana przez:
+//   - inline picker w drawerze taska (klik pill = save od razu)
+//   - bulk action z tabeli (mass set N tasków, wewnątrz prismową transakcją)
+//   - opcjonalnie kontekstowe menu w kanbanie
+export async function setTaskPriorityAction(
+  input: z.infer<typeof setTaskPrioritySchema>,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const parsed = setTaskPrioritySchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Bad input" };
+  }
+
+  const task = await db.task.findUnique({
+    where: { id: parsed.data.taskId },
+    select: { id: true, workspaceId: true, boardId: true, priority: true },
+  });
+  if (!task) return { ok: false, error: "Zadanie nie istnieje." };
+
+  const ctx = await requireWorkspaceAction(task.workspaceId, "task.update");
+
+  // No-op gdy bez zmiany (oszczędzamy audit / broadcast).
+  if (task.priority === parsed.data.priority) return { ok: true };
+
+  await db.task.update({
+    where: { id: task.id },
+    data: { priority: parsed.data.priority, version: { increment: 1 } },
+  });
+
+  await writeAudit({
+    workspaceId: task.workspaceId,
+    objectType: "Task",
+    objectId: task.id,
+    actorId: ctx.userId,
+    action: "task.priority",
+    diff: { from: task.priority, to: parsed.data.priority },
+  });
+
+  await broadcastWorkspaceChange(task.workspaceId, {
+    type: "task.changed",
+    taskId: task.id,
+    boardId: task.boardId,
+  });
+
+  return { ok: true };
 }
 
 export async function updateTaskAction(

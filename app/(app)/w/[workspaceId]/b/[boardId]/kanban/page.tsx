@@ -117,6 +117,7 @@ export default async function BoardKanbanPage({
           title: t.title,
           statusColumnId: t.statusColumnId,
           rowOrder: t.rowOrder,
+          priority: t.priority,
           startAt: t.startAt ? t.startAt.toISOString() : null,
           stopAt: t.stopAt ? t.stopAt.toISOString() : null,
           assignees: t.assignees.map((a) => ({

@@ -253,6 +253,7 @@ export async function fetchTaskDetail(
       title: task.title,
       descriptionJson: normalizeDescription(task.descriptionJson),
       statusColumnId: task.statusColumnId,
+      priority: task.priority,
       milestoneId: task.milestoneId,
       startAt: task.startAt ? task.startAt.toISOString() : null,
       stopAt: task.stopAt ? task.stopAt.toISOString() : null,

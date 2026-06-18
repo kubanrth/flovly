@@ -40,12 +40,16 @@ import {
   useAssignHotkey,
   type AssignMember,
 } from "@/components/task/assign-hotkey";
+import { PriorityBadge } from "@/components/task/priority-badge";
+import type { TaskPriorityValue } from "@/lib/task-priority";
 
 export interface KanbanTask {
   id: string;
   title: string;
   statusColumnId: string | null;
   rowOrder: number;
+  // F12-K75: priorytet zadania. NONE = badge ukryty.
+  priority: TaskPriorityValue;
   startAt: string | null;
   stopAt: string | null;
   assignees: {
@@ -599,8 +603,13 @@ function CardShell({
         dragging ? "ring-2 ring-primary/50 shadow-[0_20px_32px_-12px_rgba(123,104,238,0.45)]" : ""
       }`}
     >
-      {task.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+      {(task.priority !== "NONE" || task.tags.length > 0) && (
+        <div className="flex flex-wrap items-center gap-1">
+          {/* F12-K75: priorytet jako pierwszy badge — najważniejszy
+              sygnał dla scanning'u karty. NONE → nic nie renderujemy. */}
+          {task.priority !== "NONE" && (
+            <PriorityBadge priority={task.priority} size="xs" />
+          )}
           {task.tags.slice(0, 4).map((t) => (
             <span
               key={t.id}

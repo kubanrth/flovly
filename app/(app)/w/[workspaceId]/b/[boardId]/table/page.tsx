@@ -163,6 +163,7 @@ export default async function BoardTablePage({
           id: t.id,
           title: t.title,
           statusColumnId: t.statusColumnId,
+          priority: t.priority,
           startAt: t.startAt ? t.startAt.toISOString() : null,
           stopAt: t.stopAt ? t.stopAt.toISOString() : null,
           createdAt: t.createdAt.toISOString(),
