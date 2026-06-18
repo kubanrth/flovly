@@ -34,6 +34,7 @@ export type Action =
   | "wiki.edit"
   | "integrations.manage"
   | "board.manageMembers"
+  | "board.share"
   | "contact.read"
   | "contact.create"
   | "contact.update"
@@ -79,6 +80,7 @@ const MATRIX: Record<Role, Set<Action>> = {
     "wiki.edit",
     "integrations.manage",
     "board.manageMembers",
+    "board.share",
     "contact.read",
     "contact.create",
     "contact.update",
@@ -111,6 +113,7 @@ const MATRIX: Record<Role, Set<Action>> = {
     "poll.manage",
     "poll.vote",
     "boardLink.manage",
+    "board.share",
     "reminder.manage",
     "wiki.read",
     "wiki.edit",

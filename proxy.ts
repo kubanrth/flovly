@@ -10,7 +10,10 @@ export const proxy = auth((req) => {
   const isAuthPage = pathname.startsWith(AUTH_PATH);
   const isApiAuth = pathname.startsWith("/api/auth");
   const isInvitePage = pathname.startsWith("/invites/");
-  const isPublic = pathname === "/" || isAuthPage || isApiAuth || isInvitePage;
+  // F12-K79: public share linki — bez auth (token w URL je gate'uje).
+  const isSharePage = pathname.startsWith("/share/");
+  const isPublic =
+    pathname === "/" || isAuthPage || isApiAuth || isInvitePage || isSharePage;
 
   if (!isAuth && !isPublic) {
     const url = req.nextUrl.clone();

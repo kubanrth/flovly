@@ -9,6 +9,7 @@ import { BoardLinksServer } from "@/components/board/board-links-server";
 import { parseEnabledViews } from "@/lib/board-views";
 import { CreateTaskButton } from "@/components/task/create-task-button";
 import { ImportTasksDialog } from "@/components/task/import-tasks-dialog";
+import { ShareBoardButton } from "@/components/board/share-board-button";
 import {
   CalendarBoard,
   type CalendarTask,
@@ -72,12 +73,15 @@ export default async function BoardCalendarPage({
         enabledViews={enabledViews}
         extra={<BoardLinksServer workspaceId={workspaceId} boardId={board.id} />}
         actions={
-          canCreate ? (
-            <>
-              <ImportTasksDialog workspaceId={workspaceId} boardId={board.id} />
-              <CreateTaskButton workspaceId={workspaceId} boardId={board.id} />
-            </>
-          ) : null
+          <>
+            <ShareBoardButton workspaceId={workspaceId} boardId={board.id} />
+            {canCreate && (
+              <>
+                <ImportTasksDialog workspaceId={workspaceId} boardId={board.id} />
+                <CreateTaskButton workspaceId={workspaceId} boardId={board.id} />
+              </>
+            )}
+          </>
         }
       />
 

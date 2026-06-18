@@ -91,6 +91,8 @@ model User {
   contactMessages    ContactMessage[]      @relation("ContactMessageSender")
   // F12-K74: Czesiek AI chat sessions (per user per workspace).
   chatSessions       ChatSession[]         @relation("ChatSessionUser")
+  // F12-K79: utworzone share linki do tablic.
+  createdShareLinks  BoardShareLink[]      @relation("BoardShareCreator")
 
   @@index([isBanned])
   @@index([lastSeenAt])
@@ -207,6 +209,8 @@ model Workspace {
   contactMessages      ContactMessage[]
   // F12-K74: Czesiek AI chat sessions per workspace.
   chatSessions         ChatSession[]
+  // F12-K79: public share links do tablic w tym workspace.
+  shareLinks           BoardShareLink[]
 
   @@index([ownerId])
   @@index([deletedAt])
@@ -314,6 +318,8 @@ model Board {
   // (whiteboard, taskline). Stara 1:1 relation `canvas` zamieniona na
   // 1:N `canvases` — kod konsumujący filtruje po kind przy fetchu.
   canvases      ProcessCanvas[] @relation("BoardCanvases")
+  // F12-K79: public share linki tej tablicy.
+  shareLinks    BoardShareLink[]
 
   @@index([workspaceId])
   @@index([deletedAt])
@@ -1620,6 +1626,39 @@ model ContactMessage {
   sender    User?     @relation("ContactMessageSender", fields: [senderId], references: [id])
 
   @@index([contactId, sentAt(sort: Desc)])
+  @@index([workspaceId])
+}
+
+// F12-K79: Public share links dla tablic — interesariusze (klienci, audyt
+// zewnętrzny, partnerzy) widzą snapshot read-only przez unguessable URL.
+// Token = randomBytes(24).toString('base64url') ≈ 192 bity entropii.
+// Brak hasła w MVP — jeśli klient chce skomplikowane access control,
+// wystarczy revoke link + utworzyć nowy.
+//
+// Logowanie wyświetleń: accessCount + lastAccessedAt updateowane w
+// public route. Pozwala adminowi widzieć "ten link był otwarty 47 razy".
+model BoardShareLink {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  boardId        String
+  token          String    @unique
+  // Etykieta np. "Klient ABC — prezentacja Q3". Optional.
+  name           String?
+  createdById    String
+  lastAccessedAt DateTime?
+  accessCount    Int       @default(0)
+  // Opcjonalna data wygaśnięcia. NULL = brak limitu czasowego.
+  expiresAt      DateTime?
+  // Soft-revoke (admin może cofnąć dostęp bez kasowania row'a — historia +
+  // accessCount zostaje do audytu).
+  revokedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  board     Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("BoardShareCreator", fields: [createdById], references: [id])
+
+  @@index([boardId])
   @@index([workspaceId])
 }
 

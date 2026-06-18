@@ -5,6 +5,7 @@ import { can } from "@/lib/permissions";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { CreateTaskButton } from "@/components/task/create-task-button";
 import { ImportTasksDialog } from "@/components/task/import-tasks-dialog";
+import { ShareBoardButton } from "@/components/board/share-board-button";
 import { BackgroundCustomizer } from "@/components/view/background-customizer";
 import { BoardShell } from "@/components/view/board-shell";
 import { ViewTransition } from "@/components/view/view-transition";
@@ -84,6 +85,7 @@ export default async function BoardKanbanPage({
                 initial={background}
               />
             )}
+            <ShareBoardButton workspaceId={workspaceId} boardId={board.id} />
             {canCreate && (
               <>
                 <ImportTasksDialog
