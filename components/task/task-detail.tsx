@@ -562,27 +562,33 @@ export function TaskDetail({
           "Zapisuję…" obok timera, ale dedykowany Save CTA jest zbędny.
           Sticky liquid-glass bar — backdrop-blur z hairline shadow.
           ===================================================================== */}
-      <footer className="sticky bottom-0 z-10 -mx-4 mt-2 flex flex-wrap items-center gap-3 border-t border-border bg-background/80 px-4 py-3 backdrop-blur-md md:-mx-6 md:px-6">
+      {/* F12-K86: footer wyrównany do jednej linii baseline. flex-nowrap na
+          desktop wymusza single row; min-w-0 na timer wrapperze + shrink/grow
+          radzi sobie z długimi nazwami. Autosave indicator middle, Usuń right. */}
+      <footer className="sticky bottom-0 z-10 -mx-4 mt-2 flex items-center gap-3 border-t border-border bg-background/80 px-4 py-3 backdrop-blur-md max-md:flex-wrap md:-mx-6 md:flex-nowrap md:px-6">
         {/* Timer pill (zachowuje pełną logikę startedAt/completedAt + duration display) */}
-        <TaskTimer
-          taskId={task.id}
-          accumulatedSeconds={task.timeTrackedSeconds}
-          startedAt={task.timerStartedAt}
-          completedAt={task.timerCompletedAt}
-          canEdit={canEdit}
-        />
+        <div className="flex min-w-0 shrink-0 items-center">
+          <TaskTimer
+            taskId={task.id}
+            accumulatedSeconds={task.timeTrackedSeconds}
+            startedAt={task.timerStartedAt}
+            completedAt={task.timerCompletedAt}
+            canEdit={canEdit}
+          />
+        </div>
 
-        {/* Autosave status — subtle text-only indicator zamiast Save buttona. */}
+        {/* Autosave status — subtle text-only indicator zamiast Save buttona.
+            shrink-0 + truncate żeby nie psuł flex-nowrap. */}
         {canEdit && (
           <span
             aria-live="polite"
-            className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground/80"
+            className="shrink-0 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground/80"
           >
             {pending ? "Zapisuję…" : "Autosave"}
           </span>
         )}
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           {canDelete && (
             <form action={deleteTaskAction} className="m-0">
               <input type="hidden" name="id" value={task.id} />

@@ -127,9 +127,12 @@ function toLocalInput(iso: string | null): string {
 }
 
 // Re-order these to change the factory-default layout for brand-new boards.
+// F12-K86: "shortId" jako osobna kolumna (przed Title) — user wymaga osobnej
+// kolumny dla ID zadania zamiast inline w title cell.
 const DEFAULT_COLUMN_ORDER: string[] = [
   "statusColumnId",
   "priority",
+  "shortId",
   "title",
   "assignees",
   "tags",
@@ -142,6 +145,7 @@ const DEFAULT_COLUMN_ORDER: string[] = [
 const COLUMN_DEFS: ColumnDef[] = [
   { id: "statusColumnId", label: "Status" },
   { id: "priority", label: "Priorytet" },
+  { id: "shortId", label: "ID" },
   { id: "title", label: "Tytuł" },
   { id: "assignees", label: "Osoby" },
   { id: "tags", label: "Tagi" },
@@ -432,23 +436,35 @@ export function BoardTable({
           PRIORITY_WEIGHT[a.original.priority] -
           PRIORITY_WEIGHT[b.original.priority],
       }),
+      // F12-K86: ID column — osobna kolumna z mono shortId.
+      // Sortable po ostatnich 4 znakach cuid (najnowsze cuid'y mają wyższy id).
+      col.display({
+        id: "shortId",
+        header: "ID",
+        size: 76,
+        minSize: 56,
+        cell: (info) => {
+          const row = info.row.original;
+          const shortId = row.id.slice(-4).toUpperCase();
+          return (
+            <Link
+              href={`/w/${workspaceId}/t/${row.id}`}
+              className="inline-flex items-center font-mono text-[11px] leading-none text-brand-300 transition-colors hover:text-primary dark:text-brand-300"
+            >
+              {shortId}
+            </Link>
+          );
+        },
+      }),
       col.accessor("title", {
         header: "Tytuł",
         size: 280,
         minSize: 120,
         cell: (info) => {
           const row = info.row.original;
-          // v4 spec (linia 51): mono shortId 11px brand-light + title 13.5px
-          // white, gap 8, truncate. Brak displayId w schemacie — używamy
-          // ostatnich 4 znaków cuid jako wizualnego "tagu" wiersza (czysta
-          // dekoracja, żeby pasowało do v4 mockupu).
-          const shortId = row.id.slice(-4).toUpperCase();
           return (
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="font-mono text-[11px] leading-none text-brand-300 dark:text-brand-300 shrink-0">
-                  {shortId}
-                </span>
                 <Link
                   href={`/w/${workspaceId}/t/${row.id}`}
                   lang="pl"
