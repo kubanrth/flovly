@@ -73,17 +73,18 @@ async function loadAssignments(
         include: {
           workspace: { select: { id: true, name: true, slug: true } },
           // statusColumns needed so the inline StatusPicker in the row can change task status.
+          // F12-K91: `order` dorzucone żeby wykryć "Done" (= last status column per board).
           board: {
             select: {
               id: true,
               name: true,
               statusColumns: {
-                select: { id: true, name: true, colorHex: true },
+                select: { id: true, name: true, colorHex: true, order: true },
                 orderBy: { order: "asc" },
               },
             },
           },
-          statusColumn: true,
+          statusColumn: { select: { id: true, name: true, colorHex: true, order: true } },
           tags: { include: { tag: true } },
           // For "already-assigned" highlight in the assign-hotkey popup.
           assignees: { select: { userId: true } },
@@ -199,7 +200,21 @@ export default async function MyTasksPage({
     a.workspaceName.localeCompare(b.workspaceName) || a.name.localeCompare(b.name),
   );
 
-  const active = assignments.filter((a) => a.task.workspace);
+  // F12-K91: pomiń tasks oznaczone jako Done. Heurystyka: task.statusColumn.order
+  // == MAX(board.statusColumns.order) → ostatnia kolumna per board to "Done"
+  // (konwencja: Do zrobienia → W trakcie → Testy → Done). Schema nie ma flagi
+  // isDone — bez tej heurystyki "zakończone" trafiały do "Zaległe" (gdy stopAt
+  // w przeszłości), co klient wprost zgłosił jako bug.
+  const isTaskDone = (a: (typeof assignments)[number]): boolean => {
+    const sc = a.task.statusColumn;
+    if (!sc) return false;
+    const columns = a.task.board.statusColumns;
+    if (columns.length === 0) return false;
+    const maxOrder = columns[columns.length - 1].order;
+    return sc.order === maxOrder;
+  };
+
+  const active = assignments.filter((a) => a.task.workspace && !isTaskDone(a));
 
   // Bucket only on default sort with no filters; custom sort = flat list.
   const showBuckets = filters.sort === "updatedDesc" && filters.search === "" && filters.boardIds.length === 0;

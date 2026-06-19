@@ -1444,9 +1444,13 @@ function CanvasEditorInner({
       )}
 
       {/* Top toolbar tylko na desktop (md:flex) — na mobile używamy vertical
-          left toolbar'a (Mural-style) renderowanego poniżej. */}
+          left toolbar'a (Mural-style) renderowanego poniżej.
+          F12-K91 fix: z-10 żeby toolbar był NAD PenOverlay (z-4). Bez tego
+          klik na color swatch trafiał w PenOverlay (które ma onPointerDown
+          na cały canvas) zamiast w przycisk — kolor się nie zmieniał i każdy
+          klik spawnowal nowy drawing state (memory + render kaskada). */}
       {canEdit && (
-        <div className="pointer-events-none absolute left-1/2 top-3 hidden -translate-x-1/2 flex-col items-center gap-2 md:flex">
+        <div className="pointer-events-none absolute left-1/2 top-3 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 md:flex">
           <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-border bg-card/95 p-1 shadow-lg backdrop-blur">
             <ToolButton
               label="Wskaźnik (V)"
@@ -1773,7 +1777,7 @@ function TaskLinksPanel({
         onClick={() => setCollapsed(false)}
         title="Rozwiń panel zadań na węźle"
         aria-label="Rozwiń panel zadań na węźle"
-        className="pointer-events-auto absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-card/95 px-3 py-1.5 shadow-lg backdrop-blur transition-colors hover:border-primary/60"
+        className="pointer-events-auto absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-border bg-card/95 px-3 py-1.5 shadow-lg backdrop-blur transition-colors hover:border-primary/60"
       >
         <Link2 size={12} className="text-primary" />
         <span className="font-mono text-[0.66rem] uppercase tracking-[0.12em] text-muted-foreground">
@@ -1787,7 +1791,7 @@ function TaskLinksPanel({
   }
 
   return (
-    <div className="pointer-events-auto absolute right-3 top-3 flex w-[300px] flex-col gap-2 rounded-lg border border-border bg-card/95 p-3 shadow-lg backdrop-blur">
+    <div className="pointer-events-auto absolute right-3 top-3 z-10 flex w-[300px] flex-col gap-2 rounded-lg border border-border bg-card/95 p-3 shadow-lg backdrop-blur">
       <div className="flex items-center justify-between gap-2">
         <span className="eyebrow text-primary">Zadania na węźle</span>
         <div className="flex items-center gap-1">
