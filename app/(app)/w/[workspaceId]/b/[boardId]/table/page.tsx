@@ -7,7 +7,6 @@ import type { TableFilter, TableSort } from "@/lib/table-filters";
 import { CreateTaskButton } from "@/components/task/create-task-button";
 import { ImportTasksDialog } from "@/components/task/import-tasks-dialog";
 import { ShareBoardButton } from "@/components/board/share-board-button";
-import { BackgroundCustomizer } from "@/components/view/background-customizer";
 import { BoardShell } from "@/components/view/board-shell";
 import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
@@ -87,7 +86,6 @@ export default async function BoardTablePage({
   const canEdit = can(ctx.role, "task.update");
   const canCreate = can(ctx.role, "task.create");
   const canManageBoard = can(ctx.role, "board.update");
-  const canCustomize = can(ctx.role, "background.customize");
 
   const tableView = board.views[0];
   const background = (tableView?.background ?? null) as BackgroundConfig | null;
@@ -137,14 +135,6 @@ export default async function BoardTablePage({
         extra={<BoardLinksServer workspaceId={workspaceId} boardId={board.id} />}
         actions={
           <>
-            {canCustomize && (
-              <BackgroundCustomizer
-                workspaceId={workspaceId}
-                boardId={board.id}
-                viewType="TABLE"
-                initial={background}
-              />
-            )}
             <ShareBoardButton workspaceId={workspaceId} boardId={board.id} />
             {canCreate && (
               <>
@@ -170,6 +160,7 @@ export default async function BoardTablePage({
         }))}
         tasks={board.tasks.map((t) => ({
           id: t.id,
+          displayId: t.displayId,
           title: t.title,
           statusColumnId: t.statusColumnId,
           priority: t.priority,

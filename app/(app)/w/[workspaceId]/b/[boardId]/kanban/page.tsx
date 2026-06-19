@@ -6,7 +6,6 @@ import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { CreateTaskButton } from "@/components/task/create-task-button";
 import { ImportTasksDialog } from "@/components/task/import-tasks-dialog";
 import { ShareBoardButton } from "@/components/board/share-board-button";
-import { BackgroundCustomizer } from "@/components/view/background-customizer";
 import { BoardShell } from "@/components/view/board-shell";
 import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
@@ -60,7 +59,6 @@ export default async function BoardKanbanPage({
 
   const canCreate = can(ctx.role, "task.create");
   const canManageBoard = can(ctx.role, "board.update");
-  const canCustomize = can(ctx.role, "background.customize");
   const kanbanView = board.views[0];
   const background = (kanbanView?.background ?? null) as BackgroundConfig | null;
   const bgCss = backgroundToCss(background);
@@ -77,14 +75,6 @@ export default async function BoardKanbanPage({
         extra={<BoardLinksServer workspaceId={workspaceId} boardId={board.id} />}
         actions={
           <>
-            {canCustomize && (
-              <BackgroundCustomizer
-                workspaceId={workspaceId}
-                boardId={board.id}
-                viewType="KANBAN"
-                initial={background}
-              />
-            )}
             <ShareBoardButton workspaceId={workspaceId} boardId={board.id} />
             {canCreate && (
               <>

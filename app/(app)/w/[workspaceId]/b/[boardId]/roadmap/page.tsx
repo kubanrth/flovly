@@ -4,7 +4,6 @@ import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { RoadmapView } from "@/components/roadmap/roadmap-view";
 import { AggregatorToggle } from "@/components/roadmap/aggregator-toggle";
-import { BackgroundCustomizer } from "@/components/view/background-customizer";
 import { BoardShell } from "@/components/view/board-shell";
 import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
@@ -99,7 +98,6 @@ export default async function RoadmapPage({
   const canCreate = can(ctx.role, "milestone.create");
   const canUpdate = can(ctx.role, "milestone.update");
   const canDelete = can(ctx.role, "milestone.delete");
-  const canCustomize = can(ctx.role, "background.customize");
   const canManageBoard = can(ctx.role, "board.update");
   const enabledViews = parseEnabledViews(board.workspace.enabledViews);
 
@@ -112,16 +110,6 @@ export default async function RoadmapPage({
         active="roadmap"
         enabledViews={enabledViews}
         extra={<BoardLinksServer workspaceId={workspaceId} boardId={boardId} />}
-        actions={
-          canCustomize && roadmapView ? (
-            <BackgroundCustomizer
-              workspaceId={workspaceId}
-              boardId={boardId}
-              viewType="ROADMAP"
-              initial={background}
-            />
-          ) : null
-        }
       />
 
       <ViewTransition>

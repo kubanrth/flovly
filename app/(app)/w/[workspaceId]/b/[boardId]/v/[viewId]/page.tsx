@@ -9,7 +9,6 @@ import { RoadmapView } from "@/components/roadmap/roadmap-view";
 import { GanttView } from "@/components/roadmap/gantt-view";
 import { CanvasEditorLazy } from "@/components/canvas/canvas-editor-lazy";
 import { CreateTaskButton } from "@/components/task/create-task-button";
-import { BackgroundCustomizer } from "@/components/view/background-customizer";
 import { BoardShell } from "@/components/view/board-shell";
 import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
@@ -49,28 +48,17 @@ export default async function CustomBoardViewPage({
   const canCreate = can(ctx.role, "task.create");
   const canEdit = can(ctx.role, "task.update");
   const canManageBoard = can(ctx.role, "board.update");
-  const canCustomize = can(ctx.role, "background.customize");
 
   const actions =
-    // F12-K73/78: TASKLINE i CALENDAR jak WHITEBOARD — bez BackgroundCustomizer'a
-    // (kanwa lub gęsta siatka, customization niczego nie wnosi).
+    // F12-K73/78: TASKLINE / CALENDAR / WHITEBOARD — bez Create Task button'a
+    // (kanwa lub gęsta siatka, button niczego nie wnosi).
     view.type === "WHITEBOARD" ||
     view.type === "TASKLINE" ||
-    view.type === "CALENDAR" ? null : (
-      <>
-        {canCustomize && (
-          <BackgroundCustomizer
-            workspaceId={workspaceId}
-            boardId={boardId}
-            viewType={view.type}
-            initial={background}
-          />
-        )}
-        {canCreate && (
-          <CreateTaskButton workspaceId={workspaceId} boardId={boardId} />
-        )}
-      </>
-    );
+    view.type === "CALENDAR"
+      ? null
+      : canCreate
+        ? <CreateTaskButton workspaceId={workspaceId} boardId={boardId} />
+        : null;
 
   return (
     <BoardShell bgCss={bgCss}>
@@ -235,6 +223,7 @@ async function TableRenderer({
       }))}
       tasks={board.tasks.map((t) => ({
         id: t.id,
+        displayId: t.displayId,
         title: t.title,
         statusColumnId: t.statusColumnId,
         priority: t.priority,

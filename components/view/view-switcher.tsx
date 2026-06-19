@@ -60,6 +60,7 @@ export function ViewSwitcher({
   customViews,
   canManage,
   defaultViewIds,
+  addViewSlot,
 }: {
   workspaceId: string;
   boardId: string;
@@ -70,6 +71,10 @@ export function ViewSwitcher({
   customViews?: CustomViewDescriptor[];
   canManage?: boolean;
   defaultViewIds?: Partial<Record<ViewName, string>>;
+  // Optional slot rendered INSIDE the frame, between track and right chevron.
+  // Typically a `<CreateViewDialog />` styled with `.lg-vs-add-view`. Kept as
+  // ReactNode so parent owns the trigger UI / dialog state.
+  addViewSlot?: React.ReactNode;
 }) {
   const pathname = usePathname();
   const overviewPath = `/w/${workspaceId}/b/${boardId}/overview`;
@@ -177,6 +182,7 @@ export function ViewSwitcher({
     <div key={p.key} className="group relative shrink-0">
       <Link
         href={p.href}
+        prefetch
         ref={setPillRef(p.key)}
         role="tab"
         aria-selected={p.isActive}
@@ -263,6 +269,8 @@ export function ViewSwitcher({
           });
         })}
       </div>
+
+      {addViewSlot ? <div className="lg-vs-add-slot">{addViewSlot}</div> : null}
 
       <button
         type="button"

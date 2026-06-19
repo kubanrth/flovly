@@ -4,6 +4,7 @@ import { startTransition, useState } from "react";
 import {
   ChevronDown,
   FolderOpen,
+  FolderPlus,
   Pencil,
   Plus,
   Trash2,
@@ -546,6 +547,10 @@ function NewFolderForm({
   boardId: string;
 }) {
   const [name, setName] = useState("");
+  // F-postfix: klient zgłaszał, że stara wersja "dodaj folder linków…" jako
+  // wyblakły placeholder w dashed-borderze ginęła w UI. Teraz: brand-tinted
+  // surface + widoczna ikona FolderPlus + jawna etykieta + brand-gradient CTA
+  // gdy input ma wartość. Akcja serverowa (createLinkFolderAction) bez zmian.
   return (
     <form
       action={(fd) =>
@@ -554,27 +559,38 @@ function NewFolderForm({
           setName("");
         })
       }
-      className="flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 transition-colors focus-within:border-primary/60"
+      className="group/new-folder flex items-center gap-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-3.5 py-2.5 transition-colors focus-within:border-primary focus-within:bg-primary/10 hover:border-primary/70 hover:bg-primary/10"
     >
       <input type="hidden" name="workspaceId" value={workspaceId} />
       <input type="hidden" name="boardId" value={boardId} />
-      <input
-        name="name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        required
-        maxLength={120}
-        placeholder="dodaj folder linków…"
-        className="flex-1 bg-transparent font-mono text-[0.7rem] uppercase tracking-[0.14em] outline-none placeholder:text-muted-foreground/60"
+      <FolderPlus
+        size={18}
+        className="shrink-0 text-primary transition-transform group-focus-within/new-folder:scale-110"
+        aria-hidden
       />
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-primary/80">
+          Dodaj folder linków
+        </span>
+        <input
+          name="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          maxLength={120}
+          placeholder="np. Brandbook, API references…"
+          className="w-full bg-transparent font-display text-[0.92rem] font-semibold tracking-[-0.005em] outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
+        />
+      </div>
       <button
         type="submit"
         disabled={!name.trim()}
         aria-label="Dodaj folder linków"
         title="Dodaj folder linków (Enter)"
-        className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+        className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-brand-gradient px-3 font-mono text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-white shadow-brand transition-[transform,opacity] duration-150 hover:-translate-y-px hover:opacity-95 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-none disabled:bg-muted disabled:text-muted-foreground disabled:opacity-60 disabled:shadow-none"
       >
-        <Plus size={12} />
+        <Plus size={13} />
+        <span>Dodaj</span>
       </button>
     </form>
   );

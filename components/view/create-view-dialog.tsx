@@ -108,9 +108,9 @@ export function CreateViewDialog({
         onClick={() => setOpen(true)}
         aria-label="Nowy widok"
         title="Nowy widok"
-        className="ml-2 inline-flex h-8 items-center gap-1.5 rounded-md border border-dashed border-border bg-background px-3 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
+        className="lg-vs-add-view"
       >
-        <Plus size={12} />
+        <Plus size={12} strokeWidth={2.4} />
         <span>Widok</span>
       </button>
 

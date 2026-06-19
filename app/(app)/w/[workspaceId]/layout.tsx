@@ -50,7 +50,6 @@ export default async function WorkspaceLayout({
         <WorkspaceTabs
           workspaceId={workspace.id}
           canEditSettings={canEditSettings}
-          roleLabel={ctx.role.toLowerCase()}
         />
       </header>
 

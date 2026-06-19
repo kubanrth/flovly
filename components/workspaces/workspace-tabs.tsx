@@ -7,7 +7,6 @@ import { LayoutGrid, Settings, Users } from "lucide-react";
 export interface WorkspaceTabsProps {
   workspaceId: string;
   canEditSettings: boolean;
-  roleLabel: string;
 }
 
 // Tabs nawigacyjne workspace'u (Przegląd / Członkowie / Ustawienia).
@@ -15,10 +14,10 @@ export interface WorkspaceTabsProps {
 // Dotąd były to gołe eyebrow-styled Linki w nav'ie — nieczytelne jako tab'y,
 // brak active state'a. Teraz prawdziwe button-style pille z ikonkami, kolorowym
 // underline pod aktywnym + tinted bg, większy hit-area dla mobile.
+// F-cleanup: "Rola" pill usunięta — identyfikator roli wyjebany z widoku.
 export function WorkspaceTabs({
   workspaceId,
   canEditSettings,
-  roleLabel,
 }: WorkspaceTabsProps) {
   const pathname = usePathname();
   const baseHref = `/w/${workspaceId}`;
@@ -50,10 +49,6 @@ export function WorkspaceTabs({
           active={isSettings}
         />
       )}
-      <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 font-mono text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground md:inline-flex">
-        Rola
-        <span className="text-foreground">{roleLabel}</span>
-      </span>
     </div>
   );
 }

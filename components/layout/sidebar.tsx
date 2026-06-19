@@ -217,8 +217,8 @@ export function Sidebar({
         // Dual-mode: mobile drawer (max-md) vs desktop sticky (md+). Mobile rules MUST use `max-md:` —
         // otherwise data-[mobile-open=false]:-translate-x-full (specificity 0,2,0) beats md:translate-x-0
         // (0,1,0) and the sidebar stays hidden on desktop.
-        // v4: 210px expanded (matchuje hero mock), 72px collapsed (icon-only).
-        className="group/sidebar flex h-dvh flex-col text-sidebar-foreground transition-[transform,width] duration-200 max-md:fixed max-md:inset-0 max-md:z-40 max-md:w-full max-md:p-0 max-md:data-[mobile-open=false]:-translate-x-full max-md:data-[mobile-open=true]:translate-x-0 md:sticky md:top-0 md:self-start md:p-3 md:pr-2 data-[collapsed=true]:md:w-[72px] data-[collapsed=false]:md:w-[210px]"
+        // v4: 240px expanded (210 ciął "Wszystkie przestrzenie"), 72px collapsed (icon-only).
+        className="group/sidebar flex h-dvh flex-col text-sidebar-foreground transition-[transform,width] duration-200 max-md:fixed max-md:inset-0 max-md:z-40 max-md:w-full max-md:p-0 max-md:data-[mobile-open=false]:-translate-x-full max-md:data-[mobile-open=true]:translate-x-0 md:sticky md:top-0 md:self-start md:p-3 md:pr-2 data-[collapsed=true]:md:w-[72px] data-[collapsed=false]:md:w-[240px]"
       >
         {/* Mobile: cały sidebar scrolluje jako jedna kolumna (max-md:overflow-y-auto)
             żeby user nie był zamknięty w zagnieżdżonym scroll'u listy workspace'ów.
@@ -491,6 +491,7 @@ function WsSubLink({
   return (
     <Link
       href={href}
+      prefetch={false}
       data-active={active ? "true" : "false"}
       className="group relative inline-flex items-center gap-2 rounded-md px-2 py-1 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground/80 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground data-[active=true]:bg-white/80 data-[active=true]:shadow-[0_0_0_0.5px_rgba(12,13,18,0.08),inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-white/[0.07] dark:data-[active=true]:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.06)] data-[active=true]:font-semibold data-[active=true]:text-foreground max-md:gap-2.5 max-md:px-3 max-md:py-2.5 max-md:text-[0.86rem] [&>svg]:max-md:size-4"
     >
@@ -556,8 +557,12 @@ function NavItem({
 
   // v4: gap-2.5, padding 2.5/2 (vs poprzednie 2/1.5), rounded-lg (vs rounded-sm),
   // font-medium (vs default), text size 0.84rem (vs 0.88rem) — bardziej zwarte.
+  // Collapsed (72px): icon wyśrodkowany w buttonie (justify-center + px-0) —
+  // tak żeby wszystkie nav items miały spójną pozycję ikon w columnie 72px.
   const cls =
-    "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[0.84rem] font-medium transition-colors data-[active=true]:bg-[linear-gradient(135deg,rgba(124,92,255,0.14),rgba(210,71,181,0.10))] data-[active=true]:shadow-[inset_0_0_0_1px_rgba(124,92,255,0.18),0_1px_2px_rgba(12,13,18,0.04)] data-[active=true]:text-foreground dark:data-[active=true]:bg-[linear-gradient(135deg,rgba(155,107,242,0.28),rgba(225,49,143,0.18))] dark:data-[active=true]:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] dark:data-[active=true]:text-white max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]";
+    `group flex items-center gap-2.5 rounded-lg py-2 text-[0.84rem] font-medium transition-colors data-[active=true]:bg-[linear-gradient(135deg,rgba(124,92,255,0.14),rgba(210,71,181,0.10))] data-[active=true]:shadow-[inset_0_0_0_1px_rgba(124,92,255,0.18),0_1px_2px_rgba(12,13,18,0.04)] data-[active=true]:text-foreground dark:data-[active=true]:bg-[linear-gradient(135deg,rgba(155,107,242,0.28),rgba(225,49,143,0.18))] dark:data-[active=true]:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] dark:data-[active=true]:text-white max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem] ${
+      collapsed ? "justify-center px-0" : "px-2.5"
+    }`;
 
   if (disabled) {
     return (
@@ -675,7 +680,10 @@ function SortableWorkspaceRow({
         )}
         <Link
           href={`/w/${ws.id}`}
-          className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2 py-2 text-[0.84rem] font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
+          prefetch={false}
+          className={`flex min-w-0 flex-1 items-center gap-2.5 rounded-lg py-2 text-[0.84rem] font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem] ${
+            collapsed ? "justify-center px-0" : "px-2"
+          }`}
         >
           <WorkspaceSwatch id={ws.id} />
           {!collapsed && (
@@ -888,6 +896,7 @@ function SortableBoardRow({
       )}
       <Link
         href={`/w/${workspaceId}/b/${b.id}/table`}
+        prefetch={false}
         className={`min-w-0 flex-1 truncate rounded-md px-2 py-1 text-[0.8rem] transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground max-md:px-3 max-md:py-2.5 max-md:text-[0.95rem] ${
           boardActive
             ? "font-semibold text-foreground"

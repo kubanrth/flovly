@@ -76,6 +76,10 @@ import {
 
 export interface BoardTableTask {
   id: string;
+  // F12-K57 / F-postfix: ludzki, sekwencyjny ID per-workspace (1, 2, 3...).
+  // Renderowany w kolumnie "ID" jako `#123`. 0 = legacy task sprzed
+  // backfillu — user dostaje sygnał ("#0") że trzeba odpalić SQL.
+  displayId: number;
   title: string;
   statusColumnId: string | null;
   // F12-K75: priorytet zadania. NONE = bez badge'a w kolumnie Priorytet.
@@ -130,6 +134,7 @@ function toLocalInput(iso: string | null): string {
 const DEFAULT_COLUMN_ORDER: string[] = [
   "statusColumnId",
   "priority",
+  "displayId",
   "title",
   "assignees",
   "tags",
@@ -142,6 +147,7 @@ const DEFAULT_COLUMN_ORDER: string[] = [
 const COLUMN_DEFS: ColumnDef[] = [
   { id: "statusColumnId", label: "Status" },
   { id: "priority", label: "Priorytet" },
+  { id: "displayId", label: "ID" },
   { id: "title", label: "Tytuł" },
   { id: "assignees", label: "Osoby" },
   { id: "tags", label: "Tagi" },
@@ -431,6 +437,24 @@ export function BoardTable({
         sortingFn: (a, b) =>
           PRIORITY_WEIGHT[a.original.priority] -
           PRIORITY_WEIGHT[b.original.priority],
+      }),
+      // F-postfix: ludzki ID per-workspace. `#123` linkuje do detail page —
+      // task table to często "lista do triażu", więc szybki klik w ID otwiera
+      // szczegóły bez wchodzenia w tytuł. Sortuje numerycznie (nie po stringu).
+      // displayId==0 = legacy task sprzed backfillu, render "#0" jako sygnał.
+      col.accessor("displayId", {
+        header: "ID",
+        size: 70,
+        minSize: 50,
+        cell: (info) => (
+          <Link
+            href={`/w/${workspaceId}/t/${info.row.original.id}`}
+            className="font-mono text-[11px] tracking-tight text-muted-foreground transition-colors hover:text-primary"
+          >
+            #{info.getValue()}
+          </Link>
+        ),
+        sortingFn: (a, b) => a.original.displayId - b.original.displayId,
       }),
       col.accessor("title", {
         header: "Tytuł",
