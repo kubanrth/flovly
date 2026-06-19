@@ -1,13 +1,12 @@
 "use client";
 
-import {
-  startTransition,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+// F12-K88 (ViewSwitcher v5): liquid-glass single-row, zawsze 1 rząd niezależnie
+// od liczby widoków. Track scrollowalny + gradient mask 22px na krawędziach +
+// chevrony left/right (auto-enable gdy overflow). Active pill = gradient
+// background + inner ring + brand-clip text + fl-pop spring animation.
+// Keyboard ←/→ między pillami, focus-visible brand ring. Reduced-motion safe.
+
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Table2,
@@ -18,29 +17,15 @@ import {
   Pencil,
   FileText,
   Workflow,
+  ChevronLeft,
+  ChevronRight,
   X,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { deleteBoardViewAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
 import type { ViewName } from "@/lib/board-views";
 
-// Pure helpers live in @/lib/board-views — re-exporting from "use client" breaks server callers.
 export type { ViewName };
-
-// useLayoutEffect warns on the server; fall back to useEffect during SSR.
-const useIsoLayoutEffect =
-  typeof window !== "undefined" ? useLayoutEffect : useEffect;
-
-// Remembers the last active tab across SPA navigations (this component remounts
-// per board route) so the indicator can slide FROM the previous tab on arrival.
-let lastActive: { boardId: string; key: string } | null = null;
-
-interface IndicatorRect {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-}
 
 interface ViewDescriptor {
   name: ViewName;
@@ -57,22 +42,13 @@ export interface CustomViewDescriptor {
 }
 
 const DEFAULT_ICONS: Record<ViewName, React.ReactNode> = {
-  table: <Table2 size={14} />,
-  kanban: <KanbanSquare size={14} />,
-  roadmap: <GitBranch size={14} />,
-  gantt: <BarChart3 size={14} />,
-  calendar: <Calendar size={14} />,
-  whiteboard: <Pencil size={14} />,
-  taskline: <Workflow size={14} />,
-};
-const DEFAULT_LABELS: Record<ViewName, string> = {
-  table: "Tabela",
-  kanban: "Kanban",
-  roadmap: "Roadmapa",
-  gantt: "Gantt",
-  calendar: "Kalendarz",
-  whiteboard: "Whiteboard",
-  taskline: "Linia zadań",
+  table: <Table2 size={15} />,
+  kanban: <KanbanSquare size={15} />,
+  roadmap: <GitBranch size={15} />,
+  gantt: <BarChart3 size={15} />,
+  calendar: <Calendar size={15} />,
+  whiteboard: <Pencil size={15} />,
+  taskline: <Workflow size={15} />,
 };
 
 export function ViewSwitcher({
@@ -80,7 +56,6 @@ export function ViewSwitcher({
   boardId,
   active,
   activeViewId,
-  size = "md",
   enabled,
   customViews,
   canManage,
@@ -88,77 +63,68 @@ export function ViewSwitcher({
 }: {
   workspaceId: string;
   boardId: string;
-  // Active default view (undefined when the user is on a custom view).
   active?: ViewName;
-  // Active custom view id, used for highlight instead of `active`.
   activeViewId?: string;
   size?: "sm" | "md";
   enabled?: ViewName[];
   customViews?: CustomViewDescriptor[];
   canManage?: boolean;
-  // Undefined entries = legacy board without BoardView row → hide X.
   defaultViewIds?: Partial<Record<ViewName, string>>;
 }) {
-  const allViews: ViewDescriptor[] = [
-    {
-      name: "table",
-      label: "Tabela",
-      icon: DEFAULT_ICONS.table,
-      path: `/w/${workspaceId}/b/${boardId}/table`,
-    },
-    {
-      name: "kanban",
-      label: "Kanban",
-      icon: DEFAULT_ICONS.kanban,
-      path: `/w/${workspaceId}/b/${boardId}/kanban`,
-    },
-    {
-      name: "roadmap",
-      label: "Roadmapa",
-      icon: DEFAULT_ICONS.roadmap,
-      path: `/w/${workspaceId}/b/${boardId}/roadmap`,
-    },
-    {
-      name: "gantt",
-      label: "Gantt",
-      icon: DEFAULT_ICONS.gantt,
-      path: `/w/${workspaceId}/b/${boardId}/gantt`,
-    },
-    {
-      name: "calendar",
-      label: "Kalendarz",
-      icon: DEFAULT_ICONS.calendar,
-      path: `/w/${workspaceId}/b/${boardId}/calendar`,
-    },
-    {
-      name: "whiteboard",
-      label: "Whiteboard",
-      icon: DEFAULT_ICONS.whiteboard,
-      path: `/w/${workspaceId}/b/${boardId}/whiteboard`,
-    },
-    {
-      name: "taskline",
-      label: "Linia zadań",
-      icon: DEFAULT_ICONS.taskline,
-      path: `/w/${workspaceId}/b/${boardId}/taskline`,
-    },
-  ];
-
-  const views = enabled
-    ? allViews.filter((v) => enabled.includes(v.name))
-    : allViews;
-
-  // Liquid-glass tabs (.lg-seg / .lg-seg-btn in globals.css).
-  const heightClass =
-    size === "sm" ? "h-7 px-2.5 text-[0.76rem]" : "h-8 px-3 text-[0.82rem]";
-
-  // 6th tab 'Opis' is a per-board overview page outside ViewType enum (no BoardView row needed).
   const pathname = usePathname();
   const overviewPath = `/w/${workspaceId}/b/${boardId}/overview`;
-  const overviewActive = pathname === overviewPath || pathname?.startsWith(`${overviewPath}/`);
+  const overviewActive =
+    pathname === overviewPath || pathname?.startsWith(`${overviewPath}/`);
 
-  // Single moving highlight. Each tab registers its <a>; we measure the active
-  // one relative to the segment and CSS-transition the indicator between them.
+  const allViews: ViewDescriptor[] = [
+    { name: "table", label: "Tabela", icon: DEFAULT_ICONS.table, path: `/w/${workspaceId}/b/${boardId}/table` },
+    { name: "kanban", label: "Kanban", icon: DEFAULT_ICONS.kanban, path: `/w/${workspaceId}/b/${boardId}/kanban` },
+    { name: "roadmap", label: "Roadmapa", icon: DEFAULT_ICONS.roadmap, path: `/w/${workspaceId}/b/${boardId}/roadmap` },
+    { name: "gantt", label: "Gantt", icon: DEFAULT_ICONS.gantt, path: `/w/${workspaceId}/b/${boardId}/gantt` },
+    { name: "calendar", label: "Kalendarz", icon: DEFAULT_ICONS.calendar, path: `/w/${workspaceId}/b/${boardId}/calendar` },
+    { name: "whiteboard", label: "Whiteboard", icon: DEFAULT_ICONS.whiteboard, path: `/w/${workspaceId}/b/${boardId}/whiteboard` },
+    { name: "taskline", label: "Linia zadań", icon: DEFAULT_ICONS.taskline, path: `/w/${workspaceId}/b/${boardId}/taskline` },
+  ];
+
+  const views = enabled ? allViews.filter((v) => enabled.includes(v.name)) : allViews;
+
+  // ── Track scroll state ──────────────────────────────────────────────────
+  const trackRef = useRef<HTMLDivElement>(null);
+  const pillRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const setPillRef = useCallback(
+    (key: string) => (el: HTMLElement | null) => {
+      if (el) pillRefs.current.set(key, el);
+      else pillRefs.current.delete(key);
+    },
+    [],
+  );
+
+  const updateChevrons = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    // 2px epsilon — rounded scroll math.
+    setCanScrollLeft(el.scrollLeft > 2);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+  }, []);
+
+  useEffect(() => {
+    updateChevrons();
+    const el = trackRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", updateChevrons, { passive: true });
+    const ro = new ResizeObserver(updateChevrons);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", updateChevrons);
+      ro.disconnect();
+    };
+  }, [updateChevrons, views.length, customViews?.length]);
+
+  // Auto-scroll active pill into view (gdy switch view ze skrótu klawiaturowego
+  // albo route change).
   const activeKey = overviewActive
     ? "overview"
     : activeViewId
@@ -167,195 +133,146 @@ export function ViewSwitcher({
         ? `v:${active}`
         : null;
 
-  const segRef = useRef<HTMLDivElement>(null);
-  const linkRefs = useRef<Map<string, HTMLElement>>(new Map());
-  const [indicator, setIndicator] = useState<IndicatorRect | null>(null);
+  useEffect(() => {
+    if (!activeKey) return;
+    const pill = pillRefs.current.get(activeKey);
+    if (!pill) return;
+    pill.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [activeKey]);
 
-  const setLinkRef = useCallback(
-    (key: string) => (el: HTMLElement | null) => {
-      if (el) linkRefs.current.set(key, el);
-      else linkRefs.current.delete(key);
-    },
-    [],
-  );
+  const scrollBy = (dx: number) => {
+    trackRef.current?.scrollBy({ left: dx, behavior: "smooth" });
+  };
 
-  const measureRel = useCallback((el: HTMLElement): IndicatorRect | null => {
-    const seg = segRef.current;
-    if (!seg) return null;
-    const s = seg.getBoundingClientRect();
-    const r = el.getBoundingClientRect();
-    return { left: r.left - s.left, top: r.top - s.top, width: r.width, height: r.height };
+  // Keyboard ←/→ między pillami (Tabs ARIA pattern).
+  const onKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    const track = trackRef.current;
+    if (!track) return;
+    const focusables = Array.from(
+      track.querySelectorAll<HTMLElement>('[role="tab"]'),
+    );
+    const idx = focusables.indexOf(document.activeElement as HTMLElement);
+    if (idx === -1) return;
+    e.preventDefault();
+    const next = e.key === "ArrowLeft"
+      ? Math.max(0, idx - 1)
+      : Math.min(focusables.length - 1, idx + 1);
+    focusables[next]?.focus();
   }, []);
 
-  useIsoLayoutEffect(() => {
-    if (!activeKey) {
-      setIndicator(null);
-      return;
-    }
-    const activeEl = linkRefs.current.get(activeKey);
-    if (!activeEl) {
-      setIndicator(null);
-      return;
-    }
-    const target = measureRel(activeEl);
-    if (!target) return;
-    const prevEl =
-      lastActive && lastActive.boardId === boardId && lastActive.key !== activeKey
-        ? linkRefs.current.get(lastActive.key)
-        : null;
-    const start = prevEl ? measureRel(prevEl) : null;
-    if (start) {
-      setIndicator(start);
-      // Two frames so the start position paints before we transition to target.
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => setIndicator(target)),
-      );
-    } else {
-      setIndicator(target);
-    }
-    lastActive = { boardId, key: activeKey };
-  }, [activeKey, boardId, measureRel]);
+  // ── Pill renderer ───────────────────────────────────────────────────────
+  type PillProps = {
+    key: string;
+    href: string;
+    icon: React.ReactNode;
+    label: string;
+    isActive: boolean;
+    canDelete?: boolean;
+    viewIdToDelete?: string;
+    deleteLabel?: string;
+  };
 
-  // Realign on resize / tab-set changes — snap, no slide.
-  useEffect(() => {
-    const seg = segRef.current;
-    if (!seg) return;
-    const realign = () => {
-      const activeEl = activeKey ? linkRefs.current.get(activeKey) : null;
-      if (!activeEl) return;
-      const target = measureRel(activeEl);
-      if (!target) return;
-      setIndicator((prev) =>
-        prev &&
-        prev.left === target.left &&
-        prev.top === target.top &&
-        prev.width === target.width &&
-        prev.height === target.height
-          ? prev
-          : target,
-      );
-    };
-    const ro = new ResizeObserver(realign);
-    ro.observe(seg);
-    return () => ro.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeKey, customViews, views.length]);
+  const renderPill = (p: PillProps) => (
+    <div key={p.key} className="group relative shrink-0">
+      <Link
+        href={p.href}
+        ref={setPillRef(p.key)}
+        role="tab"
+        aria-selected={p.isActive}
+        data-active={p.isActive ? "true" : "false"}
+        className={`lg-vs-pill ${p.canDelete ? "pr-7" : ""}`}
+      >
+        {p.icon}
+        <span className="lg-vs-label">{p.label}</span>
+      </Link>
+      {p.canDelete && p.viewIdToDelete && (
+        <form
+          action={(fd) => startTransition(() => deleteBoardViewAction(fd))}
+          className="m-0 absolute right-1 top-1/2 -translate-y-1/2"
+        >
+          <input type="hidden" name="viewId" value={p.viewIdToDelete} />
+          <button
+            type="submit"
+            aria-label={p.deleteLabel ?? `Usuń widok ${p.label}`}
+            title={p.deleteLabel ?? `Usuń widok ${p.label} z tablicy`}
+            className="grid h-4 w-4 place-items-center rounded-sm text-current opacity-0 transition-opacity hover:bg-destructive/20 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+          >
+            <X size={10} />
+          </button>
+        </form>
+      )}
+    </div>
+  );
+
+  const totalPills = views.length + 1 + (customViews?.length ?? 0); // +1 for "Opis"
 
   return (
-    <div
-      ref={segRef}
-      role="tablist"
-      aria-label="Widoki tablicy"
-      className={`lg-seg flex-wrap${indicator ? " lg-seg--js" : ""}`}
-    >
-      {indicator && (
-        <span
-          aria-hidden
-          className="lg-seg-indicator"
-          style={{
-            transform: `translate(${indicator.left}px, ${indicator.top}px)`,
-            width: indicator.width,
-            height: indicator.height,
-          }}
-        />
-      )}
-      {views.map((v) => {
-        const isActive = !activeViewId && v.name === active;
-        const defaultId = defaultViewIds?.[v.name];
-        // Block deleting the active view — would 404. User must switch first.
-        const totalPills = views.length + (customViews?.length ?? 0);
-        const canDelete = canManage && !!defaultId && !isActive && totalPills > 1;
-        return (
-          <div key={v.name} className="group relative">
-            <Link
-              href={v.path}
-              ref={setLinkRef(`v:${v.name}`)}
-              role="tab"
-              aria-selected={isActive}
-              data-active={isActive ? "true" : "false"}
-              className={`lg-seg-btn font-sans focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${heightClass} ${canDelete ? "pr-6" : ""}`}
-            >
-              {v.icon}
-              <span>{v.label}</span>
-            </Link>
-            {canDelete && defaultId && (
-              <form
-                action={(fd) => startTransition(() => deleteBoardViewAction(fd))}
-                className="m-0 absolute right-1 top-1/2 -translate-y-1/2"
-              >
-                <input type="hidden" name="viewId" value={defaultId} />
-                <button
-                  type="submit"
-                  aria-label={`Usuń widok ${v.label}`}
-                  title={`Usuń widok ${v.label} z tablicy`}
-                  className="grid h-4 w-4 place-items-center rounded-sm text-current opacity-0 transition-opacity hover:bg-destructive/20 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100 group-data-[active=true]:text-primary-foreground"
-                >
-                  <X size={10} />
-                </button>
-              </form>
-            )}
-          </div>
-        );
-      })}
+    <div className="lg-vs-frame" aria-label="Widoki tablicy">
+      <button
+        type="button"
+        aria-label="Przewiń w lewo"
+        onClick={() => scrollBy(-180)}
+        disabled={!canScrollLeft}
+        className="lg-vs-chevron"
+      >
+        <ChevronLeft size={15} strokeWidth={2.2} />
+      </button>
 
-      {/* F12-K57: stała pill 'Opis' (per-board rich-text overview).
-          Zawsze widoczna, nie wymaga BoardView row'a w DB. */}
-      <div className="group relative">
-        <Link
-          href={overviewPath}
-          ref={setLinkRef("overview")}
-          role="tab"
-          aria-selected={overviewActive}
-          data-active={overviewActive ? "true" : "false"}
-          className={`lg-seg-btn font-sans focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${heightClass}`}
-        >
-          <FileText size={14} />
-          <span>Opis</span>
-        </Link>
+      <div
+        ref={trackRef}
+        role="tablist"
+        onKeyDown={onKeyDown}
+        className="lg-vs-track"
+      >
+        {views.map((v) => {
+          const isActive = !activeViewId && !overviewActive && v.name === active;
+          const defaultId = defaultViewIds?.[v.name];
+          const canDelete = !!canManage && !!defaultId && !isActive && totalPills > 1;
+          return renderPill({
+            key: `v:${v.name}`,
+            href: v.path,
+            icon: v.icon,
+            label: v.label,
+            isActive,
+            canDelete,
+            viewIdToDelete: defaultId,
+          });
+        })}
+
+        {/* "Opis" — per-board overview, zawsze widoczna (poza ViewType enum) */}
+        {renderPill({
+          key: "overview",
+          href: overviewPath,
+          icon: <FileText size={15} />,
+          label: "Opis",
+          isActive: overviewActive,
+        })}
+
+        {customViews?.map((c) => {
+          const isActive = activeViewId === c.id;
+          return renderPill({
+            key: `c:${c.id}`,
+            href: c.path,
+            icon: DEFAULT_ICONS[c.type],
+            label: c.name,
+            isActive,
+            canDelete: !!canManage,
+            viewIdToDelete: c.id,
+            deleteLabel: `Usuń widok ${c.name}`,
+          });
+        })}
       </div>
 
-      {(customViews?.length ?? 0) > 0 && (
-        <span
-          aria-hidden
-          className="mx-1 h-4 w-px bg-border"
-          role="separator"
-        />
-      )}
-
-      {customViews?.map((c) => {
-        const isActive = activeViewId === c.id;
-        return (
-          <div key={c.id} className="group relative">
-            <Link
-              href={c.path}
-              ref={setLinkRef(`c:${c.id}`)}
-              role="tab"
-              aria-selected={isActive}
-              data-active={isActive ? "true" : "false"}
-              className={`lg-seg-btn font-sans focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${heightClass} ${canManage ? "pr-6" : ""}`}
-            >
-              {DEFAULT_ICONS[c.type]}
-              <span className="max-w-[160px] truncate">{c.name}</span>
-            </Link>
-            {canManage && (
-              <form
-                action={(fd) => startTransition(() => deleteBoardViewAction(fd))}
-                className="m-0 absolute right-1 top-1/2 -translate-y-1/2"
-              >
-                <input type="hidden" name="viewId" value={c.id} />
-                <button
-                  type="submit"
-                  aria-label={`Usuń widok ${c.name}`}
-                  className="grid h-4 w-4 place-items-center rounded-sm text-current opacity-0 transition-opacity hover:bg-destructive/20 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100 group-data-[active=true]:text-primary-foreground"
-                >
-                  <X size={10} />
-                </button>
-              </form>
-            )}
-          </div>
-        );
-      })}
+      <button
+        type="button"
+        aria-label="Przewiń w prawo"
+        onClick={() => scrollBy(180)}
+        disabled={!canScrollRight}
+        className="lg-vs-chevron"
+      >
+        <ChevronRight size={15} strokeWidth={2.2} />
+      </button>
     </div>
   );
 }
-

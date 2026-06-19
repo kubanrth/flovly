@@ -641,6 +641,185 @@
   animation: fl-pulse 2s ease-out infinite;
 }
 
+/* fl-pop — spring scale na activate, używany w ViewSwitcher pill active state.
+ * 300ms cubic-bezier(.34,1.56,.64,1) — subtle overshoot 1.04 → 1.0. */
+@keyframes fl-pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ─── ViewSwitcher v5 (liquid-glass single-row, scroll + chevrony) ─────────
+ * Single-row tablist that NEVER wraps. Track jest scrollowalny z gradient
+ * mask 22px na obu krawędziach (subtle fade-out), chevrony left/right
+ * pojawiają się gdy track ma overflow. Active pill = liquid-glass gradient
+ * z inner ring + brand-clip text label + fl-pop spring.
+ * ───────────────────────────────────────────────────────────────────────── */
+.lg-vs-frame {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 44px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 2px 8px -2px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.dark .lg-vs-frame {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 4px 16px -4px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.lg-vs-chevron {
+  flex: none;
+  width: 30px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: rgba(122, 51, 236, 0.07);
+  color: #847b96;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 3;
+  position: relative;
+  transition: background 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 160ms ease;
+}
+.lg-vs-chevron:hover {
+  background: rgba(122, 51, 236, 0.14);
+  color: var(--foreground);
+}
+.lg-vs-chevron:disabled {
+  opacity: 0.25;
+  cursor: default;
+  pointer-events: none;
+}
+.dark .lg-vs-chevron {
+  background: rgba(255, 255, 255, 0.05);
+  color: #8b8398;
+}
+.dark .lg-vs-chevron:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--foreground);
+}
+
+.lg-vs-track {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 36px;
+  margin: 0 2px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 22px,
+    #000 calc(100% - 22px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 22px,
+    #000 calc(100% - 22px),
+    transparent 100%
+  );
+}
+.lg-vs-track::-webkit-scrollbar {
+  display: none;
+}
+
+.lg-vs-pill {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: #847b96;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+  position: relative;
+  transition: background 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.dark .lg-vs-pill {
+  color: #8b8398;
+}
+.lg-vs-pill:hover {
+  background: rgba(122, 51, 236, 0.1);
+  color: var(--foreground);
+}
+.dark .lg-vs-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--foreground);
+}
+.lg-vs-pill:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+.lg-vs-pill[data-active="true"] {
+  background: linear-gradient(
+    140deg,
+    rgba(122, 51, 236, 0.16),
+    rgba(225, 49, 143, 0.12)
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.85),
+    0 6px 16px -8px rgba(122, 51, 236, 0.5);
+  font-weight: 600;
+  color: var(--foreground);
+  animation: fl-pop 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.dark .lg-vs-pill[data-active="true"] {
+  background: linear-gradient(
+    140deg,
+    rgba(122, 51, 236, 0.32),
+    rgba(225, 49, 143, 0.26)
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 6px 16px -8px rgba(122, 51, 236, 0.5);
+}
+.lg-vs-pill[data-active="true"] .lg-vs-label {
+  background: linear-gradient(140deg, #7a33ec, #e1318f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.lg-vs-pill[data-active="true"] svg {
+  color: #c9a8f5;
+}
+
 @keyframes pop-in {
   from {
     opacity: 0;
@@ -993,6 +1172,13 @@
   .animate-fl-drift2,
   .animate-fl-pulse {
     animation: none;
+  }
+  .lg-vs-pill {
+    animation: none !important;
+    transition: none !important;
+  }
+  .lg-vs-track {
+    scroll-behavior: auto;
   }
 }
 .lg-seg--js .lg-seg-btn[data-active="true"] {
