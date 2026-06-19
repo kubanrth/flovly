@@ -819,7 +819,11 @@ export function BoardTable({
           <table
             ref={tableRef}
             className="text-[0.86rem]"
-            style={{ tableLayout: "fixed", width: "max-content", minWidth: "100%" }}
+            // F12-K90 (resize fix): width = sumarycznie kolumn (TanStack
+            // getTotalSize). Z `max-content` Safari/Chrome ignorowały
+            // dynamiczne <th width> i resize handle nie zmieniał wizualnej
+            // szerokości mimo że state się aktualizował.
+            style={{ tableLayout: "fixed", width: table.getTotalSize(), minWidth: "100%" }}
             onKeyDown={(e) => {
               if (!activeCell) return;
               // Only intercept when a CELL (td) is focus target — otherwise inputs in cells own their keystrokes.
@@ -1036,8 +1040,15 @@ export function BoardTable({
                               role="separator"
                               aria-orientation="vertical"
                               aria-label="Zmień szerokość kolumny"
-                              className={`absolute right-0 top-0 z-10 h-full w-1.5 cursor-col-resize select-none touch-none transition-colors ${
-                                isResizing ? "bg-primary" : "bg-transparent hover:bg-primary/40"
+                              title="Przeciągnij aby zmienić szerokość · dwuklik = reset"
+                              // F12-K90: hit-area 8px (z 6px) + offset -translate-x-1
+                              // żeby strefa była CENTROWANA na border, łatwiej trafić.
+                              // Plus przezroczyste tło ZAWSZE zostaje aktywne, brand
+                              // tint pokazuje na hover żeby user wiedział że tu klika.
+                              className={`absolute right-0 top-0 z-20 h-full w-2 translate-x-1 cursor-col-resize select-none touch-none transition-colors ${
+                                isResizing
+                                  ? "bg-primary"
+                                  : "bg-transparent hover:bg-primary/50"
                               }`}
                             />
                           )}
