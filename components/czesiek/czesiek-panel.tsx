@@ -1,15 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { CzesiekSessions } from "./czesiek-sessions";
 import { CzesiekThread } from "./czesiek-thread";
 import type { ChatMessageRow, ChatSessionSummary } from "./czesiek-types";
 
 // F12-K74: slide-in panel od prawej.
 // - Desktop: 720px wide, fixed prawej krawędzi, slide animation.
-// - Mobile (< md): pełnoekranowy overlay.
+// - Mobile (< md): pełnoekranowy overlay (h-dvh, inset-0).
 // Wewnątrz: sesje sidebar (180px) + thread (flex-1).
+//
+// F12-K88 (mobile fullscreen + drawer sessions):
+//   - Mobile: h-dvh + max-md:rounded-none. Sidebar sesji ukryty domyślnie,
+//     dostępny przez hamburger w lewym górnym rogu jako slide-in drawer
+//     (max-md:absolute + translate). Po wybraniu sesji drawer się zamyka.
+//   - Header dostaje też powiększony close X (size={20} max-md, size={14} desktop)
+//     w prawym górnym rogu — większy hit target dla touch.
 //
 // Otwarcie/zamknięcie kontrolowane przez parent (CzesiekFab) — panel
 // pozostaje zamontowany żeby zachować draft input + scroll position między
@@ -27,6 +34,9 @@ export function CzesiekPanel({
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessageRow[]>([]);
   const [sending, setSending] = useState(false);
+  // F12-K88: mobile-only drawer state — sessions sidebar slide-in od lewej.
+  // Domyślnie zamknięty (więcej miejsca dla thread'a na małym ekranie).
+  const [mobileSessionsOpen, setMobileSessionsOpen] = useState(false);
   const fetchedRef = useRef(false);
 
   // ─────────── Fetch sessions on first open ───────────
@@ -61,6 +71,10 @@ export function CzesiekPanel({
 
   const loadSession = useCallback(async (id: string) => {
     setActiveSessionId(id);
+    // F12-K88: na mobile po wybraniu sesji zamykamy drawer (UX expected
+    // dla slide-in nav patterns). Na desktop sidebar jest zawsze widoczny
+    // więc setState na false jest no-op visually.
+    setMobileSessionsOpen(false);
     const res = await fetch(`/api/chat/sessions/${id}`);
     if (!res.ok) return;
     const data = (await res.json()) as { messages: ChatMessageRow[] };
@@ -70,6 +84,7 @@ export function CzesiekPanel({
   const handleNew = useCallback(() => {
     setActiveSessionId(null);
     setMessages([]);
+    setMobileSessionsOpen(false);
   }, []);
 
   const handleDelete = useCallback(
@@ -191,26 +206,42 @@ export function CzesiekPanel({
         role="dialog"
         aria-modal="true"
         aria-label="Ateron AI"
-        className="fixed inset-0 z-50 flex translate-x-full flex-col border-l border-border bg-background opacity-0 transition-[transform,opacity] duration-300 ease-out data-[open=true]:translate-x-0 data-[open=true]:opacity-100 md:left-auto md:w-[720px] md:shadow-[0_18px_40px_-16px_rgba(76,29,149,0.36),0_30px_70px_-24px_rgba(124,92,255,0.24)]"
+        // F12-K88: na mobile h-dvh (dynamic viewport height — uwzględnia
+        // mobile browser chrome i adresbar) gwarantuje true fullscreen na
+        // iOS Safari. Na desktop wysokość liczona z inset-0 (top:0+bottom:0).
+        // rounded-none na mobile (bez border-radius na fullscreen overlay).
+        className="fixed inset-0 z-50 flex translate-x-full flex-col border-l border-border bg-background opacity-0 transition-[transform,opacity] duration-300 ease-out data-[open=true]:translate-x-0 data-[open=true]:opacity-100 max-md:h-dvh max-md:rounded-none md:left-auto md:w-[720px] md:shadow-[0_18px_40px_-16px_rgba(76,29,149,0.36),0_30px_70px_-24px_rgba(124,92,255,0.24)]"
         style={{ pointerEvents: open ? "auto" : "none" }}
       >
         {/* Header — F12-K81 v4 brand polish:
             - Avatar: 34×34 rounded-xl bg-brand-gradient ze "At" literami w centrum
               (1:1 z Flovly Components spec P4, linia 434).
-            - Tytuł: text-brand-gradient żeby brand drift na nazwę produktu. */}
-        <header className="flex items-center justify-between border-b border-border bg-card px-3.5 py-2.5">
-          <div className="flex items-center gap-2.5">
+            - Tytuł: text-brand-gradient żeby brand drift na nazwę produktu.
+            - F12-K88: hamburger (mobile only) po lewej do toggla sessions
+              drawer; powiększony X close po prawej (h-10 mobile / h-7 desktop)
+              dla touch-friendly 40px target (WCAG 2.5.8 min 24px met). */}
+        <header className="flex items-center justify-between gap-2 border-b border-border bg-card px-3.5 py-2.5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setMobileSessionsOpen((v) => !v)}
+              aria-label={mobileSessionsOpen ? "Zamknij listę rozmów" : "Otwórz listę rozmów"}
+              aria-expanded={mobileSessionsOpen}
+              className="-ml-1 grid h-10 w-10 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:hidden"
+            >
+              <Menu size={20} />
+            </button>
             <span
               aria-hidden="true"
               className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-xl bg-brand-gradient text-[0.82rem] font-bold leading-none text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_6px_16px_-5px_rgba(122,51,236,0.65)]"
             >
               At
             </span>
-            <div className="flex flex-col">
-              <span className="font-display text-[0.95rem] font-bold leading-none text-brand-gradient">
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate font-display text-[0.95rem] font-bold leading-none text-brand-gradient">
                 Ateron AI
               </span>
-              <span className="mt-1 font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground/70">
+              <span className="mt-1 truncate font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground/70">
                 Twój asystent workspace'u
               </span>
             </div>
@@ -219,21 +250,40 @@ export function CzesiekPanel({
             type="button"
             onClick={onClose}
             aria-label="Zamknij"
-            className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:h-7 md:w-7 md:rounded-md"
           >
-            <X size={14} />
+            <X size={20} className="md:hidden" />
+            <X size={14} className="hidden md:block" />
           </button>
         </header>
 
-        {/* Sessions + Thread */}
-        <div className="flex min-h-0 flex-1">
-          <CzesiekSessions
-            sessions={sessions}
-            activeId={activeSessionId}
-            onSelect={loadSession}
-            onNew={handleNew}
-            onDelete={handleDelete}
+        {/* Sessions + Thread.
+            F12-K88: na mobile sessions sidebar przechodzi w slide-in drawer
+            (absolute + translate-x), na desktop pozostaje statyczny w flex
+            row. Backdrop drawer (max-md only) zamyka go po kliknięciu. */}
+        <div className="relative flex min-h-0 flex-1">
+          {/* Drawer backdrop (mobile only) */}
+          <div
+            data-open={mobileSessionsOpen ? "true" : "false"}
+            onClick={() => setMobileSessionsOpen(false)}
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 z-10 bg-foreground/20 opacity-0 transition-opacity data-[open=true]:pointer-events-auto data-[open=true]:opacity-100 md:hidden"
           />
+          {/* Sessions wrapper — na mobile absolute slide-in (z drawer animation),
+              na desktop statyczny flex child rozciągnięty na pełną wysokość
+              parent flex containera. flex + min-h-0 dla nested overflow. */}
+          <div
+            data-open={mobileSessionsOpen ? "true" : "false"}
+            className="z-20 flex min-h-0 max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:-translate-x-full max-md:shadow-xl max-md:transition-transform max-md:duration-300 max-md:ease-out max-md:data-[open=true]:translate-x-0"
+          >
+            <CzesiekSessions
+              sessions={sessions}
+              activeId={activeSessionId}
+              onSelect={loadSession}
+              onNew={handleNew}
+              onDelete={handleDelete}
+            />
+          </div>
           <CzesiekThread
             messages={messages}
             sending={sending}

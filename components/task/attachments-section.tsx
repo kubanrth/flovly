@@ -152,10 +152,10 @@ export function AttachmentsSection({
               type="button"
               onClick={() => inputRef.current?.click()}
               aria-label="Dodaj załącznik"
-              className="flex h-[70px] w-24 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border/70 bg-muted/30 text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/5 hover:text-primary focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              className="flex h-[70px] w-24 shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-primary/40 bg-primary/8 text-primary transition-colors hover:border-primary/70 hover:bg-primary/14 focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               <UploadCloud size={16} />
-              <span className="text-[0.7rem] font-medium">Dodaj</span>
+              <span className="text-[0.7rem] font-semibold">Dodaj</span>
             </button>
           )}
         </div>

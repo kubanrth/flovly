@@ -1010,6 +1010,23 @@
   background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 30%);
 }
 
+/* Mobile override: drawer needs solid bg (glass transparency shows hero behind) */
+@media (max-width: 767px) {
+  .sidebar-glass {
+    background: #ECE8F4;
+    border-color: rgba(12,13,18,0.08);
+  }
+  .dark .sidebar-glass {
+    background: #0B0912;
+    border-color: rgba(255,255,255,0.08);
+  }
+  /* Disable gradient highlight on mobile — solid background doesn't need it */
+  .sidebar-glass::before,
+  .dark .sidebar-glass::before {
+    display: none;
+  }
+}
+
 /* Nav row states */
 .sidebar-row {
   transition: background-color 120ms ease, color 120ms ease;

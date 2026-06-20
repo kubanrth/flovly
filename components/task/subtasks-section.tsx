@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useState } from "react";
-import { CheckSquare, Square, Trash2 } from "lucide-react";
+import { CheckSquare, Square, Trash2, Plus } from "lucide-react";
 import {
   createSubtaskAction,
   deleteSubtaskAction,
@@ -44,15 +44,15 @@ export function SubtasksSection({
             </span>
           )}
         </div>
-        {/* Inline link CTA — spec wymaga `+ Dodaj` zamiast 44px emerald
-            przycisku (audit: zbyt ciężki, lamie hierarchię typografii). */}
+        {/* Brand-tinted pill CTA for better visibility (FIX 1) */}
         {canManage && !adding && (
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="font-sans text-[0.78rem] font-semibold text-primary/80 transition-colors hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/8 px-2.5 py-1 text-[12px] font-semibold text-primary transition-colors hover:border-primary/60 hover:bg-primary/14 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            + Dodaj
+            <Plus size={13} />
+            Dodaj
           </button>
         )}
       </div>

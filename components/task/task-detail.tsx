@@ -448,6 +448,12 @@ export function TaskDetail({
                 statuses={statusColumns}
                 defaultValue={task.statusColumnId}
                 disabled={!canEdit}
+                onCommit={(newStatusId) => {
+                  const fd = new FormData();
+                  fd.set("id", task.id);
+                  fd.set("statusColumnId", newStatusId);
+                  startTransition(() => patchTaskAction(fd));
+                }}
               />
             </MetaBlock>
 

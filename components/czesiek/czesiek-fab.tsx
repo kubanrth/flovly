@@ -10,6 +10,12 @@ import { CzesiekPanel } from "./czesiek-panel";
 // żeby nie zakrywać scrollbar'a. z-index 30 — poniżej Dialog'ów (50) i
 // panel'a (50) ale ponad zwykłą treścią.
 //
+// F12-K88: Na mobile podnosimy FAB do 5rem od dołu (calc(5rem + safe-area))
+// żeby NIE zasłaniał sticky footera w task detail drawer (`/w/.../t/[id]`),
+// który ma kolejność akcji: Timer + Autosave + Usuń (right). Footer ma
+// ~72px wysokości (py-3 + button h-10 + border) — 5rem (80px) daje
+// komfortowy gap. Desktop pozostaje na bottom-6 (md:!bottom-6).
+//
 // Animacja "pulsująca kulka" — 3-warstwowy efekt:
 //   1. Sonar ring (animate-ping na rozszerzającym się gradient'cie) — sygnał "żywego"
 //   2. Soft halo (animate-pulse na blur'owanym gradient'cie) — oddychający glow
@@ -25,11 +31,11 @@ export function CzesiekFab({ workspaceId }: { workspaceId: string }) {
         aria-label="Otwórz Aterona"
         title="Ateron AI — twój asystent"
         data-open={open ? "true" : "false"}
-        // Mobile: respektujemy env(safe-area-inset-bottom) żeby na iPhonie
-        // z home indicator'em FAB nie nakładał się na swipe area. Min 1rem
-        // odstępu, na top tego dodajemy safe area gdy device ma notch.
+        // Mobile: 5rem od dołu (ponad sticky footerem task detail) +
+        // safe-area-inset-bottom (iPhone home indicator). Desktop nadpisuje
+        // przez md:!bottom-6 (1.5rem).
         style={{
-          bottom: "calc(1rem + env(safe-area-inset-bottom, 0px))",
+          bottom: "calc(5rem + env(safe-area-inset-bottom, 0px))",
           right: "calc(1rem + env(safe-area-inset-right, 0px))",
         }}
         // F12-K81 (v4 brand polish): square corners per Flovly Components

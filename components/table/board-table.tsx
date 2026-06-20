@@ -264,9 +264,19 @@ export function BoardTable({
       startTransition(() => {
         saveTableColumnPrefsAction(fd);
       });
-    }, 250);
+    }, 800);
     return () => {
-      if (persistTimer.current) clearTimeout(persistTimer.current);
+      // Flush pending save on unmount (route change) — user expects width to persist.
+      if (persistTimer.current) {
+        clearTimeout(persistTimer.current);
+        const fd = new FormData();
+        fd.set("workspaceId", workspaceId);
+        fd.set("boardId", boardId);
+        fd.set("config", JSON.stringify({ widths: columnSizing }));
+        startTransition(() => {
+          saveTableColumnPrefsAction(fd);
+        });
+      }
     };
   }, [columnSizing, workspaceId, boardId, canManagePrefs]);
 
