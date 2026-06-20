@@ -20,6 +20,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# F12-K93: Next.js 16 Turbopack przy `next build` potrzebuje dużo heap'a.
+# Default Node.js heap (~1.7GB na alpine) = OOM kill w Coolify (exit 255
+# przy "Creating an optimized production build..."). 4GB heap rozwiązuje.
+ENV NODE_OPTIONS=--max-old-space-size=4096
 # Prisma client generation (postinstall już to robi, ale belt+suspenders)
 RUN npx prisma generate
 RUN npm run build
