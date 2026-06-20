@@ -1027,6 +1027,14 @@
   }
 }
 
+/* F12-K94: ukryj mobile sidebar hamburger gdy Ateron panel jest open.
+ * User myślał że hamburger zamyka chat (był w prawym górnym przy fullscreen
+ * Aterona), ale on otwierał sidebar = mylące. CzesiekFab ustawia
+ * `document.body.dataset.czesiekOpen = "true"` gdy panel jest open. */
+body[data-czesiek-open="true"] .mobile-sidebar-toggle {
+  display: none;
+}
+
 /* Nav row states */
 .sidebar-row {
   transition: background-color 120ms ease, color 120ms ease;

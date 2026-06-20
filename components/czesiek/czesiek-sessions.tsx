@@ -20,7 +20,7 @@ export function CzesiekSessions({
   onDelete: (id: string) => void;
 }) {
   return (
-    <aside className="flex w-[180px] shrink-0 flex-col gap-1.5 border-r border-border bg-card/40 p-2">
+    <aside className="flex w-[180px] shrink-0 flex-col gap-1.5 border-r border-border bg-card/40 p-2 max-md:w-[260px] max-md:bg-card max-md:h-dvh">
       <button
         type="button"
         onClick={onNew}

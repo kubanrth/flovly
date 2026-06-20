@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CzesiekPanel } from "./czesiek-panel";
 
 // F12-K74: Floating action button bottom-right. Pojawia się na każdym
@@ -22,6 +22,20 @@ import { CzesiekPanel } from "./czesiek-panel";
 //   3. Sam button + hover translateY
 export function CzesiekFab({ workspaceId }: { workspaceId: string }) {
   const [open, setOpen] = useState(false);
+
+  // F12-K94: signal globally że Ateron panel jest open — globals.css ukrywa
+  // mobile sidebar hamburger gdy panel jest open (user myślał że hamburger
+  // zamyka chat, ale on otwierał sidebar = zła nawigacja). Cleanup na unmount.
+  useEffect(() => {
+    if (open) {
+      document.body.dataset.czesiekOpen = "true";
+    } else {
+      delete document.body.dataset.czesiekOpen;
+    }
+    return () => {
+      delete document.body.dataset.czesiekOpen;
+    };
+  }, [open]);
 
   return (
     <>
