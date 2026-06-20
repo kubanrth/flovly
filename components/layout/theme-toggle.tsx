@@ -57,9 +57,9 @@ export function ThemeToggle({
         <button
           type="button"
           aria-label="Tryb"
-          className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-foreground/60"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] text-foreground/60"
         >
-          <Sun size={15} />
+          <Sun size={17} />
           <span className="flex-1 text-left">Tryb…</span>
         </button>
       );
@@ -71,7 +71,7 @@ export function ThemeToggle({
           aria-label="Tryb"
           className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] text-muted-foreground max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
         >
-          <Sun size={15} className="shrink-0 max-md:size-[18px]" />
+          <Sun size={17} className="shrink-0 max-md:size-[18px]" />
           {!collapsed && <span className="truncate">Tryb…</span>}
         </button>
       );
@@ -103,7 +103,7 @@ export function ThemeToggle({
         className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] text-foreground/80 transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/[0.06]"
       >
         <span className="text-foreground/60">
-          <Icon size={15} />
+          <Icon size={17} />
         </span>
         <span className="flex-1">{label}</span>
       </button>
@@ -119,7 +119,7 @@ export function ThemeToggle({
         title={label}
         className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-[0.88rem] text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem]"
       >
-        <Icon size={15} className="shrink-0 max-md:size-[18px]" />
+        <Icon size={17} className="shrink-0 max-md:size-[18px]" />
         {!collapsed && <span className="truncate">{label}</span>}
       </button>
     );

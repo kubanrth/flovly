@@ -42,12 +42,12 @@ export function ProfileDropdown({
     label: string;
   }> = [
     ...(user.isSuperAdmin
-      ? [{ href: "/admin", icon: <ShieldCheck size={15} />, label: "Panel admina" }]
+      ? [{ href: "/admin", icon: <ShieldCheck size={17} />, label: "Panel admina" }]
       : []),
-    { href: "/profile", icon: <User size={15} />, label: "Ustawienia konta" },
-    { href: "/inbox", icon: <Bell size={15} />, label: "Powiadomienia" },
-    { href: "/profile#2fa", icon: <ShieldCheck size={15} />, label: "2FA" },
-    { href: "/profile#sesje", icon: <Monitor size={15} />, label: "Sesje" },
+    { href: "/profile", icon: <User size={17} />, label: "Ustawienia konta" },
+    { href: "/inbox", icon: <Bell size={17} />, label: "Powiadomienia" },
+    { href: "/profile#2fa", icon: <ShieldCheck size={17} />, label: "2FA" },
+    { href: "/profile#sesje", icon: <Monitor size={17} />, label: "Sesje" },
   ];
 
   return (
@@ -73,14 +73,14 @@ export function ProfileDropdown({
         >
           <PopoverPrimitive.Popup
             className={cn(
-              "popover-glass w-[240px] overflow-hidden p-0",
+              "popover-glass w-[300px] overflow-hidden p-0",
               "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 duration-100",
             )}
           >
             {/* Header: avatar + name + email */}
-            <div className="flex items-center gap-2.5 border-b border-black/5 px-3 py-3 dark:border-white/10">
+            <div className="flex items-center gap-3 border-b border-black/5 px-4 py-3.5 dark:border-white/10">
               <span
-                className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-[10px] font-display text-[12px] font-bold text-white"
+                className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-xl font-display text-[14px] font-bold text-white"
                 style={{ background: "linear-gradient(140deg,#7C5CFF,#E1318F)" }}
               >
                 {user.avatarUrl ? (
@@ -95,28 +95,28 @@ export function ProfileDropdown({
                 )}
               </span>
               <div className="min-w-0">
-                <div className="truncate text-[13px] font-semibold text-foreground">
+                <div className="truncate text-[15px] font-semibold text-foreground">
                   {user.name ?? user.email.split("@")[0]}
                 </div>
-                <div className="truncate text-[11px] text-muted-foreground">
+                <div className="truncate text-[12px] text-muted-foreground">
                   {user.email}
                 </div>
               </div>
             </div>
 
-            <div className="p-1.5">
+            <div className="p-2">
               {items.map((it) => (
                 <PopoverPrimitive.Close
                   key={it.href}
                   render={
                     <Link
                       href={it.href}
-                      className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-foreground/80 transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/[0.06]"
+                      className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[14px] text-foreground/80 transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/[0.06]"
                     >
                       <span className="text-foreground/60">{it.icon}</span>
                       <span className="flex-1">{it.label}</span>
                       <ChevronRight
-                        size={14}
+                        size={16}
                         className="text-muted-foreground/50"
                       />
                     </Link>
@@ -136,7 +136,7 @@ export function ProfileDropdown({
                   type="submit"
                   className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] text-[#FB7185] transition-colors hover:bg-[#FB7185]/10"
                 >
-                  <LogOut size={15} />
+                  <LogOut size={17} />
                   <span className="flex-1">Wyloguj się</span>
                 </button>
               </form>
