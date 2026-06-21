@@ -297,6 +297,25 @@ export function TaskDetail({
               readOnly={!canEdit}
               defaultValue={task.title}
               aria-invalid={!!fieldErrors?.title}
+              // F12-K96: autosave na blur (Save button usunięty w v4 polish).
+              // Mirror pattern z StatusPill onCommit fix (F12-K92): trim,
+              // skip jeśli pusty albo bez zmiany, wywołaj patchTaskAction.
+              onBlur={(e) => {
+                if (!canEdit) return;
+                const next = e.currentTarget.value.trim();
+                if (!next || next === task.title) return;
+                const fd = new FormData();
+                fd.set("id", task.id);
+                fd.set("title", next);
+                startTransition(() => patchTaskAction(fd));
+              }}
+              // Enter (bez Shift) = blur → trigger save (UX z Linear/Notion).
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  e.currentTarget.blur();
+                }
+              }}
               className="flex-1 resize-none overflow-hidden border-0 bg-transparent p-0 font-display text-[1.5rem] font-bold leading-[1.2] tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground focus:outline-none aria-[invalid=true]:text-destructive md:text-[1.75rem] [field-sizing:content]"
             />
             {canEdit && (
