@@ -44,8 +44,9 @@ export function SubtasksSection({
             </span>
           )}
         </div>
-        {/* Brand-tinted pill CTA for better visibility (FIX 1) */}
-        {canManage && !adding && (
+        {/* F12-K97: small pill CTA pokazujemy TYLKO gdy są już podzadania.
+            Pusty stan dostaje full-width CTA na dole (mirror "Powiąż zadanie"). */}
+        {canManage && !adding && subtasks.length > 0 && (
           <button
             type="button"
             onClick={() => setAdding(true)}
@@ -185,12 +186,17 @@ export function SubtasksSection({
         </form>
       )}
 
-      {/* CTA moved inline into header (`+ Dodaj` link). Empty state
-          gets a soft prompt only when canManage but no subtasks yet. */}
+      {/* F12-K97: empty-state CTA full-width — mirror "Powiąż zadanie" w
+          linked-tasks-section. Lepiej widoczne niż mała plomba w headerze
+          + tekst, klient explicitly requested ten sam design. */}
       {canManage && !adding && subtasks.length === 0 && (
-        <p className="text-[0.86rem] text-muted-foreground/80">
-          Brak podzadań. Użyj <span className="text-primary/90">+ Dodaj</span> aby utworzyć pierwsze.
-        </p>
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/10 font-sans text-[0.95rem] font-semibold text-fuchsia-700 shadow-[0_1px_2px_rgba(217,70,239,0.08)] transition-colors hover:border-fuchsia-500/50 hover:bg-fuchsia-500/15 dark:border-fuchsia-400/40 dark:bg-fuchsia-400/10 dark:text-fuchsia-200 dark:hover:bg-fuchsia-400/15"
+        >
+          <Plus size={14} /> Dodaj podzadanie
+        </button>
       )}
 
       {subtasks.length === 0 && !adding && !canManage && (
