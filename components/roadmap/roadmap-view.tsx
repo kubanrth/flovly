@@ -127,9 +127,10 @@ export function RoadmapView({
       {/* v4 card — one rounded-[22px] glass surface with brand-tinted shadow.
           Inside: toolbar (top) + month axis + swimlanes/markers + hint footer.
           BoardHeader stays OUTSIDE this card (renderowany przez page.tsx).
-          Mobile (max-md): chart body chowamy — zastępujemy go vertical
-          timeline pod kartą. Toolbar zostaje (counter/aggregator/create). */}
-      <div className="relative overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_30px_70px_-30px_rgba(122,92,255,0.4)] max-md:[&_[data-roadmap-chart]]:hidden">
+          F12-K114: chart NIE jest już chowany na mobile — user chce widzieć
+          kropki + connectors (markers track) tak samo jak desktop, ale
+          scrollable horizontally jeśli nie mieszczą się. */}
+      <div className="relative overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_30px_70px_-30px_rgba(122,92,255,0.4)]">
         {/* Toolbar row — counter + aggregator badge/toggle + create button */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card/60 px-[18px] py-[14px] backdrop-blur-xl">
           <div className="flex items-center gap-3">
@@ -174,9 +175,9 @@ export function RoadmapView({
           </div>
         </div>
 
-        {/* Month axis — v4: padding-left 150px aligns with swimlane label column.
-            Mono, uppercase, muted. Mobile: ukrywamy razem z chart body. */}
-        <div data-roadmap-chart className="flex border-b border-border bg-card/40 py-[10px] pl-[150px] pr-[18px] backdrop-blur-xl">
+        {/* Month axis — referencyjny pasek miesięcy. F12-K114: mobile dostaje
+            mniejszy padding (16px zamiast 150px legacy swimlane offset). */}
+        <div data-roadmap-chart className="flex border-b border-border bg-card/40 py-[10px] pl-4 pr-4 backdrop-blur-xl md:pl-[150px] md:pr-[18px]">
           {range.ticks.map((t) => (
             <div
               key={t.ts}
@@ -230,13 +231,6 @@ export function RoadmapView({
         <div data-roadmap-chart className="border-t border-border bg-card/40 px-[18px] py-[10px]">
           <span className="text-[0.72rem] text-muted-foreground">
             Hint · najedź na pasek aby zobaczyć podgląd postępu
-          </span>
-        </div>
-        {/* Mobile-only hint inside the toolbar card — gdy chart schowany, user
-            ma być pewien, że dostaje pełną zawartość niżej w stack-cards. */}
-        <div className="hidden border-t border-border bg-card/40 px-4 py-[10px] max-md:block">
-          <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-            Lista milestonów ↓
           </span>
         </div>
       </div>

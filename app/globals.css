@@ -1325,12 +1325,14 @@ body[data-czesiek-open="true"] .mobile-sidebar-toggle {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
- * F12-K113: BROWSER AUTOFILL — override default żółtego/niebieskiego tła.
- * Chrome/Safari/Edge na zapamiętanych hasłach maluje input żółtym (light)
- * lub żóltym z dark text (dark mode → kompletnie nieczytelne). Trick z
- * inset box-shadow: maluje tło naszym brand'em ZAMIAST browser default
- * (browsers nie pozwalają na zmianę background-color bezpośrednio).
- * transition 5000s — zatrzymuje krótką animację autofill.
+ * F12-K113: BROWSER AUTOFILL — override default żółtego tła.
+ * Chrome/Safari/Edge na zapamiętanych hasłach maluje input żółtym.
+ *
+ * Iteracja 2 (F12-K114): używamy `transparent` w box-shadow inset zamiast
+ * var(--background). Pierwsza wersja malowała input solidnym czarnym
+ * `var(--background)` co psuło glass effect wrapper'a (input wycięty
+ * z aury login screen'a). Transparent zostawia tło wrapper'a widoczne.
+ * Chrome/Safari honor'ują alpha w autofill box-shadow inset.
  * ──────────────────────────────────────────────────────────────────────── */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
@@ -1343,9 +1345,10 @@ select:-webkit-autofill,
 select:-webkit-autofill:hover,
 select:-webkit-autofill:focus {
   -webkit-text-fill-color: var(--foreground);
-  -webkit-box-shadow: 0 0 0 1000px var(--background) inset;
-  box-shadow: 0 0 0 1000px var(--background) inset;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset;
+  box-shadow: 0 0 0 1000px transparent inset;
   caret-color: var(--foreground);
   border-radius: inherit;
-  transition: background-color 5000s ease-in-out 0s;
+  transition: background-color 5000s ease-in-out 0s,
+    color 5000s ease-in-out 0s;
 }
