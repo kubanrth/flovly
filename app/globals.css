@@ -1323,3 +1323,29 @@ body[data-czesiek-open="true"] .mobile-sidebar-toggle {
 .safe-bottom-plus-3 {
   padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem);
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+ * F12-K113: BROWSER AUTOFILL — override default żółtego/niebieskiego tła.
+ * Chrome/Safari/Edge na zapamiętanych hasłach maluje input żółtym (light)
+ * lub żóltym z dark text (dark mode → kompletnie nieczytelne). Trick z
+ * inset box-shadow: maluje tło naszym brand'em ZAMIAST browser default
+ * (browsers nie pozwalają na zmianę background-color bezpośrednio).
+ * transition 5000s — zatrzymuje krótką animację autofill.
+ * ──────────────────────────────────────────────────────────────────────── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  -webkit-box-shadow: 0 0 0 1000px var(--background) inset;
+  box-shadow: 0 0 0 1000px var(--background) inset;
+  caret-color: var(--foreground);
+  border-radius: inherit;
+  transition: background-color 5000s ease-in-out 0s;
+}
