@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, Network, Link as LinkIcon, X, Milestone } from "lucide-react";
@@ -218,10 +218,7 @@ export function RoadmapView({
             />
           ) : (
             <MarkersTrack
-              range={range}
               milestones={milestones}
-              todayInRange={todayInRange}
-              now={now}
               canUpdate={canUpdate}
               onEdit={(m) => setDialog({ mode: "edit", milestone: m })}
             />
@@ -524,15 +521,11 @@ function TimelineTrack({
 // roadmap spec: swimlanes per status). Label po lewej (150px), bar z gradientem
 // brand po prawej rozpięty od startAt do stopAt.
 function MarkersTrack({
-  range,
   milestones,
   canUpdate,
   onEdit,
 }: {
-  range: ReturnType<typeof computeTimelineRange>;
   milestones: MilestoneItem[];
-  todayInRange: boolean;
-  now: number;
   canUpdate: boolean;
   onEdit: (m: MilestoneItem) => void;
 }) {
@@ -556,99 +549,30 @@ function MarkersTrack({
     );
   }
 
+  // F12-K111: przywrócone kropki (klient: "powinny być kropki tak jak
+  // wcześniej było"). Każdy milestone = node z title + 48px circular dot
+  // z task count + FlowArrow connector między kolejnymi. Wszystko w jednej
+  // horizontalnej linii (overflow-x-auto na wąskich ekranach).
   return (
-    <div className="relative">
-      {sorted.map((m) => {
-        const color = colorFor(m.id);
-        const start = new Date(m.startAt).getTime();
-        const stop = new Date(m.stopAt).getTime();
-        const left = pctFor(start, range);
-        const width = Math.max(pctFor(stop, range) - left, 0.8);
-        return (
-          <SwimlaneRow
-            key={m.id}
-            milestone={m}
-            color={color}
-            left={left}
-            width={width}
-            canUpdate={canUpdate}
-            onEdit={onEdit}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-function SwimlaneRow({
-  milestone,
-  color,
-  left,
-  width,
-  canUpdate,
-  onEdit,
-}: {
-  milestone: MilestoneItem;
-  color: string;
-  left: number;
-  width: number;
-  canUpdate: boolean;
-  onEdit: (m: MilestoneItem) => void;
-}) {
-  void color;
-  return (
-    <div className="flex h-[58px] items-center border-b border-border/60 last:border-b-0">
-      {/* Status/label column — 150px per v4 spec */}
-      <div className="flex w-[150px] flex-none items-center gap-2 px-[18px]">
-        <span
-          className="h-2 w-2 shrink-0 rounded-full"
-          style={{ background: color }}
-          aria-hidden
-        />
-        <span className="truncate text-[0.78rem] font-semibold text-foreground">
-          {milestone.title}
-        </span>
-      </div>
-      {/* Bar track */}
-      <div className="relative h-full flex-1">
-        <button
-          type="button"
-          onClick={() => canUpdate && onEdit(milestone)}
-          disabled={!canUpdate}
-          className="absolute flex items-center rounded-[10px] px-[11px] text-left shadow-[0_6px_16px_-6px_rgba(124,92,255,0.55),inset_0_1px_0_rgba(255,255,255,0.3)] transition-transform duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-default"
-          style={{
-            top: 14,
-            left: `${left}%`,
-            width: `${width}%`,
-            height: 30,
-            background: "linear-gradient(135deg, var(--brand-500), var(--brand-700))",
-          }}
-          title={`${milestone.title} · ${formatDateRange(milestone.startAt, milestone.stopAt)}`}
-          aria-label={`${milestone.title}, edytuj`}
-        >
-          <span className="truncate text-[0.72rem] font-semibold text-white">
-            {milestone.title}
-          </span>
-          <span className="ml-2 shrink-0 rounded-full bg-white/25 px-1.5 font-mono text-[0.58rem] font-bold text-white">
-            {milestone.taskCount}
-          </span>
-        </button>
+    <div className="relative overflow-x-auto px-[18px] py-[24px]">
+      <div className="flex min-w-max items-start">
+        {sorted.map((m, idx) => {
+          const color = colorFor(m.id);
+          return (
+            <Fragment key={m.id}>
+              <MilestoneNode
+                milestone={m}
+                color={color}
+                canUpdate={canUpdate}
+                onEdit={onEdit}
+              />
+              {idx < sorted.length - 1 && <FlowArrow />}
+            </Fragment>
+          );
+        })}
       </div>
     </div>
   );
-}
-
-// Backwards-compat exports (rendered indirectly via MarkersTrack now). Kept
-// because timeline-utils + flow geometry may still be used by other callers.
-// Unused right now but cheap to keep — Next prunes dead imports at build time.
-export function _milestoneNodeStub() {
-  void NODE_TITLE_H;
-  void NODE_GAP;
-  void NODE_DOT;
-  void NODE_ARROW_TOP;
-  void MilestoneNode;
-  void FlowArrow;
-  void useParams;
 }
 
 function MilestoneNode({
