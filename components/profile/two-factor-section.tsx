@@ -339,7 +339,7 @@ function SecretDisplay({ secret }: { secret: string }) {
       >
         <span
           key={copied ? "check" : "copy"}
-          className="inline-flex animate-in fade-in zoom-in-50 duration-200"
+          className="inline-flex motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-50 motion-safe:duration-200"
         >
           {copied ? <Check size={13} /> : <Copy size={13} />}
         </span>

@@ -567,7 +567,7 @@ function StatusSelect({ ticketId, current }: { ticketId: string; current: Status
               left: dd.coords.left,
               width: dd.coords.width,
             }}
-            className="z-[100] overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+            className="z-[200] overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
           >
             <ul role="listbox" className="flex flex-col gap-0.5">
               {STATUSES.map((s) => {
@@ -642,7 +642,7 @@ function PrioritySelect({ ticketId, current }: { ticketId: string; current: Prio
               left: dd.coords.left,
               width: dd.coords.width,
             }}
-            className="z-[100] overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+            className="z-[200] overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
           >
             <ul role="listbox" className="flex flex-col gap-0.5">
               {PRIORITIES.map((p) => {
@@ -735,7 +735,7 @@ function AssigneeSelect({
               left: dd.coords.left,
               width: dd.coords.width,
             }}
-            className="z-[100] flex flex-col overflow-hidden rounded-lg border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+            className="z-[200] flex flex-col overflow-hidden rounded-lg border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
           >
             <div className="border-b border-border p-2">
               <input
@@ -944,7 +944,8 @@ function EditTicketDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[80] grid place-items-center bg-black/40 px-4"
+      // z-[100] === Z.modalBackdrop (F12-K104). Modal popup w środku — z-[110] dodano implicit przez nesting.
+      className="fixed inset-0 z-[100] grid place-items-center bg-black/40 px-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -1289,7 +1290,7 @@ function NewTicketForm({ workspaceId }: { workspaceId: string }) {
           type="button"
           onClick={reset}
           disabled={submitting}
-          className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground disabled:opacity-50"
+          className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground disabled:opacity-60"
         >
           Anuluj
         </button>
@@ -1568,7 +1569,7 @@ function AttachmentBadge({ attachments }: { attachments: SupportAttachment[] }) 
           <div
             ref={popRef}
             style={{ position: "fixed", top: coords.top, left: coords.left, width: 320 }}
-            className="z-[100] flex flex-col overflow-hidden rounded-lg border border-border bg-popover p-2 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+            className="z-[200] flex flex-col overflow-hidden rounded-lg border border-border bg-popover p-2 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-2 pb-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground/80">

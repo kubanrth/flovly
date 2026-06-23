@@ -213,7 +213,7 @@ function NewRequestForm() {
         <button
           type="submit"
           disabled={pending}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand-gradient px-5 font-sans text-[0.95rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand-gradient px-5 font-sans text-[0.95rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Plane size={15} /> Złóż wniosek o urlop
         </button>

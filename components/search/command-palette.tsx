@@ -134,15 +134,16 @@ export function CommandPalette({ data }: { data: CommandPaletteData }) {
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop
           className={cn(
-            "fixed inset-0 z-[90] bg-black/30 supports-backdrop-filter:backdrop-blur-sm",
+            // z-[100] === Z.modalBackdrop (F12-K104).
+            "fixed inset-0 z-[100] bg-black/30 supports-backdrop-filter:backdrop-blur-sm",
             "data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 duration-100",
           )}
         />
         <DialogPrimitive.Popup
-          // Niezależne z-index (z-[91]) — nad sidebar (z-40) i toaster (z-70).
+          // z-[110] === Z.modal (F12-K104) — nad sidebar (z-40) i toaster (z-[80]).
           // Margin-top żeby paleta wyświetlała się "z góry" jak Spotlight.
           className={cn(
-            "dialog-glass fixed left-1/2 top-[18%] z-[91] w-[600px] max-w-[calc(100%-2rem)] -translate-x-1/2 overflow-hidden rounded-2xl outline-none",
+            "dialog-glass fixed left-1/2 top-[18%] z-[110] w-[600px] max-w-[calc(100%-2rem)] -translate-x-1/2 overflow-hidden rounded-2xl outline-none",
             "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 duration-100",
           )}
         >
@@ -168,7 +169,7 @@ export function CommandPalette({ data }: { data: CommandPaletteData }) {
                 className="flex-1 bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground/70 outline-none"
                 autoFocus
               />
-              <kbd className="font-mono text-[11px] text-muted-foreground/70 rounded-md border border-black/10 dark:border-white/10 px-1.5 py-0.5">
+              <kbd className="font-mono text-[11px] text-muted-foreground/90 rounded-md border border-black/10 dark:border-white/10 px-1.5 py-0.5">
                 Esc
               </kbd>
             </div>
@@ -213,7 +214,7 @@ export function CommandPalette({ data }: { data: CommandPaletteData }) {
               ))}
             </Command.List>
 
-            <div className="flex items-center justify-between gap-3 border-t border-black/5 px-4 py-2 text-[11px] text-muted-foreground/70 dark:border-white/10">
+            <div className="flex items-center justify-between gap-3 border-t border-black/5 px-4 py-2 text-[11px] text-muted-foreground/90 dark:border-white/10">
               <span>
                 <kbd className="font-mono">↑↓</kbd> nawiguj ·{" "}
                 <kbd className="font-mono">↵</kbd> wybierz

@@ -116,7 +116,9 @@ function CommentItemView({
                 onClick={() => setEditing(true)}
                 aria-label="Edytuj"
                 title="Edytuj"
-                className="grid h-6 w-6 place-items-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                // WCAG 2.5.8: max-md bump to 44×44 (mobile touch target).
+                // Desktop keeps 24×24 (cursor precision).
+                className="grid h-6 w-6 max-md:h-11 max-md:w-11 place-items-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
                 <Pencil size={12} />
               </button>
@@ -277,7 +279,8 @@ function DeleteCommentButton({ id }: { id: string }) {
         type="submit"
         aria-label="Usuń"
         title="Usuń"
-        className="grid h-6 w-6 place-items-center rounded text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+        // WCAG 2.5.8: max-md bump to 44×44 (mobile touch target).
+        className="grid h-6 w-6 max-md:h-11 max-md:w-11 place-items-center rounded text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
       >
         <Trash2 size={12} />
       </button>

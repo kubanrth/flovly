@@ -1775,7 +1775,8 @@ function AddColumnButton({
               width: 320,
               maxHeight: coords.maxHeight,
             }}
-            className="z-[100] flex flex-col overflow-hidden rounded-xl border border-border/70 bg-popover/95 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)] backdrop-blur-md"
+            // z-[200] === Z.popoverInModal (F12-K104).
+            className="z-[200] flex flex-col overflow-hidden rounded-xl border border-border/70 bg-popover/95 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)] backdrop-blur-md"
           >
             <div className="shrink-0 border-b border-border/70 px-3 py-2.5">
               <p className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.1em] text-muted-foreground">
@@ -1818,7 +1819,7 @@ function AddColumnButton({
                 type="button"
                 onClick={submit}
                 disabled={!name.trim()}
-                className="inline-flex h-7 items-center rounded-md bg-brand-gradient px-3 font-mono text-[0.62rem] font-bold uppercase tracking-[0.1em] text-white shadow-[0_6px_16px_-6px_rgba(122,51,236,0.6)] transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="inline-flex h-7 items-center rounded-md bg-brand-gradient px-3 font-mono text-[0.62rem] font-bold uppercase tracking-[0.1em] text-white shadow-[0_6px_16px_-6px_rgba(122,51,236,0.6)] transition-opacity hover:opacity-90 disabled:opacity-60"
               >
                 Dodaj kolumnę
               </button>

@@ -187,15 +187,21 @@ export function ImportTasksDialog({
     setImporting(true);
     setParseError(null);
     startTransition(async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const res = await bulkImportTasksAction({ workspaceId, boardId, rows: rows as any });
-      setImporting(false);
-      if (!res.ok) {
-        setParseError(res.error);
-        return;
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const res = await bulkImportTasksAction({ workspaceId, boardId, rows: rows as any });
+        if (!res.ok) {
+          setParseError(res.error);
+          return;
+        }
+        setResult({ created: res.created, warnings: res.warnings });
+        router.refresh();
+      } catch (err) {
+        console.error("Bulk import failed:", err);
+        setParseError("Nie udało się zaimportować zadań.");
+      } finally {
+        setImporting(false);
       }
-      setResult({ created: res.created, warnings: res.warnings });
-      router.refresh();
     });
   }, [parsed, mapping, titleColIdx, workspaceId, boardId, router]);
 
@@ -213,6 +219,7 @@ export function ImportTasksDialog({
       </button>
 
       <Dialog
+        key={open ? "open" : "closed"}
         open={open}
         onOpenChange={(o) => {
           setOpen(o);

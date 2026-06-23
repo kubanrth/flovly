@@ -53,7 +53,7 @@ export function Checkbox({
         }}
         onChange={onChange}
         onClick={onClick}
-        className={`peer ${dim} cursor-pointer appearance-none rounded-[4px] border border-border bg-background transition-colors checked:border-primary checked:bg-primary indeterminate:border-primary indeterminate:bg-primary hover:border-primary/70 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-1 focus-visible:ring-offset-background`}
+        className={`peer ${dim} cursor-pointer appearance-none rounded-[4px] border border-border bg-background transition-colors checked:border-primary checked:bg-primary indeterminate:border-primary indeterminate:bg-primary hover:border-primary/70 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-1 focus-visible:ring-offset-background`}
       />
       {/* Check zawsze w DOM, widoczność przez peer-checked TRANSITION (nie
           keyframe): brak popu przy mount'cie tabeli z N zaznaczonymi wierszami,

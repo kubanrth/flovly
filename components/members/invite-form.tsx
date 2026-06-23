@@ -37,8 +37,16 @@ export function InviteForm({
     defaultBoardId ?? boards?.[0]?.id ?? "",
   );
   const [copied, setCopied] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const fieldErrors = !state?.ok ? state?.fieldErrors : undefined;
   const showScopeToggle = (boards?.length ?? 0) > 0 && !defaultBoardId;
+
+  // Update inviteUrl when state changes
+  useEffect(() => {
+    if (state?.ok) {
+      setInviteUrl(state.inviteUrl);
+    }
+  }, [state]);
 
   useEffect(() => {
     if (copied) {
@@ -48,9 +56,9 @@ export function InviteForm({
   }, [copied]);
 
   async function copyUrl() {
-    if (!state?.ok) return;
+    if (!inviteUrl) return;
     try {
-      await navigator.clipboard.writeText(state.inviteUrl);
+      await navigator.clipboard.writeText(inviteUrl);
       setCopied(true);
     } catch {
       /* noop */
@@ -59,7 +67,10 @@ export function InviteForm({
 
   return (
     <form
-      action={(fd) => startTransition(() => formAction(fd))}
+      action={(fd) => {
+        setInviteUrl(null); // Clear previous invite URL
+        startTransition(() => formAction(fd));
+      }}
       className="flex flex-col gap-5 rounded-xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(46,19,52,0.08)]"
     >
       <input type="hidden" name="workspaceId" value={workspaceId} />
@@ -170,13 +181,13 @@ export function InviteForm({
         </p>
       )}
 
-      {state?.ok && (
+      {inviteUrl && (
         <div className="flex flex-col gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
           <div className="flex items-center gap-2">
             <span className="eyebrow text-primary">
-              Zaproszenie {state.emailed ? "wysłane" : "utworzone"}
+              Zaproszenie {state?.ok && state.emailed ? "wysłane" : "utworzone"}
             </span>
-            {!state.emailed && (
+            {state?.ok && !state.emailed && (
               <span className="font-mono text-[0.64rem] uppercase tracking-[0.14em] text-muted-foreground">
                 (email nie skonfigurowany — skopiuj link ręcznie)
               </span>
@@ -184,7 +195,7 @@ export function InviteForm({
           </div>
           <div className="flex items-center gap-3">
             <code className="min-w-0 flex-1 truncate rounded-md bg-muted px-3 py-2 font-mono text-[0.82rem]">
-              {state.inviteUrl}
+              {inviteUrl}
             </code>
             <button
               type="button"
@@ -195,7 +206,7 @@ export function InviteForm({
                   (fade + zoom, recepta na contextual icon transitions) */}
               <span
                 key={copied ? "check" : "copy"}
-                className="inline-flex animate-in fade-in zoom-in-50 duration-200"
+                className="inline-flex motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-50 motion-safe:duration-200"
               >
                 {copied ? <Check size={13} /> : <Copy size={13} />}
               </span>

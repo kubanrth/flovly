@@ -202,7 +202,8 @@ export function AttachmentCell({
               top: coords.top,
               left: coords.left,
               width: coords.width,
-              zIndex: 60,
+              // zIndex 200 === Z.popoverInModal (F12-K104) — portalled, używany w drawer.
+              zIndex: 200,
             }}
             className="rounded-xl border border-border bg-popover p-2 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
           >

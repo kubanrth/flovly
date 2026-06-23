@@ -63,7 +63,7 @@ export function RateLimited({
         type="button"
         onClick={onRetry}
         disabled={!canRetry}
-        className="relative inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-brand-gradient px-5 font-sans text-[0.95rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 md:h-10 md:rounded-lg md:text-[0.9rem]"
+        className="relative inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-brand-gradient px-5 font-sans text-[0.95rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 md:h-10 md:rounded-lg md:text-[0.9rem]"
       >
         {canRetry ? "Spróbuj ponownie" : `Odczekaj · ${remaining}s`}
       </button>

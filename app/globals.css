@@ -178,7 +178,10 @@
   --secondary: var(--brand-50);
   --secondary-foreground: var(--brand-700);
   --muted: var(--n-100);
-  --muted-foreground: var(--n-600);
+  /* WCAG AA fix: n-600 (#847B96) on paper (#ECE8F4) was 4.4:1 — failed AA
+   * (needs ≥4.5:1 for body text). n-700 (#655C77) hits ~5.3:1 on paper and
+   * ~6.3:1 on card (#FFFFFF). Dark mode --muted-foreground already passes. */
+  --muted-foreground: var(--n-700);
   --accent: var(--brand-50);
   --accent-foreground: var(--brand-700);
 
@@ -692,7 +695,9 @@
   border-radius: 10px;
   border: none;
   background: rgba(122, 51, 236, 0.07);
-  color: #847b96;
+  /* WCAG AA fix: #847b96 → #655C77 (n-700) bumps contrast on lavender bg
+   * past 4.5:1 for the inactive chevron icon. */
+  color: #655c77;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -708,7 +713,9 @@
   color: var(--foreground);
 }
 .lg-vs-chevron:disabled {
-  opacity: 0.25;
+  /* A11y polish: 0.25 → 0.4. Still clearly disabled, but visible enough
+   * for low-vision users to notice the affordance exists. */
+  opacity: 0.4;
   cursor: default;
   pointer-events: none;
 }
@@ -761,7 +768,9 @@
   border-radius: 10px;
   border: none;
   background: transparent;
-  color: #847b96;
+  /* WCAG AA fix: inactive pill on lavender bg was 4.1:1 — failed AA.
+   * #544A5E (n-750-ish) hits ~6.9:1 on paper, ~7.6:1 on card. */
+  color: #544a5e;
   font-family: "Inter", system-ui, sans-serif;
   font-size: 13px;
   font-weight: 500;

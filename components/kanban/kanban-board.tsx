@@ -753,7 +753,7 @@ function InlineAddTask({
           type="button"
           onClick={submit}
           disabled={!title.trim()}
-          className="inline-flex h-6 items-center rounded-md bg-primary px-2.5 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="inline-flex h-6 items-center rounded-md bg-primary px-2.5 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           Dodaj
         </button>
@@ -1100,7 +1100,8 @@ function AddKanbanColumnButton({
               width: 320,
               maxHeight: coords.maxHeight,
             }}
-            className="z-[100] flex flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+            // z-[200] === Z.popoverInModal (F12-K104).
+            className="z-[200] flex flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
           >
             <div className="shrink-0 border-b border-border px-3 py-2">
               <p className="eyebrow">Nowa kolumna</p>
@@ -1152,7 +1153,7 @@ function AddKanbanColumnButton({
                 type="button"
                 onClick={submit}
                 disabled={!name.trim()}
-                className="inline-flex h-7 items-center rounded-md bg-primary px-3 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="inline-flex h-7 items-center rounded-md bg-primary px-3 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
               >
                 Dodaj kolumnę
               </button>

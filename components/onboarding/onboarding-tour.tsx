@@ -98,13 +98,15 @@ export function OnboardingTour() {
       <DialogPrimitive.Portal>
         <DialogPrimitive.Backdrop
           className={cn(
-            "fixed inset-0 z-[80] bg-black/40 supports-backdrop-filter:backdrop-blur-sm",
+            // z-[100] === Z.modalBackdrop (F12-K104).
+            "fixed inset-0 z-[100] bg-black/40 supports-backdrop-filter:backdrop-blur-sm",
             "data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 duration-150",
           )}
         />
         <DialogPrimitive.Popup
           className={cn(
-            "dialog-glass fixed left-1/2 top-1/2 z-[81] w-[350px] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[22px] outline-none",
+            // z-[110] === Z.modal (F12-K104).
+            "dialog-glass fixed left-1/2 top-1/2 z-[110] w-[350px] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[22px] outline-none",
             "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 duration-150",
           )}
         >

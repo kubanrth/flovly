@@ -100,7 +100,7 @@ export function RecurrencePicker({
               disabled={disabled}
               onClick={() => pickFreq(opt.value)}
               data-active={active}
-              className="flex items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition-colors hover:bg-muted active:bg-primary/10 data-[active=true]:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition-colors hover:bg-muted active:bg-primary/10 data-[active=true]:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span
                 aria-hidden="true"
@@ -133,7 +133,7 @@ export function RecurrencePicker({
                 aria-pressed={active}
                 onClick={() => persist({ freq: "weekly", day: idx })}
                 data-active={active}
-                className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[8px] bg-muted/50 font-mono text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-muted active:bg-primary/10 data-[active=true]:bg-brand-gradient data-[active=true]:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[8px] bg-muted/50 font-mono text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-muted active:bg-primary/10 data-[active=true]:bg-brand-gradient data-[active=true]:text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {letter}
               </button>
@@ -157,7 +157,7 @@ export function RecurrencePicker({
               persist({ freq: "monthly", day: v });
             }}
             aria-label="Dzień miesiąca"
-            className="h-7 w-14 rounded-[8px] border border-border bg-card/40 px-2 text-center font-mono text-[12.5px] tabular-nums outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-7 w-14 rounded-[8px] border border-border bg-card/40 px-2 text-center font-mono text-[12.5px] tabular-nums outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60"
           />
           <span className="text-[12px] text-muted-foreground">. miesiąca</span>
         </div>

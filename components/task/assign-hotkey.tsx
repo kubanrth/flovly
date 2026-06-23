@@ -165,7 +165,8 @@ function AssignMenu({
       SAFE,
       Math.min(at.y + 12, Math.max(SAFE, window.innerHeight - 320)),
     ),
-    zIndex: 100,
+    // zIndex 200 === Z.popoverInModal (F12-K104) — portalled hotkey popup.
+    zIndex: 200,
     width: POPUP_W,
     maxWidth: `calc(100vw - ${SAFE * 2}px)`,
   };

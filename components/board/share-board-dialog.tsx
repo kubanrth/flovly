@@ -52,6 +52,7 @@ export function ShareBoardDialog({
   const [newLinkName, setNewLinkName] = useState("");
   const [, startTrans] = useTransition();
   const [creating, setCreating] = useState(false);
+  const [revoking, setRevoking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
@@ -59,33 +60,39 @@ export function ShareBoardDialog({
     setError(null);
     setCreating(true);
     startTrans(async () => {
-      const res = await createShareLinkAction({
-        workspaceId,
-        boardId,
-        name: newLinkName.trim() || undefined,
-      });
-      setCreating(false);
-      if (!res.ok) {
-        setError(res.error);
-        return;
+      try {
+        const res = await createShareLinkAction({
+          workspaceId,
+          boardId,
+          name: newLinkName.trim() || undefined,
+        });
+        if (!res.ok) {
+          setError(res.error);
+          return;
+        }
+        // Optymistyczny update lokalnej listy + auto-copy.
+        const fresh: ShareLinkRow = {
+          id: `tmp-${res.token}`,
+          token: res.token,
+          url: res.url,
+          name: newLinkName.trim() || null,
+          createdAt: new Date().toISOString(),
+          lastAccessedAt: null,
+          accessCount: 0,
+          expiresAt: null,
+        };
+        setLinks((prev) => [fresh, ...prev]);
+        setNewLinkName("");
+        // Auto-copy świeży link do clipboardu.
+        void copyToClipboard(res.url, res.token);
+        // Refresh strony żeby dostać prawdziwe ID (cuid) — działa w tle.
+        router.refresh();
+      } catch (err) {
+        console.error("Share link create failed:", err);
+        setError("Nie udało się wygenerować linku.");
+      } finally {
+        setCreating(false);
       }
-      // Optymistyczny update lokalnej listy + auto-copy.
-      const fresh: ShareLinkRow = {
-        id: `tmp-${res.token}`,
-        token: res.token,
-        url: res.url,
-        name: newLinkName.trim() || null,
-        createdAt: new Date().toISOString(),
-        lastAccessedAt: null,
-        accessCount: 0,
-        expiresAt: null,
-      };
-      setLinks((prev) => [fresh, ...prev]);
-      setNewLinkName("");
-      // Auto-copy świeży link do clipboardu.
-      void copyToClipboard(res.url, res.token);
-      // Refresh strony żeby dostać prawdziwe ID (cuid) — działa w tle.
-      router.refresh();
     });
   };
 
@@ -94,13 +101,22 @@ export function ShareBoardDialog({
       return;
     const snapshot = links;
     setLinks((prev) => prev.filter((l) => l.id !== linkId));
+    setRevoking(true);
     startTransition(async () => {
-      const res = await revokeShareLinkAction({ linkId });
-      if (!res.ok) {
+      try {
+        const res = await revokeShareLinkAction({ linkId });
+        if (!res.ok) {
+          setLinks(snapshot);
+          setError(res.error);
+        } else {
+          router.refresh();
+        }
+      } catch (err) {
+        console.error("Share link revoke failed:", err);
         setLinks(snapshot);
-        setError(res.error);
-      } else {
-        router.refresh();
+        setError("Nie udało się cofnąć linku.");
+      } finally {
+        setRevoking(false);
       }
     });
   };

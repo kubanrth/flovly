@@ -230,7 +230,8 @@ export function StatusPicker({
               width: 280,
               maxHeight: coords.maxHeight,
             }}
-            className="popover-glass popover-enter shadow-aura z-[100] flex flex-col overflow-hidden p-[7px]"
+            // z-[200] === Z.popoverInModal (F12-K104).
+            className="popover-glass popover-enter shadow-aura z-[200] flex flex-col overflow-hidden p-[7px]"
           >
             <div className="mb-1.5 shrink-0">
               <span className="eyebrow mb-1.5 block px-1.5 text-[0.66rem]">
@@ -585,7 +586,7 @@ function AddRow({
           type="button"
           onClick={submit}
           disabled={!name.trim()}
-          className="inline-flex h-6 items-center rounded-md bg-primary px-2 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="inline-flex h-6 items-center rounded-md bg-primary px-2 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           Dodaj
         </button>

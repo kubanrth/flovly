@@ -252,7 +252,8 @@ export function WorkspaceSwitcher({
           side="bottom"
           align="start"
           sideOffset={8}
-          className="isolate z-[60]"
+          // z-[200] === Z.popoverInModal (F12-K104).
+          className="isolate z-[200]"
         >
           <PopoverPrimitive.Popup
             className={cn(

@@ -77,7 +77,7 @@ export function CzesiekThread({
             placeholder="Zapytaj Aterona…"
             rows={1}
             disabled={sending}
-            className="max-h-[120px] min-h-[28px] flex-1 resize-none bg-transparent py-1 text-[0.88rem] outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
+            className="max-h-[120px] min-h-[28px] flex-1 resize-none bg-transparent py-1 text-[0.88rem] outline-none placeholder:text-muted-foreground/60 disabled:opacity-60"
           />
           <button
             type="button"

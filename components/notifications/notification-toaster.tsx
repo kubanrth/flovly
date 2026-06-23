@@ -148,7 +148,8 @@ export function NotificationToaster({ userId }: { userId: string }) {
       aria-label="Powiadomienia"
       aria-live="polite"
       aria-atomic="false"
-      className="pointer-events-none fixed right-4 top-4 z-[70] flex w-[360px] flex-col gap-2 max-md:top-16"
+      // z-[80] === Z.toast (F12-K104) — pod modal/backdrop ale nad fab/sticky.
+      className="pointer-events-none fixed right-4 top-4 z-[80] flex w-[360px] flex-col gap-2 max-md:top-16"
     >
       {items.map((t) => (
         <ToastCard

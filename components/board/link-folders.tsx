@@ -104,8 +104,13 @@ function FolderBlock({
           <form
             action={(fd) =>
               startTransition(async () => {
-                await renameLinkFolderAction(fd);
-                setRenaming(false);
+                try {
+                  await renameLinkFolderAction(fd);
+                } catch (err) {
+                  console.error("Rename folder failed:", err);
+                } finally {
+                  setRenaming(false);
+                }
               })
             }
             className="flex flex-1 items-center gap-1"
@@ -306,8 +311,13 @@ function ColumnHeader({
         <form
           action={(fd) =>
             startTransition(async () => {
-              await renameLinkFolderColumnAction(fd);
-              setRenaming(false);
+              try {
+                await renameLinkFolderColumnAction(fd);
+              } catch (err) {
+                console.error("Rename column failed:", err);
+              } finally {
+                setRenaming(false);
+              }
             })
           }
         >
@@ -375,8 +385,12 @@ function NewColumnForm({ folderId }: { folderId: string }) {
     <form
       action={(fd) =>
         startTransition(async () => {
-          await createLinkFolderColumnAction(fd);
-          setName("");
+          try {
+            await createLinkFolderColumnAction(fd);
+            setName("");
+          } catch (err) {
+            console.error("Create column failed:", err);
+          }
         })
       }
       className="flex items-center gap-1 rounded-sm border border-dashed border-border px-1.5 py-0.5 transition-colors focus-within:border-primary/60"
@@ -555,8 +569,12 @@ function NewFolderForm({
     <form
       action={(fd) =>
         startTransition(async () => {
-          await createLinkFolderAction(fd);
-          setName("");
+          try {
+            await createLinkFolderAction(fd);
+            setName("");
+          } catch (err) {
+            console.error("Create folder failed:", err);
+          }
         })
       }
       className="group/new-folder flex items-center gap-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-3.5 py-2.5 transition-colors focus-within:border-primary focus-within:bg-primary/10 hover:border-primary/70 hover:bg-primary/10"

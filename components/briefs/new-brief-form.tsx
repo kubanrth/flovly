@@ -57,7 +57,8 @@ export function NewBriefForm({ workspaceId }: { workspaceId: string }) {
 
       {open && (
         <div
-          className="fixed inset-0 z-[80] grid place-items-center bg-black/50 px-4 py-6"
+          // z-[100] === Z.modalBackdrop (F12-K104).
+          className="fixed inset-0 z-[100] grid place-items-center bg-black/50 px-4 py-6"
           onClick={(e) => {
             if (e.target === e.currentTarget) setOpen(false);
           }}
@@ -163,7 +164,7 @@ export function NewBriefForm({ workspaceId }: { workspaceId: string }) {
                 type="button"
                 onClick={submit}
                 disabled={!title.trim()}
-                className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.88rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px] disabled:opacity-50"
+                className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.88rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px] disabled:opacity-60"
               >
                 Utwórz board
               </button>

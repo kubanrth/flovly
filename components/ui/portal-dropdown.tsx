@@ -192,7 +192,8 @@ export function PortalDropdown<V extends string = string>({
               top: coords.top,
               left: coords.left,
               width: coords.width,
-              zIndex: 100,
+              // zIndex 200 === Z.popoverInModal (F12-K104) — portalled, używany w modalach.
+              zIndex: 200,
             }}
             className="overflow-hidden rounded-xl border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
           >
@@ -216,7 +217,7 @@ export function PortalDropdown<V extends string = string>({
                         onChange(opt.value);
                         setOpen(false);
                       }}
-                      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.86rem] transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.86rem] transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                         hot ? "bg-accent" : ""
                       } ${selected ? "font-medium text-foreground" : "text-foreground"}`}
                     >

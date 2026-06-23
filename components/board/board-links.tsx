@@ -110,8 +110,13 @@ export function BoardLinks({
         <form
           action={(fd) =>
             startTransition(async () => {
-              await createBoardLinkAction(fd);
-              setAdding(false);
+              try {
+                await createBoardLinkAction(fd);
+                setAdding(false);
+              } catch (err) {
+                console.error("Create board link failed:", err);
+                setAdding(false);
+              }
             })
           }
           className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/5 px-2 py-1"

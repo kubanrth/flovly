@@ -1004,7 +1004,7 @@ function ReminderField({
                 }
               }}
               data-active={active}
-              className="inline-flex min-h-[28px] items-center gap-1.5 rounded-[8px] border border-border/60 bg-card/40 px-2.5 py-1 text-[12.5px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-primary/10 data-[active=true]:border-primary/40 data-[active=true]:bg-primary/10 data-[active=true]:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-[28px] items-center gap-1.5 rounded-[8px] border border-border/60 bg-card/40 px-2.5 py-1 text-[12.5px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-primary/10 data-[active=true]:border-primary/40 data-[active=true]:bg-primary/10 data-[active=true]:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Bell size={12} className="opacity-70" aria-hidden />
               <span>{opt.label}</span>

@@ -35,11 +35,18 @@ export function DescriptionSection({
     fd.set("id", taskId);
     fd.set("descriptionJson", draft ? JSON.stringify(draft) : "");
     startTransition(async () => {
-      await updateTaskDescriptionAction(fd);
-      setSaving(false);
-      setMode("view");
-      setFlash("Zapisano.");
-      setTimeout(() => setFlash(null), 1600);
+      try {
+        await updateTaskDescriptionAction(fd);
+        setMode("view");
+        setFlash("Zapisano.");
+        setTimeout(() => setFlash(null), 1600);
+      } catch (err) {
+        console.error("Description save failed:", err);
+        setFlash("Błąd zapisu.");
+        setTimeout(() => setFlash(null), 2000);
+      } finally {
+        setSaving(false);
+      }
     });
   };
 

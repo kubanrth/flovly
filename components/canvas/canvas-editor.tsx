@@ -1664,7 +1664,8 @@ function CanvasEditorInner({
         </div>
       )}
 
-      <div className="pointer-events-none absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full border border-border bg-card/95 px-2 py-1 shadow-sm backdrop-blur">
+      {/* z-[30] === Z.dropdown — connection badge nad canvas, ale pod MobileFullscreenToggle (z-50/fab) */}
+      <div className="pointer-events-none absolute bottom-3 right-3 z-[30] flex items-center gap-1.5 rounded-full border border-border bg-card/95 px-2 py-1 shadow-sm backdrop-blur">
         <span
           className={`inline-block h-1.5 w-1.5 rounded-full ${
             isConnected ? "bg-primary" : "bg-muted-foreground/50"
@@ -1879,7 +1880,7 @@ function TaskLinksPanel({
           type="button"
           onClick={onCreate}
           disabled={!canCreateWithNoBoard}
-          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-dashed border-border px-3 font-sans text-[0.8rem] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-dashed border-border px-3 font-sans text-[0.8rem] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
           title={canCreateWithNoBoard ? undefined : "Brak tablicy w tej przestrzeni"}
         >
           <Unlink2 size={12} /> Utwórz zadanie z węzła
@@ -2182,7 +2183,8 @@ function ContextMenu({
   return (
     <div
       ref={ref}
-      style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 60 }}
+      // zIndex 200 === Z.popoverInModal (F12-K104) — ContextMenu nad selected node.
+      style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 200 }}
       className="w-52 rounded-lg border border-border bg-popover p-1 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
     >
       {hasSelection && (
@@ -2359,7 +2361,8 @@ function TimerWidget() {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 top-[calc(100%+4px)] z-50 w-44 rounded-lg border border-border bg-popover p-2 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]">
+        // z-[200] === Z.popoverInModal (F12-K104) — TimerPopover, musi być nad modale.
+        <div className="absolute right-0 top-[calc(100%+4px)] z-[200] w-44 rounded-lg border border-border bg-popover p-2 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]">
           <div className="mb-2 grid place-items-center font-mono text-[1.25rem] tabular-nums text-foreground">
             {mm}:{ss}
           </div>
@@ -2485,7 +2488,7 @@ function CtxItem({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.82rem] transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.82rem] transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
         destructive
           ? "text-destructive hover:bg-destructive/10"
           : "text-foreground hover:bg-accent"
@@ -2656,7 +2659,8 @@ function TextColorPicker({
               top: coords.top,
               left: coords.left,
               width: 200,
-              zIndex: 100,
+              // zIndex 200 === Z.popoverInModal (F12-K104) — TextColorPicker.
+              zIndex: 200,
             }}
             className="flex flex-col gap-1.5 rounded-lg border border-border bg-popover p-2 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)]"
           >
@@ -2834,7 +2838,8 @@ function FontSizePicker({
               top: coords.top,
               left: coords.left,
               width: 220,
-              zIndex: 100,
+              // zIndex 200 === Z.popoverInModal (F12-K104) — FontSizePicker.
+              zIndex: 200,
             }}
             className="flex flex-col gap-2 rounded-lg border border-border bg-popover p-2 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)]"
           >

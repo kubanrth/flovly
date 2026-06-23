@@ -150,19 +150,26 @@ export function UsersBulkBar() {
     setPending(true);
     setResult(null);
     startTransition(async () => {
-      const res = await action(ids);
-      setPending(false);
-      setResult(res);
-      if (res.ok && res.affected > 0) {
-        // Drop selection on success so the user gets visual confirmation that
-        // the bar dismisses + their list re-renders fresh.
-        clear();
+      try {
+        const res = await action(ids);
+        setResult(res);
+        if (res.ok && res.affected > 0) {
+          // Drop selection on success so the user gets visual confirmation that
+          // the bar dismisses + their list re-renders fresh.
+          clear();
+        }
+      } catch (err) {
+        console.error("Bulk action failed:", err);
+        setResult({ ok: false, affected: 0, error: "Nie udało się wykonać operacji." });
+      } finally {
+        setPending(false);
       }
     });
   };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-4 pb-4 md:pb-6">
+    // z-[50] === Z.fab (F12-K104) — floating bulk-action bar.
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[50] flex justify-center px-4 pb-4 md:pb-6">
       <div
         role="status"
         aria-live="polite"

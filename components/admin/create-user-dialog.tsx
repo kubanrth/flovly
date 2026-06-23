@@ -16,13 +16,19 @@ export function CreateUserDialog() {
   const submit = async (formData: FormData) => {
     setError(null);
     setPending(true);
-    const res = await createUserAction(formData);
-    setPending(false);
-    if (!res.ok) {
-      setError(res.error);
-      return;
+    try {
+      const res = await createUserAction(formData);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      setOpen(false);
+    } catch (err) {
+      console.error("Create user failed:", err);
+      setError("Nie udało się utworzyć użytkownika.");
+    } finally {
+      setPending(false);
     }
-    setOpen(false);
   };
 
   return (
@@ -145,7 +151,7 @@ export function CreateUserDialog() {
                 <button
                   type="submit"
                   disabled={pending}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-gradient px-3 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-gradient px-3 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {pending ? "Tworzenie…" : "Utwórz konto"}
                 </button>

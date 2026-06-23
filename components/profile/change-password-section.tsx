@@ -117,7 +117,7 @@ export function ChangePasswordSection() {
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex h-10 items-center rounded-md bg-brand-gradient px-4 font-sans text-[0.92rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-10 items-center rounded-md bg-brand-gradient px-4 font-sans text-[0.92rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? "Zmienianie…" : "Zmień hasło"}
         </button>

@@ -199,13 +199,16 @@ export function Sidebar({
 
   return (
     <>
-      {/* Mobile hamburger — z-[80] sits above NotificationToaster (z-70) and ReminderPopups (z-60). */}
+      {/* Mobile hamburger — z-[90] === Z.mobileNav (F12-K104).
+          Nad NotificationToaster + ReminderPopups (z-[80] toast), pod
+          modal/drawer (z-[100]/[110]) — drawer ma się nakładać nad hamburger,
+          inaczej klient nie może zamknąć drawer'a. */}
       {!mobileOpen && (
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
           aria-label="Otwórz menu"
-          className="mobile-sidebar-toggle fixed right-3 top-3 z-[80] grid h-11 w-11 place-items-center rounded-lg border border-border bg-card/95 text-foreground shadow-lg backdrop-blur transition-colors hover:bg-accent md:hidden"
+          className="mobile-sidebar-toggle fixed right-3 top-3 z-[90] grid h-11 w-11 place-items-center rounded-lg border border-border bg-card/95 text-foreground shadow-lg backdrop-blur transition-colors hover:bg-accent md:hidden"
         >
           <Menu size={20} />
         </button>
@@ -565,9 +568,13 @@ function NavItem({
     }`;
 
   if (disabled) {
+    // F12-K104: aria-disabled + role="link" — SR users dostają informację
+    // że link jest niedostępny (cursor-not-allowed sam nie wystarcza).
     return (
       <span
         data-active={active ? "true" : "false"}
+        role="link"
+        aria-disabled="true"
         className={`${cls} cursor-not-allowed text-muted-foreground/60`}
         title={hint ? `Dostępne w ${hint}` : undefined}
       >

@@ -135,8 +135,9 @@ export function StageManagerDialog({
 
       <BaseDialog.Root open={open} onOpenChange={(next) => !next && setOpen(false)}>
         <BaseDialog.Portal>
-          <BaseDialog.Backdrop className="fixed inset-0 z-[85] bg-background/70 backdrop-blur-sm" />
-          <BaseDialog.Popup className="fixed left-1/2 top-1/2 z-[90] flex max-h-[85vh] w-[min(640px,92vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-[0_24px_48px_-12px_rgba(0,0,0,0.25)]">
+          {/* z-[100]/[110] === Z.modalBackdrop/modal (F12-K104). */}
+          <BaseDialog.Backdrop className="fixed inset-0 z-[100] bg-background/70 backdrop-blur-sm" />
+          <BaseDialog.Popup className="fixed left-1/2 top-1/2 z-[110] flex max-h-[85vh] w-[min(640px,92vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-[0_24px_48px_-12px_rgba(0,0,0,0.25)]">
             <div className="flex items-center justify-between border-b border-border px-6 py-3">
               <BaseDialog.Title className="eyebrow">Etapy pipeline</BaseDialog.Title>
               <button
@@ -332,7 +333,7 @@ function AddStageForm({ workspaceId }: { workspaceId: string }) {
         type="button"
         onClick={submit}
         disabled={!name.trim()}
-        className="inline-flex h-8 shrink-0 items-center rounded-md bg-brand-gradient px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-8 shrink-0 items-center rounded-md bg-brand-gradient px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
       >
         Dodaj etap
       </button>

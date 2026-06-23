@@ -169,7 +169,7 @@ export function SubtasksSection({
           <button
             type="submit"
             disabled={!title.trim()}
-            className="inline-flex h-8 items-center rounded-md bg-brand-gradient px-3 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-white shadow-brand transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-8 items-center rounded-md bg-brand-gradient px-3 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-white shadow-brand transition-opacity hover:opacity-90 disabled:opacity-60"
           >
             Dodaj
           </button>

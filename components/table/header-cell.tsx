@@ -289,7 +289,8 @@ function HeaderContextMenu({
     <div
       ref={ref}
       style={{ left: x, top: y, position: "fixed" }}
-      className="z-[60] w-56 rounded-xl border border-border bg-popover p-1 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+      // z-[200] === Z.popoverInModal (F12-K104) — portalled sort menu, może być nad modalem.
+      className="z-[200] w-56 rounded-xl border border-border bg-popover p-1 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
     >
       <MenuItem
         icon={<ArrowDownAZ size={12} />}

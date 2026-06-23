@@ -22,13 +22,19 @@ export function ResetPasswordDialog({
   const submit = async (formData: FormData) => {
     setError(null);
     setPending(true);
-    const res = await resetUserPasswordAction(formData);
-    setPending(false);
-    if (!res.ok) {
-      setError(res.error);
-      return;
+    try {
+      const res = await resetUserPasswordAction(formData);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      setOpen(false);
+    } catch (err) {
+      console.error("Password reset failed:", err);
+      setError("Nie udało się zresetować hasła.");
+    } finally {
+      setPending(false);
     }
-    setOpen(false);
   };
 
   return (
@@ -114,7 +120,7 @@ export function ResetPasswordDialog({
                 <button
                   type="submit"
                   disabled={pending}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-gradient px-3 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-gradient px-3 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {pending ? "Resetowanie…" : "Zmień hasło"}
                 </button>

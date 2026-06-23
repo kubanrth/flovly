@@ -102,7 +102,8 @@ export function ReminderPopups({
       aria-label="Przypomnienia"
       aria-live="polite"
       aria-atomic="false"
-      className="pointer-events-none fixed right-4 top-4 z-[60] flex w-[340px] flex-col gap-2 max-md:top-16"
+      // z-[80] === Z.toast (F12-K104).
+      className="pointer-events-none fixed right-4 top-4 z-[80] flex w-[340px] flex-col gap-2 max-md:top-16"
     >
       {list.map((r) => (
         <ReminderBubble

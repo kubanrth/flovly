@@ -154,7 +154,7 @@ function NoteComposer({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex h-8 items-center rounded-md bg-brand-gradient px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-8 items-center rounded-md bg-brand-gradient px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? "Dodaję…" : "Dodaj notatkę"}
         </button>

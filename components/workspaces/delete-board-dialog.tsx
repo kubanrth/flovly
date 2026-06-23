@@ -34,7 +34,14 @@ export function DeleteBoardDialog({
     fd.set("boardId", boardId);
     // deleteBoardAction redirects on success, so the dialog will
     // unmount as the router navigates. No explicit setOpen(false).
-    startTransition(() => deleteBoardAction(fd));
+    startTransition(async () => {
+      try {
+        await deleteBoardAction(fd);
+      } catch (err) {
+        console.error("Delete board failed:", err);
+        setPending(false);
+      }
+    });
   };
 
   return (

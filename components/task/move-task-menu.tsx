@@ -18,8 +18,8 @@ export interface MoveTargetBoard {
 // rzadkiego edge case'a (brak matcha = status = null, user może zmienić).
 //
 // Popover portalled do document.body żeby nie był ucięty przez `overflow-y-auto`
-// na TaskModalShellu; z-[100] żeby był nad task drawer overlay (z-80) i nad
-// mobile hamburger menu.
+// na TaskModalShellu; z-[200] === Z.popoverInModal (F12-K104) — nad drawer
+// popup (z-[110]) i nad mobile hamburger (z-[90]).
 export function MoveTaskMenu({
   taskId,
   currentBoardId,
@@ -127,7 +127,7 @@ export function MoveTaskMenu({
               left: coords.left,
               width: 300,
             }}
-            className="z-[100] overflow-hidden rounded-lg border border-border bg-popover shadow-[0_16px_40px_-16px_rgba(10,10,40,0.35)]"
+            className="z-[200] overflow-hidden rounded-lg border border-border bg-popover shadow-[0_16px_40px_-16px_rgba(10,10,40,0.35)]"
           >
             <div className="flex items-center gap-2 border-b border-border px-3 py-2">
               <Search size={11} className="text-muted-foreground" />
