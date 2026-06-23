@@ -79,7 +79,10 @@ function StatCard({
   href?: string;
 }) {
   const body = (
-    <div className="flex flex-col gap-1 rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/60">
+    // F12-K100 fix: equal-height tiles — note slot ZAWSZE renderowany z
+    // &nbsp; placeholder gdy brak, żeby wszystkie 4 cards miały taką samą
+    // wysokość (wcześniej Użytkownicy + Akcje 24h były krótsze bo brak note).
+    <div className="flex h-full flex-col gap-1 rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary/60">
       <span className="flex items-center gap-1.5 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
         <span className="text-primary">{icon}</span>
         {label}
@@ -87,11 +90,9 @@ function StatCard({
       <span className="font-display text-[1.5rem] font-bold tracking-[-0.02em] md:text-[1.8rem]">
         {value.toLocaleString("pl-PL")}
       </span>
-      {note && (
-        <span className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground">
-          {note}
-        </span>
-      )}
+      <span className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground">
+        {note ?? " "}
+      </span>
     </div>
   );
   if (href) return <Link href={href}>{body}</Link>;
