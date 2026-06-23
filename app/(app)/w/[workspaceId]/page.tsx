@@ -216,44 +216,35 @@ function WorkspaceHero({
         className="pointer-events-none absolute -bottom-28 -right-16 hidden h-[380px] w-[380px] rounded-full bg-[radial-gradient(circle,rgba(225,49,143,0.22),transparent_65%)] blur-3xl md:block"
       />
 
-      {/* Foreground row: eyebrow + name + avatars (left)  |  search + CTA (right) */}
+      {/* F12-K108: usunięty duplikat workspace name (layout.tsx już ma h1
+          "Projekty AI"). Mobile = tylko toolbar (search + avatars + CTAs).
+          Desktop md+ = avatars + toolbar (avatars są tylko tutaj, nie w
+          layout.tsx). */}
       <div className="relative flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-5">
-        {/* Left cluster */}
-        <div className="flex min-w-0 items-center gap-4">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-eyebrow">Workspace</span>
+        {/* Left cluster — TYLKO desktop md+ (avatars stack) */}
+        <div
+          className="hidden items-center md:flex"
+          aria-label={`${memberCount} członków workspace`}
+        >
+          {members.map((m, idx) => (
+            <MemberAvatar
+              key={m.id}
+              name={m.name || m.email}
+              avatarUrl={m.avatarUrl}
+              style={{
+                marginLeft: idx === 0 ? 0 : -8,
+                zIndex: members.length - idx,
+              }}
+            />
+          ))}
+          {overflow > 0 && (
             <span
-              className="truncate font-display text-[20px] font-bold leading-tight tracking-[-0.015em] text-foreground md:text-[17px]"
-              title={workspaceName}
+              className="grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-brand-50 font-mono text-[0.62rem] font-semibold text-brand-700 dark:border-[#15121F] dark:bg-white/10 dark:text-brand-200"
+              style={{ marginLeft: members.length > 0 ? -8 : 0, zIndex: 0 }}
             >
-              {workspaceName}
+              +{overflow}
             </span>
-          </div>
-          {/* Avatar stack — max 5 + overflow chip. Aria-label opisuje pełen count. */}
-          <div
-            className="hidden items-center md:flex"
-            aria-label={`${memberCount} członków workspace`}
-          >
-            {members.map((m, idx) => (
-              <MemberAvatar
-                key={m.id}
-                name={m.name || m.email}
-                avatarUrl={m.avatarUrl}
-                style={{
-                  marginLeft: idx === 0 ? 0 : -8,
-                  zIndex: members.length - idx,
-                }}
-              />
-            ))}
-            {overflow > 0 && (
-              <span
-                className="grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-brand-50 font-mono text-[0.62rem] font-semibold text-brand-700 dark:border-[#15121F] dark:bg-white/10 dark:text-brand-200"
-                style={{ marginLeft: members.length > 0 ? -8 : 0, zIndex: 0 }}
-              >
-                +{overflow}
-              </span>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Right cluster — mobile = full width row, desktop = inline */}

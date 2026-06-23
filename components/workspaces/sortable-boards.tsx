@@ -224,36 +224,38 @@ function SortableBoardRow({
         >
           <GripVertical size={14} />
         </button>
-        {/* F12-K107: mobile dwa rzędy (badge+title TOP, pills+counter BOTTOM)
-            żeby długie nazwy nie ucinały się i counter nie wystawał poza
-            ekran. Desktop: oryginalny grid 5-col. */}
+        {/* F12-K108: mirror SortableWorkspaceRow pattern. Mobile = flex-col
+            stack (badge+title TOP, pills+counter BOTTOM jako osobny rząd).
+            Desktop md+ = oryginalny grid 5-col. */}
         <Link
           href={`/w/${workspaceId}/b/${board.id}/table`}
-          className="group flex flex-1 flex-wrap items-center gap-y-2 px-3 py-3 transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none md:grid md:grid-cols-[40px_minmax(0,1fr)_180px_70px_30px] md:flex-nowrap md:gap-4 md:py-3.5"
+          className="group flex flex-1 flex-col gap-2 px-3 py-3 transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none md:grid md:grid-cols-[40px_minmax(0,1fr)_180px_70px_30px] md:items-center md:gap-4 md:py-3.5"
         >
-          {/* Init badge — workspace color identity, mirror grid card */}
-          <span
-            aria-hidden
-            className="mr-3 grid h-9 w-9 shrink-0 place-items-center rounded-xl font-display text-[0.72rem] font-bold text-white md:mr-0"
-            style={{
-              background: swatch.color,
-              boxShadow: `0 6px 14px -5px ${swatch.shadow}`,
-            }}
-          >
-            {initials}
-          </span>
+          {/* TOP row mobile / col 1+2 desktop: badge + tytuł */}
+          <div className="flex items-center gap-3 min-w-0 md:contents">
+            <span
+              aria-hidden
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-xl font-display text-[0.72rem] font-bold text-white"
+              style={{
+                background: swatch.color,
+                boxShadow: `0 6px 14px -5px ${swatch.shadow}`,
+              }}
+            >
+              {initials}
+            </span>
 
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5 md:flex-initial">
-            <span className="truncate font-display text-[1.05rem] font-semibold leading-tight tracking-[-0.01em] transition-colors group-hover:text-primary">
-              {board.name}
-            </span>
-            <span className="truncate font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
-              Tablica · {board.taskCount} {taskPl(board.taskCount)}
-            </span>
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="truncate font-display text-[1.05rem] font-semibold leading-tight tracking-[-0.01em] transition-colors group-hover:text-primary">
+                {board.name}
+              </span>
+              <span className="truncate font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
+                Tablica · {board.taskCount} {taskPl(board.taskCount)}
+              </span>
+            </div>
           </div>
 
-          {/* Meta: view pills + task count + arrow. Mobile: bottom row pełna szerokość. */}
-          <div className="flex w-full flex-wrap items-center gap-2 max-md:pl-[48px] md:contents md:w-auto md:pl-0">
+          {/* BOTTOM row mobile / col 3+4+5 desktop: view pills + counter + arrow */}
+          <div className="flex flex-wrap items-center gap-2 max-md:pl-[48px] md:contents">
             <div className="flex flex-wrap items-center gap-1">
               {visibleViews.map((view) => {
                 const meta = VIEW_META[view];
