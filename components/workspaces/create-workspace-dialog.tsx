@@ -36,7 +36,7 @@ export function CreateWorkspaceDialog() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="group flex min-h-[180px] flex-col items-start justify-between rounded-xl border border-dashed border-border p-6 text-left text-muted-foreground transition-all hover:border-primary/60 hover:bg-accent/50 hover:text-foreground focus-visible:border-primary focus-visible:text-foreground focus-visible:outline-none"
+        className="group flex min-h-[180px] flex-col items-start justify-between rounded-xl border border-dashed border-border p-6 text-left text-muted-foreground transition-[border-color,background-color,color] hover:border-primary/60 hover:bg-accent/50 hover:text-foreground focus-visible:border-primary focus-visible:text-foreground focus-visible:outline-none"
       >
         <span className="eyebrow transition-colors group-hover:text-primary">
           Nowa przestrzeń
@@ -164,7 +164,7 @@ function ViewsPicker() {
             <label
               key={p.value}
               data-on={on ? "true" : "false"}
-              className="group flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 font-mono text-[0.72rem] uppercase tracking-[0.12em] text-muted-foreground transition-all data-[on=true]:border-primary/60 data-[on=true]:bg-primary/10 data-[on=true]:text-foreground hover:border-primary/40"
+              className="group flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 font-mono text-[0.72rem] uppercase tracking-[0.12em] text-muted-foreground transition-[border-color,background-color,color] data-[on=true]:border-primary/60 data-[on=true]:bg-primary/10 data-[on=true]:text-foreground hover:border-primary/40"
             >
               <input
                 type="checkbox"

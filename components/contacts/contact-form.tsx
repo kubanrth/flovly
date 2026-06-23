@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, startTransition, useMemo, useState } from "react";
+import { useActionState, startTransition, useId, useMemo, useState } from "react";
 import {
   SearchableDropdown,
   type SearchableDropdownOption,
@@ -83,7 +83,7 @@ export function ContactForm({
             <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.55rem] font-bold text-white">
               {m.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={m.avatarUrl} alt="" className="h-full w-full object-cover" />
+                <img src={m.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
               ) : (
                 initials
               )}
@@ -124,6 +124,8 @@ export function ContactForm({
 
       <Section title="Opiekun" eyebrow="Wewnętrzny">
         <div className="flex flex-col gap-2">
+          {/* SearchableDropdown owns its own button + aria-label; eyebrow is
+              decorative copy only, so a plain span (no htmlFor target) is fine. */}
           <span className="eyebrow">Przypisany do</span>
           <SearchableDropdown
             name="ownerId"
@@ -202,10 +204,12 @@ function Field({
   placeholder?: string;
   error?: string;
 }) {
+  const inputId = useId();
   return (
-    <label className="flex flex-col gap-2">
-      <span className="eyebrow">{label}</span>
+    <div className="flex flex-col gap-2">
+      <label htmlFor={inputId} className="eyebrow">{label}</label>
       <input
+        id={inputId}
         name={name}
         type={type}
         defaultValue={defaultValue}
@@ -216,6 +220,6 @@ function Field({
       {error && (
         <span className="font-mono text-[0.66rem] text-destructive">{error}</span>
       )}
-    </label>
+    </div>
   );
 }

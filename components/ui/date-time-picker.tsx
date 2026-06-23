@@ -522,7 +522,7 @@ function TimeStepper({
           aria-label={`${ariaLabel} +${step}`}
           className="grid h-[18px] w-6 place-items-center text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
-          <ChevronUp size={11} />
+          <ChevronUp size={13} />
         </button>
         <button
           type="button"
@@ -530,7 +530,7 @@ function TimeStepper({
           aria-label={`${ariaLabel} −${step}`}
           className="grid h-[18px] w-6 place-items-center border-t border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
-          <ChevronDown size={11} />
+          <ChevronDown size={13} />
         </button>
       </div>
     </div>

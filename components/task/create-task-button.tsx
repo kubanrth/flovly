@@ -167,7 +167,7 @@ export function CreateTaskButton({
                       type="button"
                       onClick={() => setPriority(value)}
                       data-on={on ? "true" : "false"}
-                      className={`group inline-flex h-10 items-center gap-2 rounded-lg border bg-background px-3 font-sans text-[0.84rem] transition-all hover:-translate-y-px ${
+                      className={`group inline-flex h-10 items-center gap-2 rounded-lg border bg-background px-3 font-sans text-[0.84rem] transition-[transform,border-color,background-color,color] hover:-translate-y-px ${
                         on
                           ? `${meta.border} ${meta.bg} ${meta.color}`
                           : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"

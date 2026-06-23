@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState, startTransition } from "react";
+import { useActionState, useId, useRef, useState, startTransition } from "react";
 import { Camera } from "lucide-react";
 import {
   updateProfileAction,
@@ -26,6 +26,8 @@ export function ProfileForm({
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(initialAvatarUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const nameId = useId();
+  const tzId = useId();
 
   const fieldErrors = !state?.ok ? state?.fieldErrors : undefined;
   const formError = !state?.ok ? state?.error : undefined;
@@ -57,7 +59,7 @@ export function ProfileForm({
         >
           {previewUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={previewUrl} alt="" className="h-full w-full object-cover" />
+            <img src={previewUrl} alt="" width={96} height={96} className="h-full w-full object-cover" />
           ) : (
             <span className="font-display text-[1.6rem] font-bold tracking-[-0.02em]">{initials}</span>
           )}
@@ -89,9 +91,10 @@ export function ProfileForm({
       </div>
 
       {/* Name */}
-      <label className="flex flex-col gap-2">
-        <span className="eyebrow">Imię i nazwisko</span>
+      <div className="flex flex-col gap-2">
+        <label htmlFor={nameId} className="eyebrow">Imię i nazwisko</label>
         <input
+          id={nameId}
           name="name"
           type="text"
           required
@@ -105,7 +108,7 @@ export function ProfileForm({
             {fieldErrors.name}
           </span>
         )}
-      </label>
+      </div>
 
       {/* Email (read-only) */}
       <div className="flex flex-col gap-2">
@@ -119,9 +122,10 @@ export function ProfileForm({
       </div>
 
       {/* Timezone */}
-      <label className="flex flex-col gap-2">
-        <span className="eyebrow">Strefa czasowa</span>
+      <div className="flex flex-col gap-2">
+        <label htmlFor={tzId} className="eyebrow">Strefa czasowa</label>
         <select
+          id={tzId}
           name="timezone"
           defaultValue={initialTimezone}
           className="h-10 appearance-none border-b border-border bg-transparent pb-1 font-mono text-[0.92rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
@@ -137,7 +141,7 @@ export function ProfileForm({
             {fieldErrors.timezone}
           </span>
         )}
-      </label>
+      </div>
 
       {formError && (
         <p className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-destructive">

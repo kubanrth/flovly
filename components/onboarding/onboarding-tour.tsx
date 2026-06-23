@@ -153,7 +153,7 @@ export function OnboardingTour() {
                   <span
                     key={i}
                     className={cn(
-                      "h-1.5 rounded-full transition-all duration-200",
+                      "h-1.5 rounded-full transition-[width,background-color] duration-200",
                       i === step
                         ? "w-[18px]"
                         : "w-1.5 bg-muted-foreground/25",

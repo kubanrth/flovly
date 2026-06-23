@@ -157,7 +157,7 @@ function ActivityRow({
           >
             {actor.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={actor.avatarUrl} alt="" className="h-full w-full object-cover" />
+              <img src={actor.avatarUrl} alt="" width={28} height={28} className="h-full w-full object-cover" />
             ) : (
               actorLabel.slice(0, 2).toUpperCase()
             )}

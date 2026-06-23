@@ -95,7 +95,7 @@ function CommentItemView({
       >
         {comment.author.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={comment.author.avatarUrl} alt="" className="h-full w-full object-cover" />
+          <img src={comment.author.avatarUrl} alt="" width={32} height={32} className="h-full w-full object-cover" />
         ) : (
           initials
         )}
@@ -226,10 +226,12 @@ function EditCommentForm({
     updateCommentAction,
     null,
   );
-  const doneId = state?.ok ? state.commentId : null;
+  // FIX: track state object reference instead of doneId — new state = re-fire
   useEffect(() => {
-    if (doneId) onDone();
-  }, [doneId, onDone]);
+    if (state?.ok) {
+      onDone();
+    }
+  }, [state, onDone]);
   return (
     <form
       action={(fd) => startTransition(() => formAction(fd))}

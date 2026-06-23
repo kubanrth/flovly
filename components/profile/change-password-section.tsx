@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState, startTransition } from "react";
+import { useActionState, useId, useRef, useState, startTransition } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import {
   changePasswordAction,
@@ -11,6 +11,8 @@ export function ChangePasswordSection() {
   const formRef = useRef<HTMLFormElement>(null);
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
+  const currentId = useId();
+  const newId = useId();
 
   const [state, formAction, pending] = useActionState<ChangePasswordState, FormData>(
     async (prev, fd) => {
@@ -42,10 +44,11 @@ export function ChangePasswordSection() {
         </p>
       </div>
 
-      <label className="flex flex-col gap-2">
-        <span className="eyebrow">Aktualne hasło</span>
+      <div className="flex flex-col gap-2">
+        <label htmlFor={currentId} className="eyebrow">Aktualne hasło</label>
         <div className="relative">
           <input
+            id={currentId}
             name="currentPassword"
             type={showCurrent ? "text" : "password"}
             required
@@ -67,12 +70,13 @@ export function ChangePasswordSection() {
             {fieldErrors.currentPassword}
           </span>
         )}
-      </label>
+      </div>
 
-      <label className="flex flex-col gap-2">
-        <span className="eyebrow">Nowe hasło (min 8 znaków)</span>
+      <div className="flex flex-col gap-2">
+        <label htmlFor={newId} className="eyebrow">Nowe hasło (min 8 znaków)</label>
         <div className="relative">
           <input
+            id={newId}
             name="newPassword"
             type={showNew ? "text" : "password"}
             required
@@ -96,7 +100,7 @@ export function ChangePasswordSection() {
             {fieldErrors.newPassword}
           </span>
         )}
-      </label>
+      </div>
 
       {formError && (
         <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-[0.88rem] text-destructive">

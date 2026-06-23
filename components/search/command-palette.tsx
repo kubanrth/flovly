@@ -164,6 +164,7 @@ export function CommandPalette({ data }: { data: CommandPaletteData }) {
                 value={query}
                 onValueChange={setQuery}
                 placeholder="Szukaj workspace, tablicy, zadania, akcji..."
+                aria-label="Wyszukaj workspace, tablicę, zadanie lub akcję"
                 className="flex-1 bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground/70 outline-none"
                 autoFocus
               />

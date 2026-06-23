@@ -177,7 +177,7 @@ export function AssigneePickerCell({
               >
                 {a.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={a.avatarUrl} alt="" className="h-full w-full object-cover" />
+                  <img src={a.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
                 ) : (
                   (a.name ?? a.email).slice(0, 2).toUpperCase()
                 )}
@@ -239,7 +239,7 @@ export function AssigneePickerCell({
                       <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-[6px] bg-brand-gradient font-display text-[10px] font-bold text-white">
                         {m.avatarUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={m.avatarUrl} alt="" className="h-full w-full object-cover" />
+                          <img src={m.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
                         ) : (
                           (m.name ?? m.email).slice(0, 2).toUpperCase()
                         )}
@@ -340,7 +340,7 @@ export function AssigneePickerCell({
                         <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-[8px] bg-brand-gradient font-display text-[11px] font-bold text-white">
                           {m.avatarUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={m.avatarUrl} alt="" className="h-full w-full object-cover" />
+                            <img src={m.avatarUrl} alt="" width={32} height={32} className="h-full w-full object-cover" />
                           ) : (
                             (m.name ?? m.email).slice(0, 2).toUpperCase()
                           )}

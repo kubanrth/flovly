@@ -65,15 +65,15 @@ export function BriefEditor({
     if (!canEdit) return;
     const docStr = doc ? JSON.stringify(doc) : "";
     const initialDocStr = brief.contentJson ? JSON.stringify(brief.contentJson) : "";
-    if (
-      title === brief.title &&
-      docStr === initialDocStr &&
-      status === brief.status &&
-      emoji === brief.emoji &&
-      headerColor === brief.headerColor
-    )
-      return;
-    const h = setTimeout(() => {
+    const hasChanges =
+      title !== brief.title ||
+      docStr !== initialDocStr ||
+      status !== brief.status ||
+      emoji !== brief.emoji ||
+      headerColor !== brief.headerColor;
+    if (!hasChanges) return;
+
+    const saveNow = () => {
       const fd = new FormData();
       fd.set("id", brief.id);
       fd.set("title", title);
@@ -87,8 +87,15 @@ export function BriefEditor({
           new Date().toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }),
         );
       });
-    }, 500);
-    return () => clearTimeout(h);
+    };
+
+    const h = setTimeout(saveNow, 500);
+
+    // FIX: flush pending autosave on unmount by calling immediately
+    return () => {
+      clearTimeout(h);
+      if (hasChanges) saveNow();
+    };
   }, [
     title, doc, status, emoji, headerColor,
     brief.id, brief.title, brief.contentJson, brief.status, brief.emoji, brief.headerColor,
@@ -171,6 +178,7 @@ export function BriefEditor({
             placeholder="Nazwa briefu…"
             maxLength={200}
             readOnly={!canEdit}
+            aria-label="Nazwa briefu"
             className="flex-1 border-0 bg-transparent font-display text-[2.2rem] font-bold leading-tight tracking-[-0.02em] outline-none placeholder:text-muted-foreground/40"
           />
 
@@ -236,12 +244,13 @@ export function BriefEditor({
               />
 
               <form
-                action={(fd) =>
+                action={async (fd) => {
+                  // FIX: move confirm() outside server action to avoid pending stuck state
+                  if (!confirm("Usunąć ten brief?")) return;
                   startTransition(async () => {
-                    if (!confirm("Usunąć ten brief?")) return;
                     await deleteBriefAction(fd);
-                  })
-                }
+                  });
+                }}
                 className="m-0"
               >
                 <input type="hidden" name="id" value={brief.id} />

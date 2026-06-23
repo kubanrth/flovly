@@ -24,7 +24,7 @@ export function CzesiekSessions({
       <button
         type="button"
         onClick={onNew}
-        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-background font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-all hover:border-primary/60 hover:text-foreground"
+        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-background font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-[border-color,color] hover:border-primary/60 hover:text-foreground"
       >
         <Plus size={11} />
         <span>Nowa</span>

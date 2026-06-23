@@ -478,7 +478,7 @@ function SortableBoardSection({
                         >
                           {a.avatarUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={a.avatarUrl} alt="" className="h-full w-full object-cover" />
+                            <img src={a.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
                           ) : (
                             (a.name ?? a.email).slice(0, 2).toUpperCase()
                           )}

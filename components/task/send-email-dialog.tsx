@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, startTransition } from "react";
+import { useActionState, useState, startTransition, useEffect } from "react";
 import { Mail } from "lucide-react";
 import {
   Dialog,
@@ -39,6 +39,22 @@ export function SendEmailDialog({
     () => new Set(attachments.map((a) => a.id)),
   );
 
+  // FIX: auto-close on success + reset picked state
+  useEffect(() => {
+    if (state?.ok) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOpen(false);
+    }
+  }, [state?.ok]);
+
+  // Reset form state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPicked(new Set(attachments.map((a) => a.id)));
+    }
+  }, [open, attachments]);
+
   const toggle = (id: string) => {
     setPicked((prev) => {
       const next = new Set(prev);
@@ -70,7 +86,7 @@ className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border bor
         <Mail size={12} /> Wyślij mailem
       </button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={setOpen} key={open ? "open" : "closed"}>
         <DialogContent className="rounded-2xl border-border bg-card shadow-aura sm:max-w-[540px]">
           <DialogHeader>
             <span className="eyebrow">Wyślij zadanie</span>

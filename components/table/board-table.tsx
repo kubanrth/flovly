@@ -1051,11 +1051,12 @@ export function BoardTable({
                               aria-orientation="vertical"
                               aria-label="Zmień szerokość kolumny"
                               title="Przeciągnij aby zmienić szerokość · dwuklik = reset"
-                              // F12-K90: hit-area 8px (z 6px) + offset -translate-x-1
-                              // żeby strefa była CENTROWANA na border, łatwiej trafić.
-                              // Plus przezroczyste tło ZAWSZE zostaje aktywne, brand
-                              // tint pokazuje na hover żeby user wiedział że tu klika.
-                              className={`absolute right-0 top-0 z-20 h-full w-2 translate-x-1 cursor-col-resize select-none touch-none transition-colors ${
+                              // F12-K90: hit-area 6px (z 8px) bez translate-x-1.
+                              // Wcześniej translate-x-1 wystawał 4px poza right edge =
+                              // overlap z pierwszą cellą sąsiedniej (pinned) kolumny.
+                              // Teraz handle siedzi w obrębie własnej cell'i, centered
+                              // na borderze przez własną szerokość.
+                              className={`absolute right-0 top-0 z-20 h-full w-1.5 cursor-col-resize select-none touch-none transition-colors ${
                                 isResizing
                                   ? "bg-primary"
                                   : "bg-transparent hover:bg-primary/50"
@@ -1759,7 +1760,7 @@ function AddColumnButton({
         onClick={() => (open ? closeReset() : openWithCoords())}
         aria-label="Dodaj kolumnę"
         title="Dodaj kolumnę"
-        className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-all hover:scale-105 hover:bg-accent hover:text-foreground"
+        className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-[transform,background-color,color] hover:scale-105 hover:bg-accent hover:text-foreground"
       >
         <Plus size={13} />
       </button>

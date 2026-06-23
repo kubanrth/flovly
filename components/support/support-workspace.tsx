@@ -436,7 +436,7 @@ function PersonChip({
       <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.6rem] font-bold text-white">
         {person.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={person.avatarUrl} alt="" className="h-full w-full object-cover" />
+          <img src={person.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
         ) : (
           (person.name ?? person.email).slice(0, 2).toUpperCase()
         )}
@@ -784,7 +784,7 @@ function AssigneeSelect({
                       <span className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.6rem] font-bold text-white">
                         {m.avatarUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={m.avatarUrl} alt="" className="h-full w-full object-cover" />
+                          <img src={m.avatarUrl} alt="" width={28} height={28} className="h-full w-full object-cover" />
                         ) : (
                           (m.name ?? m.email).slice(0, 2).toUpperCase()
                         )}

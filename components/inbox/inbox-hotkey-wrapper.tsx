@@ -124,7 +124,7 @@ export function InboxHotkeyList({
   return (
     <>
       {/* v4: jedna karta rounded-[22px] glass surface z brand-tinted shadow. */}
-      <div className="relative overflow-hidden rounded-[22px] border border-white/60 bg-white/55 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-white/[0.03]">
+      <div className="relative overflow-hidden rounded-[22px] border border-white/60 bg-card/95 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] dark:border-white/10 dark:bg-white/[0.03]">
         <div className="flex flex-col gap-3 px-4 py-4 md:px-5 md:py-5">
           {groups.map((group, idx) => (
             <section key={group.key} className={idx === 0 ? "" : "mt-2"}>
@@ -370,7 +370,7 @@ function NotificationRow({
     <div
       data-unread={unread ? "true" : "false"}
       {...(hotkeyProps ?? {})}
-      className="group flex items-start gap-3 rounded-[13px] border border-transparent px-3.5 py-3 transition-all hover:border-white/60 hover:bg-white/60 data-[unread=true]:bg-primary/[0.06] dark:hover:border-white/[0.08] dark:hover:bg-white/[0.04] max-md:gap-3 max-md:px-3 max-md:py-3.5"
+      className="group flex items-start gap-3 rounded-[13px] border border-transparent px-3.5 py-3 transition-[border-color,background-color] hover:border-white/60 hover:bg-white/60 data-[unread=true]:bg-primary/[0.06] dark:hover:border-white/[0.08] dark:hover:bg-white/[0.04] max-md:gap-3 max-md:px-3 max-md:py-3.5"
     >
       <span
         className={`relative grid h-9 w-9 shrink-0 place-items-center rounded-[10px] text-white max-md:h-10 max-md:w-10 ${

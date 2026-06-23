@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, startTransition, useMemo, useState } from "react";
+import { useActionState, startTransition, useId, useMemo, useState } from "react";
 import { Bell, Check } from "lucide-react";
 import {
   createDealAction,
@@ -105,6 +105,13 @@ export function DealForm({
     initial?.contactId ?? defaultContactId ?? "",
   );
 
+  // Stable per-field IDs for label htmlFor= associations.
+  const titleId = useId();
+  const valueId = useId();
+  const currencyId = useId();
+  const closeDateId = useId();
+  const reminderNoteId = useId();
+
   const stageOptions = useMemo<SearchableDropdownOption[]>(
     () =>
       stages.map((s) => ({
@@ -165,9 +172,10 @@ export function DealForm({
       action={(fd) => startTransition(() => formAction(fd))}
       className="flex flex-col gap-6"
     >
-      <label className="flex flex-col gap-2">
-        <span className="eyebrow">Tytuł deala *</span>
+      <div className="flex flex-col gap-2">
+        <label htmlFor={titleId} className="eyebrow">Tytuł deala *</label>
         <input
+          id={titleId}
           name="title"
           required
           maxLength={200}
@@ -182,38 +190,41 @@ export function DealForm({
             {fieldErrors.title}
           </span>
         )}
-      </label>
+      </div>
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-        <label className="flex flex-col gap-2">
-          <span className="eyebrow">Wartość</span>
+        <div className="flex flex-col gap-2">
+          <label htmlFor={valueId} className="eyebrow">Wartość</label>
           <input
+            id={valueId}
             name="valueAmount"
             inputMode="decimal"
             defaultValue={initial?.valueAmount != null ? String(initial.valueAmount) : ""}
             placeholder="0,00"
             className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
-        </label>
-        <label className="flex flex-col gap-2">
-          <span className="eyebrow">Waluta</span>
+        </div>
+        <div className="flex flex-col gap-2">
+          <label htmlFor={currencyId} className="eyebrow">Waluta</label>
           <input
+            id={currencyId}
             name="valueCurrency"
             maxLength={6}
             defaultValue={initial?.valueCurrency ?? "PLN"}
             placeholder="PLN"
             className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] uppercase outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
-        </label>
-        <label className="flex flex-col gap-2">
-          <span className="eyebrow">Planowane zamknięcie</span>
+        </div>
+        <div className="flex flex-col gap-2">
+          <label htmlFor={closeDateId} className="eyebrow">Planowane zamknięcie</label>
           <input
+            id={closeDateId}
             name="expectedCloseAt"
             type="date"
             defaultValue={dateValue}
             className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
-        </label>
+        </div>
       </div>
 
       {/* F12-K71 v2: reminder w osobnym brand-purple card'zie (mirror
@@ -246,8 +257,9 @@ export function DealForm({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <span className="eyebrow">Treść (opcjonalna)</span>
+          <label htmlFor={reminderNoteId} className="eyebrow">Treść (opcjonalna)</label>
           <textarea
+            id={reminderNoteId}
             name="reminderNote"
             defaultValue={initial?.reminderNote ?? ""}
             maxLength={500}

@@ -547,7 +547,7 @@ function ItemsList({
   // v4 single card — rounded-[22px] glass surface, brand-tinted shadow.
   // Items in środku jako rounded-[10px] surfaces z hover bg-white/3.
   return (
-    <div className="rounded-[22px] border border-white/60 bg-white/55 p-2 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-white/[0.03]">
+    <div className="rounded-[22px] border border-white/60 bg-card/95 p-2 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] dark:border-white/10 dark:bg-white/[0.03]">
       <ul className="flex flex-col gap-1">
         {items.map((item) => (
           <li key={item.id}>
@@ -742,7 +742,7 @@ function ItemRow({
           type="submit"
           aria-label="Usuń zadanie"
           title="Usuń zadanie"
-          className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+          className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground opacity-0 transition-[opacity,background-color,color] hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
         >
           <Trash2 size={14} />
         </button>
@@ -795,7 +795,7 @@ function QuickAddItem({
   // Mobile: większy input (min-h 44px tap target), gap-2 zamiast gap-3.
   const cls =
     variant === "bottom"
-      ? "flex items-center gap-3 rounded-[10px] border border-white/60 bg-white/70 px-4 py-2.5 transition-all focus-within:border-primary focus-within:shadow-[0_0_0_4px_rgba(124,92,255,0.15)] dark:border-white/10 dark:bg-white/[0.04] max-md:gap-2 max-md:py-1.5"
+      ? "flex items-center gap-3 rounded-[10px] border border-white/60 bg-white/70 px-4 py-2.5 transition-[border-color,box-shadow] focus-within:border-primary focus-within:shadow-[0_0_0_4px_rgba(124,92,255,0.15)] dark:border-white/10 dark:bg-white/[0.04] max-md:gap-2 max-md:py-1.5"
       : variant === "panel"
         ? "flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 transition-colors focus-within:border-primary/60"
         : "flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-3 shadow-[0_1px_2px_rgba(46,19,52,0.08)]";
@@ -1027,7 +1027,7 @@ function AssignedTasksPanel({ tasks }: { tasks: AssignedTaskRef[] }) {
           <li key={t.id}>
             <Link
               href={`/w/${t.workspaceId}/t/${t.id}`}
-              className="group flex flex-col gap-1 rounded-md border border-border bg-card px-3 py-2 transition-all hover:-translate-y-[1px] hover:border-primary/60"
+              className="group flex flex-col gap-1 rounded-md border border-border bg-card px-3 py-2 transition-[transform,border-color] hover:-translate-y-[1px] hover:border-primary/60"
             >
               <div className="flex items-start gap-2">
                 <span className="min-w-0 flex-1 truncate font-display text-[0.86rem] font-semibold leading-tight tracking-[-0.01em] group-hover:text-primary">

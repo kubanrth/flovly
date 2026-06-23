@@ -2,6 +2,7 @@
 
 import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -1777,7 +1778,7 @@ function TaskLinksPanel({
         onClick={() => setCollapsed(false)}
         title="Rozwiń panel zadań na węźle"
         aria-label="Rozwiń panel zadań na węźle"
-        className="pointer-events-auto absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-border bg-card/95 px-3 py-1.5 shadow-lg backdrop-blur transition-colors hover:border-primary/60"
+        className="pointer-events-auto absolute right-3 top-14 z-10 inline-flex items-center gap-1.5 rounded-full border border-border bg-card/95 px-3 py-1.5 shadow-lg backdrop-blur transition-colors hover:border-primary/60"
       >
         <Link2 size={12} className="text-primary" />
         <span className="font-mono text-[0.66rem] uppercase tracking-[0.12em] text-muted-foreground">
@@ -1791,7 +1792,7 @@ function TaskLinksPanel({
   }
 
   return (
-    <div className="pointer-events-auto absolute right-3 top-3 z-10 flex w-[300px] flex-col gap-2 rounded-lg border border-border bg-card/95 p-3 shadow-lg backdrop-blur">
+    <div className="pointer-events-auto absolute right-3 top-14 z-10 flex w-[300px] flex-col gap-2 rounded-lg border border-border bg-card/95 p-3 shadow-lg backdrop-blur">
       <div className="flex items-center justify-between gap-2">
         <span className="eyebrow text-primary">Zadania na węźle</span>
         <div className="flex items-center gap-1">
@@ -2547,12 +2548,50 @@ function TextColorPicker({
   onPick: (hex: string | null) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  // F12-K103: portal-rendered popover. Trigger siedzi w toolbar wrapperze
+  // który ma z-10 (stacking context), więc lokalne z-[60] NIE wyjdzie nad
+  // task-modal (z-85) / onboarding (z-80). createPortal(document.body) +
+  // fixed positioning rozwiązuje to + omija ewentualne overflow-hidden
+  // na canvas container. Wzorzec z components/ui/portal-dropdown.tsx.
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    const recompute = () => {
+      const r = triggerRef.current?.getBoundingClientRect();
+      if (!r) return;
+      if (r.bottom < 0 || r.top > window.innerHeight) {
+        setOpen(false);
+        return;
+      }
+      const POP_W = 200;
+      const left = Math.min(
+        Math.max(8, r.left),
+        window.innerWidth - POP_W - 8,
+      );
+      setCoords({ top: r.bottom + 6, left });
+    };
+    recompute();
+    const onScroll = () => recompute();
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as unknown as globalThis.Node)) setOpen(false);
+      const t = e.target as unknown as globalThis.Node;
+      if (triggerRef.current?.contains(t)) return;
+      if (popRef.current?.contains(t)) return;
+      setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -2583,8 +2622,9 @@ function TextColorPicker({
   ];
 
   return (
-    <div ref={ref} className="relative">
+    <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
         disabled={disabled}
@@ -2604,43 +2644,58 @@ function TextColorPicker({
           aria-hidden
         />
       </button>
-      {open && !disabled && (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-[60] flex w-[200px] flex-col gap-1.5 rounded-lg border border-border bg-popover p-2 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)]">
-          <div className="flex flex-wrap gap-1.5">
-            {TEXT_PALETTE.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => {
-                  onPick(c);
-                  setOpen(false);
-                }}
-                className={`h-6 w-6 rounded-full border transition-transform hover:scale-110 ${
-                  currentColor === c
-                    ? "border-primary ring-2 ring-primary/30"
-                    : "border-border"
-                }`}
-                style={{ background: c }}
-                aria-label={`Kolor tekstu ${c}`}
-                title={c}
-              />
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              onPick(null);
-              setOpen(false);
+      {open &&
+        !disabled &&
+        coords &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={popRef}
+            style={{
+              position: "fixed",
+              top: coords.top,
+              left: coords.left,
+              width: 200,
+              zIndex: 100,
             }}
-            className={`mt-1 inline-flex h-7 items-center justify-center rounded-md border border-border bg-background px-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] transition-colors hover:border-primary/60 ${
-              currentColor === null ? "border-primary text-primary" : "text-muted-foreground"
-            }`}
+            className="flex flex-col gap-1.5 rounded-lg border border-border bg-popover p-2 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)]"
           >
-            Auto (kontrast)
-          </button>
-        </div>
-      )}
-    </div>
+            <div className="flex flex-wrap gap-1.5">
+              {TEXT_PALETTE.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => {
+                    onPick(c);
+                    setOpen(false);
+                  }}
+                  className={`h-6 w-6 rounded-full border transition-transform hover:scale-110 ${
+                    currentColor === c
+                      ? "border-primary ring-2 ring-primary/30"
+                      : "border-border"
+                  }`}
+                  style={{ background: c }}
+                  aria-label={`Kolor tekstu ${c}`}
+                  title={c}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                onPick(null);
+                setOpen(false);
+              }}
+              className={`mt-1 inline-flex h-7 items-center justify-center rounded-md border border-border bg-background px-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] transition-colors hover:border-primary/60 ${
+                currentColor === null ? "border-primary text-primary" : "text-muted-foreground"
+              }`}
+            >
+              Auto (kontrast)
+            </button>
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }
 
@@ -2652,7 +2707,14 @@ function FontSizePicker({
   onPick: (size: number | null) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  // F12-K103: portal-rendered popover, takie samo uzasadnienie jak
+  // TextColorPicker — trigger w toolbarze z-10, popover musi wyjść
+  // ponad task-modal (z-85) i onboarding (z-80).
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(
+    null,
+  );
 
   // null = mixed selection or Auto (no override set).
   const currentSize = (() => {
@@ -2675,8 +2737,37 @@ function FontSizePicker({
 
   useEffect(() => {
     if (!open) return;
+    const recompute = () => {
+      const r = triggerRef.current?.getBoundingClientRect();
+      if (!r) return;
+      if (r.bottom < 0 || r.top > window.innerHeight) {
+        setOpen(false);
+        return;
+      }
+      const POP_W = 220;
+      const left = Math.min(
+        Math.max(8, r.left),
+        window.innerWidth - POP_W - 8,
+      );
+      setCoords({ top: r.bottom + 6, left });
+    };
+    recompute();
+    const onScroll = () => recompute();
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as unknown as globalThis.Node)) setOpen(false);
+      const t = e.target as unknown as globalThis.Node;
+      if (triggerRef.current?.contains(t)) return;
+      if (popRef.current?.contains(t)) return;
+      setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -2713,8 +2804,9 @@ function FontSizePicker({
   };
 
   return (
-    <div ref={ref} className="relative">
+    <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
         disabled={disabled}
@@ -2730,8 +2822,22 @@ function FontSizePicker({
           </span>
         )}
       </button>
-      {open && !disabled && (
-        <div className="absolute left-0 top-[calc(100%+6px)] z-[60] flex w-[220px] flex-col gap-2 rounded-lg border border-border bg-popover p-2 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)]">
+      {open &&
+        !disabled &&
+        coords &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={popRef}
+            style={{
+              position: "fixed",
+              top: coords.top,
+              left: coords.left,
+              width: 220,
+              zIndex: 100,
+            }}
+            className="flex flex-col gap-2 rounded-lg border border-border bg-popover p-2 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)]"
+          >
           <div className="flex items-center gap-1">
             <button
               type="button"
@@ -2806,9 +2912,10 @@ function FontSizePicker({
           >
             Auto (domyślny)
           </button>
-        </div>
+        </div>,
+        document.body,
       )}
-    </div>
+    </>
   );
 }
 
@@ -3096,7 +3203,7 @@ function MobileToolButton({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className={`grid h-10 w-10 place-items-center rounded-xl transition-all active:scale-95 ${toneClass}`}
+      className={`grid h-10 w-10 place-items-center rounded-xl transition-[transform,background-color] active:scale-95 ${toneClass}`}
     >
       {children}
     </button>
@@ -3141,7 +3248,7 @@ function MobileFullscreenToggle({
       onClick={toggle}
       aria-label={isFullscreen ? "Wyjdź z trybu pełnoekranowego" : "Tryb pełnoekranowy"}
       title={isFullscreen ? "Wyjdź z full screen" : "Full screen"}
-      className="pointer-events-auto absolute bottom-3 right-3 z-20 grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-neutral-900/95 text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)] backdrop-blur transition-all hover:bg-neutral-800 active:scale-95 md:hidden"
+      className="pointer-events-auto absolute bottom-3 right-3 z-20 grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-neutral-900/95 text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)] backdrop-blur transition-[transform,background-color] hover:bg-neutral-800 active:scale-95 md:hidden"
     >
       {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
     </button>

@@ -58,7 +58,7 @@ export function HotkeyTaskList({
       {anyRows ? (
         // v4 single card — rounded-[22px] glass surface z brand-tinted shadow.
         // Wszystkie grupy w jednej karcie, każda z own accent strip top-of-group.
-        <div className="relative overflow-hidden rounded-[22px] border border-white/60 bg-white/55 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-white/[0.03]">
+        <div className="relative overflow-hidden rounded-[22px] border border-white/60 bg-card/95 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] dark:border-white/10 dark:bg-white/[0.03]">
           <div className="flex flex-col gap-2 px-4 py-4 md:px-5 md:py-5">
             {visibleSections.map((section, idx) => (
               <Section
@@ -184,7 +184,7 @@ function TaskRow({
     <div
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className="group flex items-center gap-3 rounded-[13px] border border-white/60 bg-white/70 px-3.5 py-3 transition-all hover:-translate-y-[1px] hover:border-primary/40 hover:bg-white hover:shadow-[0_8px_20px_-12px_rgba(122,51,236,0.25)] dark:border-white/[0.08] dark:bg-white/[0.04] dark:hover:bg-white/[0.06] max-md:min-h-[56px] max-md:items-start max-md:gap-2.5 max-md:px-4 max-md:py-3"
+      className="group flex items-center gap-3 rounded-[13px] border border-white/60 bg-white/70 px-3.5 py-3 transition-[transform,border-color,background-color,box-shadow] hover:-translate-y-[1px] hover:border-primary/40 hover:bg-white hover:shadow-[0_8px_20px_-12px_rgba(122,51,236,0.25)] dark:border-white/[0.08] dark:bg-white/[0.04] dark:hover:bg-white/[0.06] max-md:min-h-[56px] max-md:items-start max-md:gap-2.5 max-md:px-4 max-md:py-3"
     >
       <span className="shrink-0 font-mono text-[0.7rem] font-semibold text-brand-400 max-md:pt-0.5 max-md:text-[0.72rem]">
         {displayId}

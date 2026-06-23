@@ -76,7 +76,7 @@ export function MobileFiltersDrawer(props: Props) {
 
         {/* The toolbar already handles add/remove/clear on its own. We just
             give it breathing room inside the sheet. */}
-        <div className="max-h-[55vh] overflow-y-auto pb-2">
+        <div className="max-h-[60dvh] overflow-y-auto pb-2">
           <TableFiltersToolbar
             workspaceId={props.workspaceId}
             boardId={props.boardId}

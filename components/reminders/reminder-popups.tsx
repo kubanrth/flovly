@@ -97,7 +97,13 @@ export function ReminderPopups({
   if (list.length === 0) return null;
 
   return (
-    <div className="pointer-events-none fixed right-4 top-4 z-[60] flex w-[340px] flex-col gap-2 max-md:top-16">
+    <div
+      role="region"
+      aria-label="Przypomnienia"
+      aria-live="polite"
+      aria-atomic="false"
+      className="pointer-events-none fixed right-4 top-4 z-[60] flex w-[340px] flex-col gap-2 max-md:top-16"
+    >
       {list.map((r) => (
         <ReminderBubble
           key={r.id}

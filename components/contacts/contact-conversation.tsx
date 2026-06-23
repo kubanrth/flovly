@@ -188,7 +188,7 @@ function Composer({
         <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.55rem] font-bold text-white">
           {s.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={s.avatarUrl} alt="" className="h-full w-full object-cover" />
+            <img src={s.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
           ) : (
             (s.name ?? s.email).slice(0, 2).toUpperCase()
           )}

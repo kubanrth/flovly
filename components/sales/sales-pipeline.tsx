@@ -347,9 +347,9 @@ function StageColumn({
           plain rounded-lg header — chevron clip + pełna szerokość = brzydki
           wycinek po prawej. Sticky też off na mobile bo każda kolumna jest
           w osobnym vertical slot'cie.
-          Dwa render'y bo dynamic clip-path nie da się prosto override'ować
+          Dwo render'y bo dynamic clip-path nie da się prosto override'ować
           z CSS class'y — łatwiej dwa div'y z visibility. */}
-      <div className="hidden md:sticky md:top-0 md:z-[1] md:pointer-events-none md:block">
+      <div className="hidden md:sticky md:top-0 md:z-[1] md:block">
         <div
           className="flex h-10 items-center justify-between gap-2"
           style={{
@@ -361,6 +361,7 @@ function StageColumn({
             borderRadius: isFirst && isLast ? 10 : 0,
           }}
         >
+          {/* FIX: remove md:pointer-events-none from parent; allow stage name selection */}
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate font-display text-[0.86rem] font-semibold tracking-[-0.01em]">
               {stage.name}
@@ -379,8 +380,7 @@ function StageColumn({
             href={`/w/${workspaceId}/sales/new?stageId=${stage.id}`}
             aria-label={`Nowy deal w etapie ${stage.name}`}
             title={`Nowy deal w etapie ${stage.name}`}
-            // Re-enable klik na "+" — header ma pointer-events-none żeby nie blokował drag'a.
-            className="pointer-events-auto grid h-6 w-6 shrink-0 place-items-center rounded-md transition-colors hover:bg-black/10"
+            className="grid h-6 w-6 shrink-0 place-items-center rounded-md transition-colors hover:bg-black/10"
             style={{ color: fg }}
           >
             <span className="text-base leading-none">+</span>

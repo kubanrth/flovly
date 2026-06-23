@@ -102,7 +102,10 @@ export function PriorityPickerCell({
           </span>
         )}
         {canEdit && (
-          <ChevronDown size={11} className="text-muted-foreground/60" />
+          <ChevronDown
+            size={11}
+            className="text-muted-foreground/60 max-md:hidden"
+          />
         )}
       </button>
 

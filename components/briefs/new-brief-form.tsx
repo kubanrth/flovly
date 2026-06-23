@@ -95,7 +95,7 @@ export function NewBriefForm({ workspaceId }: { workspaceId: string }) {
                       type="button"
                       onClick={() => setTemplateId(t.id)}
                       data-active={active}
-                      className="group/card flex flex-col gap-2 rounded-lg border border-border bg-card p-4 text-left transition-all hover:-translate-y-[1px] hover:border-primary/60 data-[active=true]:border-primary data-[active=true]:shadow-[0_0_0_2px_var(--primary)]"
+                      className="group/card flex flex-col gap-2 rounded-lg border border-border bg-card p-4 text-left transition-[transform,border-color,box-shadow] hover:-translate-y-[1px] hover:border-primary/60 data-[active=true]:border-primary data-[active=true]:shadow-[0_0_0_2px_var(--primary)]"
                       style={
                         active
                           ? {

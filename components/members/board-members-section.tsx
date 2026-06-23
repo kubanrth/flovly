@@ -290,7 +290,7 @@ function BoardMemberRow({
       <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.78rem] font-bold text-white">
         {avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+          <img src={avatarUrl} alt="" width={36} height={36} className="h-full w-full object-cover" />
         ) : (
           (name ?? email).slice(0, 2).toUpperCase()
         )}

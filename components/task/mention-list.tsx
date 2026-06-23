@@ -78,7 +78,7 @@ export const MentionList = forwardRef<MentionListHandle, MentionListProps>(
               <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.58rem] font-bold text-white">
                 {m.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={m.avatarUrl} alt="" className="h-full w-full object-cover" />
+                  <img src={m.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
                 ) : (
                   initials
                 )}

@@ -95,7 +95,7 @@ export function NotesWorkspace({
     // v4 glass card — całość owinięta w rounded-[22px] z brand-tinted shadow.
     // 3-kolumnowy układ (folders/list/editor) zachowany pod spodem, ale wizualnie
     // jako jedna karta z hairline'ami między kolumnami.
-    <div className="relative h-[calc(100dvh-0px)] overflow-hidden rounded-[22px] border border-white/60 bg-white/55 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-white/[0.03]">
+    <div className="relative h-[calc(100dvh-0px)] overflow-hidden rounded-[22px] border border-white/60 bg-card/95 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] dark:border-white/10 dark:bg-white/[0.03]">
       <div className="flex h-full overflow-hidden">
         <FoldersColumn
           folders={folders}

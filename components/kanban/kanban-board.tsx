@@ -932,7 +932,7 @@ function CardShell({
               >
                 {a.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={a.avatarUrl} alt="" className="h-full w-full object-cover" />
+                  <img src={a.avatarUrl} alt="" width={22} height={22} className="h-full w-full object-cover" />
                 ) : (
                   (a.name ?? a.email).slice(0, 2).toUpperCase()
                 )}
@@ -1100,7 +1100,7 @@ function AddKanbanColumnButton({
               width: 320,
               maxHeight: coords.maxHeight,
             }}
-            className="z-[60] flex flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+            className="z-[100] flex flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
           >
             <div className="shrink-0 border-b border-border px-3 py-2">
               <p className="eyebrow">Nowa kolumna</p>

@@ -368,7 +368,7 @@ function EditEventForm({
                 onClick={() => setColor(c)}
                 aria-label={`Wybierz kolor ${c}`}
                 data-active={color === c ? "true" : "false"}
-                className="h-7 w-7 rounded-md ring-2 ring-transparent transition-all data-[active=true]:ring-primary"
+                className="h-7 w-7 rounded-md ring-2 ring-transparent transition-[box-shadow] data-[active=true]:ring-primary"
                 style={{ background: c }}
               />
             ))}

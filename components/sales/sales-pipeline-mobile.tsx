@@ -231,7 +231,7 @@ export function SalesPipelineMobile({
             onClick={() => setIdx(i)}
             aria-label={`Przejdź do etapu ${s.name}`}
             aria-current={i === idx ? "true" : undefined}
-            className="rounded-full transition-all"
+            className="rounded-full transition-[width,background-color]"
             style={{
               width: i === idx ? 18 : 6,
               height: 6,

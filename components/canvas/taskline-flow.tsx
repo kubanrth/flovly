@@ -631,7 +631,7 @@ function TaskLineCard({
   return (
     <div
       {...listeners}
-      className={`group relative flex w-full flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-sm transition-all hover:border-primary/40 hover:shadow-md ${ring} ${listeners ? "cursor-grab active:cursor-grabbing" : ""}`}
+      className={`group relative flex w-full flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-sm transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md ${ring} ${listeners ? "cursor-grab active:cursor-grabbing" : ""}`}
     >
       {item.flowMark === "start" && (
         <span className="absolute -top-2 left-3 rounded-full bg-emerald-500 px-2 py-0.5 font-mono text-[0.55rem] uppercase tracking-[0.16em] text-white shadow-sm">
@@ -677,7 +677,7 @@ function TaskLineCard({
             onPointerDown={(e) => e.stopPropagation()}
             aria-label="Usuń z linii"
             title="Usuń z linii"
-            className="ml-auto grid h-5 w-5 place-items-center rounded text-muted-foreground/0 transition-all group-hover:text-muted-foreground hover:!bg-rose-500/10 hover:!text-rose-500"
+            className="ml-auto grid h-5 w-5 place-items-center rounded text-muted-foreground/0 transition-[color,background-color] group-hover:text-muted-foreground hover:!bg-rose-500/10 hover:!text-rose-500"
           >
             <X size={11} />
           </button>
@@ -780,7 +780,7 @@ function EndDropCell({ onDrop }: { onDrop: (e: React.DragEvent) => void }) {
         onDrop(e);
       }}
       data-hover={hover ? "true" : "false"}
-      className="grid min-h-[110px] w-full place-items-center rounded-xl border border-dashed border-border/60 bg-card/30 text-[0.78rem] text-muted-foreground/60 transition-all data-[hover=true]:border-primary/60 data-[hover=true]:bg-primary/5 data-[hover=true]:text-foreground"
+      className="grid min-h-[110px] w-full place-items-center rounded-xl border border-dashed border-border/60 bg-card/30 text-[0.78rem] text-muted-foreground/60 transition-[border-color,background-color,color] data-[hover=true]:border-primary/60 data-[hover=true]:bg-primary/5 data-[hover=true]:text-foreground"
     >
       <span className="font-mono text-[0.65rem] uppercase tracking-[0.14em]">
         + dodaj zadanie
@@ -808,7 +808,7 @@ function EmptyLineDropZone({
       } : undefined}
       onDragLeave={canEdit ? () => setHover(false) : undefined}
       data-hover={hover ? "true" : "false"}
-      className="flex min-h-[140px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border/50 bg-card/20 px-6 text-center transition-all data-[hover=true]:border-primary/60 data-[hover=true]:bg-primary/5"
+      className="flex min-h-[140px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border/50 bg-card/20 px-6 text-center transition-[border-color,background-color] data-[hover=true]:border-primary/60 data-[hover=true]:bg-primary/5"
     >
       <p className="text-[0.85rem] font-medium text-foreground">
         Dodaj pierwsze zadanie

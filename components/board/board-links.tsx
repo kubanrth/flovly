@@ -61,7 +61,7 @@ export function BoardLinks({
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-8 items-center gap-2 rounded-full border border-border bg-card px-3 pr-2.5 font-mono text-[0.7rem] font-semibold uppercase tracking-[0.1em] transition-all hover:-translate-y-[1px] hover:border-primary/50 hover:shadow-[0_6px_16px_-8px_rgba(10,10,40,0.2)]"
+              className="inline-flex h-8 items-center gap-2 rounded-full border border-border bg-card px-3 pr-2.5 font-mono text-[0.7rem] font-semibold uppercase tracking-[0.1em] transition-[transform,border-color,box-shadow] hover:-translate-y-[1px] hover:border-primary/50 hover:shadow-[0_6px_16px_-8px_rgba(10,10,40,0.2)]"
               style={{ color: v.color }}
             >
               <span

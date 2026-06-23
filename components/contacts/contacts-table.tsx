@@ -311,7 +311,7 @@ function ContactRow({
             onClick={onDelete}
             aria-label={`Usuń kontakt ${row.companyName ?? row.email ?? row.id}`}
             title="Usuń kontakt"
-            className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground/40 opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+            className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground/40 opacity-0 transition-[opacity,background-color,color] hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
           >
             <Trash2 size={12} />
           </button>

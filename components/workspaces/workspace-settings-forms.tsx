@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, startTransition } from "react";
+import { useActionState, useId, useState, startTransition } from "react";
 import {
   deleteWorkspaceAction,
   updateWorkspaceAction,
@@ -73,6 +73,7 @@ export function DeleteWorkspaceForm({
   workspaceName: string;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const confirmId = useId();
   const [state, formAction, pending] = useActionState<WorkspaceFormState, FormData>(
     deleteWorkspaceAction,
     null,
@@ -110,9 +111,10 @@ export function DeleteWorkspaceForm({
         Aby potwierdzić, wpisz dokładną nazwę:{" "}
         <span className="font-mono text-foreground">{workspaceName}</span>
       </p>
-      <label className="flex flex-col gap-2">
-        <span className="eyebrow">Potwierdzenie</span>
+      <div className="flex flex-col gap-2">
+        <label htmlFor={confirmId} className="eyebrow">Potwierdzenie</label>
         <input
+          id={confirmId}
           name="confirmName"
           type="text"
           required
@@ -123,7 +125,7 @@ export function DeleteWorkspaceForm({
         {fieldError && (
           <span className="font-mono text-[0.68rem] text-destructive">{fieldError}</span>
         )}
-      </label>
+      </div>
       {formError && (
         <p className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-destructive">
           {formError}
@@ -164,10 +166,12 @@ function TextInput({
   maxLength?: number;
   error?: string;
 }) {
+  const inputId = useId();
   return (
-    <label className="flex flex-col gap-2">
-      <span className="eyebrow">{label}</span>
+    <div className="flex flex-col gap-2">
+      <label htmlFor={inputId} className="eyebrow">{label}</label>
       <input
+        id={inputId}
         name={name}
         type="text"
         defaultValue={defaultValue}
@@ -180,7 +184,7 @@ function TextInput({
       {error && (
         <span className="font-mono text-[0.68rem] text-destructive">{error}</span>
       )}
-    </label>
+    </div>
   );
 }
 
@@ -197,10 +201,12 @@ function TextArea({
   maxLength?: number;
   error?: string;
 }) {
+  const inputId = useId();
   return (
-    <label className="flex flex-col gap-2">
-      <span className="eyebrow">{label}</span>
+    <div className="flex flex-col gap-2">
+      <label htmlFor={inputId} className="eyebrow">{label}</label>
       <textarea
+        id={inputId}
         name={name}
         rows={3}
         defaultValue={defaultValue}
@@ -211,6 +217,6 @@ function TextArea({
       {error && (
         <span className="font-mono text-[0.68rem] text-destructive">{error}</span>
       )}
-    </label>
+    </div>
   );
 }

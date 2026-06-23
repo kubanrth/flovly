@@ -343,7 +343,7 @@ function ColleaguesList({
               <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.62rem] font-bold text-white">
                 {c.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.avatarUrl} alt="" className="h-full w-full object-cover" />
+                  <img src={c.avatarUrl} alt="" width={36} height={36} className="h-full w-full object-cover" />
                 ) : (
                   (c.name ?? c.email).slice(0, 2).toUpperCase()
                 )}

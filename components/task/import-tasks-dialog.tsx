@@ -278,7 +278,7 @@ export function ImportTasksDialog({
               }}
               onClick={() => fileInputRef.current?.click()}
               data-hover={dragOver ? "true" : "false"}
-              className="flex min-h-[160px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-background/50 px-6 transition-all hover:border-primary/40 data-[hover=true]:border-primary/60 data-[hover=true]:bg-primary/5"
+              className="flex min-h-[160px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-background/50 px-6 transition-[border-color,background-color] hover:border-primary/40 data-[hover=true]:border-primary/60 data-[hover=true]:bg-primary/5"
             >
               <FileUp size={28} className="text-muted-foreground" />
               <p className="font-display text-[0.95rem] font-semibold text-foreground">

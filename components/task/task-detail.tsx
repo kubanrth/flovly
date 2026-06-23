@@ -296,6 +296,7 @@ export function TaskDetail({
               rows={1}
               readOnly={!canEdit}
               defaultValue={task.title}
+              aria-label="Tytuł zadania"
               aria-invalid={!!fieldErrors?.title}
               // F12-K96: autosave na blur (Save button usunięty w v4 polish).
               // Mirror pattern z StatusPill onCommit fix (F12-K92): trim,
@@ -804,7 +805,7 @@ function AssigneesStack({
           >
             {m.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={m.avatarUrl} alt="" className="h-full w-full object-cover" />
+              <img src={m.avatarUrl} alt="" width={28} height={28} className="h-full w-full object-cover" />
             ) : (
               initialsOf(m.name, m.email)
             )}
@@ -867,7 +868,7 @@ function AssigneesStack({
                     <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-md bg-brand-gradient font-display text-[0.6rem] font-bold text-white">
                       {m.avatarUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={m.avatarUrl} alt="" className="h-full w-full object-cover" />
+                        <img src={m.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
                       ) : (
                         initialsOf(m.name, m.email)
                       )}
@@ -1179,6 +1180,7 @@ function TagsSection({
                 maxLength={32}
                 placeholder="np. urgent"
                 autoFocus
+                aria-label="Nazwa nowego tagu"
                 className="min-w-[110px] flex-1 rounded-md bg-transparent px-2 py-1 text-[0.78rem] outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
               />
               <div className="flex items-center gap-1">

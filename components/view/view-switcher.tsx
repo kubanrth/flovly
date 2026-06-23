@@ -204,6 +204,10 @@ export function ViewSwitcher({
         ref={setPillRef(p.key)}
         role="tab"
         aria-selected={p.isActive}
+        // ponytail: aria-controls points to a panel id rendered by the route
+        // tree (different page wrapper per view) — id may not exist in DOM,
+        // but the attribute still gives SRs the tab→panel relation semantically.
+        aria-controls={`view-panel-${p.key.replace(/[:]/g, "-")}`}
         data-active={p.isActive ? "true" : "false"}
         className={`lg-vs-pill ${p.canDelete ? "pr-7" : ""}`}
       >

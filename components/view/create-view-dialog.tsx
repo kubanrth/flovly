@@ -150,7 +150,7 @@ export function CreateViewDialog({
                       type="button"
                       onClick={() => setSelectedType(t.value)}
                       data-on={on ? "true" : "false"}
-                      className="group flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 font-mono text-[0.72rem] uppercase tracking-[0.12em] text-muted-foreground transition-all data-[on=true]:border-primary/60 data-[on=true]:bg-primary/10 data-[on=true]:text-foreground hover:border-primary/40"
+                      className="group flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 font-mono text-[0.72rem] uppercase tracking-[0.12em] text-muted-foreground transition-[border-color,background-color,color] data-[on=true]:border-primary/60 data-[on=true]:bg-primary/10 data-[on=true]:text-foreground hover:border-primary/40"
                     >
                       <Icon
                         size={14}

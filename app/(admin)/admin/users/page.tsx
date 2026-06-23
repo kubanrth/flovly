@@ -255,7 +255,7 @@ function UserRow({ user, isSelf }: { user: UserRow; isSelf: boolean }) {
           <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.68rem] font-bold text-white">
             {user.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+              <img src={user.avatarUrl} alt="" width={32} height={32} className="h-full w-full object-cover" />
             ) : (
               initials
             )}

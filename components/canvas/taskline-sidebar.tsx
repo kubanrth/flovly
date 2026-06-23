@@ -175,7 +175,7 @@ function TaskLineCard({ task }: { task: TaskLineTask }) {
       // pill po prawej.
       // Mobile: chip-style — szerokość 220px (snap point dla horizontal scroll),
       // bez mb-1.5 (gap od <ul> max-md:gap-2 wystarczy).
-      className="group mb-1.5 flex cursor-grab flex-col gap-1.5 rounded-[12px] border border-[color-mix(in_oklch,var(--foreground)_8%,transparent)] bg-[color-mix(in_oklch,var(--card)_70%,transparent)] p-3 transition-all hover:-translate-y-px hover:border-primary/40 hover:shadow-[0_8px_18px_-10px_rgba(124,92,255,0.35)] active:cursor-grabbing max-md:mb-0 max-md:min-w-[220px] max-md:max-w-[220px] max-md:shrink-0"
+      className="group mb-1.5 flex cursor-grab flex-col gap-1.5 rounded-[12px] border border-[color-mix(in_oklch,var(--foreground)_8%,transparent)] bg-[color-mix(in_oklch,var(--card)_70%,transparent)] p-3 transition-[transform,border-color,box-shadow] hover:-translate-y-px hover:border-primary/40 hover:shadow-[0_8px_18px_-10px_rgba(124,92,255,0.35)] active:cursor-grabbing max-md:mb-0 max-md:min-w-[220px] max-md:max-w-[220px] max-md:shrink-0"
     >
       <div className="flex items-center gap-2">
         {task.statusColor && (
