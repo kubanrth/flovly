@@ -32,7 +32,7 @@ export default async function TaskPage({
   const backHref = safeBackHref(from, `/w/${workspaceId}`);
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4">
+    <div className="mx-auto flex max-w-5xl flex-col gap-4">
       <Link
         href={backHref}
         className="eyebrow inline-flex w-fit transition-colors hover:text-foreground focus-visible:text-foreground"

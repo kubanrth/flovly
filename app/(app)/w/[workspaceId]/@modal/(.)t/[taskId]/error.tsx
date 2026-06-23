@@ -32,7 +32,7 @@ export default function TaskModalError({
       <BaseDialog.Portal>
         <BaseDialog.Backdrop className="fixed inset-0 z-[100] bg-background/70 backdrop-blur-sm data-[open]:opacity-100" />
         <BaseDialog.Popup
-          className="fixed inset-y-0 right-0 z-[110] flex w-full max-w-[720px] flex-col overflow-y-auto border-l border-border bg-background shadow-[0_18px_40px_-16px_rgba(76,29,149,0.40)] data-[open]:translate-x-0"
+          className="fixed inset-y-0 right-0 z-[110] flex w-full max-w-[860px] flex-col overflow-y-auto border-l border-border bg-background shadow-[0_18px_40px_-16px_rgba(76,29,149,0.40)] data-[open]:translate-x-0"
           initialFocus={undefined}
         >
           <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 sm:px-8">
