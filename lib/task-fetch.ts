@@ -118,7 +118,12 @@ export async function fetchTaskDetail(
   // a PRIVATE board could otherwise still load the task page.
   if (!(await userCanAccessBoard(task.boardId, ctx.userId, ctx.role))) notFound();
 
-  const [members, tags, comments, auditEntries, attachmentRows, candidateRows, workspaceBoardRows, workspaceContactRows] = await Promise.all([
+  // F12-K105 perf: usunięty workspaceContact fetch (1000 contacts) —
+  // ContactField wyciągnięty z task-detail w F12-K67, nigdy nie renderowany.
+  // Plus candidateRows 500 → 100 (linked-tasks picker rzadko klikany,
+  // jeśli user chce więcej → fetch lazy), auditLog 50 → 20 (drawer
+  // pokazuje top widoczne, więcej dostępne na pełnej stronie task'a).
+  const [members, tags, comments, auditEntries, attachmentRows, candidateRows, workspaceBoardRows] = await Promise.all([
     db.workspaceMembership.findMany({
       where: { workspaceId },
       include: {
@@ -142,7 +147,7 @@ export async function fetchTaskDetail(
     db.auditLog.findMany({
       where: { workspaceId, objectType: "Task", objectId: taskId },
       orderBy: { createdAt: "desc" },
-      take: 50,
+      take: 20,
       include: {
         actor: { select: { id: true, name: true, email: true, avatarUrl: true } },
       },
@@ -154,12 +159,13 @@ export async function fetchTaskDetail(
         uploader: { select: { id: true, name: true, email: true, avatarUrl: true } },
       },
     }),
-    // Picker candidate pool — capped at 500 most-recently-updated so the
-    // workspace overview doesn't slow down. Excludes self + soft-deleted.
+    // Picker candidate pool — 100 most-recently-updated (was 500). Linked
+    // tasks picker open ~rzadko; gdy user szuka konkretnego task'a, polega
+    // na search input. Większy pool nie pomaga UX a kosztuje fetch.
     db.task.findMany({
       where: { workspaceId, deletedAt: null, id: { not: taskId } },
       orderBy: { updatedAt: "desc" },
-      take: 500,
+      take: 100,
       select: { id: true, title: true, displayId: true },
     }),
     // Lista tablic w workspace dla MoveTaskMenu w nagłówku karty. Order
@@ -171,21 +177,6 @@ export async function fetchTaskDetail(
         id: true,
         name: true,
         workspace: { select: { name: true } },
-      },
-    }),
-    // Pool wszystkich aktywnych kontaktów w workspace dla ContactField w
-    // task-detail. Cap 1000 — workspace'y z setkami klientów zachowują
-    // responsywność, dropdown i tak jest searchable po stronie browsera.
-    db.contact.findMany({
-      where: { workspaceId, deletedAt: null },
-      orderBy: { updatedAt: "desc" },
-      take: 1000,
-      select: {
-        id: true,
-        companyName: true,
-        firstName: true,
-        lastName: true,
-        email: true,
       },
     }),
   ]);
@@ -358,16 +349,9 @@ export async function fetchTaskDetail(
       workspaceName: b.workspace.name,
     })),
     contactId: task.contactId,
-    workspaceContacts: workspaceContactRows.map((c) => {
-      // Label = firma + osoba w nawiasie, fallback na email albo "(bez nazwy)"
-      // gdy kontakt to czysty placeholder.
-      const person = [c.firstName, c.lastName].filter(Boolean).join(" ");
-      // Pierwszeństwo: companyName → osoba → email → placeholder.
-      const labelBase =
-        c.companyName ?? (person !== "" ? person : (c.email ?? "(bez nazwy)"));
-      const suffix =
-        c.companyName && person ? ` · ${person}` : "";
-      return { id: c.id, label: `${labelBase}${suffix}` };
-    }),
+    // F12-K105: workspaceContacts pusta — ContactField nie renderowany na
+    // karcie task'a (wyciągnięty w F12-K67). Jeśli ContactField wróci na
+    // task drawer, dodaj fetch z powrotem do Promise.all powyżej.
+    workspaceContacts: [],
   };
 }
