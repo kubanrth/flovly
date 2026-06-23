@@ -37,14 +37,18 @@ function isoToDate(iso: string | null): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+// F12-K117: kompaktowy format dd.mm.rr (+ HH:MM) zamiast "17 cze 2026, 14:30".
+// W meta-grid START/KONIEC (drawer 2-col) długi format truncate'ował się
+// do "17 ..." — klient żądał widzenia pełnej daty. Numeric DD.MM.YY mieści
+// się w ~75px content area boxa, jest jednoznaczny i czytelny.
 function formatDisplay(date: Date | null, dateOnly: boolean): string {
   if (!date) return "";
-  return date.toLocaleString("pl-PL", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    ...(dateOnly ? {} : { hour: "2-digit", minute: "2-digit" }),
-  });
+  const dd = pad2(date.getDate());
+  const mm = pad2(date.getMonth() + 1);
+  const yy = String(date.getFullYear()).slice(-2);
+  const base = `${dd}.${mm}.${yy}`;
+  if (dateOnly) return base;
+  return `${base} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
 }
 
 function pad2(n: number): string {
@@ -226,11 +230,11 @@ export function DateTimePicker({
           />
         )}
         <span
-          className={`min-w-0 flex-1 truncate ${
+          className={`min-w-0 flex-1 truncate tabular-nums ${
             date
               ? isCell
                 ? "font-mono text-[0.8rem] text-foreground"
-                : "text-foreground"
+                : "font-mono text-[0.82rem] text-foreground"
               : isCell
                 ? "font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground/60"
                 : "text-muted-foreground"
