@@ -13,6 +13,10 @@ import {
   TeamTasksTable,
   type TeamMemberRow,
 } from "@/components/profile/team-tasks-table";
+import {
+  ActivityFeed,
+  type ActivityFeedEntry,
+} from "@/components/profile/activity-feed";
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -106,6 +110,42 @@ export default async function ProfilePage() {
     myTasksClosedThisMonth: closedThisMonth,
     statusBreakdown,
   };
+
+  // F12-K98: Twoja aktywność feed — ostatnie 25 entries z AuditLog gdzie
+  // actorId == aktualny user. Scoped do workspace'ów których user jest
+  // członkiem (workspace.deletedAt: null + memberships filter implicit
+  // przez AuditLog → Workspace FK + RLS na poziomie query).
+  const myActivityRaw = await db.auditLog.findMany({
+    where: {
+      actorId: userId,
+      workspace: {
+        deletedAt: null,
+        memberships: { some: { userId } },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 25,
+    select: {
+      id: true,
+      workspaceId: true,
+      objectType: true,
+      objectId: true,
+      action: true,
+      createdAt: true,
+      workspace: { select: { name: true, slug: true } },
+    },
+  });
+
+  const myActivity: ActivityFeedEntry[] = myActivityRaw.map((e) => ({
+    id: e.id,
+    workspaceId: e.workspaceId,
+    workspaceName: e.workspace.name,
+    workspaceSlug: e.workspace.slug,
+    objectType: e.objectType,
+    objectId: e.objectId,
+    action: e.action,
+    createdAt: e.createdAt,
+  }));
 
   // ── Team table (admin / manager view) ────────────────────────────────────
   // Visible when the user is ADMIN in at least one non-deleted workspace.
@@ -229,6 +269,20 @@ export default async function ProfilePage() {
               <StatusBreakdown items={statusBreakdown} />
             </div>
           )}
+
+          {/* F12-K98: account activity feed — przywrócone na user feedback
+              "uciekł widok tego konta ze szczegółami aktywności". */}
+          <div id="aktywnosc" className="flex flex-col gap-3 pt-4 scroll-mt-24">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="eyebrow">Twoja aktywność</span>
+              {myActivity.length > 0 && (
+                <span className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
+                  Ostatnie {myActivity.length}
+                </span>
+              )}
+            </div>
+            <ActivityFeed entries={myActivity} />
+          </div>
 
           {isManager && (
             <div className="flex flex-col gap-3 pt-4">
