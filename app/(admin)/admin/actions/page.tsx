@@ -64,7 +64,7 @@ export default async function AdminActionsPage({
               name="action"
               defaultValue={params.action ?? ""}
               placeholder="np. user.banned"
-              className="h-9 w-full rounded-md border border-border bg-background px-3 text-[0.86rem] outline-none focus:border-primary md:w-[220px]"
+              className="h-9 w-full rounded-md border border-border bg-background px-3 text-[0.86rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:w-[220px]"
             />
           </label>
           <label className="flex flex-col gap-1">
@@ -75,7 +75,7 @@ export default async function AdminActionsPage({
               name="actor"
               defaultValue={params.actor ?? ""}
               placeholder="email admina"
-              className="h-9 w-full rounded-md border border-border bg-background px-3 text-[0.86rem] outline-none focus:border-primary md:w-[220px]"
+              className="h-9 w-full rounded-md border border-border bg-background px-3 text-[0.86rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:w-[220px]"
             />
           </label>
           <label className="flex flex-col gap-1">
@@ -85,7 +85,7 @@ export default async function AdminActionsPage({
             <select
               name="days"
               defaultValue={params.days ?? ""}
-              className="h-9 rounded-md border border-border bg-background px-3 font-mono text-[0.78rem] uppercase tracking-[0.12em] outline-none focus:border-primary"
+              className="h-9 rounded-md border border-border bg-background px-3 font-mono text-[0.78rem] uppercase tracking-[0.12em] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               <option value="">wszystko</option>
               <option value="1">24 h</option>

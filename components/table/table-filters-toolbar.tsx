@@ -187,7 +187,7 @@ function FilterChip({
       <select
         value={filter.op}
         onChange={(e) => onChange({ ...filter, op: e.target.value as FilterOp })}
-        className="bg-transparent px-1 py-0.5 font-mono text-[0.66rem] uppercase tracking-[0.1em] text-muted-foreground outline-none focus:text-foreground"
+        className="bg-transparent px-1 py-0.5 font-mono text-[0.66rem] uppercase tracking-[0.1em] text-muted-foreground outline-none focus-visible:text-foreground"
       >
         {ops.map((op) => (
           <option key={op} value={op}>
@@ -235,7 +235,7 @@ function FilterValueInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="0"
-          className="w-20 rounded-sm border border-border bg-background px-1.5 py-0.5 font-mono text-[0.78rem] outline-none focus:border-primary/60"
+          className="w-20 rounded-sm border border-border bg-background px-1.5 py-0.5 font-mono text-[0.78rem] outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
         />
       );
     case "DATE":
@@ -247,7 +247,7 @@ function FilterValueInput({
           type="date"
           value={value ? value.slice(0, 10) : ""}
           onChange={(e) => onChange(e.target.value)}
-          className="rounded-sm border border-border bg-background px-1.5 py-0.5 font-mono text-[0.78rem] outline-none focus:border-primary/60"
+          className="rounded-sm border border-border bg-background px-1.5 py-0.5 font-mono text-[0.78rem] outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
         />
       );
     case "SINGLE_SELECT": {
@@ -256,7 +256,7 @@ function FilterValueInput({
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="rounded-sm border border-border bg-background px-1.5 py-0.5 text-[0.78rem] outline-none focus:border-primary/60"
+          className="rounded-sm border border-border bg-background px-1.5 py-0.5 text-[0.78rem] outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
         >
           <option value="">— wybierz —</option>
           {opts.map((o) => (
@@ -306,7 +306,7 @@ function FilterValueInput({
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="rounded-sm border border-border bg-background px-1.5 py-0.5 text-[0.78rem] outline-none focus:border-primary/60"
+          className="rounded-sm border border-border bg-background px-1.5 py-0.5 text-[0.78rem] outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
         >
           <option value="">— wybierz —</option>
           {opts.map((o) => (
@@ -324,7 +324,7 @@ function FilterValueInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="wartość…"
-          className="w-32 rounded-sm border border-border bg-background px-1.5 py-0.5 text-[0.78rem] outline-none focus:border-primary/60"
+          className="w-32 rounded-sm border border-border bg-background px-1.5 py-0.5 text-[0.78rem] outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
         />
       );
   }

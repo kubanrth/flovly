@@ -191,7 +191,7 @@ function TaskRow({
       </span>
       <Link
         href={`/w/${row.workspaceId}/t/${row.id}?from=${encodeURIComponent("/my-tasks")}`}
-        className="min-w-0 flex-1 truncate text-[0.88rem] font-medium leading-tight tracking-[-0.005em] transition-colors hover:text-primary focus-visible:text-primary focus-visible:outline-none max-md:flex max-md:min-h-[44px] max-md:flex-col max-md:items-start max-md:gap-1 max-md:overflow-hidden max-md:whitespace-normal max-md:text-[0.9375rem] max-md:leading-[1.3]"
+        className="min-w-0 flex-1 truncate rounded-sm text-[0.88rem] font-medium leading-tight tracking-[-0.005em] transition-colors hover:text-primary focus-visible:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary max-md:flex max-md:min-h-[44px] max-md:flex-col max-md:items-start max-md:gap-1 max-md:overflow-hidden max-md:whitespace-normal max-md:text-[0.9375rem] max-md:leading-[1.3]"
       >
         <span className="max-md:line-clamp-2 max-md:w-full">{row.title}</span>
         {row.stopAt && (

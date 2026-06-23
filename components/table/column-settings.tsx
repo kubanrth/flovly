@@ -363,7 +363,7 @@ function ConfigureColumnButton({
               value={draftName}
               onChange={(e) => setDraftName(e.target.value)}
               maxLength={80}
-              className="mb-3 w-full rounded-md border border-border bg-background px-2 py-1.5 text-[0.86rem] outline-none focus:border-primary/60"
+              className="mb-3 w-full rounded-md border border-border bg-background px-2 py-1.5 text-[0.86rem] outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
               placeholder="Nazwa kolumny"
             />
             <p className="mb-1.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground/80">

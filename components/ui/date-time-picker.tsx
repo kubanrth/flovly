@@ -513,7 +513,7 @@ function TimeStepper({
           if (Number.isFinite(n)) onChange(Math.max(min, Math.min(max, n)));
         }}
         aria-label={ariaLabel}
-        className="w-10 bg-transparent px-2 text-center font-mono text-[0.92rem] font-semibold tabular-nums focus:outline-none"
+        className="w-10 bg-transparent px-2 text-center font-mono text-[0.92rem] font-semibold tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset"
       />
       <div className="flex flex-col border-l border-border">
         <button

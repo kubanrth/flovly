@@ -438,7 +438,7 @@ function NotificationRow({
               }}
               maxLength={500}
               placeholder="Twoja notatka (priorytet, kontekst…)"
-              className="h-8 flex-1 rounded-md border border-primary/40 bg-background px-2 text-[0.84rem] outline-none focus:border-primary"
+              className="h-8 flex-1 rounded-md border border-primary/40 bg-background px-2 text-[0.84rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
             />
             <button
               type="button"

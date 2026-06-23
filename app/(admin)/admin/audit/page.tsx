@@ -70,7 +70,7 @@ export default async function AdminAuditPage({
               defaultValue={params.action ?? ""}
               placeholder="np. task.updated"
               // Mobile v4: 48px tap target + 16px text to suppress iOS auto-zoom on focus.
-              className="h-12 w-full rounded-md border border-border bg-background px-3 text-[16px] outline-none focus:border-primary md:h-9 md:text-[0.86rem] md:w-[220px]"
+              className="h-12 w-full rounded-md border border-border bg-background px-3 text-[16px] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:h-9 md:text-[0.86rem] md:w-[220px]"
             />
           </label>
           <label className="flex flex-col gap-1">
@@ -81,7 +81,7 @@ export default async function AdminAuditPage({
               name="actor"
               defaultValue={params.actor ?? ""}
               placeholder="email / imię"
-              className="h-12 w-full rounded-md border border-border bg-background px-3 text-[16px] outline-none focus:border-primary md:h-9 md:text-[0.86rem] md:w-[220px]"
+              className="h-12 w-full rounded-md border border-border bg-background px-3 text-[16px] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:h-9 md:text-[0.86rem] md:w-[220px]"
             />
           </label>
           <label className="flex flex-col gap-1">
@@ -91,7 +91,7 @@ export default async function AdminAuditPage({
             <select
               name="days"
               defaultValue={params.days ?? ""}
-              className="h-12 rounded-md border border-border bg-background px-3 font-mono text-[16px] uppercase tracking-[0.12em] outline-none focus:border-primary md:h-9 md:text-[0.78rem]"
+              className="h-12 rounded-md border border-border bg-background px-3 font-mono text-[16px] uppercase tracking-[0.12em] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:h-9 md:text-[0.78rem]"
             >
               <option value="">wszystko</option>
               <option value="1">24 h</option>

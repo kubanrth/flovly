@@ -71,7 +71,7 @@ export function CreateUserDialog() {
                   required
                   autoFocus
                   placeholder="user@example.com"
-                  className="h-9 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary"
+                  className="h-9 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
                 />
               </label>
 
@@ -86,7 +86,7 @@ export function CreateUserDialog() {
                   minLength={2}
                   maxLength={80}
                   placeholder="Daniel"
-                  className="h-9 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary"
+                  className="h-9 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
                 />
               </label>
 
@@ -102,7 +102,7 @@ export function CreateUserDialog() {
                     minLength={8}
                     maxLength={200}
                     placeholder="••••••••"
-                    className="h-9 w-full rounded-md border border-border bg-background px-3 pr-9 text-[0.9rem] outline-none focus:border-primary"
+                    className="h-9 w-full rounded-md border border-border bg-background px-3 pr-9 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
                   />
                   <button
                     type="button"

@@ -74,7 +74,7 @@ export function MemberRow({
               name="role"
               defaultValue={role}
               onChange={(e) => (e.currentTarget.form as HTMLFormElement).requestSubmit()}
-              className="h-8 border border-border bg-transparent px-2 font-mono text-[0.72rem] uppercase tracking-[0.12em] outline-none focus:border-primary"
+              className="h-8 border border-border bg-transparent px-2 font-mono text-[0.72rem] uppercase tracking-[0.12em] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               <option value="ADMIN">ADMIN</option>
               <option value="MEMBER">MEMBER</option>

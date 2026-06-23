@@ -316,7 +316,7 @@ export function TaskDetail({
                   e.currentTarget.blur();
                 }
               }}
-              className="flex-1 resize-none overflow-hidden border-0 bg-transparent p-0 font-display text-[1.5rem] font-bold leading-[1.2] tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground focus:outline-none aria-[invalid=true]:text-destructive md:text-[1.75rem] [field-sizing:content]"
+              className="flex-1 resize-none overflow-hidden rounded-sm border-0 bg-transparent p-0 font-display text-[1.5rem] font-bold leading-[1.2] tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 aria-[invalid=true]:text-destructive md:text-[1.75rem] [field-sizing:content]"
             />
             {canEdit && (
               <Pencil
@@ -507,6 +507,13 @@ export function TaskDetail({
                   disabled={!canEdit}
                   placeholder="Brak daty"
                   label="Data startu"
+                  onChange={(iso) => {
+                    if (!canEdit) return;
+                    const fd = new FormData();
+                    fd.set("id", task.id);
+                    fd.set("startAt", iso ?? "");
+                    startTransition(() => patchTaskAction(fd));
+                  }}
                 />
               </MetaBlock>
               <MetaBlock label="Koniec">
@@ -517,6 +524,13 @@ export function TaskDetail({
                   disabled={!canEdit}
                   placeholder="Brak daty"
                   label="Data końca"
+                  onChange={(iso) => {
+                    if (!canEdit) return;
+                    const fd = new FormData();
+                    fd.set("id", task.id);
+                    fd.set("stopAt", iso ?? "");
+                    startTransition(() => patchTaskAction(fd));
+                  }}
                 />
               </MetaBlock>
             </div>
@@ -563,6 +577,7 @@ export function TaskDetail({
                 defaultValue={task.reminderOffset ?? "none"}
                 reminderAt={task.reminderAt}
                 disabled={!canEdit}
+                taskId={task.id}
               />
             </MetaBlock>
 
@@ -941,10 +956,12 @@ function ReminderField({
   defaultValue,
   reminderAt,
   disabled,
+  taskId,
 }: {
   defaultValue: string;
   reminderAt: string | null;
   disabled: boolean;
+  taskId: string;
 }) {
   const [value, setValue] = useState<string>(defaultValue);
   // Quick-pick offsets pokazane jako chip-row (15min nieobsługiwany przez backend,
@@ -976,7 +993,15 @@ function ReminderField({
               role="radio"
               aria-checked={active}
               disabled={disabled}
-              onClick={() => setValue(opt.value)}
+              onClick={() => {
+                if (!disabled) {
+                  const fd = new FormData();
+                  fd.set("id", taskId);
+                  fd.set("reminderOffset", opt.value);
+                  startTransition(() => patchTaskAction(fd));
+                  setValue(opt.value);
+                }
+              }}
               data-active={active}
               className="inline-flex min-h-[28px] items-center gap-1.5 rounded-[8px] border border-border/60 bg-card/40 px-2.5 py-1 text-[12.5px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-primary/10 data-[active=true]:border-primary/40 data-[active=true]:bg-primary/10 data-[active=true]:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -1230,7 +1255,7 @@ export function ContactField({
         value={contactId ?? ""}
         onChange={(e) => submit(e.target.value)}
         disabled={disabled}
-        className="h-9 w-full rounded-lg border border-border bg-background/60 px-3 text-[0.82rem] outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-60"
+        className="h-9 w-full rounded-lg border border-border bg-background/60 px-3 text-[0.82rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <option value="">— brak —</option>
         {contacts.map((c) => (

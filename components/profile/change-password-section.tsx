@@ -51,7 +51,7 @@ export function ChangePasswordSection() {
             required
             autoComplete="current-password"
             aria-invalid={!!fieldErrors?.currentPassword}
-            className="h-10 w-full rounded-md border border-border bg-background px-3 pr-10 text-[0.92rem] outline-none focus:border-primary aria-[invalid=true]:border-destructive"
+            className="h-10 w-full rounded-md border border-border bg-background px-3 pr-10 text-[0.92rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
           />
           <button
             type="button"
@@ -80,7 +80,7 @@ export function ChangePasswordSection() {
             maxLength={200}
             autoComplete="new-password"
             aria-invalid={!!fieldErrors?.newPassword}
-            className="h-10 w-full rounded-md border border-border bg-background px-3 pr-10 text-[0.92rem] outline-none focus:border-primary aria-[invalid=true]:border-destructive"
+            className="h-10 w-full rounded-md border border-border bg-background px-3 pr-10 text-[0.92rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
           />
           <button
             type="button"

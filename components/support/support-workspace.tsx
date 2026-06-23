@@ -567,7 +567,7 @@ function StatusSelect({ ticketId, current }: { ticketId: string; current: Status
               left: dd.coords.left,
               width: dd.coords.width,
             }}
-            className="z-[80] overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+            className="z-[100] overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
           >
             <ul role="listbox" className="flex flex-col gap-0.5">
               {STATUSES.map((s) => {
@@ -642,7 +642,7 @@ function PrioritySelect({ ticketId, current }: { ticketId: string; current: Prio
               left: dd.coords.left,
               width: dd.coords.width,
             }}
-            className="z-[80] overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+            className="z-[100] overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
           >
             <ul role="listbox" className="flex flex-col gap-0.5">
               {PRIORITIES.map((p) => {
@@ -735,7 +735,7 @@ function AssigneeSelect({
               left: dd.coords.left,
               width: dd.coords.width,
             }}
-            className="z-[80] flex flex-col overflow-hidden rounded-lg border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+            className="z-[100] flex flex-col overflow-hidden rounded-lg border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
           >
             <div className="border-b border-border p-2">
               <input
@@ -743,7 +743,7 @@ function AssigneeSelect({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Szukaj osoby…"
-                className="h-8 w-full rounded-md border border-border bg-background px-2 text-[0.82rem] outline-none focus:border-primary/60"
+                className="h-8 w-full rounded-md border border-border bg-background px-2 text-[0.82rem] outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
               />
             </div>
             <ul role="listbox" className="max-h-72 overflow-y-auto p-1">
@@ -974,7 +974,7 @@ function EditTicketDialog({
             onChange={(e) => setTitle(e.target.value)}
             disabled={!canEditContent}
             maxLength={200}
-            className="h-10 rounded-md border border-border bg-background px-3 text-[0.95rem] outline-none focus:border-primary disabled:opacity-60"
+            className="h-10 rounded-md border border-border bg-background px-3 text-[0.95rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60"
           />
         </div>
 
@@ -986,7 +986,7 @@ function EditTicketDialog({
             disabled={!canEditContent}
             rows={6}
             maxLength={5000}
-            className="min-h-[140px] resize-y rounded-md border border-border bg-background p-3 text-[0.9rem] outline-none focus:border-primary disabled:opacity-60"
+            className="min-h-[140px] resize-y rounded-md border border-border bg-background p-3 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-60"
           />
         </div>
 
@@ -1161,7 +1161,7 @@ function NewTicketForm({ workspaceId }: { workspaceId: string }) {
           autoFocus
           maxLength={200}
           placeholder="Krótko o co chodzi"
-          className="h-10 border-b border-border bg-transparent pb-1 font-display text-[1.1rem] outline-none focus:border-primary"
+          className="h-10 border-b border-border bg-transparent pb-1 font-display text-[1.1rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
         />
       </div>
 
@@ -1175,7 +1175,7 @@ function NewTicketForm({ workspaceId }: { workspaceId: string }) {
           rows={4}
           maxLength={5000}
           placeholder="Co się dzieje, jakich kroków oczekujesz, co już próbowałeś…"
-          className="min-h-[100px] resize-y rounded-md border border-border bg-background p-2 text-[0.9rem] outline-none focus:border-primary"
+          className="min-h-[100px] resize-y rounded-md border border-border bg-background p-2 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
         />
       </div>
 
@@ -1568,7 +1568,7 @@ function AttachmentBadge({ attachments }: { attachments: SupportAttachment[] }) 
           <div
             ref={popRef}
             style={{ position: "fixed", top: coords.top, left: coords.left, width: 320 }}
-            className="z-[80] flex flex-col overflow-hidden rounded-lg border border-border bg-popover p-2 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+            className="z-[100] flex flex-col overflow-hidden rounded-lg border border-border bg-popover p-2 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-2 pb-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground/80">

@@ -114,7 +114,7 @@ export function CreateViewDialog({
         <span>Widok</span>
       </button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={setOpen} key={open ? "open" : "closed"}>
         <DialogContent className="dialog-glass rounded-2xl border-transparent sm:max-w-[480px]">
           <DialogHeader>
             <span className="eyebrow">Nowy widok</span>
@@ -179,7 +179,7 @@ export function CreateViewDialog({
                   maxLength={60}
                   placeholder="np. Sprint 4 · Kanban klienta"
                   aria-invalid={!state?.ok && !!state?.fieldErrors?.name}
-                  className="h-10 border-b border-border bg-transparent pb-1 font-sans text-[1rem] outline-none focus:border-primary aria-[invalid=true]:border-destructive"
+                  className="h-10 border-b border-border bg-transparent pb-1 font-sans text-[1rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
                 />
                 {!state?.ok && state?.fieldErrors?.name && (
                   <span className="font-mono text-[0.68rem] text-destructive">

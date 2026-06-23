@@ -41,7 +41,7 @@ export function NewCanvasForm({ workspaceId }: { workspaceId: string }) {
           maxLength={200}
           placeholder="np. Onboarding klienta"
           aria-invalid={!!fieldError}
-          className="h-10 min-w-[240px] rounded-md border border-border bg-background px-3 text-[0.92rem] outline-none focus:border-primary aria-[invalid=true]:border-destructive"
+          className="h-10 min-w-[240px] rounded-md border border-border bg-background px-3 text-[0.92rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
         />
         {fieldError && (
           <span className="font-mono text-[0.68rem] text-destructive">{fieldError}</span>

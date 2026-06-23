@@ -162,7 +162,7 @@ export function UsersBulkBar() {
   };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-4 md:pb-6">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-4 pb-4 md:pb-6">
       <div
         role="status"
         aria-live="polite"

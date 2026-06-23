@@ -305,7 +305,7 @@ function EditEventForm({
             required
             maxLength={200}
             defaultValue={event.title}
-            className="h-9 rounded-md border border-border bg-background px-3 text-[0.92rem] outline-none focus:border-primary"
+            className="h-9 rounded-md border border-border bg-background px-3 text-[0.92rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </label>
 
@@ -352,7 +352,7 @@ function EditEventForm({
             rows={3}
             maxLength={2000}
             defaultValue={event.description ?? ""}
-            className="rounded-md border border-border bg-background px-3 py-2 text-[0.9rem] leading-relaxed outline-none focus:border-primary"
+            className="rounded-md border border-border bg-background px-3 py-2 text-[0.9rem] leading-relaxed outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </label>
 
@@ -452,7 +452,7 @@ function NewEventForm({
             autoFocus
             maxLength={200}
             placeholder="np. Spotkanie z klientem"
-            className="h-9 rounded-md border border-border bg-background px-2 text-[0.88rem] outline-none focus:border-primary"
+            className="h-9 rounded-md border border-border bg-background px-2 text-[0.88rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -489,7 +489,7 @@ function NewEventForm({
           name="description"
           rows={2}
           maxLength={2000}
-          className="resize-none rounded-md border border-border bg-background p-2 text-[0.86rem] outline-none focus:border-primary"
+          className="resize-none rounded-md border border-border bg-background p-2 text-[0.86rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
         />
       </div>
       <div className="flex flex-wrap items-center gap-1">

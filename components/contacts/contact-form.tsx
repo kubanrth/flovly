@@ -211,7 +211,7 @@ function Field({
         defaultValue={defaultValue}
         placeholder={placeholder}
         aria-invalid={!!error}
-        className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary aria-[invalid=true]:border-destructive"
+        className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
       />
       {error && (
         <span className="font-mono text-[0.66rem] text-destructive">{error}</span>

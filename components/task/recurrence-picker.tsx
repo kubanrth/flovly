@@ -157,7 +157,7 @@ export function RecurrencePicker({
               persist({ freq: "monthly", day: v });
             }}
             aria-label="Dzień miesiąca"
-            className="h-7 w-14 rounded-[8px] border border-border bg-card/40 px-2 text-center font-mono text-[12.5px] tabular-nums outline-none focus:border-primary/60 disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-7 w-14 rounded-[8px] border border-border bg-card/40 px-2 text-center font-mono text-[12.5px] tabular-nums outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
           />
           <span className="text-[12px] text-muted-foreground">. miesiąca</span>
         </div>

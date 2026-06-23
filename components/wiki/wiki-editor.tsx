@@ -53,7 +53,7 @@ export function WikiEditor({
           readOnly={!canEdit}
           maxLength={120}
           // Mobile v4: title 18px display per spec — readable but not overwhelming on 320px viewports.
-          className="flex-1 border-b border-border bg-transparent pb-2 font-display text-[1.5rem] font-bold leading-[1.15] tracking-[-0.02em] outline-none focus:border-primary md:text-[2.2rem] md:leading-[1.1] md:tracking-[-0.03em]"
+          className="flex-1 border-b border-border bg-transparent pb-2 font-display text-[1.5rem] font-bold leading-[1.15] tracking-[-0.02em] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:text-[2.2rem] md:leading-[1.1] md:tracking-[-0.03em]"
         />
       </div>
 

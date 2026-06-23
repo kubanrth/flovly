@@ -99,7 +99,7 @@ export default async function AdminWorkspacesPage({
               type="search"
               defaultValue={query}
               placeholder="szukaj po nazwie / slugu…"
-              className="h-9 w-full rounded-md border border-border bg-card px-3 text-[0.88rem] outline-none focus:border-primary md:w-[260px]"
+              className="h-9 w-full rounded-md border border-border bg-card px-3 text-[0.88rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:w-[260px]"
             />
             <button
               type="submit"

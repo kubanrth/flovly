@@ -174,7 +174,7 @@ export function SearchableDropdown({
         aria-expanded={open}
         aria-invalid={invalid || undefined}
         onClick={() => !disabled && setOpen((v) => !v)}
-        className={`flex h-10 w-full items-center gap-2 rounded-md border bg-background px-3 text-left text-[0.9rem] outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${triggerClass}`}
+        className={`flex h-10 w-full items-center gap-2 rounded-md border bg-background px-3 text-left text-[0.9rem] outline-none transition-colors focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60 ${triggerClass}`}
       >
         {selected?.leading && (
           <span className="shrink-0">{selected.leading}</span>
@@ -242,7 +242,7 @@ export function SearchableDropdown({
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={searchPlaceholder}
-                    className="flex-1 bg-transparent text-[0.82rem] outline-none placeholder:text-muted-foreground/60"
+                    className="flex-1 bg-transparent text-[0.82rem] outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset placeholder:text-muted-foreground/60"
                   />
                 </div>
               </div>

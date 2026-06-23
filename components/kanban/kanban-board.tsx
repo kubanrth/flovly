@@ -30,6 +30,7 @@ import { PRIORITY_META } from "@/lib/task-priority";
 import {
   DndContext,
   DragOverlay,
+  KeyboardSensor,
   MeasuringStrategy,
   MouseSensor,
   PointerSensor,
@@ -46,6 +47,7 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext,
+  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -144,8 +146,11 @@ export function KanbanBoard({
     useSensor(TouchSensor, {
       activationConstraint: { delay: 180, tolerance: 6 },
     }),
-    // Keyboard/pen fallback.
+    // Pen fallback.
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    // Keyboard accessibility (WCAG 2.1.1): Space/Enter to pick up,
+    // arrows to move, Space to drop, Esc to cancel.
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   // Hybrid collision: pointerWithin is precise inside columns (so dragging a
@@ -334,6 +339,29 @@ export function KanbanBoard({
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
+      // WCAG 2.1.1 — keyboard DnD announcements + instructions for screen readers.
+      accessibility={{
+        announcements: {
+          onDragStart({ active }) {
+            return `Podniesiono zadanie ${active.id}`;
+          },
+          onDragOver({ active, over }) {
+            if (over) return `Zadanie ${active.id} nad ${over.id}`;
+            return undefined;
+          },
+          onDragEnd({ active, over }) {
+            if (over) return `Upuszczono zadanie ${active.id} na ${over.id}`;
+            return `Anulowano przeniesienie zadania ${active.id}`;
+          },
+          onDragCancel({ active }) {
+            return `Anulowano przeniesienie zadania ${active.id}`;
+          },
+        },
+        screenReaderInstructions: {
+          draggable:
+            "Naciśnij Space lub Enter aby podnieść. Strzałki aby przenieść. Space aby upuścić. Esc aby anulować.",
+        },
+      }}
     >
       {/* v4: Kontener kanbanu = jedna karta glass rounded-[22px] z brand-tinted
           shadow. Wewnątrz: internal header + rail kolumn.
@@ -513,12 +541,14 @@ function Column({
           flex-col z body który scrolluje samodzielnie (header sticky).
           Spec: bg-white/3 + border-white/7 + backdrop-blur. */}
       <div
-        className={`group/col flex ${COLUMN_W_BASE} ${COLUMN_W_MD} shrink-0 snap-start flex-col overflow-hidden rounded-[15px] border border-border/50 bg-white/[0.03] backdrop-blur-md md:snap-none dark:border-white/[0.07] dark:bg-white/[0.03]`}
+        role="group"
+        aria-label={`Kolumna ${name}, ${tasks.length} ${tasks.length === 1 ? "zadanie" : "zadań"}`}
+        className={`group/col flex ${COLUMN_W_BASE} ${COLUMN_W_MD} shrink-0 snap-start flex-col overflow-hidden rounded-[15px] border border-border/50 bg-white/[0.03] md:snap-none dark:border-white/[0.07] dark:bg-white/[0.04]`}
       >
         {/* HEADER — sticky w obrębie kolumny.
             Layout: grip-icon (drag/reorder visual cue) + color-dot + nazwa (bold) +
             count (mała szara) + chevrons reorder z prawej. */}
-        <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-white/[0.07] bg-card/40 px-3 py-3 backdrop-blur-md dark:border-white/[0.07] dark:bg-white/[0.02]">
+        <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-white/[0.07] bg-card/95 px-3 py-3 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] dark:border-white/[0.07] dark:bg-card/95">
           {/* Grip icon — 6 kropek z designu, czysto wizualny (sygnał reorder) */}
           <GripVertical
             size={13}
@@ -576,7 +606,7 @@ function Column({
         {/* BODY — scroll container.
             v4: padding 10px (≈ p-2.5), gap 9px (gap-2.5) — z referencji. */}
         <ColumnDropZone id={id}>
-          <div className="flex min-h-[60px] flex-1 flex-col gap-2.5 overflow-y-auto p-2.5">
+          <div role="list" className="flex min-h-[60px] flex-1 flex-col gap-2.5 overflow-y-auto p-2.5">
             {tasks.map((t) => (
               <SortableCard
                 key={t.id}
@@ -752,19 +782,24 @@ function SortableCard({
     useSortable({ id: task.id });
 
   return (
-    <div
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-        // v4: drag state — opacity 0.5 + scale 0.98 (delikatne "wycofanie" karty).
-        opacity: isDragging ? 0.5 : 1,
-        scale: isDragging ? "0.98" : "1",
-      }}
-      {...attributes}
-      {...listeners}
-    >
-      <CardShell task={task} workspaceId={workspaceId} hotkeyProps={hotkeyProps} />
+    // Outer wrapper carries role="listitem" so the column body (role="list")
+    // has a proper listitem children. Inner div is the dnd-kit draggable —
+    // its spread `attributes` inject role="button" which we don't override.
+    <div role="listitem">
+      <div
+        ref={setNodeRef}
+        style={{
+          transform: CSS.Transform.toString(transform),
+          transition,
+          // v4: drag state — opacity 0.5 + scale 0.98 (delikatne "wycofanie" karty).
+          opacity: isDragging ? 0.5 : 1,
+          scale: isDragging ? "0.98" : "1",
+        }}
+        {...attributes}
+        {...listeners}
+      >
+        <CardShell task={task} workspaceId={workspaceId} hotkeyProps={hotkeyProps} />
+      </div>
     </div>
   );
 }
@@ -1083,7 +1118,7 @@ function AddKanbanColumnButton({
                 }}
                 maxLength={40}
                 placeholder="Nazwa kolumny…"
-                className="mb-3 w-full rounded-md border border-border bg-background px-2 py-1.5 text-[0.86rem] outline-none focus:border-primary/60"
+                className="mb-3 w-full rounded-md border border-border bg-background px-2 py-1.5 text-[0.86rem] outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
               />
               <p className="mb-1.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground/80">
                 Kolor

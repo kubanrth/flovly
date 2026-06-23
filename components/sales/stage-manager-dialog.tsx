@@ -135,8 +135,8 @@ export function StageManagerDialog({
 
       <BaseDialog.Root open={open} onOpenChange={(next) => !next && setOpen(false)}>
         <BaseDialog.Portal>
-          <BaseDialog.Backdrop className="fixed inset-0 z-40 bg-background/70 backdrop-blur-sm" />
-          <BaseDialog.Popup className="fixed left-1/2 top-1/2 z-50 flex max-h-[85vh] w-[min(640px,92vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-[0_24px_48px_-12px_rgba(0,0,0,0.25)]">
+          <BaseDialog.Backdrop className="fixed inset-0 z-[85] bg-background/70 backdrop-blur-sm" />
+          <BaseDialog.Popup className="fixed left-1/2 top-1/2 z-[90] flex max-h-[85vh] w-[min(640px,92vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-[0_24px_48px_-12px_rgba(0,0,0,0.25)]">
             <div className="flex items-center justify-between border-b border-border px-6 py-3">
               <BaseDialog.Title className="eyebrow">Etapy pipeline</BaseDialog.Title>
               <button
@@ -236,7 +236,7 @@ function StageRow({
           const v = e.target.value.trim();
           if (v.length > 0 && v !== stage.name) onChange({ name: v });
         }}
-        className="h-8 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-[0.9rem] outline-none focus:border-primary"
+        className="h-8 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
       />
 
       <select
@@ -246,7 +246,7 @@ function StageRow({
           onChange({ closedKind: v === "won" || v === "lost" ? v : null });
         }}
         aria-label="Typ etapu końcowego"
-        className="h-8 shrink-0 rounded-md border border-border bg-background px-2 text-[0.82rem] outline-none focus:border-primary"
+        className="h-8 shrink-0 rounded-md border border-border bg-background px-2 text-[0.82rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
       >
         <option value="">Otwarty</option>
         <option value="won">Wygrane</option>
@@ -314,7 +314,7 @@ function AddStageForm({ workspaceId }: { workspaceId: string }) {
         }}
         maxLength={60}
         placeholder="Nazwa nowego etapu…"
-        className="h-8 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-[0.9rem] outline-none focus:border-primary"
+        className="h-8 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
       />
       <select
         value={closedKind}
@@ -322,7 +322,7 @@ function AddStageForm({ workspaceId }: { workspaceId: string }) {
           setClosedKind(e.target.value === "won" || e.target.value === "lost" ? e.target.value : "")
         }
         aria-label="Typ nowego etapu"
-        className="h-8 shrink-0 rounded-md border border-border bg-background px-2 text-[0.82rem] outline-none focus:border-primary"
+        className="h-8 shrink-0 rounded-md border border-border bg-background px-2 text-[0.82rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
       >
         <option value="">Otwarty</option>
         <option value="won">Wygrane</option>

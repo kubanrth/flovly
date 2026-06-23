@@ -413,7 +413,7 @@ function LineSection({
               }
             }}
             autoFocus
-            className="flex-1 border-b border-border bg-transparent text-[0.85rem] font-semibold outline-none focus:border-primary"
+            className="flex-1 border-b border-border bg-transparent text-[0.85rem] font-semibold outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         ) : (
           <button

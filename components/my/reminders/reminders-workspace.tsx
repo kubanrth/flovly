@@ -194,7 +194,7 @@ function NewReminderForm({
           autoFocus
           maxLength={200}
           placeholder="O czym chcesz pamiętać?"
-          className="h-10 border-b border-border bg-transparent pb-1 font-display text-[1.1rem] outline-none focus:border-primary"
+          className="h-10 border-b border-border bg-transparent pb-1 font-display text-[1.1rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
         />
       </div>
 
@@ -207,7 +207,7 @@ function NewReminderForm({
           rows={2}
           maxLength={2000}
           placeholder="Dodatkowy kontekst…"
-          className="min-h-[3rem] resize-none rounded-md border border-border bg-background p-2 text-[0.9rem] outline-none focus:border-primary"
+          className="min-h-[3rem] resize-none rounded-md border border-border bg-background p-2 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
         />
       </div>
 
@@ -220,7 +220,7 @@ function NewReminderForm({
             value={dueAt}
             onChange={(e) => setDueAt(e.target.value)}
             required
-            className="h-9 rounded-md border border-border bg-background px-3 font-mono text-[0.8rem] outline-none focus:border-primary"
+            className="h-9 rounded-md border border-border bg-background px-3 font-mono text-[0.8rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -496,7 +496,7 @@ function EditReminderForm({
           onChange={(e) => setTitle(e.target.value)}
           required
           maxLength={200}
-          className="h-9 rounded-md border border-border bg-background px-2 text-[0.9rem] outline-none focus:border-primary"
+          className="h-9 rounded-md border border-border bg-background px-2 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
         />
       </div>
       <div className="flex flex-col gap-1">
@@ -507,7 +507,7 @@ function EditReminderForm({
           onChange={(e) => setBody(e.target.value)}
           rows={2}
           maxLength={2000}
-          className="resize-none rounded-md border border-border bg-background p-2 text-[0.86rem] outline-none focus:border-primary"
+          className="resize-none rounded-md border border-border bg-background p-2 text-[0.86rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
         />
       </div>
       <div className="flex flex-wrap items-end gap-3">
@@ -519,7 +519,7 @@ function EditReminderForm({
             value={dueAt}
             onChange={(e) => setDueAt(e.target.value)}
             required
-            className="h-9 rounded-md border border-border bg-background px-2 font-mono text-[0.78rem] outline-none focus:border-primary"
+            className="h-9 rounded-md border border-border bg-background px-2 font-mono text-[0.78rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -637,7 +637,7 @@ function RecipientPicker({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Szukaj osoby…"
-                className="h-9 w-full rounded-md border border-border bg-background px-3 text-[0.86rem] outline-none focus:border-primary/60"
+                className="h-9 w-full rounded-md border border-border bg-background px-3 text-[0.86rem] outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
               />
             </div>
             <ul className="max-h-72 overflow-y-auto p-1">

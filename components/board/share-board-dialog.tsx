@@ -151,7 +151,7 @@ export function ShareBoardDialog({
                 }}
                 placeholder="np. Klient ABC — prezentacja Q3"
                 maxLength={80}
-                className="h-10 border-b border-border bg-transparent pb-1 text-[0.95rem] outline-none focus:border-primary"
+                className="h-10 border-b border-border bg-transparent pb-1 text-[0.95rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
               />
             </label>
             <div className="flex items-center justify-end">

@@ -143,7 +143,7 @@ export function NotificationToaster({ userId }: { userId: string }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="pointer-events-none fixed right-4 top-4 z-[70] flex w-[360px] flex-col gap-2">
+    <div className="pointer-events-none fixed right-4 top-4 z-[70] flex w-[360px] flex-col gap-2 max-md:top-16">
       {items.map((t) => (
         <ToastCard
           key={t.id}

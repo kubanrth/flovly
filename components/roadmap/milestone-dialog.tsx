@@ -88,10 +88,10 @@ export function MilestoneDialog({
   const defaultStop = initial?.stopAt ?? defaults.stop;
 
   return (
-    <BaseDialog.Root open onOpenChange={(open) => !open && onClose()}>
+    <BaseDialog.Root open onOpenChange={(open) => !open && onClose()} key={mode === "edit" && initial ? `edit-${initial.id}` : "create"}>
       <BaseDialog.Portal>
-        <BaseDialog.Backdrop className="fixed inset-0 z-40 bg-background/70 backdrop-blur-sm" />
-        <BaseDialog.Popup className="fixed left-1/2 top-1/2 z-50 flex max-h-[90vh] w-[min(560px,92vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-[0_24px_48px_-12px_rgba(0,0,0,0.25)]">
+        <BaseDialog.Backdrop className="fixed inset-0 z-[85] bg-background/70 backdrop-blur-sm" />
+        <BaseDialog.Popup className="fixed left-1/2 top-1/2 z-[90] flex max-h-[90vh] w-[min(560px,92vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-[0_24px_48px_-12px_rgba(0,0,0,0.25)]">
           <div className="flex items-center justify-between border-b border-border px-6 py-3">
             <BaseDialog.Title className="eyebrow">
               {isEdit ? "Edytuj milestone" : "Nowy milestone"}
@@ -124,7 +124,7 @@ export function MilestoneDialog({
                 defaultValue={initial?.title ?? ""}
                 autoFocus
                 aria-invalid={!!fieldErrors?.title}
-                className="border-b border-border bg-transparent pb-2 font-display text-[1.4rem] leading-[1.2] tracking-[-0.02em] outline-none focus:border-primary aria-[invalid=true]:border-destructive"
+                className="border-b border-border bg-transparent pb-2 font-display text-[1.4rem] leading-[1.2] tracking-[-0.02em] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
               />
               {fieldErrors?.title && (
                 <span className="font-mono text-[0.68rem] text-destructive">
@@ -169,7 +169,7 @@ export function MilestoneDialog({
               <select
                 name="assigneeId"
                 defaultValue={initial?.assignee?.id ?? ""}
-                className="h-10 appearance-none border-b border-border bg-transparent pb-1 font-mono text-[0.82rem] uppercase tracking-[0.12em] outline-none focus:border-primary"
+                className="h-10 appearance-none border-b border-border bg-transparent pb-1 font-mono text-[0.82rem] uppercase tracking-[0.12em] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 <option value="">— brak —</option>
                 {members.map((m) => (
@@ -308,7 +308,7 @@ function LinkedMilestonesSection({
             name="childId"
             required
             defaultValue=""
-            className="h-9 flex-1 rounded-md border border-border bg-background px-2 text-[0.86rem] outline-none focus:border-primary"
+            className="h-9 flex-1 rounded-md border border-border bg-background px-2 text-[0.86rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             <option value="" disabled>
               Wybierz milestone z innej tablicy…

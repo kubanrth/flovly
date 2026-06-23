@@ -125,7 +125,7 @@ export function TableHeaderCell({
             }
           }}
           maxLength={80}
-          className="min-w-0 flex-1 rounded-sm border border-primary/40 bg-background px-1 py-0.5 text-[0.66rem] uppercase tracking-[0.14em] text-foreground outline-none focus:border-primary"
+          className="min-w-0 flex-1 rounded-sm border border-primary/40 bg-background px-1 py-0.5 text-[0.66rem] uppercase tracking-[0.14em] text-foreground outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
         />
       ) : (
         <span className="truncate">{label}</span>

@@ -132,7 +132,7 @@ function FolderBlock({
                   setRenaming(false);
                 }
               }}
-              className="flex-1 min-w-0 rounded-sm border border-primary/40 bg-background px-2 py-0.5 font-display text-[0.95rem] font-semibold outline-none focus:border-primary"
+              className="flex-1 min-w-0 rounded-sm border border-primary/40 bg-background px-2 py-0.5 font-display text-[0.95rem] font-semibold outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
             />
           </form>
         ) : (
@@ -333,7 +333,7 @@ function ColumnHeader({
                 setRenaming(false);
               }
             }}
-            className="w-full rounded-sm border border-primary/40 bg-background px-1 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] outline-none focus:border-primary"
+            className="w-full rounded-sm border border-primary/40 bg-background px-1 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </form>
       ) : (

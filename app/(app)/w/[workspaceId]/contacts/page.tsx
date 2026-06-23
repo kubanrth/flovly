@@ -113,7 +113,7 @@ export default async function ContactsListPage({
                   type="search"
                   defaultValue={query}
                   placeholder="szukaj po firmie / email / NIP…"
-                  className="h-9 w-full rounded-md border border-border bg-card pl-7 pr-3 text-[0.88rem] outline-none focus:border-primary md:w-[260px]"
+                  className="h-9 w-full rounded-md border border-border bg-card pl-7 pr-3 text-[0.88rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:w-[260px]"
                 />
               </div>
               <button

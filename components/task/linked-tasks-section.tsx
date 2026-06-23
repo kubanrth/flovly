@@ -210,7 +210,7 @@ function LinkPicker({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="szukaj po tytule albo #ID…"
-            className="h-9 w-full rounded-md border border-border bg-background pl-7 pr-3 text-[0.88rem] outline-none focus:border-primary"
+            className="h-9 w-full rounded-md border border-border bg-background pl-7 pr-3 text-[0.88rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </div>
         <button

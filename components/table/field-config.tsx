@@ -223,7 +223,7 @@ export function NumberFormatPicker({
             onChange={(e) =>
               onChange({ ...value, numberCurrency: e.target.value.toUpperCase().slice(0, 4) })
             }
-            className="w-20 rounded-md border border-border bg-background px-2 py-1 text-[0.78rem] uppercase text-foreground outline-none focus:border-primary/50"
+            className="w-20 rounded-md border border-border bg-background px-2 py-1 text-[0.78rem] uppercase text-foreground outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </label>
       )}
@@ -238,7 +238,7 @@ export function NumberFormatPicker({
             onChange={(e) =>
               onChange({ ...value, numberPrecision: Math.max(0, Math.min(6, Number(e.target.value))) })
             }
-            className="w-16 rounded-md border border-border bg-background px-2 py-1 text-[0.78rem] text-foreground outline-none focus:border-primary/50"
+            className="w-16 rounded-md border border-border bg-background px-2 py-1 text-[0.78rem] text-foreground outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </label>
       )}
@@ -286,7 +286,7 @@ export function RatingMaxPicker({
         onChange={(e) =>
           onChange({ ...value, ratingMax: Math.max(3, Math.min(10, Number(e.target.value))) })
         }
-        className="w-16 rounded-md border border-border bg-background px-2 py-1 text-[0.78rem] text-foreground outline-none focus:border-primary/50"
+        className="w-16 rounded-md border border-border bg-background px-2 py-1 text-[0.78rem] text-foreground outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40"
       />
     </label>
   );

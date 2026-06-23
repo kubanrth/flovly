@@ -615,7 +615,7 @@ export async function bulkImportTasksAction(
   let nextRowOrder = (maxRowOrder._max.rowOrder ?? 0) + 1;
 
   const warnings: string[] = [];
-  let skipped = 0;
+  const skipped = 0;
 
   // Transakcja — jeśli któryś task się sypnie (rare po walidacji zod), wszystko rollback.
   const created = await db.$transaction(async (tx) => {
@@ -801,7 +801,7 @@ export async function patchTaskAction(formData: FormData) {
   const ctx = await requireWorkspaceAction(existing.workspaceId, "task.update");
 
   const data: Record<string, unknown> = {};
-  const keys = ["title", "statusColumnId", "startAt", "stopAt", "rowOrder", "contactId"] as const;
+  const keys = ["title", "statusColumnId", "startAt", "stopAt", "rowOrder", "contactId", "reminderOffset"] as const;
   let hasChange = false;
 
   for (const k of keys) {
@@ -840,6 +840,23 @@ export async function patchTaskAction(formData: FormData) {
           hasChange = true;
         }
       }
+    } else if (k === "reminderOffset") {
+      // Reminder resolution requires stopAt — use existing or updated value.
+      const nextStopAt = "stopAt" in data ? (data.stopAt as Date | null) : existing.stopAt;
+      const offset = String(raw);
+      data.reminderAt = resolveReminder(offset, nextStopAt);
+      // Re-arm cron when reminderAt changes: clear reminderSentAt.
+      if (
+        data.reminderAt &&
+        existing.reminderAt &&
+        (data.reminderAt as Date).getTime() !== existing.reminderAt.getTime()
+      ) {
+        data.reminderSentAt = null;
+      } else if (!data.reminderAt && existing.reminderAt) {
+        // Clearing reminder.
+        data.reminderSentAt = null;
+      }
+      hasChange = true;
     }
   }
 

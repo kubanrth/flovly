@@ -197,7 +197,7 @@ function PollCreator({
           maxLength={280}
           placeholder="Który wariant wybieramy?"
           autoFocus
-          className="border-b border-border bg-transparent pb-1 font-display text-[1rem] outline-none focus:border-primary"
+          className="border-b border-border bg-transparent pb-1 font-display text-[1rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
         />
       </label>
       <div className="flex flex-col gap-2">
@@ -211,7 +211,7 @@ function PollCreator({
               required
               maxLength={120}
               placeholder={`Opcja ${i + 1}`}
-              className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-[0.9rem] outline-none focus:border-primary"
+              className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
             />
             <button
               type="button"

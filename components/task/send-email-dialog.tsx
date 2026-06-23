@@ -101,7 +101,7 @@ className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border bor
                 required
                 autoFocus
                 placeholder="imie@firma.pl"
-                className="h-10 border-b border-border bg-transparent pb-1 font-sans text-[1rem] outline-none focus:border-primary"
+                className="h-10 border-b border-border bg-transparent pb-1 font-sans text-[1rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
               />
             </label>
 
@@ -112,7 +112,7 @@ className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border bor
                 rows={3}
                 maxLength={2000}
                 placeholder="Krótka notka od Ciebie — np. 'Proszę o akcept'."
-                className="min-h-[4rem] resize-none border-b border-border bg-transparent pb-1 font-sans text-[0.95rem] outline-none focus:border-primary"
+                className="min-h-[4rem] resize-none border-b border-border bg-transparent pb-1 font-sans text-[0.95rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
               />
             </label>
 

@@ -234,7 +234,7 @@ function TitleEditor({
           (e.currentTarget as HTMLInputElement).blur();
         }
       }}
-      className={`flex-1 border-b border-transparent bg-transparent pb-1 font-display text-[1.1rem] leading-tight tracking-[-0.01em] outline-none focus:border-border ${
+      className={`flex-1 border-b border-transparent bg-transparent pb-1 font-display text-[1.1rem] leading-tight tracking-[-0.01em] outline-none focus-visible:border-border ${
         completed ? "text-muted-foreground line-through" : ""
       }`}
     />
@@ -541,7 +541,7 @@ function DateRow({
           if (e.currentTarget.value === local) return;
           (e.currentTarget.form as HTMLFormElement).requestSubmit();
         }}
-        className="flex-1 bg-transparent font-mono text-[0.78rem] outline-none focus:text-foreground"
+        className="flex-1 bg-transparent font-mono text-[0.78rem] outline-none focus-visible:text-foreground"
       />
       {value && (
         <button

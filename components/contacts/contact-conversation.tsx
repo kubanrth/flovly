@@ -229,7 +229,7 @@ function Composer({
             type="text"
             maxLength={200}
             placeholder="np. Re: oferta na Q3"
-            className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary"
+            className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </label>
       </div>
@@ -245,7 +245,7 @@ function Composer({
           maxLength={20000}
           rows={4}
           placeholder="Cześć, dziękuję za rozmowę…"
-          className="min-h-[110px] rounded-md border border-border bg-background p-3 text-[0.92rem] leading-[1.55] outline-none focus:border-primary"
+          className="min-h-[110px] rounded-md border border-border bg-background p-3 text-[0.92rem] leading-[1.55] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
         />
       </label>
 

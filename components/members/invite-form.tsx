@@ -104,7 +104,7 @@ export function InviteForm({
               <select
                 value={boardId}
                 onChange={(e) => setBoardId(e.target.value)}
-                className="h-9 appearance-none rounded-md border border-border bg-background px-3 font-mono text-[0.82rem] outline-none focus:border-primary"
+                className="h-9 appearance-none rounded-md border border-border bg-background px-3 font-mono text-[0.82rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 {(boards ?? []).map((b) => (
                   <option key={b.id} value={b.id}>
@@ -131,7 +131,7 @@ export function InviteForm({
             required
             placeholder="np. anna@firma.pl"
             aria-invalid={!!fieldErrors?.email}
-            className="h-10 border-b border-border bg-transparent pb-1 text-[0.95rem] outline-none focus:border-primary aria-[invalid=true]:border-destructive"
+            className="h-10 border-b border-border bg-transparent pb-1 text-[0.95rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
           />
           {fieldErrors?.email && (
             <span className="font-mono text-[0.66rem] text-destructive">
@@ -145,7 +145,7 @@ export function InviteForm({
           <select
             name="role"
             defaultValue="MEMBER"
-            className="h-10 appearance-none border-b border-border bg-transparent pb-1 font-mono text-[0.9rem] outline-none focus:border-primary"
+            className="h-10 appearance-none border-b border-border bg-transparent pb-1 font-mono text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             <option value="ADMIN">ADMIN</option>
             <option value="MEMBER">MEMBER</option>

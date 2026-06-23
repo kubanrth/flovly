@@ -508,7 +508,7 @@ function EditRow({
           }
         }}
         maxLength={40}
-        className="rounded-sm border border-border bg-background px-1.5 py-0.5 text-[0.78rem] outline-none focus:border-primary/60"
+        className="rounded-sm border border-border bg-background px-1.5 py-0.5 text-[0.78rem] outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
       />
       <ColorRow selected={color} onChange={setColor} />
       <div className="flex items-center justify-end gap-1">
@@ -570,7 +570,7 @@ function AddRow({
         }}
         placeholder="Nazwa statusu…"
         maxLength={40}
-        className="rounded-sm border border-border bg-background px-1.5 py-1 text-[0.82rem] outline-none focus:border-primary/60"
+        className="rounded-sm border border-border bg-background px-1.5 py-1 text-[0.82rem] outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
       />
       <ColorRow selected={color} onChange={setColor} />
       <div className="flex items-center justify-end gap-1">

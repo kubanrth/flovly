@@ -175,7 +175,7 @@ export function DealForm({
           defaultValue={initial?.title ?? ""}
           placeholder="np. Wdrożenie systemu CRM dla XYZ Sp. z o.o."
           aria-invalid={!!fieldErrors?.title}
-          className="h-10 rounded-md border border-border bg-background px-3 text-[0.95rem] outline-none focus:border-primary aria-[invalid=true]:border-destructive"
+          className="h-10 rounded-md border border-border bg-background px-3 text-[0.95rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
         />
         {fieldErrors?.title && (
           <span className="font-mono text-[0.66rem] text-destructive">
@@ -192,7 +192,7 @@ export function DealForm({
             inputMode="decimal"
             defaultValue={initial?.valueAmount != null ? String(initial.valueAmount) : ""}
             placeholder="0,00"
-            className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary"
+            className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </label>
         <label className="flex flex-col gap-2">
@@ -202,7 +202,7 @@ export function DealForm({
             maxLength={6}
             defaultValue={initial?.valueCurrency ?? "PLN"}
             placeholder="PLN"
-            className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] uppercase outline-none focus:border-primary"
+            className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] uppercase outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </label>
         <label className="flex flex-col gap-2">
@@ -211,7 +211,7 @@ export function DealForm({
             name="expectedCloseAt"
             type="date"
             defaultValue={dateValue}
-            className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary"
+            className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </label>
       </div>
@@ -253,7 +253,7 @@ export function DealForm({
             maxLength={500}
             rows={3}
             placeholder='Co Ci ma się przypomnieć? np. „zadzwonić w sprawie umowy"…'
-            className="min-h-[80px] resize-y rounded-md border border-border bg-background p-2.5 text-[0.88rem] leading-[1.55] outline-none focus:border-primary"
+            className="min-h-[80px] resize-y rounded-md border border-border bg-background p-2.5 text-[0.88rem] leading-[1.55] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
           <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground/70">
             wkleja się w mailu jako blockquote pod tytułem deal'a

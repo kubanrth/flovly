@@ -132,7 +132,7 @@ export function CreateTaskButton({
                   maxLength={2000}
                   placeholder="np. Zaprojektować logo FLOVLY"
                   aria-invalid={!!fieldError}
-                  className="h-10 w-full border-b border-border bg-transparent pb-1 pr-6 text-[1rem] outline-none focus:border-primary aria-[invalid=true]:border-destructive"
+                  className="h-10 w-full border-b border-border bg-transparent pb-1 pr-6 text-[1rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
                 />
               </span>
               {fieldError && (

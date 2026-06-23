@@ -161,7 +161,7 @@ function EnrollFlow() {
                 // Mobile: h-[52px] + text-[22px] mono center (zgodnie z v4 mobile
                 // 2FA cells: 52px tall, 22px font, monospace, center). Desktop
                 // zostaje przy oryginalnej wadze (h-10), ale font już mono large.
-                className="h-[52px] w-[180px] rounded-md border border-border bg-background px-3 text-center font-mono text-[22px] tracking-[0.25em] outline-none focus:border-primary md:h-10 md:w-[140px] md:text-[1.1rem] md:tracking-[0.2em]"
+                className="h-[52px] w-[180px] rounded-md border border-border bg-background px-3 text-center font-mono text-[22px] tracking-[0.25em] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:h-10 md:w-[140px] md:text-[1.1rem] md:tracking-[0.2em]"
               />
               <button
                 type="button"
@@ -270,7 +270,7 @@ function DisableFlow() {
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
           // Mobile: h-[52px] + text-[16px] (no iOS zoom). Desktop: h-9.
-          className="h-[52px] rounded-md border border-border bg-background px-3 text-[16px] outline-none focus:border-primary md:h-9 md:text-[0.95rem]"
+          className="h-[52px] rounded-md border border-border bg-background px-3 text-[16px] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:h-9 md:text-[0.95rem]"
         />
       </label>
       <label className="flex flex-col gap-1">
@@ -285,7 +285,7 @@ function DisableFlow() {
           autoComplete="one-time-code"
           maxLength={6}
           // Mobile: 52px touch target + text-[16px] (no iOS zoom). Desktop: h-9.
-          className="h-[52px] w-[180px] rounded-md border border-border bg-background px-3 font-mono text-[16px] tracking-[0.2em] outline-none focus:border-primary md:h-9 md:w-[140px] md:text-[0.95rem]"
+          className="h-[52px] w-[180px] rounded-md border border-border bg-background px-3 font-mono text-[16px] tracking-[0.2em] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:h-9 md:w-[140px] md:text-[0.95rem]"
         />
       </label>
       {error && <ErrorLine message={error} />}

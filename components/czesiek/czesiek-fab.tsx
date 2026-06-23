@@ -1,7 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { CzesiekPanel } from "./czesiek-panel";
+
+// F12-K96: routes z własnym sticky bottom UI (mobile save bar / action bar) gdzie
+// CzesiekFab nakładałby się na klient action. Match przez startsWith po
+// /w/<id>/. Desktop nie ma sticky bottom — ale fixed FAB i tak wisi w prawym
+// dolnym rogu więc hide też (mniejszy GPU cost przy okazji).
+const HIDE_ON_PATTERNS: RegExp[] = [
+  /^\/w\/[^/]+\/sales\/[^/]+/, // deal detail (mobile actions: rose-500 X)
+  /^\/w\/[^/]+\/wiki(\/|$)/, // wiki editor (mobile save bar)
+];
+
+function shouldHideFab(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return HIDE_ON_PATTERNS.some((re) => re.test(pathname));
+}
 
 // F12-K74: Floating action button bottom-right. Pojawia się na każdym
 // widoku workspace'u. Klik otwiera Ateron AI panel.
@@ -16,12 +31,16 @@ import { CzesiekPanel } from "./czesiek-panel";
 // ~72px wysokości (py-3 + button h-10 + border) — 5rem (80px) daje
 // komfortowy gap. Desktop pozostaje na bottom-6 (md:!bottom-6).
 //
-// Animacja "pulsująca kulka" — 3-warstwowy efekt:
-//   1. Sonar ring (animate-ping na rozszerzającym się gradient'cie) — sygnał "żywego"
-//   2. Soft halo (animate-pulse na blur'owanym gradient'cie) — oddychający glow
-//   3. Sam button + hover translateY
+// Animacja "pulsująca kulka" — 2-warstwowy efekt (F12-K96 perf fix):
+//   1. Soft halo (animate-pulse na blur'owanym gradient'cie) — oddychający glow
+//   2. Sam button + hover translateY
+// PRZED: 3 warstwy z sonar ring (animate-ping + scaling) na fixed bottom-right
+// = continuous GPU repaint mounted per workspace page. Klient zgłaszał zamulanie.
+// Sonar ring usunięty, halo zostaje z motion-reduce respect.
 export function CzesiekFab({ workspaceId }: { workspaceId: string }) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const hidden = shouldHideFab(pathname);
 
   // F12-K94: signal globally że Ateron panel jest open — globals.css ukrywa
   // mobile sidebar hamburger gdy panel jest open (user myślał że hamburger
@@ -36,6 +55,10 @@ export function CzesiekFab({ workspaceId }: { workspaceId: string }) {
       delete document.body.dataset.czesiekOpen;
     };
   }, [open]);
+
+  // Hide FAB on routes z własnym sticky bottom UI (deal mobile actions,
+  // wiki save bar) — żeby nie nakładało się z klient action.
+  if (hidden) return null;
 
   return (
     <>
@@ -60,15 +83,10 @@ export function CzesiekFab({ workspaceId }: { workspaceId: string }) {
         <span className="font-display text-[1.1rem] font-bold leading-none tracking-[-0.02em]">
           At
         </span>
-        {/* Sonar ring — rozszerza się + fade, 2.4s loop */}
+        {/* Soft halo — pulsująca poświata w miejscu (motion-reduce respect) */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -z-10 rounded-[18px] bg-brand-gradient opacity-70 animate-[ping_2.4s_cubic-bezier(0,0,0.2,1)_infinite]"
-        />
-        {/* Soft halo — pulsująca poświata w miejscu */}
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -z-10 animate-pulse rounded-[18px] bg-brand-gradient opacity-50 blur-lg"
+          className="pointer-events-none absolute inset-0 -z-10 rounded-[18px] bg-brand-gradient opacity-50 blur-lg animate-pulse motion-reduce:animate-none"
         />
       </button>
 

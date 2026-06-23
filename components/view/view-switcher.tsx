@@ -149,14 +149,32 @@ export function ViewSwitcher({
     trackRef.current?.scrollBy({ left: dx, behavior: "smooth" });
   };
 
-  // Keyboard ←/→ między pillami (Tabs ARIA pattern).
+  // Keyboard ←/→/Home/End między pillami (WAI-ARIA Tabs pattern).
   const onKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    if (
+      e.key !== "ArrowLeft" &&
+      e.key !== "ArrowRight" &&
+      e.key !== "Home" &&
+      e.key !== "End"
+    ) {
+      return;
+    }
     const track = trackRef.current;
     if (!track) return;
     const focusables = Array.from(
       track.querySelectorAll<HTMLElement>('[role="tab"]'),
     );
+    if (focusables.length === 0) return;
+    if (e.key === "Home") {
+      e.preventDefault();
+      focusables[0]?.focus();
+      return;
+    }
+    if (e.key === "End") {
+      e.preventDefault();
+      focusables[focusables.length - 1]?.focus();
+      return;
+    }
     const idx = focusables.indexOf(document.activeElement as HTMLElement);
     if (idx === -1) return;
     e.preventDefault();

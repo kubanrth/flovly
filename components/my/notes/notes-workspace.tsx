@@ -269,7 +269,7 @@ function FolderRow({
               setRenaming(false);
             }
           }}
-          className="flex-1 min-w-0 rounded-sm border border-primary/40 bg-background px-1.5 py-0.5 text-[0.85rem] outline-none focus:border-primary"
+          className="flex-1 min-w-0 rounded-sm border border-primary/40 bg-background px-1.5 py-0.5 text-[0.85rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
         />
       </form>
     );
@@ -566,7 +566,9 @@ function NotesListColumn({
       {!isTrash && (
         <form
           action={(fd) => startTransition(() => createNoteAction(fd))}
-          className="md:hidden fixed bottom-6 right-5 z-30 m-0"
+          // F12-K96 perf/UX: bottom-24 (5rem nad CzesiekFab który stoi na
+          // mobile bottom-6 = 1.5rem + h-14 = ~5rem zajętej przestrzeni).
+          className="md:hidden fixed bottom-24 right-5 z-30 m-0"
         >
           <input type="hidden" name="folderId" value={folderId} />
           <button

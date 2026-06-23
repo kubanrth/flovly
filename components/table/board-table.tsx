@@ -899,11 +899,11 @@ export function BoardTable({
                   // v4 spec (linia 40): glass bg + backdrop-blur(30px) saturate(160%),
                   // border-bottom hairline. Higher saturate niż reszta sticky elementów
                   // — header ma się czuć jak osobna warstwa "frosted glass".
-                  <tr key={hg.id} className="border-b border-border/60 bg-white/[0.03] backdrop-blur-[30px] backdrop-saturate-[160%] dark:bg-white/[0.04]">
+                  <tr key={hg.id} className="border-b border-border/60 bg-card/95 shadow-[0_1px_0_0_var(--border)] dark:bg-card/95">
                     {canEdit && (
                       // Sticky pinning disabled on mobile (max-md:!static) — couldn't scroll past pinned columns.
                       <th
-                        className="sticky left-0 top-0 z-30 h-11 w-11 bg-white/[0.04] px-3 shadow-[1px_0_0_0_var(--border)] backdrop-blur-[30px] backdrop-saturate-[160%] dark:bg-white/[0.05] max-md:!static max-md:!shadow-none max-md:!backdrop-blur-none"
+                        className="sticky left-0 top-0 z-30 h-11 w-11 bg-card/95 px-3 shadow-[1px_0_0_0_var(--border)] dark:bg-card/95 max-md:!static max-md:!shadow-none"
                         // F12-K76: hint o shift+click range select — najczęstszy
                         // bulk-action UX, ale wymaga discovery.
                         title="Klik = zaznacz wszystkie. Klik + Shift na innym wierszu = zakres."
@@ -968,7 +968,7 @@ export function BoardTable({
                               : "text-muted-foreground/80"
                           } ${
                             isPinned
-                              ? "z-20 bg-white/[0.04] shadow-[1px_0_0_0_var(--border)] backdrop-blur-[30px] backdrop-saturate-[160%] dark:bg-white/[0.05] max-md:!static max-md:!bg-transparent max-md:!shadow-none max-md:!backdrop-blur-none"
+                              ? "z-20 bg-card/95 shadow-[1px_0_0_0_var(--border)] dark:bg-card/95 max-md:!static max-md:!bg-transparent max-md:!shadow-none"
                               : "bg-transparent"
                           }`}
                           style={{
@@ -1327,7 +1327,7 @@ function BulkActionsBar({
     // v4 bulk toolbar (linia 62): rounded-[14px], padding 9/15, gap 12, glass
     // backdrop-blur(30px) + brand-tinted shadow `0 16px 36px -16px rgba(0,0,0,.6)`.
     // Counter badge to mała kwadratowa pill 22x22 z brand-gradient.
-    <div className="fixed z-50 flex items-center border border-white/10 bg-popover/85 shadow-[0_16px_36px_-16px_rgba(0,0,0,0.6),0_30px_70px_-30px_rgba(122,51,236,0.4)] backdrop-blur-[30px] backdrop-saturate-[160%] max-md:inset-x-0 max-md:bottom-0 max-md:gap-1.5 max-md:rounded-t-[18px] max-md:border-x-0 max-md:border-b-0 max-md:px-3 max-md:pt-2 max-md:pb-safe-bottom md:bottom-6 md:left-1/2 md:max-w-[calc(100vw-24px)] md:-translate-x-1/2 md:gap-3 md:rounded-[14px] md:px-[15px] md:py-[9px]">
+    <div className="fixed z-50 flex items-center border border-white/10 bg-popover/95 shadow-[0_16px_36px_-16px_rgba(0,0,0,0.6),0_30px_70px_-30px_rgba(122,51,236,0.4)] backdrop-blur-md max-md:inset-x-0 max-md:bottom-0 max-md:gap-1.5 max-md:rounded-t-[18px] max-md:border-x-0 max-md:border-b-0 max-md:px-3 max-md:pt-2 max-md:pb-safe-bottom md:bottom-6 md:left-1/2 md:max-w-[calc(100vw-24px)] md:-translate-x-1/2 md:gap-3 md:rounded-[14px] md:px-[15px] md:py-[9px]">
       {/* Counter pill — na mobile w odrębnej "header" rzeczy. Tu rendrujemy
           ją absolutnie na top mobile sheet'a + jako pierwszy element desktopu. */}
       <span className="inline-flex h-[22px] w-[22px] items-center justify-center rounded-[7px] bg-brand-gradient text-[11px] font-bold text-white max-md:absolute max-md:-top-2.5 max-md:left-1/2 max-md:-translate-x-1/2 max-md:rounded-full max-md:h-[26px] max-md:w-auto max-md:px-2.5 max-md:text-[12px] max-md:shadow-brand">

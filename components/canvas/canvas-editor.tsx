@@ -1846,7 +1846,7 @@ function TaskLinksPanel({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="szukaj zadania…"
-            className="h-7 flex-1 rounded-md border border-border bg-background px-2 text-[0.8rem] outline-none focus:border-primary"
+            className="h-7 flex-1 rounded-md border border-border bg-background px-2 text-[0.8rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
         </div>
         {filtered.length > 0 && (

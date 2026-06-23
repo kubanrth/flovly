@@ -90,7 +90,7 @@ export function EditableTitle({
         // Same typography as the heading (parent's className) — looks
         // like in-place edit, not a popup form. Border-bottom + bg-transparent
         // makes the input feel "lighter" than a regular form field.
-        className={`${className} m-0 w-full border-0 border-b border-primary/60 bg-transparent px-0 py-0 outline-none focus:border-primary`}
+        className={`${className} m-0 w-full border-0 border-b border-primary/60 bg-transparent px-0 py-0 outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40`}
       />
     );
   }

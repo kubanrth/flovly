@@ -92,7 +92,7 @@ export function CreateBoardDialog({
         {label && <span>{label}</span>}
       </button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={setOpen} key={open ? "open" : "closed"}>
         <DialogContent className="dialog-glass rounded-2xl border-transparent sm:max-w-[480px]">
           <DialogHeader>
             <span className="eyebrow">Nowa tablica</span>
@@ -120,7 +120,7 @@ export function CreateBoardDialog({
                 maxLength={80}
                 placeholder="np. Q2 Roadmap, Backlog, KPIs"
                 aria-invalid={!state?.ok && !!state?.fieldErrors?.name}
-                className="h-10 border-b border-border bg-transparent pb-1 font-sans text-[1rem] outline-none focus:border-primary aria-[invalid=true]:border-destructive"
+                className="h-10 border-b border-border bg-transparent pb-1 font-sans text-[1rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
               />
               {!state?.ok && state?.fieldErrors?.name && (
                 <span className="font-mono text-[0.68rem] text-destructive">
@@ -136,7 +136,7 @@ export function CreateBoardDialog({
                 rows={2}
                 maxLength={280}
                 placeholder="Opcjonalny — co ta tablica śledzi?"
-                className="min-h-[2.5rem] resize-none border-b border-border bg-transparent pb-1 font-sans text-[0.95rem] outline-none focus:border-primary"
+                className="min-h-[2.5rem] resize-none border-b border-border bg-transparent pb-1 font-sans text-[0.95rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
               />
             </label>
 

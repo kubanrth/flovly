@@ -92,7 +92,7 @@ export function BoardMembersSection({
         <select
           value={selected.id}
           onChange={(e) => selectBoard(e.target.value)}
-          className="h-9 appearance-none rounded-md border border-border bg-background px-3 font-display text-[0.9rem] font-semibold outline-none focus:border-primary"
+          className="h-9 appearance-none rounded-md border border-border bg-background px-3 font-display text-[0.9rem] font-semibold outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
         >
           {boards.map((b) => (
             <option key={b.id} value={b.id}>
@@ -220,7 +220,7 @@ function AddExistingMember({
         <select
           value={userId}
           onChange={(e) => setUserId(e.target.value)}
-          className="h-9 min-w-[220px] flex-1 appearance-none rounded-md border border-border bg-background px-3 text-[0.88rem] outline-none focus:border-primary"
+          className="h-9 min-w-[220px] flex-1 appearance-none rounded-md border border-border bg-background px-3 text-[0.88rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
         >
           {candidates.map((c) => (
             <option key={c.userId} value={c.userId}>
@@ -231,7 +231,7 @@ function AddExistingMember({
         <select
           value={role}
           onChange={(e) => setRole(e.target.value as Role)}
-          className="h-9 appearance-none rounded-md border border-border bg-background px-3 font-mono text-[0.82rem] outline-none focus:border-primary"
+          className="h-9 appearance-none rounded-md border border-border bg-background px-3 font-mono text-[0.82rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
         >
           <option value="ADMIN">ADMIN</option>
           <option value="MEMBER">MEMBER</option>
@@ -308,7 +308,7 @@ function BoardMemberRow({
       <select
         value={role}
         onChange={(e) => changeRole(e.target.value as Role)}
-        className="h-8 appearance-none rounded-md border border-border bg-background px-2 font-mono text-[0.74rem] outline-none focus:border-primary"
+        className="h-8 appearance-none rounded-md border border-border bg-background px-2 font-mono text-[0.74rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
       >
         <option value="ADMIN">ADMIN</option>
         <option value="MEMBER">MEMBER</option>

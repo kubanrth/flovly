@@ -350,7 +350,7 @@ export function ImportTasksDialog({
                           next[i] = e.target.value as TaskField;
                           setMapping(next);
                         }}
-                        className="h-9 rounded-md border border-border bg-background px-2 text-[0.82rem] outline-none focus:border-primary"
+                        className="h-9 rounded-md border border-border bg-background px-2 text-[0.82rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
                       >
                         {FIELD_OPTIONS.map((opt) => (
                           <option key={opt.value} value={opt.value}>

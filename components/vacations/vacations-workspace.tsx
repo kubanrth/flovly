@@ -194,7 +194,7 @@ function NewRequestForm() {
               type="text"
               maxLength={500}
               placeholder="np. wakacje rodzinne"
-              className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary"
+              className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
             />
           </label>
         </div>

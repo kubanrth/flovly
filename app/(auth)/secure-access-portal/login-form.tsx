@@ -30,6 +30,7 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
         required
         placeholder="adam@studio.pl"
         error={state?.fieldErrors?.email}
+        errorId="email-error"
       />
 
       <Field
@@ -40,6 +41,7 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
         required
         placeholder="••••••••"
         error={state?.fieldErrors?.password}
+        errorId="password-error"
         trailing={
           <button
             type="button"
@@ -64,6 +66,7 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
         inputMode="numeric"
         placeholder="123456 lub kod zapasowy"
         error={state?.fieldErrors?.totp}
+        errorId="totp-error"
       />
 
       {/* Row z "pozostań zalogowany" + "zapomniałem hasła" — wizualnie z v4 */}
@@ -125,6 +128,7 @@ function Field({
   required,
   placeholder,
   error,
+  errorId,
   trailing,
 }: {
   label: string;
@@ -136,6 +140,7 @@ function Field({
   required?: boolean;
   placeholder?: string;
   error?: string;
+  errorId?: string;
   trailing?: React.ReactNode;
 }) {
   return (
@@ -160,13 +165,14 @@ function Field({
           required={required}
           placeholder={placeholder}
           aria-invalid={!!error}
+          aria-describedby={error && errorId ? errorId : undefined}
           // text-[16px] na mobile = NO iOS auto-zoom. md+ wraca do skali v4.
           className="h-full w-full flex-1 bg-transparent text-[16px] text-foreground outline-none placeholder:text-muted-foreground/55 md:text-[0.95rem]"
         />
         {trailing}
       </div>
       {error && (
-        <span className="font-mono text-[0.68rem] text-destructive" role="alert">
+        <span id={errorId} className="font-mono text-[0.68rem] text-destructive" role="alert">
           {error}
         </span>
       )}

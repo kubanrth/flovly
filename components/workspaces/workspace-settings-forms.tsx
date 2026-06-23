@@ -118,7 +118,7 @@ export function DeleteWorkspaceForm({
           required
           autoComplete="off"
           autoFocus
-          className="h-12 border-b border-border bg-transparent pb-1 font-mono text-[16px] outline-none focus:border-destructive md:h-10 md:text-[0.95rem]"
+          className="h-12 border-b border-border bg-transparent pb-1 font-mono text-[16px] outline-none focus-visible:border-destructive focus-visible:ring-2 focus-visible:ring-destructive/40 md:h-10 md:text-[0.95rem]"
         />
         {fieldError && (
           <span className="font-mono text-[0.68rem] text-destructive">{fieldError}</span>
@@ -175,7 +175,7 @@ function TextInput({
         maxLength={maxLength}
         aria-invalid={!!error}
         // Mobile v4: 48px tap target + 16px text prevents iOS auto-zoom.
-        className="h-12 border-b border-border bg-transparent pb-1 text-[16px] outline-none focus:border-primary aria-[invalid=true]:border-destructive md:h-10 md:text-[1rem]"
+        className="h-12 border-b border-border bg-transparent pb-1 text-[16px] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive md:h-10 md:text-[1rem]"
       />
       {error && (
         <span className="font-mono text-[0.68rem] text-destructive">{error}</span>
@@ -206,7 +206,7 @@ function TextArea({
         defaultValue={defaultValue}
         maxLength={maxLength}
         aria-invalid={!!error}
-        className="min-h-[3.5rem] resize-none border-b border-border bg-transparent pb-1 text-[16px] outline-none focus:border-primary aria-[invalid=true]:border-destructive md:min-h-[3rem] md:text-[1rem]"
+        className="min-h-[3.5rem] resize-none border-b border-border bg-transparent pb-1 text-[16px] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive md:min-h-[3rem] md:text-[1rem]"
       />
       {error && (
         <span className="font-mono text-[0.68rem] text-destructive">{error}</span>
