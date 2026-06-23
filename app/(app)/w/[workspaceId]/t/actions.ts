@@ -150,7 +150,12 @@ export async function createTaskAction(
     diff: { title: task.title },
   });
 
+  // F12-K106: revalidate wszystkie board view routes (table/kanban/roadmap/etc),
+  // nie tylko workspace overview. Bez "layout" mode Next.js nie invaliduje
+  // dynamic children → user na /w/[id]/b/[bid]/table widzi stare dane do
+  // odświeżenia (klient: "trzeba odświeżyć żeby zobaczyć nowe zadanie").
   revalidatePath(`/w/${parsed.data.workspaceId}`);
+  revalidatePath(`/w/[workspaceId]/b/[boardId]`, "layout");
   await broadcastWorkspaceChange(task.workspaceId, {
     type: "task.changed",
     taskId: task.id,

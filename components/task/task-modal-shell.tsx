@@ -49,6 +49,34 @@ export function TaskModalShell({
     } catch {
       /* sessionStorage off or bad JSON — fallback to back */
     }
+    // F12-K106: fallback gdy sessionStorage puste (klient na świeżym cache
+    // raportuje że po zamknięciu drawer'a wraca na /workspaces zamiast do
+    // tablicy). sessionStorage ustawia się TYLKO w CreateTaskButton po
+    // success — gdy user kliknie EXISTING task w tabeli, taskModalReturnTo
+    // puste → router.back() w pustej historii (deep link / nowy tab) leci
+    // na default workspace overview. document.referrer jest niezawodny.
+    if (!returnTo && typeof document !== "undefined") {
+      try {
+        const ref = document.referrer;
+        if (ref) {
+          const refUrl = new URL(ref);
+          // Same-origin only (security: nie redirect na external referrer).
+          if (refUrl.origin === window.location.origin) {
+            const refPath = refUrl.pathname + refUrl.search + refUrl.hash;
+            // Nie wracaj na ten sam task (refresh) ani na overview workspace
+            // (default fallback który był broken).
+            if (
+              !refPath.includes(`/t/${taskId}`) &&
+              refPath !== "/workspaces"
+            ) {
+              returnTo = refPath;
+            }
+          }
+        }
+      } catch {
+        /* invalid referrer — fallback to router.back() */
+      }
+    }
     // scroll: false → Next.js nie resetuje scroll'a na router push;
     // potem requestAnimationFrame przywraca zapamiętaną pozycję ZANIM
     // base-ui zdąży zrobić własny scroll-restore.
