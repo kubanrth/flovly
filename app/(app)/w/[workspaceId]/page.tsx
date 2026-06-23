@@ -247,20 +247,21 @@ function WorkspaceHero({
           )}
         </div>
 
-        {/* Right cluster — mobile = full width row, desktop = inline */}
+        {/* F12-K109: mobile = search FULL WIDTH osobny rząd, CTAs w drugim
+            rzędzie (basis-full na search wymusza wrap). Wcześniej search +
+            Whiteboard + Nowe zadanie w 1 rzędzie pchały się i search był
+            squeezed do "Szul". */}
         <div className="flex flex-wrap items-center gap-2 max-md:w-full">
-          {/* Glass search bar — purely visual stub for v4 brand polish; we
-              don't have a global search yet (note in handoff). */}
           <label
             htmlFor="ws-hero-search"
-            className="flex h-9 items-center gap-2 rounded-lg border border-white/70 bg-white/65 px-3 font-sans text-[0.82rem] text-muted-foreground backdrop-blur transition-colors focus-within:border-primary/40 focus-within:bg-white/85 max-md:flex-1 dark:border-white/10 dark:bg-white/5 dark:focus-within:bg-white/[0.08]"
+            className="flex h-9 items-center gap-2 rounded-lg border border-white/70 bg-white/65 px-3 font-sans text-[0.82rem] text-muted-foreground backdrop-blur transition-colors focus-within:border-primary/40 focus-within:bg-white/85 max-md:basis-full dark:border-white/10 dark:bg-white/5 dark:focus-within:bg-white/[0.08]"
           >
-            <Search size={14} aria-hidden="true" />
+            <Search size={14} className="shrink-0" aria-hidden="true" />
             <input
               id="ws-hero-search"
               type="search"
               placeholder="Szukaj zadań…"
-              className="bg-transparent text-foreground outline-none placeholder:text-muted-foreground/70 max-md:w-full md:w-[200px]"
+              className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground/70 md:w-[200px] md:flex-initial"
             />
           </label>
 

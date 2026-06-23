@@ -550,7 +550,10 @@ export function SortableBoardsGrid({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={items.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        {/* F12-K109: min-w-0 na grid container żeby grid sam się nie rozszerza
+            ponad parent width (domyślne grid items mają min-width: auto =
+            min-content, co dla view pills row produkuje content > viewport). */}
+        <div className="grid min-w-0 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {items.map((board) => (
             <SortableBoardCard key={board.id} workspaceId={workspaceId} board={board} />
           ))}
@@ -589,14 +592,17 @@ function SortableBoardCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={`group relative ${isDragging ? "cursor-grabbing" : ""}`}
+      className={`group relative min-w-0 ${isDragging ? "cursor-grabbing" : ""}`}
     >
       {/* Karta v4: liquid-glass z backdrop-blur, layered shadow, 3px top strip
           w kolorze workspace. p-5 (większe niż stare p-4), rounded-2xl (18px).
           Spring easing na hover [cubic-bezier(.34,1.56,.64,1)] żeby kafelki
-          "skakały" z odbiciem — sygnatura v4 motion. */}
+          "skakały" z odbiciem — sygnatura v4 motion.
+          F12-K109: min-w-0 na grid item (kafelek nie rozszerza się ponad
+          dostępną kolumnę grida — bez tego flex/grid liczy intrinsic content
+          width = pełna suma pills + tytuł, co wypycha card poza viewport). */}
       <div
-        className="relative flex h-full flex-col gap-3.5 overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-5 pl-12 backdrop-blur-xl shadow-[0_1px_0_rgba(255,255,255,.6)_inset,0_14px_30px_-18px_rgba(76,29,149,.30)] transition-[transform,box-shadow,border-color] duration-300 [transition-timing-function:cubic-bezier(.34,1.56,.64,1)] group-hover:-translate-y-[3px] group-hover:border-primary/30 group-hover:shadow-[0_1px_0_rgba(255,255,255,.7)_inset,0_22px_44px_-18px_rgba(76,29,149,.45),0_30px_70px_-24px_rgba(225,49,143,.20)] max-md:min-h-[200px] md:h-[200px]"
+        className="relative flex h-full min-w-0 flex-col gap-3.5 overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-5 pl-12 backdrop-blur-xl shadow-[0_1px_0_rgba(255,255,255,.6)_inset,0_14px_30px_-18px_rgba(76,29,149,.30)] transition-[transform,box-shadow,border-color] duration-300 [transition-timing-function:cubic-bezier(.34,1.56,.64,1)] group-hover:-translate-y-[3px] group-hover:border-primary/30 group-hover:shadow-[0_1px_0_rgba(255,255,255,.7)_inset,0_22px_44px_-18px_rgba(76,29,149,.45),0_30px_70px_-24px_rgba(225,49,143,.20)] max-md:min-h-[200px] md:h-[200px]"
       >
         {/* 3px top accent strip — wizualna "kotwica" koloru tablicy (v4 hero) */}
         <span

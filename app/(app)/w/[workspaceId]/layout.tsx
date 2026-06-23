@@ -53,7 +53,13 @@ export default async function WorkspaceLayout({
         />
       </header>
 
-      <main className="flex-1 px-4 py-5 md:px-14 md:py-10">{children}</main>
+      {/* F12-K109: min-w-0 overflow-x-hidden — bez nich flex-1 main z workspace
+          overview rozszerzał się ponad viewport gdy w grid items były wide
+          pills (TABELA/KANBAN/WHITEBOARD/ROADMAPA), kafelki się rozjeżdżały
+          poza prawą krawędź ekranu na mobile. */}
+      <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-5 md:px-14 md:py-10">
+        {children}
+      </main>
       {modal}
       <CzesiekFab workspaceId={workspace.id} />
     </>
