@@ -8,6 +8,7 @@
 // - "+ Nowa linia" przycisk na dole tworzy kolejną pustą linię.
 
 import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import {
   DndContext,
   PointerSensor,
@@ -74,6 +75,7 @@ export type BoardTaskMeta = {
 };
 
 export function TaskLineFlow({
+  workspaceId,
   canvasId,
   initialItems,
   initialRows,
@@ -81,6 +83,7 @@ export function TaskLineFlow({
   canEdit,
   onPlacedTaskIdsChange,
 }: {
+  workspaceId: string;
   canvasId: string;
   initialItems: TaskLineFlowItem[];
   initialRows: TaskLineRowMeta[];
@@ -315,6 +318,7 @@ export function TaskLineFlow({
       {sortedRows.map((row) => (
         <LineSection
           key={row.id}
+          workspaceId={workspaceId}
           row={row}
           items={itemsByLine.get(row.id) ?? []}
           canEdit={canEdit}
@@ -345,6 +349,7 @@ export function TaskLineFlow({
 // ─────────── LineSection — pojedyncza linia ──────────────────────────────
 
 function LineSection({
+  workspaceId,
   row,
   items,
   canEdit,
@@ -356,6 +361,7 @@ function LineSection({
   onRename,
   onDeleteLine,
 }: {
+  workspaceId: string;
   row: TaskLineRowMeta;
   items: TaskLineFlowItem[];
   canEdit: boolean;
@@ -490,6 +496,7 @@ function LineSection({
                 return (
                   <Fragment key={item.id}>
                     <FlowSlot
+                      workspaceId={workspaceId}
                       item={item}
                       isLast={isLast}
                       isAnchor={isAnchor}
@@ -524,6 +531,7 @@ function LineSection({
 // Po End anchor'ze NIE rysujemy strzałki — End to terminator linii.
 
 function FlowSlot({
+  workspaceId,
   item,
   isLast,
   isAnchor,
@@ -533,6 +541,7 @@ function FlowSlot({
   onFlowMark,
   canEdit,
 }: {
+  workspaceId: string;
   item: TaskLineFlowItem;
   isLast: boolean;
   isAnchor: boolean;
@@ -556,7 +565,9 @@ function FlowSlot({
   return (
     <div ref={setNodeRef} style={style} {...attributes} className="relative">
       <TaskLineCard
+        workspaceId={workspaceId}
         item={item}
+        isAnchor={isAnchor}
         listeners={canEdit && !isAnchor ? listeners : undefined}
         onRemove={onRemove}
         onFlowMark={onFlowMark}
@@ -608,13 +619,17 @@ function RowWrapDivider() {
 // ─────────── Card — kanban-style ──────────────────────────────────────────
 
 function TaskLineCard({
+  workspaceId,
   item,
+  isAnchor,
   listeners,
   onRemove,
   onFlowMark,
   canEdit,
 }: {
+  workspaceId: string;
   item: TaskLineFlowItem;
+  isAnchor: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   listeners?: any;
   onRemove: () => void;
@@ -633,6 +648,20 @@ function TaskLineCard({
       {...listeners}
       className={`group relative flex w-full flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-sm transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md ${ring} ${listeners ? "cursor-grab active:cursor-grabbing" : ""}`}
     >
+      {/* F12-K112: Link overlay otwiera task drawer po kliku. Anchor nodes
+          (START/END placeholdery) nie mają taskId więc skip. Pointer sensor
+          ma activationConstraint distance: 6 — krótki klik bez ruchu trafia
+          Link, ruch > 6px aktywuje drag i Link nie odpala onClick.
+          Buttons (X / Start / Koniec / Clear) mają e.stopPropagation() i
+          relative z-10 — siedzą NAD Link overlay'em, więc ich klik nie
+          triggers nav. */}
+      {!isAnchor && (
+        <Link
+          href={`/w/${workspaceId}/t/${item.taskId}`}
+          aria-label={`Otwórz zadanie: ${item.taskTitle}`}
+          className="absolute inset-0 z-0 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        />
+      )}
       {item.flowMark === "start" && (
         <span className="absolute -top-2 left-3 rounded-full bg-emerald-500 px-2 py-0.5 font-mono text-[0.55rem] uppercase tracking-[0.16em] text-white shadow-sm">
           Start
@@ -644,7 +673,7 @@ function TaskLineCard({
         </span>
       )}
 
-      <div className="flex items-center gap-2">
+      <div className="relative z-10 flex items-center gap-2">
         {item.statusColor && (
           <span
             className="h-2 w-2 shrink-0 rounded-full"
@@ -672,6 +701,7 @@ function TaskLineCard({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
+              e.preventDefault();
               onRemove();
             }}
             onPointerDown={(e) => e.stopPropagation()}
@@ -684,12 +714,12 @@ function TaskLineCard({
         )}
       </div>
 
-      <div className="line-clamp-2 text-[0.88rem] font-semibold leading-tight text-foreground">
+      <div className="relative z-10 line-clamp-2 text-[0.88rem] font-semibold leading-tight text-foreground">
         {item.taskTitle}
       </div>
 
       {canEdit && (
-        <div className="flex items-center gap-1 border-t border-border/60 pt-2">
+        <div className="relative z-10 flex items-center gap-1 border-t border-border/60 pt-2">
           <FlowMarkButton
             active={item.flowMark === "start"}
             onClick={(e) => {

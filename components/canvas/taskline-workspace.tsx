@@ -93,6 +93,7 @@ export function TaskLineWorkspace({
         className="glass-surface relative min-h-[420px] flex-1 overflow-hidden rounded-[22px] shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)]"
       >
         <TaskLineFlow
+          workspaceId={workspaceId}
           canvasId={canvasId}
           initialItems={initialItems}
           initialRows={initialRows}
