@@ -271,6 +271,9 @@ function SortableWorkspaceRow({ workspace: w }: { workspace: WorkspaceRow }) {
     background: isDragging ? "var(--accent)" : undefined,
   } as const;
 
+  const swatch = useMemo(() => swatchFor(w.id), [w.id]);
+  const initials = useMemo(() => initialsFor(w.name), [w.name]);
+
   return (
     <li
       ref={setNodeRef}
@@ -288,36 +291,49 @@ function SortableWorkspaceRow({ workspace: w }: { workspace: WorkspaceRow }) {
         >
           <GripVertical size={14} />
         </button>
-        {/* Mobile: vertical stack — desktop grid columns ściskały nazwę
-            workspace'a do 2 znaków (klient: "Pr...", "Ki...", "E..."). Tytuł
-            ma teraz pełną szerokość w pierwszym rzędzie, meta-info pod nim
-            jako mono-pille. md+ wraca do gridu z 4 kolumnami. */}
+        {/* F12-K110: dodany init badge (workspace color identity) na mobile
+            i desktop — mirror SortableBoardRow z F12-K108. Wcześniej list
+            view nie miał badge'a, kafelki miały — visual mismatch między
+            modes na desktopie i między mobile/desktop. */}
         <Link
           href={`/w/${w.id}`}
-          className="group flex flex-1 flex-col gap-2 px-3 py-3 transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none md:grid md:grid-cols-[minmax(0,1fr)_90px_130px_30px] md:items-center md:gap-4 md:py-3.5"
+          className="group flex flex-1 flex-col gap-2 px-3 py-3 transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none md:grid md:grid-cols-[40px_minmax(0,1fr)_90px_130px_30px] md:items-center md:gap-4 md:py-3.5"
         >
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="truncate font-display text-[1.05rem] font-semibold leading-tight tracking-[-0.01em] transition-colors group-hover:text-primary">
-              {w.name}
+          {/* TOP row mobile / col 1+2 desktop: badge + nazwa */}
+          <div className="flex min-w-0 items-center gap-3 md:contents">
+            <span
+              aria-hidden
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-xl font-display text-[0.72rem] font-bold text-white"
+              style={{
+                background: swatch.color,
+                boxShadow: `0 6px 14px -5px ${swatch.shadow}`,
+              }}
+            >
+              {initials}
             </span>
-            <span className="truncate font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
-              /{w.slug}
-              {w.description ? ` · ${w.description}` : ""}
-            </span>
+
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="truncate font-display text-[1.05rem] font-semibold leading-tight tracking-[-0.01em] transition-colors group-hover:text-primary">
+                {w.name}
+              </span>
+              <span className="truncate font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
+                /{w.slug}
+                {w.description ? ` · ${w.description}` : ""}
+              </span>
+            </div>
           </div>
 
-          {/* Mobile: meta jako bottom row (pille zamiast kolumn). md+: trzy
-              osobne kolumny grid'a. */}
-          <div className="flex items-center gap-2 md:contents">
-            <span className="inline-flex items-center rounded-full border border-border bg-card px-2 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground md:rounded-none md:border-0 md:bg-transparent md:px-0">
+          {/* BOTTOM row mobile / col 3+4+5 desktop: role + boards + arrow */}
+          <div className="flex items-center gap-2 max-md:pl-[48px] md:contents">
+            <span className="inline-flex shrink-0 items-center rounded-full border border-border bg-card px-2 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground md:rounded-none md:border-0 md:bg-transparent md:px-0">
               {w.role.toLowerCase()}
             </span>
-            <span className="inline-flex items-center rounded-full border border-border bg-card px-2 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground md:rounded-none md:border-0 md:bg-transparent md:px-0">
+            <span className="inline-flex shrink-0 items-center rounded-full border border-border bg-card px-2 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground md:rounded-none md:border-0 md:bg-transparent md:px-0">
               {w.boardCount} {boardPl(w.boardCount)}
             </span>
             <ArrowRight
               size={14}
-              className="ml-auto text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary md:ml-0 md:justify-self-end"
+              className="ml-auto shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary md:ml-0 md:justify-self-end"
             />
           </div>
         </Link>
