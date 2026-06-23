@@ -1325,6 +1325,20 @@ body[data-czesiek-open="true"] .mobile-sidebar-toggle {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
+ * F12-K115: ZOOM LOCK (mobile) — klient nie chce pinch / double-tap zoom.
+ * Viewport meta (layout.tsx) handle'uje większość. CSS touch-action jest
+ * fallback'iem dla iOS Safari < 16 gdzie userScalable=false bywał ignorowany.
+ *
+ * pan-x pan-y: zostawia normal scroll (vertical + horizontal), blokuje
+ * gesty pinch i double-tap zoom. Single-finger scroll/click działa.
+ *
+ * `none` byłoby drastyczne (zabijałoby też scroll). pan-x pan-y to balance.
+ * ──────────────────────────────────────────────────────────────────────── */
+html {
+  touch-action: pan-x pan-y;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
  * F12-K113: BROWSER AUTOFILL — override default żółtego tła.
  * Chrome/Safari/Edge na zapamiętanych hasłach maluje input żółtym.
  *

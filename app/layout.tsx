@@ -37,9 +37,17 @@ export const metadata: Metadata = {
 // viewportFit=cover żeby env(safe-area-inset-*) zwracało prawdziwe wartości
 // na iPhonie X+. Bez tego FAB / sticky elements mogłyby nakładać się na
 // home indicator / notch area.
+// F12-K115: klient zażyczył blokady zoom — aplikacja zachowuje się jak
+// native app (no pinch-zoom, no double-tap zoom). minimumScale = maximumScale = 1
+// fix'uje skalę, userScalable = false dezaktywuje gesty zoom (Android +
+// Safari iOS 16+ respektują). UWAGA: to accessibility anti-pattern (WCAG
+// 1.4.4), ale klient pomimo informacji o tym zażyczył jednoznacznie.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  minimumScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
 };
 
