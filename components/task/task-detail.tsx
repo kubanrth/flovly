@@ -273,7 +273,7 @@ export function TaskDetail({
               type="button"
               aria-label="Pełny widok"
               className="grid h-[30px] w-[30px] place-items-center rounded-[9px] border border-border bg-card/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-              onClick={() => router.push(`/w/${workspaceId}/b/${boardId}/t/${task.id}`)}
+              onClick={() => router.push(`/w/${workspaceId}/t/${task.id}`)}
             >
               <Maximize2 size={14} />
             </button>
@@ -358,7 +358,7 @@ export function TaskDetail({
           BODY — 2 kolumny: main (1fr) + sticky meta sidebar (280px)
           Mobile (max-md): meta sidebar zwija się pod main column.
           ===================================================================== */}
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_320px]">
         {/* ============ MAIN COLUMN ============ */}
         <main className="flex min-w-0 flex-col gap-8">
           {/* Description — Tiptap rich text editor */}

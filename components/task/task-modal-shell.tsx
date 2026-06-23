@@ -108,7 +108,7 @@ export function TaskModalShell({
             z-[200] (popoverInModal) żeby wyjść nad popup. */}
         <BaseDialog.Backdrop className="fixed inset-0 z-[100] bg-background/70 backdrop-blur-sm data-[closed]:opacity-0 data-[open]:opacity-100" />
         <BaseDialog.Popup
-          className="fixed inset-y-0 right-0 z-[110] flex w-full max-w-[860px] flex-col overflow-y-auto border-l border-border bg-background shadow-[0_18px_40px_-16px_rgba(76,29,149,0.40),0_30px_70px_-24px_rgba(124,92,255,0.24)] data-[closed]:translate-x-full data-[open]:translate-x-0 transition-transform duration-200"
+          className="fixed inset-y-0 right-0 z-[110] flex w-full max-w-[960px] flex-col overflow-y-auto border-l border-border bg-background shadow-[0_18px_40px_-16px_rgba(76,29,149,0.40),0_30px_70px_-24px_rgba(124,92,255,0.24)] data-[closed]:translate-x-full data-[open]:translate-x-0 transition-transform duration-200"
           initialFocus={undefined}
         >
           {/* F12-K41: padding sm:px-8 — na mobile (~360-400px szerokości
