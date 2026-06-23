@@ -192,7 +192,7 @@ export function PortalDropdown<V extends string = string>({
               top: coords.top,
               left: coords.left,
               width: coords.width,
-              zIndex: 60,
+              zIndex: 100,
             }}
             className="overflow-hidden rounded-xl border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
           >

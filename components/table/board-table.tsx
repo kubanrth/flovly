@@ -1774,7 +1774,7 @@ function AddColumnButton({
               width: 320,
               maxHeight: coords.maxHeight,
             }}
-            className="z-[60] flex flex-col overflow-hidden rounded-xl border border-border/70 bg-popover/95 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)] backdrop-blur-md"
+            className="z-[100] flex flex-col overflow-hidden rounded-xl border border-border/70 bg-popover/95 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)] backdrop-blur-md"
           >
             <div className="shrink-0 border-b border-border/70 px-3 py-2.5">
               <p className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.1em] text-muted-foreground">

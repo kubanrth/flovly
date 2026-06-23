@@ -202,7 +202,7 @@ export function AssigneePickerCell({
               width: 300,
               maxHeight: coords.maxHeight,
             }}
-            className="popover-glass popover-enter shadow-aura z-[80] flex flex-col overflow-hidden p-2"
+            className="popover-glass popover-enter shadow-aura z-[100] flex flex-col overflow-hidden p-2"
           >
             <div className="mb-1.5 shrink-0">
               <span className="eyebrow mb-1.5 block px-1.5 text-[0.66rem]">
@@ -527,7 +527,7 @@ export function TagPickerCell({
               width: 280,
               maxHeight: coords.maxHeight,
             }}
-            className="popover-glass popover-enter shadow-aura z-[80] flex flex-col overflow-hidden p-2"
+            className="popover-glass popover-enter shadow-aura z-[100] flex flex-col overflow-hidden p-2"
           >
             <div className="mb-1.5 shrink-0">
               <span className="eyebrow mb-1.5 block px-1.5 text-[0.66rem]">

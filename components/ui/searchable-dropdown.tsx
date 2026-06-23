@@ -231,7 +231,7 @@ export function SearchableDropdown({
               width: coords.width,
               maxHeight: coords.maxHeight,
             }}
-            className="z-[60] flex flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+            className="z-[100] flex flex-col overflow-hidden rounded-xl border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
           >
             {options.length > 6 && (
               <div className="shrink-0 border-b border-border px-2.5 py-2">

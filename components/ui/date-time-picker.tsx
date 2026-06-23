@@ -273,7 +273,7 @@ export function DateTimePicker({
             onPointerDownCapture={(e) => e.stopPropagation()}
             onMouseDownCapture={(e) => e.stopPropagation()}
             style={{ position: "fixed", top: coords.top, left: coords.left, width: 320 }}
-            className="popover-glass popover-enter shadow-aura z-[80] flex flex-col overflow-hidden"
+            className="popover-glass popover-enter shadow-aura z-[100] flex flex-col overflow-hidden"
           >
             {/* Presets row — Dziś / Jutro / W tygodniu — v4 spec */}
             <div className="flex shrink-0 items-center gap-1.5 px-3 pt-3">
