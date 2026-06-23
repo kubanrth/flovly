@@ -201,19 +201,19 @@ function WorkspaceHero({
   return (
     <section
       aria-label="Workspace overview"
-      className="relative overflow-hidden rounded-[22px] border border-white/60 bg-white/70 px-5 py-4 shadow-[0_18px_40px_-24px_rgba(76,29,149,0.26)] md:px-6 md:py-5 dark:border-white/10 dark:bg-white/[0.04]"
+      // F12-K107: mobile bez glass card wrapper + blobs (klient raportował
+      // że hero wygląda mały vs pełnoekranowe board cards = visual mismatch).
+      // Mobile = inline (border-b only). Desktop md+ = glass card z aurą.
+      className="relative md:overflow-hidden md:rounded-[22px] md:border md:border-white/60 md:bg-white/70 md:px-6 md:py-5 md:shadow-[0_18px_40px_-24px_rgba(76,29,149,0.26)] md:dark:border-white/10 md:dark:bg-white/[0.04] max-md:border-b max-md:border-border max-md:pb-4"
     >
-      {/* F12-K85 perf: blobs są STATIC. animate-fl-drift dawał continuous
-          repaint (transform+scale w 24s loop) który zabijał GPU — klient
-          raportuje zamulanie. Plus backdrop-blur-2xl na sekcji usunięty
-          (zostaje sam gradient z aury). */}
+      {/* F12-K85 perf: blobs są STATIC. F12-K107: tylko desktop (md+). */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-32 -left-24 h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(122,51,236,0.28),transparent_65%)] blur-3xl"
+        className="pointer-events-none absolute -top-32 -left-24 hidden h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(122,51,236,0.28),transparent_65%)] blur-3xl md:block"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-28 -right-16 h-[380px] w-[380px] rounded-full bg-[radial-gradient(circle,rgba(225,49,143,0.22),transparent_65%)] blur-3xl"
+        className="pointer-events-none absolute -bottom-28 -right-16 hidden h-[380px] w-[380px] rounded-full bg-[radial-gradient(circle,rgba(225,49,143,0.22),transparent_65%)] blur-3xl md:block"
       />
 
       {/* Foreground row: eyebrow + name + avatars (left)  |  search + CTA (right) */}
@@ -223,7 +223,7 @@ function WorkspaceHero({
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="text-eyebrow">Workspace</span>
             <span
-              className="truncate font-display text-[17px] font-bold leading-tight tracking-[-0.015em] text-foreground"
+              className="truncate font-display text-[20px] font-bold leading-tight tracking-[-0.015em] text-foreground md:text-[17px]"
               title={workspaceName}
             >
               {workspaceName}
@@ -256,20 +256,20 @@ function WorkspaceHero({
           </div>
         </div>
 
-        {/* Right cluster */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Right cluster — mobile = full width row, desktop = inline */}
+        <div className="flex flex-wrap items-center gap-2 max-md:w-full">
           {/* Glass search bar — purely visual stub for v4 brand polish; we
               don't have a global search yet (note in handoff). */}
           <label
             htmlFor="ws-hero-search"
-            className="flex h-9 items-center gap-2 rounded-lg border border-white/70 bg-white/65 px-3 font-sans text-[0.82rem] text-muted-foreground backdrop-blur transition-colors focus-within:border-primary/40 focus-within:bg-white/85 dark:border-white/10 dark:bg-white/5 dark:focus-within:bg-white/[0.08]"
+            className="flex h-9 items-center gap-2 rounded-lg border border-white/70 bg-white/65 px-3 font-sans text-[0.82rem] text-muted-foreground backdrop-blur transition-colors focus-within:border-primary/40 focus-within:bg-white/85 max-md:flex-1 dark:border-white/10 dark:bg-white/5 dark:focus-within:bg-white/[0.08]"
           >
             <Search size={14} aria-hidden="true" />
             <input
               id="ws-hero-search"
               type="search"
               placeholder="Szukaj zadań…"
-              className="w-[160px] bg-transparent text-foreground outline-none placeholder:text-muted-foreground/70 md:w-[200px]"
+              className="bg-transparent text-foreground outline-none placeholder:text-muted-foreground/70 max-md:w-full md:w-[200px]"
             />
           </label>
 

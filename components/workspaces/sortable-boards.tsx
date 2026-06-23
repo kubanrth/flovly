@@ -224,14 +224,17 @@ function SortableBoardRow({
         >
           <GripVertical size={14} />
         </button>
+        {/* F12-K107: mobile dwa rzędy (badge+title TOP, pills+counter BOTTOM)
+            żeby długie nazwy nie ucinały się i counter nie wystawał poza
+            ekran. Desktop: oryginalny grid 5-col. */}
         <Link
           href={`/w/${workspaceId}/b/${board.id}/table`}
-          className="group flex flex-1 items-center gap-3 px-3 py-3 transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none md:grid md:grid-cols-[40px_minmax(0,1fr)_180px_70px_30px] md:gap-4 md:py-3.5"
+          className="group flex flex-1 flex-wrap items-center gap-y-2 px-3 py-3 transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none md:grid md:grid-cols-[40px_minmax(0,1fr)_180px_70px_30px] md:flex-nowrap md:gap-4 md:py-3.5"
         >
           {/* Init badge — workspace color identity, mirror grid card */}
           <span
             aria-hidden
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl font-display text-[0.72rem] font-bold text-white"
+            className="mr-3 grid h-9 w-9 shrink-0 place-items-center rounded-xl font-display text-[0.72rem] font-bold text-white md:mr-0"
             style={{
               background: swatch.color,
               boxShadow: `0 6px 14px -5px ${swatch.shadow}`,
@@ -240,7 +243,7 @@ function SortableBoardRow({
             {initials}
           </span>
 
-          <div className="flex min-w-0 flex-col gap-0.5">
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5 md:flex-initial">
             <span className="truncate font-display text-[1.05rem] font-semibold leading-tight tracking-[-0.01em] transition-colors group-hover:text-primary">
               {board.name}
             </span>
@@ -249,8 +252,8 @@ function SortableBoardRow({
             </span>
           </div>
 
-          {/* Meta: view pills + task count + arrow. Mobile: bottom row pills. */}
-          <div className="flex items-center gap-2 md:contents">
+          {/* Meta: view pills + task count + arrow. Mobile: bottom row pełna szerokość. */}
+          <div className="flex w-full flex-wrap items-center gap-2 max-md:pl-[48px] md:contents md:w-auto md:pl-0">
             <div className="flex flex-wrap items-center gap-1">
               {visibleViews.map((view) => {
                 const meta = VIEW_META[view];
@@ -259,7 +262,7 @@ function SortableBoardRow({
                   <span
                     key={view}
                     title={meta.label}
-                    className={`inline-flex h-6 items-center gap-1 rounded-lg border border-border bg-background/70 px-1.5 font-mono text-[0.6rem] uppercase tracking-[0.12em] backdrop-blur-sm ${meta.accent}`}
+                    className={`inline-flex h-6 shrink-0 items-center gap-1 rounded-lg border border-border bg-background/70 px-1.5 font-mono text-[0.6rem] uppercase tracking-[0.12em] backdrop-blur-sm ${meta.accent}`}
                   >
                     <Icon size={10} />
                     <span className="max-md:hidden">{meta.label}</span>
@@ -267,17 +270,17 @@ function SortableBoardRow({
                 );
               })}
               {moreCount > 0 && (
-                <span className="inline-flex h-6 items-center rounded-lg bg-primary/10 px-1.5 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-primary">
+                <span className="inline-flex h-6 shrink-0 items-center rounded-lg bg-primary/10 px-1.5 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-primary">
                   +{moreCount}
                 </span>
               )}
             </div>
-            <span className="inline-flex items-center rounded-full border border-border bg-card px-2 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground md:rounded-none md:border-0 md:bg-transparent md:px-0">
+            <span className="inline-flex shrink-0 items-center rounded-full border border-border bg-card px-2 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground md:rounded-none md:border-0 md:bg-transparent md:px-0">
               {board.taskCount} {taskPl(board.taskCount)}
             </span>
             <ArrowRight
               size={14}
-              className="ml-auto text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary md:ml-0 md:justify-self-end"
+              className="ml-auto shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary md:ml-0 md:justify-self-end"
             />
           </div>
         </Link>
