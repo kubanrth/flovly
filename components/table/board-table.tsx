@@ -3,6 +3,7 @@
 import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   createColumnHelper,
   flexRender,
@@ -1570,13 +1571,25 @@ function DateCell({
       <MutedDash />
     );
   }
-  // variant="cell" strips input-style border; autosave via patchTaskAction on every pick/clear.
+  // F12-K122: try/catch wokół patchTaskAction. Wcześniej startTransition
+  // połykał błędy (np. milestone constraint date range), klient widział że
+  // kalendarz się zamyka ale po refresh wracała stara data. Teraz error =
+  // alert z server message + router.refresh() żeby UI od razu pokazało
+  // canonical state z DB (lokalny DateTimePicker state.date jest dynamic ale
+  // po refresh `value` prop dostaje aktualną wartość → useEffect setDate sync).
+  const router = useRouter();
   const persist = (iso: string) => {
     const fd = new FormData();
     fd.set("id", taskId);
     fd.set(field, iso);
     startTransition(async () => {
-      await patchTaskAction(fd);
+      try {
+        await patchTaskAction(fd);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Nie udało się zapisać daty.";
+        window.alert(msg);
+        router.refresh();
+      }
     });
   };
   return (

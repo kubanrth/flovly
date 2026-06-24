@@ -928,11 +928,21 @@ export async function patchTaskAction(formData: FormData) {
   // Layout-level revalidation covers /table, /kanban, /v/[viewId], /roadmap,
   // /gantt in one call. Without it, modal edits stay stale on custom views.
   revalidatePath(`/w/[workspaceId]/b/[boardId]`, "layout");
-  await broadcastWorkspaceChange(updated.workspaceId, {
-    type: "task.changed",
-    taskId: updated.id,
-    boardId: updated.boardId,
-  });
+  // F12-K122: broadcast try/catch — Supabase realtime padnięcie (timeout
+  // z K99) NIE może wywalić całego action po sukcesie DB. Wcześniej throw
+  // tutaj fail'ował response → klient startTransition łapał reject silently
+  // → cell wyglądał jakby zapisał (kalendarz close) ale po refresh wracał
+  // stary stan (bo data była zapisana w DB ale klient nie dostał OK,
+  // może rollbackowal local state lub po prostu nie pokazywał update).
+  try {
+    await broadcastWorkspaceChange(updated.workspaceId, {
+      type: "task.changed",
+      taskId: updated.id,
+      boardId: updated.boardId,
+    });
+  } catch {
+    /* broadcast non-fatal — DB save + revalidate succeeded */
+  }
 
   // Only notify when statusColumnId actually changed — patches may be title/date only.
   if (statusChanged) {
