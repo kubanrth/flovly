@@ -63,11 +63,16 @@ export function TaskModalShell({
           // Same-origin only (security: nie redirect na external referrer).
           if (refUrl.origin === window.location.origin) {
             const refPath = refUrl.pathname + refUrl.search + refUrl.hash;
-            // Nie wracaj na ten sam task (refresh) ani na overview workspace
-            // (default fallback który był broken).
+            // F12-K119: skip każdy /t/<id> path (nie tylko current taskId).
+            // Wcześniej user: task A → task B → close → referrer=task A →
+            // otwierało task A zamiast tabeli. Plus skip /workspaces overview
+            // (default fallback) i routes z @modal który nie powinien być
+            // returnTo (modal segment, nie real page).
+            const hasTaskPath = /\/t\/[A-Za-z0-9_-]+/.test(refPath);
             if (
-              !refPath.includes(`/t/${taskId}`) &&
-              refPath !== "/workspaces"
+              !hasTaskPath &&
+              refPath !== "/workspaces" &&
+              !refPath.includes("/@modal/")
             ) {
               returnTo = refPath;
             }

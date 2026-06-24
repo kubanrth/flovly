@@ -217,11 +217,21 @@ export async function setTaskPriorityAction(
     diff: { from: task.priority, to: parsed.data.priority },
   });
 
-  await broadcastWorkspaceChange(task.workspaceId, {
-    type: "task.changed",
-    taskId: task.id,
-    boardId: task.boardId,
-  });
+  // F12-K119: revalidatePath żeby drawer + standalone page + list views
+  // pokazały nowy priorytet bez F5. Plus broadcast w try/catch — jeśli
+  // realtime channel padnie (Supabase down), action nie crashuje całego
+  // route i user nie widzi "This page couldn't load".
+  revalidatePath(`/w/${task.workspaceId}/t/${task.id}`);
+  revalidatePath(`/w/[workspaceId]/b/[boardId]`, "layout");
+  try {
+    await broadcastWorkspaceChange(task.workspaceId, {
+      type: "task.changed",
+      taskId: task.id,
+      boardId: task.boardId,
+    });
+  } catch {
+    /* broadcast failure non-fatal — DB write succeeded, UI revalidate'd */
+  }
 
   return { ok: true };
 }

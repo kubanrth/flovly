@@ -273,7 +273,14 @@ export function TaskDetail({
               type="button"
               aria-label="Pełny widok"
               className="grid h-[30px] w-[30px] place-items-center rounded-[9px] border border-border bg-card/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-              onClick={() => router.push(`/w/${workspaceId}/t/${task.id}`)}
+              onClick={() => {
+                // F12-K119: window.location zamiast router.push — escape z
+                // intercepting modal route (@modal/(.)t/[taskId]). router.push
+                // z poziomu drawer'a do tego samego URL'a jest no-op (Next już
+                // tam jest), plus intercept route zostaje aktywny. Full nav
+                // wymusza ponowny resolve do prawdziwego page.tsx (nie modal).
+                window.location.assign(`/w/${workspaceId}/t/${task.id}`);
+              }}
             >
               <Maximize2 size={14} />
             </button>

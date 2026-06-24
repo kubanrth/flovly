@@ -29,10 +29,16 @@ export type UpdateMilestoneState =
   | { ok: false; error?: string; fieldErrors?: CreateFieldErrors }
   | null;
 
+// F12-K119: pojedynczy revalidatePath z mode "layout" zamiast 3 sekwencyjnych
+// calls per-view. Wcześniej milestone create/update/delete czekał na 3 SSR
+// rebuilds (roadmap + table + kanban) — klient: "milestones zapisują się
+// w chuj długo". Layout mode invaliduje WSZYSTKIE dynamic children
+// (/roadmap, /table, /kanban, /gantt, /whiteboard, /taskline, /calendar)
+// w 1 wywołaniu, plus oszczędza ~2 rebuild'y.
 function revalidate(workspaceId: string, boardId: string) {
-  revalidatePath(`/w/${workspaceId}/b/${boardId}/roadmap`);
-  revalidatePath(`/w/${workspaceId}/b/${boardId}/table`);
-  revalidatePath(`/w/${workspaceId}/b/${boardId}/kanban`);
+  void workspaceId;
+  void boardId;
+  revalidatePath(`/w/[workspaceId]/b/[boardId]`, "layout");
 }
 
 export async function createMilestoneAction(
