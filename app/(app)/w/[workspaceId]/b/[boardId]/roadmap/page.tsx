@@ -19,46 +19,61 @@ export default async function RoadmapPage({
   const { workspaceId, boardId } = await params;
   const ctx = await requireWorkspaceMembership(workspaceId);
 
-  const board = await db.board.findFirst({
-    where: { id: boardId, workspaceId, deletedAt: null },
-    include: {
-      workspace: { select: { enabledViews: true } },
-      views: { where: { type: "ROADMAP" } },
-      milestones: {
-        where: { deletedAt: null },
-        orderBy: [{ orderIndex: "asc" }, { startAt: "asc" }],
-        include: {
-          assignee: { select: { id: true, name: true, email: true, avatarUrl: true } },
-          tasks: {
-            where: { deletedAt: null },
-            select: {
-              id: true,
-              title: true,
-              statusColumnId: true,
+  // F12-K121: board + memberships paralel (były sequential) — board ma
+  // deep includes (milestones + assignee + tasks + parentLinks + child),
+  // memberships jest niezależna. Promise.all daje ~50% szybciej dla
+  // tego SSR fetch'a który blokuje auto-refresh po milestone create.
+  // Plus tasks take: 50 (cap dla edge case milestones z 500+ taskami).
+  const [board, memberships] = await Promise.all([
+    db.board.findFirst({
+      where: { id: boardId, workspaceId, deletedAt: null },
+      include: {
+        workspace: { select: { enabledViews: true } },
+        views: { where: { type: "ROADMAP" } },
+        milestones: {
+          where: { deletedAt: null },
+          orderBy: [{ orderIndex: "asc" }, { startAt: "asc" }],
+          include: {
+            assignee: { select: { id: true, name: true, email: true, avatarUrl: true } },
+            tasks: {
+              where: { deletedAt: null },
+              take: 50,
+              select: {
+                id: true,
+                title: true,
+                statusColumnId: true,
+              },
             },
-          },
-          // Aggregator side: children of this milestone (other boards' milestones
-          // it aggregates). We filter out deleted children at query time since
-          // soft-deletes leave the link row behind.
-          parentLinks: {
-            where: { child: { deletedAt: null, board: { deletedAt: null } } },
-            include: {
-              child: {
-                select: {
-                  id: true,
-                  title: true,
-                  startAt: true,
-                  stopAt: true,
-                  boardId: true,
-                  board: { select: { name: true } },
+            // Aggregator side: children of this milestone (other boards' milestones
+            // it aggregates). We filter out deleted children at query time since
+            // soft-deletes leave the link row behind.
+            parentLinks: {
+              where: { child: { deletedAt: null, board: { deletedAt: null } } },
+              include: {
+                child: {
+                  select: {
+                    id: true,
+                    title: true,
+                    startAt: true,
+                    stopAt: true,
+                    boardId: true,
+                    board: { select: { name: true } },
+                  },
                 },
               },
             },
           },
         },
       },
-    },
-  });
+    }),
+    db.workspaceMembership.findMany({
+      where: { workspaceId },
+      include: {
+        user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+      },
+      orderBy: { joinedAt: "asc" },
+    }),
+  ]);
   if (!board) notFound();
 
   // When this board is an aggregator, fetch other boards' milestones to feed
@@ -83,14 +98,6 @@ export default async function RoadmapPage({
         orderBy: { name: "asc" },
       })
     : [];
-
-  const memberships = await db.workspaceMembership.findMany({
-    where: { workspaceId },
-    include: {
-      user: { select: { id: true, name: true, email: true, avatarUrl: true } },
-    },
-    orderBy: { joinedAt: "asc" },
-  });
 
   const roadmapView = board.views[0];
   const background = (roadmapView?.background ?? null) as BackgroundConfig | null;
