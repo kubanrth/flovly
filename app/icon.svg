@@ -9,8 +9,7 @@
       <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
     </linearGradient>
   </defs>
-  <rect x="0" y="0" width="48" height="48" rx="14" fill="url(#g)"/>
-  <rect x="0" y="0" width="48" height="24" rx="14" fill="url(#sheen)" opacity="0.35"/>
-  <path d="M10 13L24 32L38 13" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
-  <path d="M10 22L24 41L38 22" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="0" y="0" width="48" height="48" rx="12" fill="url(#g)"/>
+  <rect x="0" y="0" width="48" height="22" rx="12" fill="url(#sheen)" opacity="0.3"/>
+  <path d="M16 12H34V18H22V22H32V28H22V37H16V12Z" fill="#fff"/>
 </svg>
