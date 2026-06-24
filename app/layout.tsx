@@ -32,6 +32,20 @@ export const metadata: Metadata = {
   title: "FLOVLY · System Zarządzania Projektami",
   description: "Wewnętrzny system zarządzania projektami.",
   robots: { index: false, follow: false },
+  // F12-K125: opengraph + twitter cards żeby link preview (Telegram, Slack,
+  // Messenger, FB) renderował brand image zamiast Vercel default trójkąta.
+  // Image route auto-resolves do app/opengraph-image.tsx (Next.js convention).
+  openGraph: {
+    title: "FLOVLY",
+    description: "Wewnętrzny system zarządzania projektami.",
+    siteName: "FLOVLY",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "FLOVLY",
+    description: "Wewnętrzny system zarządzania projektami.",
+  },
 };
 
 // viewportFit=cover żeby env(safe-area-inset-*) zwracało prawdziwe wartości
