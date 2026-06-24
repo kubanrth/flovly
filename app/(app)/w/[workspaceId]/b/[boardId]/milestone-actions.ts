@@ -68,28 +68,36 @@ export async function createMilestoneAction(
 
   const ctx = await requireWorkspaceAction(parsed.data.workspaceId, "milestone.create");
 
-  const board = await db.board.findFirst({
-    where: { id: parsed.data.boardId, workspaceId: parsed.data.workspaceId, deletedAt: null },
-  });
+  // F12-K120: 3 niezależne queries paralelne (Promise.all) — wcześniej 3
+  // sequential roundtripy do Coolify Postgres = ~1.5s overhead na samych
+  // network'ach. Plus writeAudit fire-and-forget (audit log nie jest
+  // krytyczny dla UX — może lecieć w tle).
+  const [board, member, last] = await Promise.all([
+    db.board.findFirst({
+      where: { id: parsed.data.boardId, workspaceId: parsed.data.workspaceId, deletedAt: null },
+      select: { id: true },
+    }),
+    parsed.data.assigneeId
+      ? db.workspaceMembership.findUnique({
+          where: {
+            workspaceId_userId: {
+              workspaceId: parsed.data.workspaceId,
+              userId: parsed.data.assigneeId,
+            },
+          },
+          select: { workspaceId: true },
+        })
+      : Promise.resolve(null),
+    db.milestone.findFirst({
+      where: { boardId: parsed.data.boardId, deletedAt: null },
+      orderBy: { orderIndex: "desc" },
+      select: { orderIndex: true },
+    }),
+  ]);
   if (!board) return { ok: false, error: "Tablica nie istnieje." };
-
-  // Assignee must be a workspace member.
-  if (parsed.data.assigneeId) {
-    const member = await db.workspaceMembership.findUnique({
-      where: {
-        workspaceId_userId: {
-          workspaceId: parsed.data.workspaceId,
-          userId: parsed.data.assigneeId,
-        },
-      },
-    });
-    if (!member) return { ok: false, fieldErrors: { assigneeId: "Nie jest członkiem." } };
+  if (parsed.data.assigneeId && !member) {
+    return { ok: false, fieldErrors: { assigneeId: "Nie jest członkiem." } };
   }
-
-  const last = await db.milestone.findFirst({
-    where: { boardId: parsed.data.boardId, deletedAt: null },
-    orderBy: { orderIndex: "desc" },
-  });
 
   const milestone = await db.milestone.create({
     data: {
@@ -107,14 +115,15 @@ export async function createMilestoneAction(
     },
   });
 
-  await writeAudit({
+  // Fire-and-forget audit — nie blokuje response.
+  void writeAudit({
     workspaceId: milestone.workspaceId,
     objectType: "Milestone",
     objectId: milestone.id,
     actorId: ctx.userId,
     action: "milestone.created",
     diff: { title: milestone.title },
-  });
+  }).catch((e) => console.error("[milestone.create] audit failed:", e));
 
   revalidate(milestone.workspaceId, milestone.boardId);
   return { ok: true, milestoneId: milestone.id };
@@ -164,14 +173,15 @@ export async function updateMilestoneAction(
     },
   });
 
-  await writeAudit({
+  // F12-K120: fire-and-forget audit (nie blokuje response klienta).
+  void writeAudit({
     workspaceId: existing.workspaceId,
     objectType: "Milestone",
     objectId: existing.id,
     actorId: ctx.userId,
     action: "milestone.updated",
     diff: { title: parsed.data.title },
-  });
+  }).catch((e) => console.error("[milestone.update] audit failed:", e));
 
   revalidate(existing.workspaceId, existing.boardId);
   return { ok: true, milestoneId: existing.id };
@@ -199,14 +209,15 @@ export async function deleteMilestoneAction(formData: FormData) {
     }),
   ]);
 
-  await writeAudit({
+  // F12-K120: fire-and-forget audit (nie blokuje response klienta).
+  void writeAudit({
     workspaceId: existing.workspaceId,
     objectType: "Milestone",
     objectId: existing.id,
     actorId: ctx.userId,
     action: "milestone.deleted",
     diff: { title: existing.title },
-  });
+  }).catch((e) => console.error("[milestone.delete] audit failed:", e));
 
   revalidate(existing.workspaceId, existing.boardId);
 }
