@@ -808,7 +808,21 @@ export async function updateTaskDescriptionAction(formData: FormData) {
 // Small-field patches used by the Table view's inline-edit cells.
 // Unlike updateTaskAction, this updates only the fields present in the
 // FormData, so each click-to-edit cell can fire independently.
+//
+// F12-K123: server-side logger dla unknown errors. Klient widzi Next.js
+// generic prod message ("An error occurred in the Server Components
+// render…") gdy action throws — bez logu nie wiemy CO crashuje. Każdy
+// throw teraz zostawia ślad w Coolify logs (Dashboard → containers → logs).
 export async function patchTaskAction(formData: FormData) {
+  try {
+    return await patchTaskActionInner(formData);
+  } catch (e) {
+    console.error("[patchTaskAction] failed:", e);
+    throw e; // re-throw — klient (DateCell) handle'uje przez try/catch + refresh
+  }
+}
+
+async function patchTaskActionInner(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const existing = await db.task.findUnique({ where: { id } });
@@ -945,35 +959,43 @@ export async function patchTaskAction(formData: FormData) {
   }
 
   // Only notify when statusColumnId actually changed — patches may be title/date only.
+  // F12-K123: notify try/catch — Email/realtime notification failure NIE może
+  // wywalić całego action po sukcesie DB. Klient zmienia status, fail
+  // notification = klient widzi "Server Components render error" mimo że
+  // status zapisał się prawidłowo.
   if (statusChanged) {
-    const [board, actor, fromCol, toCol] = await Promise.all([
-      db.board.findUnique({ where: { id: updated.boardId }, select: { name: true } }),
-      db.user.findUnique({ where: { id: ctx.userId }, select: { name: true, email: true } }),
-      previousStatusColumnId
-        ? db.statusColumn.findUnique({
-            where: { id: previousStatusColumnId },
-            select: { name: true },
-          })
-        : Promise.resolve(null),
-      updated.statusColumnId
-        ? db.statusColumn.findUnique({
-            where: { id: updated.statusColumnId },
-            select: { name: true },
-          })
-        : Promise.resolve(null),
-    ]);
-    await notifyBoardEvent({
-      workspaceId: updated.workspaceId,
-      taskId: updated.id,
-      taskTitle: updated.title,
-      boardId: updated.boardId,
-      boardName: board?.name ?? null,
-      actorId: ctx.userId,
-      actorName: actor?.name ?? actor?.email ?? null,
-      type: "task.status.changed",
-      fromStatusName: fromCol?.name ?? null,
-      toStatusName: toCol?.name ?? null,
-    });
+    try {
+      const [board, actor, fromCol, toCol] = await Promise.all([
+        db.board.findUnique({ where: { id: updated.boardId }, select: { name: true } }),
+        db.user.findUnique({ where: { id: ctx.userId }, select: { name: true, email: true } }),
+        previousStatusColumnId
+          ? db.statusColumn.findUnique({
+              where: { id: previousStatusColumnId },
+              select: { name: true },
+            })
+          : Promise.resolve(null),
+        updated.statusColumnId
+          ? db.statusColumn.findUnique({
+              where: { id: updated.statusColumnId },
+              select: { name: true },
+            })
+          : Promise.resolve(null),
+      ]);
+      await notifyBoardEvent({
+        workspaceId: updated.workspaceId,
+        taskId: updated.id,
+        taskTitle: updated.title,
+        boardId: updated.boardId,
+        boardName: board?.name ?? null,
+        actorId: ctx.userId,
+        actorName: actor?.name ?? actor?.email ?? null,
+        type: "task.status.changed",
+        fromStatusName: fromCol?.name ?? null,
+        toStatusName: toCol?.name ?? null,
+      });
+    } catch (e) {
+      console.error("[patchTaskAction] status-changed notify failed:", e);
+    }
   }
 }
 

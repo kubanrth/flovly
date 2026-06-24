@@ -1571,12 +1571,12 @@ function DateCell({
       <MutedDash />
     );
   }
-  // F12-K122: try/catch wokół patchTaskAction. Wcześniej startTransition
-  // połykał błędy (np. milestone constraint date range), klient widział że
-  // kalendarz się zamyka ale po refresh wracała stara data. Teraz error =
-  // alert z server message + router.refresh() żeby UI od razu pokazało
-  // canonical state z DB (lokalny DateTimePicker state.date jest dynamic ale
-  // po refresh `value` prop dostaje aktualną wartość → useEffect setDate sync).
+  // F12-K123: zamiast wyświetlać Next.js generic prod error ("An error
+  // occurred in the Server Components render…"), pokazujemy user-friendly
+  // PL message TYLKO gdy error ma readable message (np. milestone
+  // constraint z PL textem). Dla unknown errors (Next.js digest hiding
+  // real message): silent router.refresh() — UI wróci do canonical state
+  // z DB bez intrusive alert'a.
   const router = useRouter();
   const persist = (iso: string) => {
     const fd = new FormData();
@@ -1586,8 +1586,17 @@ function DateCell({
       try {
         await patchTaskAction(fd);
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Nie udało się zapisać daty.";
-        window.alert(msg);
+        console.error("[DateCell.persist] patchTaskAction failed:", e);
+        const msg = e instanceof Error ? e.message : "";
+        const isGenericProd =
+          !msg ||
+          msg.includes("Server Components render") ||
+          msg.startsWith("An error occurred");
+        if (!isGenericProd) {
+          // Known error (np. milestone constraint date range w PL).
+          window.alert(msg);
+        }
+        // Zawsze refresh — UI wróci do canonical state z DB.
         router.refresh();
       }
     });
