@@ -328,11 +328,35 @@ export async function createBoardViewAction(
     }
   }
 
+  // F12-K126: nowy NAMED widok (np. "Problemy") startuje CZYSTO — bez custom
+  // kolumn z głównej tabeli, bez filtrów/sortowania/grupowania.
+  // User: "Tworząc dodatkową tabelę duplikuje się treść podstawowej" —
+  // klient widział że nowa "Problemy" pokazuje wszystkie custom kolumny
+  // z TABELA + ten sam config. Default view (wantsDefault=true) zachowuje
+  // pusty configJson żeby restore działał jak fresh setup.
+  let configJson: Prisma.InputJsonValue = {};
+  if (!wantsDefault && parsed.data.type === "TABLE") {
+    const customCols = await db.tableColumn.findMany({
+      where: { boardId: parsed.data.boardId },
+      select: { id: true },
+    });
+    configJson = {
+      // Wszystkie custom kolumny domyślnie schowane — user explicit
+      // odsłania w "Kolumny" toggle.
+      hidden: customCols.map((c) => c.id),
+      // Empty filters/sort/groupBy explicit (defensive — i tak bywa default,
+      // ale zapis wymusza świeży state przy każdym otwarciu).
+      filters: [],
+      groupBy: null,
+    };
+  }
+
   const view = await db.boardView.create({
     data: {
       boardId: parsed.data.boardId,
       type: parsed.data.type,
       name: wantsDefault ? null : parsed.data.name,
+      configJson,
     },
   });
 
