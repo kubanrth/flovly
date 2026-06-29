@@ -27,7 +27,10 @@ export function ThemeToggle({
   variant?: "sidebar" | "compact" | "labeled" | "menu-item";
   collapsed?: boolean;
 }) {
-  const [theme, setTheme] = useState<Theme>("light");
+  // F12-K127: init "dark" zamiast "light" — SSR default = dark (zob.
+  // <html className="dark"> w layout.tsx). Init "light" powodował krótki
+  // applyTheme("light") flash w mount effect przed sczytaniem localStorage.
+  const [theme, setTheme] = useState<Theme>("dark");
   const [mounted, setMounted] = useState(false);
 
   // Synchronising with external state (localStorage) — setState in effect is intentional.
@@ -142,17 +145,16 @@ export function ThemeToggle({
   );
 }
 
-// Inline script to set the `dark` class BEFORE React hydrates — prevents
-// flash of light theme on initial paint when user prefers dark. Drop into
-// <head> in the root layout.
+// F12-K127: SSR renderuje <html className="dark"> jako default (zob.
+// app/layout.tsx). Boot script REMOVES `dark` jeśli user wybrał explicit
+// "light". Wcześniej script ADD'ował dark — React 19 hydration mógł
+// override className, klient widział light flash przed ThemeToggle mount.
 export const themeBootScript = `
   (function() {
     try {
       var k = '${KEY}';
       var s = window.localStorage.getItem(k);
-      // v4: dark = default w app'ce. User może wybrać 'light' i wybór persistuje.
-      var dark = s !== 'light';
-      if (dark) document.documentElement.classList.add('dark');
+      if (s === 'light') document.documentElement.classList.remove('dark');
     } catch (e) {}
   })();
 `;

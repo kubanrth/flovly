@@ -73,7 +73,12 @@ export default function RootLayout({
   return (
     <html
       lang="pl"
-      className={`${interSans.variable} ${jetbrainsMono.variable} ${onestDisplay.variable} h-full antialiased`}
+      // F12-K127: dark jako SSR default na <html>. Wcześniej brak `dark`
+      // class w SSR powodował że nowa karta renderowała w light, po
+      // klik na ProfileDropdown (mount ThemeToggle) → applyTheme(dark)
+      // → klasa wracała. Teraz SSR = dark, boot script REMOVES klasę
+      // gdy localStorage = "light" (mirror logic: light wymaga opt-in).
+      className={`${interSans.variable} ${jetbrainsMono.variable} ${onestDisplay.variable} h-full antialiased dark`}
       suppressHydrationWarning
     >
       <head>
