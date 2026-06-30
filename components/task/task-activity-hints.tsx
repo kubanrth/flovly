@@ -1,4 +1,4 @@
-import { CheckSquare, FileText, Link2, MessageSquare } from "lucide-react";
+import { CheckSquare, FileText, Link2, MessageSquare, Paperclip } from "lucide-react";
 
 function commentLabel(n: number): string {
   if (n === 1) return "komentarz";
@@ -17,6 +17,7 @@ export function TaskActivityHints({
   subtaskCount = 0,
   subtaskDoneCount = 0,
   linkedCount = 0,
+  attachmentCount = 0,
 }: {
   hasDescription: boolean;
   commentCount: number;
@@ -25,8 +26,17 @@ export function TaskActivityHints({
   subtaskDoneCount?: number;
   // Count of TaskLink rows where this task is source OR target.
   linkedCount?: number;
+  // F12-K128: liczba attachments. 0 → ukryty badge.
+  attachmentCount?: number;
 }) {
-  if (!hasDescription && commentCount <= 0 && subtaskCount <= 0 && linkedCount <= 0) return null;
+  if (
+    !hasDescription &&
+    commentCount <= 0 &&
+    subtaskCount <= 0 &&
+    linkedCount <= 0 &&
+    attachmentCount <= 0
+  )
+    return null;
   const subtaskComplete = subtaskCount > 0 && subtaskDoneCount === subtaskCount;
   return (
     <div className="flex flex-wrap items-center gap-1.5 font-mono text-[0.62rem] uppercase tracking-[0.12em]">
@@ -73,6 +83,18 @@ export function TaskActivityHints({
           className="inline-flex items-center gap-1 rounded-full border border-fuchsia-500/30 bg-fuchsia-500/15 px-1.5 py-0.5 font-semibold text-fuchsia-700 dark:border-fuchsia-400/40 dark:bg-fuchsia-400/15 dark:text-fuchsia-200"
         >
           <Link2 size={10} aria-hidden /> {linkedCount}
+        </span>
+      )}
+      {attachmentCount > 0 && (
+        <span
+          title={
+            attachmentCount === 1
+              ? "1 załącznik"
+              : `${attachmentCount} załączników`
+          }
+          className="inline-flex items-center gap-1 rounded-full border border-orange-500/30 bg-orange-500/15 px-1.5 py-0.5 font-semibold text-orange-700 dark:border-orange-400/40 dark:bg-orange-400/15 dark:text-orange-200"
+        >
+          <Paperclip size={10} aria-hidden /> {attachmentCount}
         </span>
       )}
     </div>

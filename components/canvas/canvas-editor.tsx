@@ -3215,11 +3215,11 @@ function MobileToolButton({
   );
 }
 
-// F12-K72 v3: fullscreen toggle bottom-right. Klient: "powinna byc opcja
-// powikeszenia tego whiteboardu do full screen, tak samo wyaczenie i tam
-// mozesz totalnie to edytowac". Używamy Fullscreen API (browser native) —
-// element wrapper'a rozszerza się do całego viewport'u + ekran browsera
-// schowa też hamburger, header itp. Esc / ponowny klik wychodzi.
+// F12-K128: fullscreen toggle (desktop + mobile). Wcześniej `md:hidden`
+// limit'owało tylko mobile — klient chce żeby na desktop też mógł rozszerzyć
+// whiteboard jak na Miro/Whimsical. Używamy Fullscreen API (browser native)
+// — element wrapper'a rozszerza się do całego viewport'u + browser hide
+// chrome (tabs/address bar). Esc / ponowny klik wychodzi.
 function MobileFullscreenToggle({
   wrapperRef,
 }: {
@@ -3252,8 +3252,8 @@ function MobileFullscreenToggle({
       type="button"
       onClick={toggle}
       aria-label={isFullscreen ? "Wyjdź z trybu pełnoekranowego" : "Tryb pełnoekranowy"}
-      title={isFullscreen ? "Wyjdź z full screen" : "Full screen"}
-      className="pointer-events-auto absolute bottom-3 right-3 z-20 grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-neutral-900/95 text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)] backdrop-blur transition-[transform,background-color] hover:bg-neutral-800 active:scale-95 md:hidden"
+      title={isFullscreen ? "Wyjdź z full screen" : "Pełny ekran (jak Miro/Whimsical)"}
+      className="pointer-events-auto absolute bottom-4 right-4 z-20 grid h-11 w-11 place-items-center rounded-xl border border-white/10 bg-neutral-900/95 text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)] backdrop-blur transition-[transform,background-color] hover:bg-neutral-800 active:scale-95"
     >
       {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
     </button>

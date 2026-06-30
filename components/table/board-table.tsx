@@ -496,6 +496,7 @@ export function BoardTable({
                 subtaskCount={row.subtaskCount}
                 subtaskDoneCount={row.subtaskDoneCount}
                 linkedCount={row.linkedCount}
+                attachmentCount={row.attachments.length}
               />
             </div>
           );

@@ -85,6 +85,8 @@ export interface KanbanTask {
   subtaskCount: number;
   subtaskDoneCount: number;
   linkedCount: number;
+  // F12-K128: liczba załączników task'a — wyświetlany badge w activity hints.
+  attachmentCount: number;
 }
 
 export interface KanbanStatusColumn {
@@ -916,6 +918,7 @@ function CardShell({
         subtaskCount={task.subtaskCount}
         subtaskDoneCount={task.subtaskDoneCount}
         linkedCount={task.linkedCount}
+        attachmentCount={task.attachmentCount}
       />
 
       {/* ROW 5 — META row: avatars left, stopAt pill right.

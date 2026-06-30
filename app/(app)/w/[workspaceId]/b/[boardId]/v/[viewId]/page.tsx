@@ -173,6 +173,7 @@ async function TableRenderer({
               comments: { where: { deletedAt: null } },
               linksOut: true,
               linksIn: true,
+              attachments: { where: { deletedAt: null } },
             },
           },
           subtasks: { select: { completed: true } },
@@ -304,6 +305,7 @@ async function KanbanRenderer({
                 comments: { where: { deletedAt: null } },
                 linksOut: true,
                 linksIn: true,
+                attachments: { where: { deletedAt: null } },
               },
             },
             subtasks: { select: { completed: true } },
@@ -352,6 +354,7 @@ async function KanbanRenderer({
         subtaskCount: t.subtasks.length,
         subtaskDoneCount: t.subtasks.filter((s) => s.completed).length,
         linkedCount: t._count.linksOut + t._count.linksIn,
+        attachmentCount: t._count.attachments,
       }))}
       members={memberships.map((m) => m.user)}
     />

@@ -42,6 +42,8 @@ export default async function BoardKanbanPage({
               comments: { where: { deletedAt: null } },
               linksOut: true,
               linksIn: true,
+              // F12-K128: count załączników (non-soft-deleted) dla activity hint.
+              attachments: { where: { deletedAt: null } },
             },
           },
           subtasks: { select: { completed: true } },
@@ -135,6 +137,7 @@ export default async function BoardKanbanPage({
           subtaskCount: t.subtasks.length,
           subtaskDoneCount: t.subtasks.filter((s) => s.completed).length,
           linkedCount: t._count.linksOut + t._count.linksIn,
+          attachmentCount: t._count.attachments,
         }))}
         members={memberships.map((m) => m.user)}
       />
