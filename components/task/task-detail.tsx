@@ -368,8 +368,12 @@ export function TaskDetail({
       <div className="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_320px]">
         {/* ============ MAIN COLUMN ============ */}
         <main className="flex min-w-0 flex-col gap-8">
-          {/* Description — Tiptap rich text editor */}
-          <Section eyebrow="Opis">
+          {/* F12-K129: eyebrow POMINIĘTY na każdym Section który wrap'uje
+              child z własnym header'em (Description, Subtasks, Attachments,
+              Linked, Poll, Comments — wszystkie renderują "eyebrow + count
+              + action buttons" wewnątrz siebie). Wcześniej mieliśmy
+              "PODZADANIA / PODZADANIA" duplikat. */}
+          <Section>
             <DescriptionSection
               taskId={task.id}
               initial={task.descriptionJson}
@@ -377,8 +381,7 @@ export function TaskDetail({
             />
           </Section>
 
-          {/* Subtasks (checklist + progress bar) */}
-          <Section eyebrow={`Podzadania${subtasks.length ? ` · ${subtasks.filter((s) => s.completed).length}/${subtasks.length}` : ""}`}>
+          <Section>
             <SubtasksSection
               taskId={task.id}
               subtasks={subtasks}
@@ -386,8 +389,7 @@ export function TaskDetail({
             />
           </Section>
 
-          {/* Attachments — image previews + file cards + dashed dodaj */}
-          <Section eyebrow={`Załączniki${attachments.length ? ` · ${attachments.length}` : ""}`}>
+          <Section>
             <AttachmentsSection
               taskId={task.id}
               attachments={attachments}
@@ -396,9 +398,8 @@ export function TaskDetail({
             />
           </Section>
 
-          {/* Linked tasks — pokrewne zadania */}
           {(linkedTasks.length > 0 || canEdit) && (
-            <Section eyebrow={`Powiązane${linkedTasks.length ? ` · ${linkedTasks.length}` : ""}`}>
+            <Section>
               <LinkedTasksSection
                 workspaceId={workspaceId}
                 taskId={task.id}
@@ -409,9 +410,8 @@ export function TaskDetail({
             </Section>
           )}
 
-          {/* Poll — głosowanie zespołu */}
           {(poll || canManagePoll) && (
-            <Section eyebrow="Głosowanie">
+            <Section>
               <PollSection
                 taskId={task.id}
                 poll={poll}
@@ -447,8 +447,7 @@ export function TaskDetail({
             </Section>
           )}
 
-          {/* Comments thread */}
-          <Section eyebrow={`Komentarze${comments.length ? ` · ${comments.length}` : ""}`}>
+          <Section>
             <CommentsSection
               taskId={task.id}
               comments={comments}
@@ -664,14 +663,21 @@ function Section({
   eyebrow,
   children,
 }: {
-  eyebrow: React.ReactNode;
+  // F12-K129: eyebrow opcjonalny — child sekcje (SubtasksSection,
+  // DescriptionSection, CommentsSection, LinkedTasksSection, PollSection,
+  // AttachmentsSection) mają WŁASNE headery z count'em + action buttons.
+  // Wcześniej Section renderowała eyebrow zawsze → duplikat "PODZADANIA /
+  // PODZADANIA" itd. Now: jeśli eyebrow undefined, tylko border + spacing.
+  eyebrow?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <section className="flex flex-col gap-3 border-b border-border pb-8 last:border-0 last:pb-0">
-      <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-        {eyebrow}
-      </span>
+      {eyebrow && (
+        <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+          {eyebrow}
+        </span>
+      )}
       <div>{children}</div>
     </section>
   );
