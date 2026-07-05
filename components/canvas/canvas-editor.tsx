@@ -1289,7 +1289,10 @@ function CanvasEditorInner({
           onPickTemplate={(k) => applyTemplate(k)}
         />
       )}
-      <MobileFullscreenToggle wrapperRef={flowWrapperRef} />
+      {/* F12-K130: MobileFullscreenToggle removed — funkcjonalność
+          fullscreen przeniesiona do CanvasZoomControls (button "Pełny
+          ekran" obok Powiększ/Pomniejsz). Klient: "są 2 guziki, prawy w
+          bez sensu miejscu — usuń, dodaj funkcjonalność temu lewemu". */}
 
       {/* Custom markers for connector endings React Flow doesn't ship. */}
       <svg className="absolute h-0 w-0" aria-hidden>
@@ -1398,7 +1401,7 @@ function CanvasEditorInner({
       >
         <Background gap={24} size={1} />
         {/* Custom controls — native <Controls/> has no dark-mode parity. */}
-        <CanvasZoomControls />
+        <CanvasZoomControls wrapperRef={flowWrapperRef} />
         <MiniMap pannable zoomable className="!bg-card" />
         <StrokeViewportLayer strokes={strokes} />
         <AlignmentGuides vx={guides.vx} hy={guides.hy} />
@@ -2501,8 +2504,37 @@ function CtxItem({
 }
 
 // Native <Controls/> from react-flow has no dark-mode parity; we use semantic vars instead.
-function CanvasZoomControls() {
+// F12-K130: dodany fullscreen button — icon Maximize2 wcześniej myląco
+// wyglądał jak "pełny ekran" ale wywoływał fitView. Teraz Fullscreen API
+// (browser native) — wrapper rozszerza się do całego viewport'u.
+function CanvasZoomControls({
+  wrapperRef,
+}: {
+  wrapperRef: React.RefObject<HTMLDivElement | null>;
+}) {
   const rf = useReactFlow();
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const onChange = () => {
+      setIsFullscreen(document.fullscreenElement === wrapperRef.current);
+    };
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, [wrapperRef]);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await wrapperRef.current?.requestFullscreen();
+      }
+    } catch {
+      /* user denied / browser nie wspiera — silent fail */
+    }
+  };
+
   return (
     <div
       className="absolute bottom-4 left-4 z-[5] flex flex-col gap-1 rounded-lg border border-border bg-card/95 p-1 shadow-lg backdrop-blur"
@@ -2514,8 +2546,11 @@ function CanvasZoomControls() {
       <ControlButton label="Pomniejsz" onClick={() => rf.zoomOut()}>
         <MinusIcon size={14} />
       </ControlButton>
-      <ControlButton label="Dopasuj" onClick={() => rf.fitView({ padding: 0.2, duration: 200 })}>
-        <Maximize2 size={14} />
+      <ControlButton
+        label={isFullscreen ? "Wyjdź z pełnego ekranu" : "Pełny ekran"}
+        onClick={toggleFullscreen}
+      >
+        {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
       </ControlButton>
     </div>
   );
@@ -3215,50 +3250,7 @@ function MobileToolButton({
   );
 }
 
-// F12-K128: fullscreen toggle (desktop + mobile). Wcześniej `md:hidden`
-// limit'owało tylko mobile — klient chce żeby na desktop też mógł rozszerzyć
-// whiteboard jak na Miro/Whimsical. Używamy Fullscreen API (browser native)
-// — element wrapper'a rozszerza się do całego viewport'u + browser hide
-// chrome (tabs/address bar). Esc / ponowny klik wychodzi.
-function MobileFullscreenToggle({
-  wrapperRef,
-}: {
-  wrapperRef: React.RefObject<HTMLDivElement | null>;
-}) {
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  useEffect(() => {
-    const onChange = () => {
-      setIsFullscreen(document.fullscreenElement === wrapperRef.current);
-    };
-    document.addEventListener("fullscreenchange", onChange);
-    return () => document.removeEventListener("fullscreenchange", onChange);
-  }, [wrapperRef]);
-
-  const toggle = async () => {
-    try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      } else {
-        await wrapperRef.current?.requestFullscreen();
-      }
-    } catch {
-      /* user denied / browser nie wspiera — silent fail */
-    }
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={toggle}
-      aria-label={isFullscreen ? "Wyjdź z trybu pełnoekranowego" : "Tryb pełnoekranowy"}
-      title={isFullscreen ? "Wyjdź z full screen" : "Pełny ekran (jak Miro/Whimsical)"}
-      className="pointer-events-auto absolute bottom-4 right-4 z-20 grid h-11 w-11 place-items-center rounded-xl border border-white/10 bg-neutral-900/95 text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.4)] backdrop-blur transition-[transform,background-color] hover:bg-neutral-800 active:scale-95"
-    >
-      {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-    </button>
-  );
-}
-
-// MobileWhiteboardHint usunięty w v3 — zastąpiony przez MobileCanvasToolbar
-// + MobileFullscreenToggle które dają realny mobile UX zamiast info chip'a.
+// F12-K130: MobileFullscreenToggle usunięty — fullscreen przeniesiony do
+// CanvasZoomControls (button "Pełny ekran" obok +/- zoom). Klient uważał
+// że osobny button bottom-right jest bez sensu, wystarczy jeden button
+// w istniejącym zoom control pasku po lewej.
