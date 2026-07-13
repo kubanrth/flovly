@@ -96,6 +96,8 @@ model User {
   chatSessions       ChatSession[]         @relation("ChatSessionUser")
   // F12-K79: utworzone share linki do tablic.
   createdShareLinks  BoardShareLink[]      @relation("BoardShareCreator")
+  // F12-K132: sekrety w team password vault.
+  secretItems        SecretItem[]          @relation("SecretItemOwner")
 
   @@index([isBanned])
   @@index([lastSeenAt])
@@ -214,9 +216,42 @@ model Workspace {
   chatSessions         ChatSession[]
   // F12-K79: public share links do tablic w tym workspace.
   shareLinks           BoardShareLink[]
+  // F12-K132: team password vault — sekrety przypisane do workspace.
+  secretItems          SecretItem[]
 
   @@index([ownerId])
   @@index([deletedAt])
+}
+
+// F12-K132: team password vault (Bitwarden-style).
+// Password + notatka szyfrowane symetrycznie AES-256-GCM z VAULT_KEY (env).
+// Każdy członek workspace'u ma read + write dostęp (workspace-shared vault).
+// Reveal wymaga eksplicytnej akcji (revealSecretAction) — nigdy nie
+// wysyłamy niezaszyfrowanego payloadu w SSR fetch listy.
+model SecretItem {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  ownerId        String
+  name           String    // "Gmail firmowy", "WiFi biuro"
+  category       String?   // opcjonalny grouper (email/vpn/wifi/tool/…)
+  url            String?
+  username       String?
+  // AES-256-GCM: enc = ciphertext + authTag (concatenated, base64).
+  // iv = initialization vector per-item (base64, 12 bytes → 16 chars).
+  passwordEnc    String
+  passwordIv     String
+  // notatka też szyfrowana — może zawierać recovery codes, seed phrases.
+  notesEnc       String?
+  notesIv        String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner     User      @relation("SecretItemOwner", fields: [ownerId], references: [id])
+
+  @@index([workspaceId, deletedAt])
+  @@index([ownerId])
 }
 
 model WorkspaceMembership {

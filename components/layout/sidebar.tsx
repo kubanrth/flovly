@@ -48,6 +48,7 @@ import {
   Inbox,
   Layers,
   LineChart,
+  KeyRound,
   Menu,
   Plane,
   Plus,
@@ -844,6 +845,13 @@ function SortableBoardsList({
         icon={<LineChart size={11} />}
         label="Plan sprzedaży"
         active={pathname.startsWith(`/w/${workspaceId}/sales`)}
+      />
+      {/* F12-K132: team password vault. */}
+      <WsSubLink
+        href={`/w/${workspaceId}/passwords`}
+        icon={<KeyRound size={11} />}
+        label="Hasła"
+        active={pathname.startsWith(`/w/${workspaceId}/passwords`)}
       />
       {canManage(role) && (
         <WsSubLink
