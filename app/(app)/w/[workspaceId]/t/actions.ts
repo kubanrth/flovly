@@ -74,6 +74,12 @@ export async function createTaskAction(
     statusColumnId: formData.get("statusColumnId") || undefined,
     priority: formData.get("priority") || undefined,
   });
+  // F12-K131: viewId (opcjonalne) — jeśli task tworzony w custom named
+  // view context, dodajemy TaskView entry po create. Default view (bez
+  // viewId param) → task widoczny w default view (bez TaskView entry).
+  const rawViewId = formData.get("viewId");
+  const contextViewId =
+    typeof rawViewId === "string" && rawViewId.length > 0 ? rawViewId : null;
 
   if (!parsed.success) {
     const fe: CreateFieldErrors = {};
@@ -140,6 +146,25 @@ export async function createTaskAction(
       ...(parsed.data.priority ? { priority: parsed.data.priority } : {}),
     },
   });
+
+  // F12-K131: przypisz task do custom view'a jeśli tworzony z jego context'u.
+  // Verify view należy do tego boardu i ma name (nie default view — default
+  // widzi wszystkie, nie potrzebuje entry).
+  if (contextViewId) {
+    const view = await db.boardView.findFirst({
+      where: {
+        id: contextViewId,
+        boardId: parsed.data.boardId,
+        name: { not: null },
+      },
+      select: { id: true },
+    });
+    if (view) {
+      await db.taskView.create({
+        data: { taskId: task.id, viewId: view.id },
+      });
+    }
+  }
 
   await writeAudit({
     workspaceId: task.workspaceId,

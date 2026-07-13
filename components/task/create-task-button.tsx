@@ -34,9 +34,14 @@ const PRIORITY_PICK_OPTIONS: {
 export function CreateTaskButton({
   workspaceId,
   boardId,
+  viewId,
 }: {
   workspaceId: string;
   boardId: string;
+  // F12-K131: jeśli set, nowy task auto-przypisany do tego custom view'a
+  // (via TaskView join). Named views (Problemy/Bugi/etc.) używają — task
+  // pokazuje się TYLKO w tym view. Default view (/table) nie podaje.
+  viewId?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -117,6 +122,8 @@ export function CreateTaskButton({
           >
             <input type="hidden" name="workspaceId" value={workspaceId} />
             <input type="hidden" name="boardId" value={boardId} />
+            {/* F12-K131: viewId → auto-assign do custom view via TaskView join. */}
+            {viewId && <input type="hidden" name="viewId" value={viewId} />}
             {/* F12-K75: priority kontrolowany przez state, hidden field
                 spina go z form data (server odbiera w createTaskAction). */}
             <input type="hidden" name="priority" value={priority} />

@@ -57,7 +57,7 @@ export default async function CustomBoardViewPage({
     view.type === "CALENDAR"
       ? null
       : canCreate
-        ? <CreateTaskButton workspaceId={workspaceId} boardId={boardId} />
+        ? <CreateTaskButton workspaceId={workspaceId} boardId={boardId} viewId={viewId} />
         : null;
 
   return (
@@ -78,6 +78,7 @@ export default async function CustomBoardViewPage({
         <TableRenderer
           workspaceId={workspaceId}
           boardId={boardId}
+          viewId={viewId}
           canEdit={canEdit}
           canManageBoard={canManageBoard}
           configJson={view.configJson}
@@ -87,6 +88,7 @@ export default async function CustomBoardViewPage({
         <KanbanRenderer
           workspaceId={workspaceId}
           boardId={boardId}
+          viewId={viewId}
           canManageBoard={canManageBoard}
         />
       )}
@@ -120,12 +122,14 @@ export default async function CustomBoardViewPage({
 async function TableRenderer({
   workspaceId,
   boardId,
+  viewId,
   canEdit,
   canManageBoard,
   configJson,
 }: {
   workspaceId: string;
   boardId: string;
+  viewId: string;
   canEdit: boolean;
   canManageBoard: boolean;
   configJson: unknown;
@@ -149,7 +153,14 @@ async function TableRenderer({
       statusColumns: { orderBy: { order: "asc" } },
       customColumns: { orderBy: { order: "asc" } },
       tasks: {
-        where: { deletedAt: null },
+        // F12-K131: named views (custom) pokazują TYLKO task'i explicit
+        // przypisane przez TaskView join. Default view (`/table`) pokazuje
+        // wszystkie. Nowe task'e utworzone w custom view auto-assign
+        // przez createTaskAction (viewId form param).
+        where: {
+          deletedAt: null,
+          taskViews: { some: { viewId } },
+        },
         orderBy: [{ statusColumn: { order: "asc" } }, { rowOrder: "asc" }],
         include: {
           assignees: {
@@ -281,10 +292,12 @@ async function TableRenderer({
 async function KanbanRenderer({
   workspaceId,
   boardId,
+  viewId,
   canManageBoard,
 }: {
   workspaceId: string;
   boardId: string;
+  viewId: string;
   canManageBoard: boolean;
 }) {
   const [board, memberships] = await Promise.all([
@@ -293,7 +306,12 @@ async function KanbanRenderer({
       include: {
         statusColumns: { orderBy: { order: "asc" } },
         tasks: {
-          where: { deletedAt: null },
+          // F12-K131: filter przez TaskView join — named view = tylko
+          // task'i explicit przypisane. Kanban path (custom KANBAN view).
+          where: {
+            deletedAt: null,
+            taskViews: { some: { viewId } },
+          },
           orderBy: [{ statusColumn: { order: "asc" } }, { rowOrder: "asc" }],
           include: {
             assignees: {

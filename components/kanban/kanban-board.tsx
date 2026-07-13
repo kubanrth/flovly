@@ -672,11 +672,14 @@ function ColumnDropZone({ id, children }: { id: string; children: React.ReactNod
 function InlineAddTask({
   workspaceId,
   boardId,
+  viewId,
   statusColumnId,
   registerOpener,
 }: {
   workspaceId: string;
   boardId: string;
+  // F12-K131: opcjonalne — jeśli set, auto-assign do custom view.
+  viewId?: string;
   statusColumnId: string;
   registerOpener?: (open: (() => void) | null) => void;
 }) {
@@ -700,6 +703,7 @@ function InlineAddTask({
     fd.set("boardId", boardId);
     fd.set("title", trimmed);
     fd.set("statusColumnId", statusColumnId);
+    if (viewId) fd.set("viewId", viewId);
     startTransition(async () => {
       await createTaskAction(null, fd);
       setTitle("");

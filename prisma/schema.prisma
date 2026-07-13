@@ -360,9 +360,26 @@ model BoardView {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  board     Board      @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  taskViews TaskView[]
 
   @@index([boardId, type])
+}
+
+// F12-K131: many-to-many task↔view assignment. Task może być przypisany
+// do wielu named views (np. "Problemy", "Bugi"). Default view (BoardView
+// z name=null) POKAZUJE WSZYSTKO — nie potrzebuje wpisu w TaskView.
+// Named view pokazuje TYLKO task'i z wpisem TaskView w tym view.
+// Task tworzony w context'cie custom view'a automatycznie dodaje wpis.
+model TaskView {
+  taskId String
+  viewId String
+
+  task Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  view BoardView @relation(fields: [viewId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, viewId])
+  @@index([viewId])
 }
 
 enum BoardLinkKind {
@@ -582,6 +599,8 @@ model Task {
   linksIn      TaskLink[]            @relation("TaskLinkTarget")
   // F12-K67: powiązanie z kontaktem CRM.
   contact      Contact?              @relation("TaskContact", fields: [contactId], references: [id], onDelete: SetNull)
+  // F12-K131: przypisania do named view'ów (many-to-many).
+  taskViews    TaskView[]
 
   @@index([boardId, statusColumnId, rowOrder])
   @@index([boardId, updatedAt(sort: Desc)])
