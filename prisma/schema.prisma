@@ -29,6 +29,9 @@ model User {
   lastSeenAt    DateTime?
   totpSecret    String?
   totpEnabledAt DateTime?
+  // F12-K133: domyślna stawka godzinowa dla time tracking (PLN/h * 100).
+  // Może być override'owana per WorkspaceMembership.hourlyRateOverride.
+  hourlyRateCents Int?
   // F12-K83: null = first-login user, set after the onboarding tour modal is
   // completed or skipped. Used to gate the <OnboardingTour /> in (app) layout.
   onboardingCompletedAt DateTime?
@@ -98,6 +101,9 @@ model User {
   createdShareLinks  BoardShareLink[]      @relation("BoardShareCreator")
   // F12-K132: sekrety w team password vault.
   secretItems        SecretItem[]          @relation("SecretItemOwner")
+  // F12-K133: TimeCamp-like time entries + approvals.
+  timeEntries        TimeEntry[]           @relation("TimeEntryUser")
+  approvedTimeEntries TimeEntry[]          @relation("TimeEntryApprover")
 
   @@index([isBanned])
   @@index([lastSeenAt])
@@ -218,6 +224,8 @@ model Workspace {
   shareLinks           BoardShareLink[]
   // F12-K132: team password vault — sekrety przypisane do workspace.
   secretItems          SecretItem[]
+  // F12-K133: TimeCamp-like time entries.
+  timeEntries          TimeEntry[]
 
   @@index([ownerId])
   @@index([deletedAt])
@@ -252,6 +260,43 @@ model SecretItem {
 
   @@index([workspaceId, deletedAt])
   @@index([ownerId])
+}
+
+// F12-K133: TimeCamp-like time tracking.
+// Historia wpisów czasu — user (assignee/creator/dowolny member) wpisuje
+// czas przeznaczony na task. Wpis może być stworzony:
+//   - manualnie (retro: "wczoraj 14:00-16:30 na task X")
+//   - z timera (na click "Zakończ" po task.timerStartedAt → tworzy Entry)
+//
+// Billable — flag do raportowania klienckiego (tylko billable idą do faktury).
+// rateSnapshotCents — CENA W MOMENCIE WPISU (historyczny — user może zmienić
+// hourlyRate ale stare wpisy zachowują stawkę).
+// approvedById/approvedAt — TimeCamp-style approvals (manager zatwierdza).
+model TimeEntry {
+  id                 String    @id @default(cuid())
+  workspaceId        String
+  taskId             String?
+  userId             String
+  startedAt          DateTime
+  stoppedAt          DateTime
+  durationSeconds    Int       // redundant vs stopped-started, ale ułatwia SUM w raportach
+  note               String?
+  billable           Boolean   @default(true)
+  rateSnapshotCents  Int?      // stawka godzinowa PLN * 100 w momencie wpisu (null = brak stawki)
+  approvedById       String?
+  approvedAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  task      Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  user      User      @relation("TimeEntryUser", fields: [userId], references: [id])
+  approver  User?     @relation("TimeEntryApprover", fields: [approvedById], references: [id])
+
+  @@index([workspaceId, startedAt])
+  @@index([userId, startedAt])
+  @@index([taskId])
 }
 
 model WorkspaceMembership {
@@ -636,6 +681,8 @@ model Task {
   contact      Contact?              @relation("TaskContact", fields: [contactId], references: [id], onDelete: SetNull)
   // F12-K131: przypisania do named view'ów (many-to-many).
   taskViews    TaskView[]
+  // F12-K133: TimeCamp-like — historia wpisów czasu per task.
+  timeEntries  TimeEntry[]
 
   @@index([boardId, statusColumnId, rowOrder])
   @@index([boardId, updatedAt(sort: Desc)])

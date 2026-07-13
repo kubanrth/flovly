@@ -49,6 +49,7 @@ import {
   Layers,
   LineChart,
   KeyRound,
+  Clock,
   Menu,
   Plane,
   Plus,
@@ -852,6 +853,13 @@ function SortableBoardsList({
         icon={<KeyRound size={11} />}
         label="Hasła"
         active={pathname.startsWith(`/w/${workspaceId}/passwords`)}
+      />
+      {/* F12-K133: TimeCamp-like time tracking. */}
+      <WsSubLink
+        href={`/w/${workspaceId}/time`}
+        icon={<Clock size={11} />}
+        label="Czas pracy"
+        active={pathname.startsWith(`/w/${workspaceId}/time`)}
       />
       {canManage(role) && (
         <WsSubLink

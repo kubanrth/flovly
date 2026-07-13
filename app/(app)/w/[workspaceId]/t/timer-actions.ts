@@ -71,16 +71,41 @@ export async function pauseTaskTimerAction(formData: FormData) {
   if (!task.timerStartedAt) return;
   if (task.timerCompletedAt) return;
 
+  const now = new Date();
+  const startedAt = task.timerStartedAt;
   const elapsed = Math.floor(
-    (Date.now() - task.timerStartedAt.getTime()) / 1000,
+    (now.getTime() - startedAt.getTime()) / 1000,
   );
-  await db.task.update({
-    where: { id: task.id },
-    data: {
-      timeTrackedSeconds: { increment: Math.max(0, elapsed) },
-      timerStartedAt: null,
-    },
+  // F12-K133: pobierz rate z User (snapshot dla TimeEntry).
+  const user = await db.user.findUnique({
+    where: { id: ctx.userId },
+    select: { hourlyRateCents: true },
   });
+  await db.$transaction([
+    db.task.update({
+      where: { id: task.id },
+      data: {
+        timeTrackedSeconds: { increment: Math.max(0, elapsed) },
+        timerStartedAt: null,
+      },
+    }),
+    // F12-K133: sesja timera → TimeEntry w timesheet + raportach.
+    ...(elapsed >= 1
+      ? [
+          db.timeEntry.create({
+            data: {
+              workspaceId: task.workspaceId,
+              taskId: task.id,
+              userId: ctx.userId,
+              startedAt,
+              stoppedAt: now,
+              durationSeconds: elapsed,
+              rateSnapshotCents: user?.hourlyRateCents ?? null,
+            },
+          }),
+        ]
+      : []),
+  ]);
   await writeAudit({
     workspaceId: task.workspaceId,
     objectType: "Task",
@@ -89,6 +114,7 @@ export async function pauseTaskTimerAction(formData: FormData) {
     action: "task.timerPaused",
     diff: { sessionSeconds: elapsed },
   });
+  revalidatePath(`/w/${task.workspaceId}/time`);
   await broadcastWorkspaceChange(task.workspaceId, {
     type: "task.changed",
     taskId: task.id,
@@ -108,18 +134,44 @@ export async function completeTaskTimerAction(formData: FormData) {
   if (task.timerCompletedAt) return;
 
   const now = new Date();
-  const extraSeconds = task.timerStartedAt
-    ? Math.max(0, Math.floor((now.getTime() - task.timerStartedAt.getTime()) / 1000))
+  const runningStart = task.timerStartedAt;
+  const extraSeconds = runningStart
+    ? Math.max(0, Math.floor((now.getTime() - runningStart.getTime()) / 1000))
     : 0;
 
-  await db.task.update({
-    where: { id: task.id },
-    data: {
-      timeTrackedSeconds: task.timeTrackedSeconds + extraSeconds,
-      timerStartedAt: null,
-      timerCompletedAt: now,
-    },
-  });
+  // F12-K133: rate snapshot dla TimeEntry (jeśli była sesja).
+  const user = runningStart
+    ? await db.user.findUnique({
+        where: { id: ctx.userId },
+        select: { hourlyRateCents: true },
+      })
+    : null;
+
+  await db.$transaction([
+    db.task.update({
+      where: { id: task.id },
+      data: {
+        timeTrackedSeconds: task.timeTrackedSeconds + extraSeconds,
+        timerStartedAt: null,
+        timerCompletedAt: now,
+      },
+    }),
+    ...(runningStart && extraSeconds >= 1
+      ? [
+          db.timeEntry.create({
+            data: {
+              workspaceId: task.workspaceId,
+              taskId: task.id,
+              userId: ctx.userId,
+              startedAt: runningStart,
+              stoppedAt: now,
+              durationSeconds: extraSeconds,
+              rateSnapshotCents: user?.hourlyRateCents ?? null,
+            },
+          }),
+        ]
+      : []),
+  ]);
   await writeAudit({
     workspaceId: task.workspaceId,
     objectType: "Task",
@@ -133,4 +185,5 @@ export async function completeTaskTimerAction(formData: FormData) {
     taskId: task.id,
   });
   revalidatePath(`/w/${task.workspaceId}/t/${task.id}`);
+  revalidatePath(`/w/${task.workspaceId}/time`);
 }
