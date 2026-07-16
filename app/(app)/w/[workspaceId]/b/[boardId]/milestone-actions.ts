@@ -54,6 +54,11 @@ export async function createMilestoneAction(
     startAt: formData.get("startAt"),
     stopAt: formData.get("stopAt"),
   });
+  // F12-K134: opcjonalny scope do custom named ROADMAP view — milestone
+  // widoczny tylko w tym view (default roadmapa widzi wszystkie).
+  const rawViewId = formData.get("boardViewId");
+  const boardViewId =
+    typeof rawViewId === "string" && rawViewId.length > 0 ? rawViewId : null;
   if (!parsed.success) {
     const fe: CreateFieldErrors = {};
     for (const issue of parsed.error.issues) {
@@ -99,10 +104,26 @@ export async function createMilestoneAction(
     return { ok: false, fieldErrors: { assigneeId: "Nie jest członkiem." } };
   }
 
+  // F12-K134: verify boardViewId — musi być named ROADMAP view TEGO boardu.
+  let scopedViewId: string | null = null;
+  if (boardViewId) {
+    const view = await db.boardView.findFirst({
+      where: {
+        id: boardViewId,
+        boardId: parsed.data.boardId,
+        type: "ROADMAP",
+        name: { not: null },
+      },
+      select: { id: true },
+    });
+    scopedViewId = view?.id ?? null;
+  }
+
   const milestone = await db.milestone.create({
     data: {
       workspaceId: parsed.data.workspaceId,
       boardId: parsed.data.boardId,
+      boardViewId: scopedViewId,
       creatorId: ctx.userId,
       assigneeId: parsed.data.assigneeId || null,
       title: parsed.data.title,

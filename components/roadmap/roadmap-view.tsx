@@ -69,6 +69,7 @@ type Mode = "timeline" | "markers";
 export function RoadmapView({
   workspaceId,
   boardId,
+  boardViewId,
   members,
   milestones,
   canCreate,
@@ -81,6 +82,9 @@ export function RoadmapView({
 }: {
   workspaceId: string;
   boardId: string;
+  // F12-K134: set gdy renderowane w custom named ROADMAP view — nowe
+  // milestones dostają scope do tego view'a.
+  boardViewId?: string;
   members: MilestoneMember[];
   milestones: MilestoneItem[];
   canCreate: boolean;
@@ -417,6 +421,7 @@ export function RoadmapView({
         <MilestoneDialog
           workspaceId={workspaceId}
           boardId={boardId}
+          boardViewId={boardViewId}
           members={members}
           mode={dialog.mode}
           // Resolve from `milestones` (not the stale dialog.milestone) so the

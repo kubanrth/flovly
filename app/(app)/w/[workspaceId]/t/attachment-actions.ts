@@ -143,7 +143,11 @@ export async function getAttachmentDownloadUrlAction(input: {
   await requireWorkspaceMembership(existing.task.workspaceId);
 
   try {
-    const url = await createSignedDownloadUrl(existing.storageKey);
+    // F12-K134: SVG dostaje Content-Disposition: attachment (XSS mitigation —
+    // otwarcie SVG jako dokument wykonuje skrypty; download nie).
+    const url = await createSignedDownloadUrl(existing.storageKey, undefined, {
+      forceDownload: existing.mimeType === "image/svg+xml",
+    });
     return { ok: true, url, filename: existing.filename };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Download URL failed" };

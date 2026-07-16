@@ -8,10 +8,12 @@ export const MAX_ATTACHMENT_BYTES = 25 * 1024 * 1024;
 export const MAX_VIDEO_ATTACHMENT_BYTES = 50 * 1024 * 1024;
 export const SIGNED_DOWNLOAD_TTL_SECONDS = 15 * 60; // 15-minute download URL per brief
 
-// SVG (image/svg+xml) celowo wycięte — może zawierać <script>/event
-// handler'y wykonywane w kontekście naszej domeny gdy plik jest
-// serwowany inline (Supabase signed URL nie dodaje Content-Disposition:
-// attachment). Stored XSS.
+// F12-K134: SVG dozwolone z mitigacją XSS. SVG może zawierać <script> —
+// niebezpieczne TYLKO gdy plik jest otwarty jako dokument (nawigacja do
+// URL). Mitigacja: signed URL dla SVG minted z download:true (Content-
+// Disposition: attachment → browser pobiera zamiast renderować), a
+// thumbnails renderujemy przez <img src> gdzie skrypty NIE wykonują się
+// (spec: SVG w <img> = static image, no scripting context).
 //
 // Video: dozwolone tylko popularne format'y (mp4 / webm / quicktime). Nie
 // dodajemy mkv / avi / wmv żeby uniknąć egzotycznych dekoderów + żeby Safari
@@ -21,6 +23,7 @@ export const ALLOWED_ATTACHMENT_MIMES = new Set([
   "image/jpeg",
   "image/webp",
   "image/gif",
+  "image/svg+xml",
   "video/mp4",
   "video/webm",
   "video/quicktime",
@@ -100,10 +103,14 @@ export async function createSignedUploadUrl(key: string): Promise<{
 export async function createSignedDownloadUrl(
   key: string,
   ttlSeconds: number = SIGNED_DOWNLOAD_TTL_SECONDS,
+  // F12-K134: forceDownload → Supabase dodaje Content-Disposition: attachment.
+  // Wymagane dla SVG (XSS gdy otwarty jako dokument) — browser pobiera
+  // zamiast renderować inline.
+  opts?: { forceDownload?: boolean },
 ): Promise<string> {
   const { data, error } = await supabaseAdmin()
     .storage.from(ATTACHMENTS_BUCKET)
-    .createSignedUrl(key, ttlSeconds);
+    .createSignedUrl(key, ttlSeconds, opts?.forceDownload ? { download: true } : undefined);
   if (error || !data) throw error ?? new Error("createSignedUrl failed");
   return data.signedUrl;
 }
@@ -147,8 +154,12 @@ export function isAllowedMime(mime: string): boolean {
 }
 
 export function isImageMime(mime: string): boolean {
-  // Explicit reject SVG — startsWith("image/") would let it through,
-  // enabling stored XSS via inline serving.
-  if (mime === "image/svg+xml") return false;
+  // F12-K134: SVG dozwolone dla thumbnails — <img src="…svg"> to bezpieczny
+  // kontekst (skrypty w SVG nie wykonują się w <img>). Download link dla
+  // SVG jest minted z forceDownload (zob. createSignedDownloadUrl).
   return mime.startsWith("image/");
+}
+
+export function isSvgMime(mime: string): boolean {
+  return mime === "image/svg+xml";
 }

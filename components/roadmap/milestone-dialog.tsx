@@ -39,6 +39,7 @@ type Mode = "create" | "edit";
 export function MilestoneDialog({
   workspaceId,
   boardId,
+  boardViewId,
   members,
   mode,
   initial,
@@ -48,6 +49,8 @@ export function MilestoneDialog({
 }: {
   workspaceId: string;
   boardId: string;
+  // F12-K134: custom view scope — nowe milestones lądują tylko w tym view.
+  boardViewId?: string;
   members: MilestoneMember[];
   mode: Mode;
   initial: InitialMilestone | null;
@@ -113,6 +116,9 @@ export function MilestoneDialog({
           >
             <input type="hidden" name="workspaceId" value={workspaceId} />
             <input type="hidden" name="boardId" value={boardId} />
+            {boardViewId && (
+              <input type="hidden" name="boardViewId" value={boardViewId} />
+            )}
             {isEdit && initial && <input type="hidden" name="id" value={initial.id} />}
 
             <label className="flex flex-col gap-2">

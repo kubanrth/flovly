@@ -899,6 +899,12 @@ model Milestone {
   id              String    @id @default(cuid())
   workspaceId     String
   boardId         String
+  // F12-K134: scope do custom named ROADMAP view. null = default roadmapa
+  // (widzi wszystko), set = milestone należy TYLKO do tego custom view'a.
+  // Bez FK constraint na BoardView — view delete zostawia milestone
+  // osierocony ale widoczny na default roadmapie (bezpieczniejsze niż
+  // kaskadowe kasowanie pracy klienta).
+  boardViewId     String?
   creatorId       String
   assigneeId      String?
   title           String

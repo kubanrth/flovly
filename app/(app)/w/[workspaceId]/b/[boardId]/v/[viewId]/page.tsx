@@ -96,18 +96,20 @@ export default async function CustomBoardViewPage({
         <RoadmapRenderer
           workspaceId={workspaceId}
           boardId={boardId}
+          viewId={viewId}
           canCreate={can(ctx.role, "milestone.create")}
           canUpdate={can(ctx.role, "milestone.update")}
           canDelete={can(ctx.role, "milestone.delete")}
         />
       )}
       {view.type === "GANTT" && (
-        <GanttRenderer workspaceId={workspaceId} boardId={boardId} />
+        <GanttRenderer workspaceId={workspaceId} boardId={boardId} viewId={viewId} />
       )}
       {view.type === "WHITEBOARD" && (
         <WhiteboardRenderer
           workspaceId={workspaceId}
           boardId={boardId}
+          viewId={viewId}
           canEdit={can(ctx.role, "canvas.edit")}
           canCreateTask={canCreate}
           userId={ctx.userId}
@@ -382,12 +384,14 @@ async function KanbanRenderer({
 async function RoadmapRenderer({
   workspaceId,
   boardId,
+  viewId,
   canCreate,
   canUpdate,
   canDelete,
 }: {
   workspaceId: string;
   boardId: string;
+  viewId: string;
   canCreate: boolean;
   canUpdate: boolean;
   canDelete: boolean;
@@ -397,7 +401,9 @@ async function RoadmapRenderer({
       where: { id: boardId },
       include: {
         milestones: {
-          where: { deletedAt: null },
+          // F12-K134: custom named ROADMAP pokazuje TYLKO swoje milestones
+          // (boardViewId scope) — bez tego duplikowała całą default roadmapę.
+          where: { deletedAt: null, boardViewId: viewId },
           orderBy: [{ orderIndex: "asc" }, { startAt: "asc" }],
           include: {
             assignee: { select: { id: true, name: true, email: true, avatarUrl: true } },
@@ -422,6 +428,7 @@ async function RoadmapRenderer({
     <RoadmapView
       workspaceId={workspaceId}
       boardId={boardId}
+      boardViewId={viewId}
       members={memberships.map((m) => m.user)}
       milestones={board.milestones.map((m) => ({
         id: m.id,
@@ -448,15 +455,20 @@ async function RoadmapRenderer({
 async function GanttRenderer({
   workspaceId,
   boardId,
+  viewId,
 }: {
   workspaceId: string;
   boardId: string;
+  viewId: string;
 }) {
   const board = await db.board.findFirst({
     where: { id: boardId },
     include: {
       tasks: {
-        where: { deletedAt: null },
+        // F12-K134: named GANTT view pokazuje tylko taski przypisane do
+        // view'a (mirror K131 table/kanban) — bez tego custom Gantt
+        // duplikował cały board.
+        where: { deletedAt: null, taskViews: { some: { viewId } } },
         orderBy: [{ startAt: "asc" }, { rowOrder: "asc" }],
         include: {
           statusColumn: { select: { name: true, colorHex: true } },
@@ -495,6 +507,7 @@ async function GanttRenderer({
 async function WhiteboardRenderer({
   workspaceId,
   boardId,
+  viewId,
   canEdit,
   canCreateTask,
   userId,
@@ -502,15 +515,19 @@ async function WhiteboardRenderer({
 }: {
   workspaceId: string;
   boardId: string;
+  viewId: string;
   canEdit: boolean;
   canCreateTask: boolean;
   userId: string;
   boardName: string;
 }) {
-  // Custom whiteboards share the per-board canvas with the default /whiteboard
-  // route — same drawing, just reachable through a labelled pill.
+  // F12-K134: każdy custom whiteboard view dostaje WŁASNY canvas —
+  // kind = "view:<viewId>" (para boardId+kind jest unique). Wcześniej
+  // custom whiteboards współdzieliły canvas z default /whiteboard →
+  // "nowa tablica duplikuje treść poprzedniej".
+  const kind = `view:${viewId}`;
   let canvas = await db.processCanvas.findFirst({
-    where: { boardId, deletedAt: null },
+    where: { boardId, kind, deletedAt: null },
     include: {
       nodes: {
         include: {
@@ -522,7 +539,7 @@ async function WhiteboardRenderer({
   });
   if (!canvas) {
     canvas = await db.processCanvas.create({
-      data: { workspaceId, boardId, name: boardName, creatorId: userId },
+      data: { workspaceId, boardId, kind, name: boardName, creatorId: userId },
       include: {
         nodes: {
           include: {
