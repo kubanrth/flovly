@@ -350,6 +350,36 @@ export function Sidebar({
                 pathname={pathname}
                 collapsed={collapsed}
               />
+              {/* F12-K136: Kontakty / Czas pracy / Hasła przeniesione z
+                  per-workspace sublinks do sekcji TWOJE (klient: "nie ma
+                  być do każdego workspace tylko na górze"). Dane pozostają
+                  workspace-scoped — link prowadzi do pierwszego workspace'a
+                  usera (typowy klient ma jeden). */}
+              {workspaces[0] && (
+                <>
+                  <NavItem
+                    href={`/w/${workspaces[0].id}/contacts`}
+                    icon={<Briefcase size={16} />}
+                    label="Kontakty"
+                    pathname={pathname}
+                    collapsed={collapsed}
+                  />
+                  <NavItem
+                    href={`/w/${workspaces[0].id}/time`}
+                    icon={<Clock size={16} />}
+                    label="Czas pracy"
+                    pathname={pathname}
+                    collapsed={collapsed}
+                  />
+                  <NavItem
+                    href={`/w/${workspaces[0].id}/passwords`}
+                    icon={<KeyRound size={16} />}
+                    label="Hasła"
+                    pathname={pathname}
+                    collapsed={collapsed}
+                  />
+                </>
+              )}
               <NavItem
                 href="/workspaces"
                 icon={<Layers size={16} />}
@@ -835,31 +865,13 @@ function SortableBoardsList({
         label="Kalendarz"
         active={pathname.startsWith(`/w/${workspaceId}/calendar`)}
       />
-      <WsSubLink
-        href={`/w/${workspaceId}/contacts`}
-        icon={<Briefcase size={11} />}
-        label="Kontakty"
-        active={pathname.startsWith(`/w/${workspaceId}/contacts`)}
-      />
+      {/* F12-K136: Kontakty / Hasła / Czas pracy przeniesione do sekcji
+          TWOJE na górze sidebara — nie duplikujemy per workspace. */}
       <WsSubLink
         href={`/w/${workspaceId}/sales`}
         icon={<LineChart size={11} />}
         label="Plan sprzedaży"
         active={pathname.startsWith(`/w/${workspaceId}/sales`)}
-      />
-      {/* F12-K132: team password vault. */}
-      <WsSubLink
-        href={`/w/${workspaceId}/passwords`}
-        icon={<KeyRound size={11} />}
-        label="Hasła"
-        active={pathname.startsWith(`/w/${workspaceId}/passwords`)}
-      />
-      {/* F12-K133: TimeCamp-like time tracking. */}
-      <WsSubLink
-        href={`/w/${workspaceId}/time`}
-        icon={<Clock size={11} />}
-        label="Czas pracy"
-        active={pathname.startsWith(`/w/${workspaceId}/time`)}
       />
       {canManage(role) && (
         <WsSubLink

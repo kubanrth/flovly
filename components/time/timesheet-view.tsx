@@ -10,7 +10,6 @@ import {
   Trash2,
   CheckCircle2,
   Circle,
-  Coins,
   X,
   Calendar as CalendarIcon,
 } from "lucide-react";
@@ -19,7 +18,6 @@ import {
   createTimeEntryAction,
   deleteTimeEntryAction,
   approveTimeEntryAction,
-  setMyHourlyRateAction,
   type CreateTimeEntryState,
 } from "@/app/(app)/w/[workspaceId]/time/actions";
 
@@ -141,10 +139,12 @@ export function TimesheetView({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Top bar: rate + user filter + summary */}
+      {/* Top bar: user filter + summary. F12-K136: RateEditor usunięty
+          (klient: "wyjebać stawkę godzinową z góry") — stawki per user
+          można ustawiać przez DB/admin, earnings liczą się nadal z
+          rateSnapshotCents zapisanego we wpisach. */}
       <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card/40 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-3">
-          <RateEditor initialCents={myHourlyRateCents} />
           <UserFilter
             members={members}
             value={userFilter}
@@ -381,53 +381,8 @@ function EntryChip({
   );
 }
 
-function RateEditor({ initialCents }: { initialCents: number | null }) {
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(
-    initialCents !== null ? (initialCents / 100).toFixed(2) : "",
-  );
-  const submit = () => {
-    const fd = new FormData();
-    fd.set("hourlyRatePln", value);
-    startTransition(() => void setMyHourlyRateAction(fd));
-    setEditing(false);
-  };
-  return (
-    <div className="flex items-center gap-2 text-[0.82rem]">
-      <Coins size={14} className="text-amber-500" />
-      {editing ? (
-        <div className="flex items-center gap-1">
-          <input
-            type="number"
-            step="0.01"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            onBlur={submit}
-            onKeyDown={(e) => e.key === "Enter" && submit()}
-            autoFocus
-            placeholder="0.00"
-            className="h-8 w-24 rounded-md border border-border bg-background px-2 font-mono text-[0.82rem] outline-none focus:border-primary/60"
-          />
-          <span className="text-muted-foreground">PLN/h</span>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          className="rounded-md px-2 py-1 hover:bg-muted"
-        >
-          {initialCents !== null ? (
-            <span className="font-mono font-semibold">
-              {fmtMoney(initialCents / 100)}/h
-            </span>
-          ) : (
-            <span className="text-muted-foreground">Ustaw stawkę</span>
-          )}
-        </button>
-      )}
-    </div>
-  );
-}
+// F12-K136: RateEditor usunięty (klient nie chce stawki w UI).
+// setMyHourlyRateAction zostaje po stronie serwera na przyszłość.
 
 function UserFilter({
   members,
