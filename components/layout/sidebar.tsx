@@ -90,6 +90,8 @@ export interface SidebarWorkspace {
 
 // Bumped v2 to ignore stale localStorage from prior sessions; users start expanded.
 const STORAGE_KEY = "danielos.sidebar.collapsed.v2";
+// F12-K137: stan zwinięcia sekcji TWOJE.
+const MINE_OPEN_KEY = "danielos.sidebar.mineOpen.v1";
 
 export function Sidebar({
   user,
@@ -104,6 +106,26 @@ export function Sidebar({
   const activeWorkspaceId = pathname.match(/^\/w\/([^/]+)/)?.[1] ?? null;
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // F12-K137: zwijanie sekcji TWOJE (klient: "mało miejsca na przestrzenie").
+  // Default open; wybór persistowany w localStorage.
+  const [mineOpen, setMineOpen] = useState(true);
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(MINE_OPEN_KEY) === "0") setMineOpen(false);
+    } catch {
+      /* noop */
+    }
+  }, []);
+  const toggleMine = () => {
+    setMineOpen((prev) => {
+      try {
+        window.localStorage.setItem(MINE_OPEN_KEY, prev ? "0" : "1");
+      } catch {
+        /* noop */
+      }
+      return !prev;
+    });
+  };
   const [expandedIds, setExpandedIds] = useState<Set<string>>(
     new Set(activeWorkspaceId ? [activeWorkspaceId] : []),
   );
@@ -291,14 +313,27 @@ export function Sidebar({
           )}
 
           {/* ─── SEKCJA "TWOJE" — personal nav items ─── */}
+          {/* F12-K137: header jest toggle'em — zwija sekcję żeby zostawić
+              więcej miejsca na PRZESTRZENIE. W trybie icon-only (collapsed
+              sidebar) sekcja zawsze widoczna (nie ma headera do kliknięcia). */}
           <div className="border-b border-black/5 px-3 pb-2 pt-3 dark:border-white/[0.05] max-md:px-4 max-md:pt-4">
             {!collapsed && (
-              <div className="mb-2 px-1.5">
+              <button
+                type="button"
+                onClick={toggleMine}
+                aria-expanded={mineOpen}
+                className="group/mine mb-2 flex w-full items-center justify-between rounded-md px-1.5 py-0.5 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.04]"
+              >
                 <span className="eyebrow max-md:text-[0.78rem] max-md:tracking-[0.12em]">
                   Twoje
                 </span>
-              </div>
+                <ChevronDown
+                  size={13}
+                  className={`text-muted-foreground/60 transition-transform group-hover/mine:text-muted-foreground ${mineOpen ? "" : "-rotate-90"}`}
+                />
+              </button>
             )}
+            {(collapsed || mineOpen) && (
             <nav className="flex flex-col gap-1">
               <NavItem
                 href="/inbox"
@@ -389,6 +424,7 @@ export function Sidebar({
                 exact
               />
             </nav>
+            )}
           </div>
 
           {/* ─── SEKCJA "PRZESTRZENIE" — workspaces list + DnD reorder ─── */}
