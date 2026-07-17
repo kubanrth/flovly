@@ -9,6 +9,8 @@ import { NotificationToaster } from "@/components/notifications/notification-toa
 import { CommandPalette } from "@/components/search/command-palette";
 import type { CommandPaletteData } from "@/components/search/command-palette";
 import { OnboardingTour } from "@/components/onboarding/onboarding-tour";
+import { RouteTracker } from "@/components/layout/route-tracker";
+import { Suspense } from "react";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -208,6 +210,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {/* F12-K83: onboarding tour tylko gdy pierwszy login (flag w User).
           Modal closeuje się sam i zapisuje flagę przez completeOnboardingAction. */}
       {user.onboardingCompletedAt === null && <OnboardingTour />}
+
+      {/* F12-K135: śledzi ostatnią nie-taskową ścieżkę — TaskModalShell
+          wraca do niej po zamknięciu drawer'a. Suspense wymagany przez
+          useSearchParams w client component pod server layoutem. */}
+      <Suspense fallback={null}>
+        <RouteTracker />
+      </Suspense>
     </div>
   );
 }

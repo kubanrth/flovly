@@ -49,37 +49,27 @@ export function TaskModalShell({
     } catch {
       /* sessionStorage off or bad JSON — fallback to back */
     }
-    // F12-K106: fallback gdy sessionStorage puste (klient na świeżym cache
-    // raportuje że po zamknięciu drawer'a wraca na /workspaces zamiast do
-    // tablicy). sessionStorage ustawia się TYLKO w CreateTaskButton po
-    // success — gdy user kliknie EXISTING task w tabeli, taskModalReturnTo
-    // puste → router.back() w pustej historii (deep link / nowy tab) leci
-    // na default workspace overview. document.referrer jest niezawodny.
-    if (!returnTo && typeof document !== "undefined") {
+    // F12-K135: fallback = ostatnia nie-taskowa ścieżka z RouteTracker'a
+    // ((app) layout, aktualizuje się na każdą SPA-nawigację).
+    // Poprzednie podejście (K106/K119) używało document.referrer — ale
+    // referrer trzyma ostatni PEŁNY document load, nie SPA history. User
+    // wchodził do appki z /inbox → close drawer'a przenosił do powiadomień
+    // mimo że siedział w tabeli. sessionStorage tracker nie ma tej wady.
+    if (!returnTo) {
       try {
-        const ref = document.referrer;
-        if (ref) {
-          const refUrl = new URL(ref);
-          // Same-origin only (security: nie redirect na external referrer).
-          if (refUrl.origin === window.location.origin) {
-            const refPath = refUrl.pathname + refUrl.search + refUrl.hash;
-            // F12-K119: skip każdy /t/<id> path (nie tylko current taskId).
-            // Wcześniej user: task A → task B → close → referrer=task A →
-            // otwierało task A zamiast tabeli. Plus skip /workspaces overview
-            // (default fallback) i routes z @modal który nie powinien być
-            // returnTo (modal segment, nie real page).
-            const hasTaskPath = /\/t\/[A-Za-z0-9_-]+/.test(refPath);
-            if (
-              !hasTaskPath &&
-              refPath !== "/workspaces" &&
-              !refPath.includes("/@modal/")
-            ) {
-              returnTo = refPath;
-            }
-          }
+        const last = sessionStorage.getItem("flovly:lastListPath");
+        // Sanity: internal path, bez /t/<id> (tracker i tak je pomija —
+        // defensive double-check na wypadek starych/uszkodzonych wpisów).
+        if (
+          last &&
+          last.startsWith("/") &&
+          !last.startsWith("//") &&
+          !/\/t\/[A-Za-z0-9_-]+/.test(last)
+        ) {
+          returnTo = last;
         }
       } catch {
-        /* invalid referrer — fallback to router.back() */
+        /* sessionStorage off — fallback to router.back() */
       }
     }
     // scroll: false → Next.js nie resetuje scroll'a na router push;
