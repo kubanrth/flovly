@@ -72,20 +72,32 @@ export function TaskModalShell({
         /* sessionStorage off — fallback to router.back() */
       }
     }
-    // scroll: false → Next.js nie resetuje scroll'a na router push;
-    // potem requestAnimationFrame przywraca zapamiętaną pozycję ZANIM
-    // base-ui zdąży zrobić własny scroll-restore.
-    const restoreY = restoreScrollYRef.current ?? 0;
+    // F12-K138: scroll pozycja z RouteTracker'a (zapisywana NA BIEŻĄCO gdy
+    // user scrollował listę) — ref z mount'u drawer'a bywał przekłamany bo
+    // base-ui scroll-lock potrafił już wyzerować window.scrollY.
+    let restoreY = restoreScrollYRef.current ?? 0;
+    try {
+      const stored = sessionStorage.getItem("flovly:lastListScroll");
+      const n = stored !== null ? Number(stored) : NaN;
+      if (Number.isFinite(n) && n >= 0) restoreY = n;
+    } catch {
+      /* sessionStorage off — zostaje ref */
+    }
     if (returnTo) {
       router.push(returnTo, { scroll: false });
     } else {
       router.back();
     }
-    // Wyłączamy scrollRestoration globalnie na 200ms — wystarczy żeby
-    // route push się rozpropagował, potem ustawiamy własne Y.
-    requestAnimationFrame(() => {
-      window.scrollTo({ top: restoreY, behavior: "instant" });
-    });
+    // F12-K138: restore PONAWIANY — pojedynczy rAF przegrywał wyścig z
+    // (a) unlock'iem scroll-locka base-ui (własny restore), (b) commitem
+    // re-renderu tabeli po revalidate (zmiana wysokości strony). Efekt u
+    // klienta: widok "zjeżdżał na dół" albo przesuwał się o kilkadziesiąt
+    // px. Kilka prób w oknie ~250ms wygrywa z oboma.
+    const apply = () => window.scrollTo({ top: restoreY, behavior: "instant" });
+    requestAnimationFrame(apply);
+    setTimeout(apply, 50);
+    setTimeout(apply, 130);
+    setTimeout(apply, 250);
   };
 
   return (

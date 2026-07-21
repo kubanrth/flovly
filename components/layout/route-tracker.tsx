@@ -13,25 +13,57 @@ import { usePathname, useSearchParams } from "next/navigation";
 // referrer nadal "/inbox" → każde zamknięcie drawer'a przenosiło do
 // powiadomień. Ten tracker aktualizuje się na każdą zmianę pathname.
 export const LAST_LIST_PATH_KEY = "flovly:lastListPath";
+// F12-K138: scroll pozycja strony listowej — zapisywana NA BIEŻĄCO (nie
+// w momencie otwarcia drawer'a, kiedy base-ui zdążył już scroll-lockować
+// body i window.scrollY bywa 0/przekłamane).
+export const LAST_LIST_SCROLL_KEY = "flovly:lastListScroll";
 
 export function RouteTracker() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const isTaskRoute = /\/t\/[^/]+/.test(pathname);
+
   useEffect(() => {
     // Pomijamy task routes (/t/<id> — to drawer/pełny widok zadania,
     // nie miejsce do którego chcemy "wracać").
-    if (/\/t\/[^/]+/.test(pathname)) return;
+    if (isTaskRoute) return;
     try {
       const qs = searchParams.toString();
       sessionStorage.setItem(
         LAST_LIST_PATH_KEY,
         qs ? `${pathname}?${qs}` : pathname,
       );
+      // Świeża strona listowa = zresetuj punkt odniesienia na aktualny scroll.
+      sessionStorage.setItem(LAST_LIST_SCROLL_KEY, String(window.scrollY));
     } catch {
       /* sessionStorage off (private mode) — close() ma fallback */
     }
-  }, [pathname, searchParams]);
+  }, [pathname, searchParams, isTaskRoute]);
+
+  // F12-K138: łap scroll na bieżąco (passive, throttle przez rAF) — tylko
+  // gdy user realnie jest na stronie listowej. Gdy drawer otwarty (task
+  // route), body jest scroll-locked i scrollY kłamie — nie nadpisujemy.
+  useEffect(() => {
+    if (isTaskRoute) return;
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        try {
+          sessionStorage.setItem(LAST_LIST_SCROLL_KEY, String(window.scrollY));
+        } catch {
+          /* noop */
+        }
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [isTaskRoute]);
 
   return null;
 }
