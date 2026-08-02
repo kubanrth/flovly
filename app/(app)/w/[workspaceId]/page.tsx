@@ -209,11 +209,11 @@ function WorkspaceHero({
       {/* F12-K85 perf: blobs są STATIC. F12-K107: tylko desktop (md+). */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-32 -left-24 hidden h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(122,51,236,0.28),transparent_65%)] blur-3xl md:block"
+        className="pointer-events-none absolute -top-32 -left-24 hidden h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(122,51,236,0.28),transparent_65%)] blur-3xl md:block dark:md:hidden"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-28 -right-16 hidden h-[380px] w-[380px] rounded-full bg-[radial-gradient(circle,rgba(225,49,143,0.22),transparent_65%)] blur-3xl md:block"
+        className="pointer-events-none absolute -bottom-28 -right-16 hidden h-[380px] w-[380px] rounded-full bg-[radial-gradient(circle,rgba(225,49,143,0.22),transparent_65%)] blur-3xl md:block dark:md:hidden"
       />
 
       {/* F12-K108: usunięty duplikat workspace name (layout.tsx już ma h1
