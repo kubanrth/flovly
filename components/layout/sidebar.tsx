@@ -50,6 +50,7 @@ import {
   LineChart,
   KeyRound,
   Clock,
+  CreditCard,
   Menu,
   Plane,
   Plus,
@@ -410,6 +411,14 @@ export function Sidebar({
                     href={`/w/${workspaces[0].id}/passwords`}
                     icon={<KeyRound size={16} />}
                     label="Hasła"
+                    pathname={pathname}
+                    collapsed={collapsed}
+                  />
+                  {/* F12-K140: zarządzanie subskrypcjami firmy. */}
+                  <NavItem
+                    href={`/w/${workspaces[0].id}/subscriptions`}
+                    icon={<CreditCard size={16} />}
+                    label="Subskrypcje"
                     pathname={pathname}
                     collapsed={collapsed}
                   />

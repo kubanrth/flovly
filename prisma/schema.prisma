@@ -226,6 +226,8 @@ model Workspace {
   secretItems          SecretItem[]
   // F12-K133: TimeCamp-like time entries.
   timeEntries          TimeEntry[]
+  // F12-K140: subskrypcje firmy.
+  subscriptions        Subscription[]
 
   @@index([ownerId])
   @@index([deletedAt])
@@ -297,6 +299,32 @@ model TimeEntry {
   @@index([workspaceId, startedAt])
   @@index([userId, startedAt])
   @@index([taskId])
+}
+
+// F12-K140: zarządzanie subskrypcjami firmy ("Excel, ale ładnie narysowany").
+// Wiersz = jedna aktywna subskrypcja (narzędzie/serwis). amountCents = kwota
+// w groszach (int — bez float'ów przy pieniądzach), cycle = MONTHLY/YEARLY.
+// Podsumowanie (suma miesięczna/roczna) liczone w UI.
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+model Subscription {
+  id          String       @id @default(cuid())
+  workspaceId String
+  name        String
+  url         String?
+  amountCents Int          @default(0)
+  cycle       BillingCycle @default(MONTHLY)
+  notes       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, deletedAt])
 }
 
 model WorkspaceMembership {
