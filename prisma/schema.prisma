@@ -103,6 +103,8 @@ model User {
   secretItems        SecretItem[]          @relation("SecretItemOwner")
   // F12-K133: TimeCamp-like time entries + approvals.
   timeEntries        TimeEntry[]           @relation("TimeEntryUser")
+  // F12-K141: członkostwa w projektach subskrypcji.
+  subscriptionProjectMemberships SubscriptionProjectMember[]
   approvedTimeEntries TimeEntry[]          @relation("TimeEntryApprover")
 
   @@index([isBanned])
@@ -228,6 +230,8 @@ model Workspace {
   timeEntries          TimeEntry[]
   // F12-K140: subskrypcje firmy.
   subscriptions        Subscription[]
+  // F12-K141: projekty subskrypcji.
+  subscriptionProjects SubscriptionProject[]
 
   @@index([ownerId])
   @@index([deletedAt])
@@ -313,6 +317,10 @@ enum BillingCycle {
 model Subscription {
   id          String       @id @default(cuid())
   workspaceId String
+  // F12-K141: opcjonalne przypisanie do projektu — gate'uje widoczność
+  // (nie-admin widzi tylko subskrypcje projektów w których jest członkiem
+  // + nieprzypisane). SetNull: usunięcie projektu nie kasuje subskrypcji.
+  projectId   String?
   name        String
   url         String?
   amountCents Int          @default(0)
@@ -322,9 +330,39 @@ model Subscription {
   updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspace Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project   SubscriptionProject? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, deletedAt])
+}
+
+// F12-K141: projekt w module subskrypcji — nazwa + lista userów z dostępem.
+// Workspace ADMIN zarządza projektami i dostępami; członek projektu widzi
+// (i może weryfikować) koszty subskrypcji przypisanych do projektu.
+model SubscriptionProject {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  workspace     Workspace                   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  members       SubscriptionProjectMember[]
+  subscriptions Subscription[]
+
+  @@index([workspaceId, deletedAt])
+}
+
+model SubscriptionProjectMember {
+  projectId String
+  userId    String
+
+  project SubscriptionProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@index([userId])
 }
 
 model WorkspaceMembership {
