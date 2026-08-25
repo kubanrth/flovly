@@ -1,0 +1,20 @@
+/* tokens.css — paste as-is; extend, don't override */
+:root{
+  --orange-50:#FFF4EE;--orange-100:#FFE8DB;--orange-200:#FFCFB3;--orange-300:#FFAE80;--orange-400:#FF8640;
+  --orange-500:#FF5C00;--orange-600:#E04E00;--orange-700:#B83F00;--orange-800:#8A3000;--orange-900:#5C2000;--orange-950:#331200;
+  --n-0:#FFFFFF;--n-50:#FAF9F7;--n-100:#F3F1EE;--n-200:#E6E3DE;--n-300:#D2CEC7;--n-400:#B0ABA3;--n-500:#8A857D;--n-600:#66625B;--n-700:#4A4640;--n-900:#1C1A17;--n-950:#0F0E0C;--ink:#14110D;
+  --success:#1E9E5A;--success-text:#157A45;--warning:#E8A100;--warning-text:#8A5F00;--danger:#D6382C;--danger-text:#B7291F;--info:#2F6FE8;--info-text:#2457B8;
+  --chip-gray-bg:#EDEBE7;--chip-gray-fg:#4A4640;--chip-orange-bg:#FFE8DB;--chip-orange-fg:#8A3000;--chip-red-bg:#FDE3E1;--chip-red-fg:#8F1F16;
+  --chip-yellow-bg:#FBF0C8;--chip-yellow-fg:#6E4F00;--chip-green-bg:#DDF3E6;--chip-green-fg:#14603A;--chip-teal-bg:#D8F1EF;--chip-teal-fg:#0F5C57;
+  --chip-blue-bg:#DDE9FC;--chip-blue-fg:#1D3F8A;--chip-indigo-bg:#E3E4FB;--chip-indigo-fg:#2F3A8F;--chip-purple-bg:#EDE3FA;--chip-purple-fg:#5A2E8A;
+  --chip-pink-bg:#FBE2EE;--chip-pink-fg:#8A1F52;--chip-brown-bg:#EFE4DA;--chip-brown-fg:#5C3A1E;--chip-black-bg:#1C1A17;--chip-black-fg:#FFFFFF;
+  --bg:#FFFFFF;--canvas:#FAF9F7;--card:#FFFFFF;--popover:#FFFFFF;--border:#E6E3DE;--fg:#1C1A17;--fg-2:#66625B;--fg-3:#8A857D;
+  --primary:#FF5C00;--primary-fg:#14110D;--link:#B83F00;
+  --font-sans:"Inter",system-ui,sans-serif;--font-mono:"JetBrains Mono",ui-monospace,monospace;
+  --text-2xs:11px;--text-xs:12px;--text-sm:13px;--text-base:14px;--text-md:16px;--text-lg:20px;--text-xl:24px;--text-2xl:32px;
+  --radius-xs:4px;--radius-sm:6px;--radius-md:8px;--radius-lg:12px;
+  --shadow-e1:0 1px 2px rgba(20,17,13,.06),0 4px 12px rgba(20,17,13,.08);--shadow-e2:0 8px 24px rgba(20,17,13,.12),0 2px 6px rgba(20,17,13,.06);
+  --row-compact:28px;--row-comfortable:36px;--row-spacious:44px;--topbar:48px;--sidebar:240px;--sidebar-rail:56px;--tabs:40px;--panel:600px;
+  --focus:0 0 0 2px #FFFFFF,0 0 0 4px #FF5C00;--ease-out:cubic-bezier(.2,.8,.2,1);--dur-fast:100ms;--dur-normal:150ms;--dur-slow:220ms;
+}
+.dark{--bg:#000000;--canvas:#000000;--card:#0A0A0A;--popover:#0D0D0D;--border:rgba(255,255,255,.10);--fg:#F5F3F0;--fg-2:#B0ABA3;--fg-3:#8A857D;--link:#FF8640;--shadow-e1:0 1px 2px rgba(0,0,0,.5),0 4px 12px rgba(0,0,0,.5);--shadow-e2:0 8px 24px rgba(0,0,0,.6),0 2px 6px rgba(0,0,0,.4)}

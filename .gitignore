@@ -48,3 +48,9 @@ e2e/.auth/
 playwright-report/
 test-results/
 .env.test
+
+# redesign pack — obrazy zduplikowane z inspo/, zip do uploadu
+docs/redesign/claude-design-pack.zip
+docs/redesign/claude-design-pack/*.png
+docs/redesign/claude-design-pack/*.jpg
+docs/redesign/claude-design-pack/*.svg
