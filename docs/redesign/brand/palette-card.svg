@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" width="880" height="420" font-family="Inter, system-ui" font-size="11">
+  <rect width="880" height="420" fill="#FFFFFF"/>
+  <text x="24" y="30" font-size="14" font-weight="700" fill="#1C1A17">Brand palette — Marty Supreme orange · warm neutrals · semantic</text>
+  <!-- orange ramp -->
+  <text x="24" y="58" fill="#8A857D">ORANGE</text>
+  <g transform="translate(24,66)">
+    <rect x="0"   width="72" height="56" fill="#FFF4EE"/><text x="4" y="70" fill="#4A4640">50 FFF4EE</text>
+    <rect x="76"  width="72" height="56" fill="#FFE8DB"/><text x="80" y="70" fill="#4A4640">100 FFE8DB</text>
+    <rect x="152" width="72" height="56" fill="#FFCFB3"/><text x="156" y="70" fill="#4A4640">200 FFCFB3</text>
+    <rect x="228" width="72" height="56" fill="#FFAE80"/><text x="232" y="70" fill="#4A4640">300 FFAE80</text>
+    <rect x="304" width="72" height="56" fill="#FF8640"/><text x="308" y="70" fill="#4A4640">400 FF8640</text>
+    <rect x="380" width="72" height="56" fill="#FF5C00"/><text x="384" y="70" fill="#4A4640" font-weight="700">500 FF5C00</text>
+    <rect x="456" width="72" height="56" fill="#E04E00"/><text x="460" y="70" fill="#4A4640">600 E04E00</text>
+    <rect x="532" width="72" height="56" fill="#B83F00"/><text x="536" y="70" fill="#4A4640">700 B83F00</text>
+    <rect x="608" width="72" height="56" fill="#8A3000"/><text x="612" y="70" fill="#4A4640">800 8A3000</text>
+    <rect x="684" width="72" height="56" fill="#5C2000"/><text x="688" y="70" fill="#4A4640">900 5C2000</text>
+    <rect x="760" width="72" height="56" fill="#331200"/><text x="764" y="70" fill="#4A4640">950 331200</text>
+  </g>
+  <!-- neutrals -->
+  <text x="24" y="166" fill="#8A857D">NEUTRAL (warm)</text>
+  <g transform="translate(24,174)">
+    <rect x="0"   width="72" height="56" fill="#FFFFFF" stroke="#E6E3DE"/><text x="4" y="70" fill="#4A4640">0 FFFFFF</text>
+    <rect x="76"  width="72" height="56" fill="#FAF9F7"/><text x="80" y="70" fill="#4A4640">50 FAF9F7</text>
+    <rect x="152" width="72" height="56" fill="#F3F1EE"/><text x="156" y="70" fill="#4A4640">100 F3F1EE</text>
+    <rect x="228" width="72" height="56" fill="#E6E3DE"/><text x="232" y="70" fill="#4A4640">200 E6E3DE</text>
+    <rect x="304" width="72" height="56" fill="#D2CEC7"/><text x="308" y="70" fill="#4A4640">300 D2CEC7</text>
+    <rect x="380" width="72" height="56" fill="#B0ABA3"/><text x="384" y="70" fill="#4A4640">400 B0ABA3</text>
+    <rect x="456" width="72" height="56" fill="#8A857D"/><text x="460" y="70" fill="#4A4640">500 8A857D</text>
+    <rect x="532" width="72" height="56" fill="#66625B"/><text x="536" y="70" fill="#4A4640">600 66625B</text>
+    <rect x="608" width="72" height="56" fill="#4A4640"/><text x="612" y="70" fill="#4A4640">700 4A4640</text>
+    <rect x="684" width="72" height="56" fill="#1C1A17"/><text x="688" y="70" fill="#4A4640">900 1C1A17</text>
+    <rect x="760" width="72" height="56" fill="#0F0E0C"/><text x="764" y="70" fill="#4A4640">950 0F0E0C</text>
+  </g>
+  <!-- semantic + usage -->
+  <text x="24" y="274" fill="#8A857D">SEMANTIC</text>
+  <g transform="translate(24,282)">
+    <rect x="0"   width="72" height="40" fill="#1E9E5A"/><text x="4" y="54" fill="#4A4640">success</text>
+    <rect x="76"  width="72" height="40" fill="#E8A100"/><text x="80" y="54" fill="#4A4640">warning</text>
+    <rect x="152" width="72" height="40" fill="#D6382C"/><text x="156" y="54" fill="#4A4640">danger</text>
+    <rect x="228" width="72" height="40" fill="#2F6FE8"/><text x="232" y="54" fill="#4A4640">info</text>
+  </g>
+  <text x="24" y="360" fill="#8A857D">USAGE</text>
+  <g transform="translate(24,368)">
+    <rect width="150" height="32" rx="6" fill="#FF5C00"/><text x="75" y="21" text-anchor="middle" font-weight="600" font-size="13" fill="#14110D">Utwórz · 6.1:1</text>
+    <rect x="160" width="150" height="32" rx="6" fill="#FFFFFF" stroke="#E6E3DE"/><text x="235" y="21" text-anchor="middle" font-weight="600" font-size="13" fill="#1C1A17">Secondary</text>
+    <rect x="320" width="150" height="32" rx="6" fill="#000000"/><text x="395" y="21" text-anchor="middle" font-weight="600" font-size="13" fill="#FF5C00">Dark · orange text 6.8:1</text>
+    <rect x="480" width="150" height="32" rx="6" fill="#FFE8DB"/><text x="555" y="21" text-anchor="middle" font-weight="600" font-size="13" fill="#8A3000">Tint chip · 7.1:1</text>
+    <rect x="640" width="190" height="32" rx="6" fill="#FF5C00"/><text x="735" y="21" text-anchor="middle" font-weight="600" font-size="13" fill="#FFFFFF">✗ white text · 3.1:1</text>
+  </g>
+</svg>

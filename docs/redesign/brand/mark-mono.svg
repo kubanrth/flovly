@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 120" width="260" height="120">
+  <title>Mark A — mono black on white / white on black</title>
+  <rect width="130" height="120" fill="#FFFFFF"/>
+  <g transform="translate(25,10)">
+    <clipPath id="m1"><circle cx="40" cy="40" r="40"/></clipPath>
+    <g clip-path="url(#m1)">
+      <circle cx="40" cy="40" r="40" fill="#14110D"/>
+      <rect x="50" y="50" width="48" height="48" transform="rotate(45 50 50)" fill="#FFFFFF"/>
+    </g>
+  </g>
+  <rect x="130" width="130" height="120" fill="#000000"/>
+  <g transform="translate(155,10)">
+    <clipPath id="m2"><circle cx="40" cy="40" r="40"/></clipPath>
+    <g clip-path="url(#m2)">
+      <circle cx="40" cy="40" r="40" fill="#FFFFFF"/>
+      <rect x="50" y="50" width="48" height="48" transform="rotate(45 50 50)" fill="#000000"/>
+    </g>
+  </g>
+</svg>
