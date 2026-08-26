@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { RoadmapView } from "@/components/roadmap/roadmap-view";
-import { AggregatorToggle } from "@/components/roadmap/aggregator-toggle";
+import { docToText } from "@/components/roadmap/roadmap-model";
 import { BoardShell } from "@/components/view/board-shell";
 import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
@@ -29,6 +29,7 @@ export default async function RoadmapPage({
       where: { id: boardId, workspaceId, deletedAt: null },
       include: {
         workspace: { select: { enabledViews: true } },
+        statusColumns: { orderBy: { order: "asc" } },
         views: { where: { type: "ROADMAP" } },
         milestones: {
           where: { deletedAt: null },
@@ -42,6 +43,9 @@ export default async function RoadmapPage({
                 id: true,
                 title: true,
                 statusColumnId: true,
+                startAt: true,
+                stopAt: true,
+                statusColumn: { select: { name: true, colorHex: true } },
               },
             },
             // Aggregator side: children of this milestone (other boards' milestones
@@ -120,17 +124,12 @@ export default async function RoadmapPage({
       />
 
       <ViewTransition>
-      {canManageBoard && (
-        <AggregatorToggle
-          workspaceId={workspaceId}
-          boardId={boardId}
-          initialOn={board.isAggregator}
-        />
-      )}
       <RoadmapView
         workspaceId={workspaceId}
         boardId={boardId}
+        boardName={board.name}
         members={memberships.map((m) => m.user)}
+        statusColumns={board.statusColumns.map((c) => ({ id: c.id, name: c.name, colorHex: c.colorHex, order: c.order }))}
         isAggregator={board.isAggregator}
         canManageBoard={canManageBoard}
         workspaceMilestones={workspaceMilestones.map((b) => ({
@@ -149,8 +148,17 @@ export default async function RoadmapPage({
           startAt: m.startAt.toISOString(),
           stopAt: m.stopAt.toISOString(),
           assignee: m.assignee,
+          descriptionText: docToText(m.descriptionJson),
           taskCount: m.tasks.length,
-          tasks: m.tasks.map((t) => ({ id: t.id, title: t.title })),
+          tasks: m.tasks.map((t) => ({
+            id: t.id,
+            title: t.title,
+            statusColumnId: t.statusColumnId,
+            statusName: t.statusColumn?.name ?? null,
+            statusColorHex: t.statusColumn?.colorHex ?? null,
+            startAt: t.startAt?.toISOString() ?? null,
+            stopAt: t.stopAt?.toISOString() ?? null,
+          })),
           linkedChildren: m.parentLinks.map((l) => ({
             linkId: l.id,
             id: l.child.id,

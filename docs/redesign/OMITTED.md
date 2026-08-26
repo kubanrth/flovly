@@ -57,3 +57,22 @@ Stan po F1 (B4: nagłówek tablicy / tabsy / toolbar / dialog nowego widoku, 202
   (`flovly:boardBg:<boardId>`), więc działa per urządzenie, nie per tablica dla całego
   zespołu. Ścieżka wyjścia: kolumna `Board.backgroundColor` + server action —
   podmienia się dwie funkcje w `components/view/board-header-menu.tsx`.
+
+### B8 Podsumowanie
+- **„+3 w tym tygodniu"** pod kaflem Ukończone — nigdzie nie ma znacznika czasu ukończenia
+  zadania; `updatedAt` kłamie. Podwiersz wycięty.
+- **„WIP limit 5"** pod kaflem W toku — `StatusColumn` nie ma pola limitu.
+- **Link „Wszystko"** przy Ostatniej aktywności — nie istnieje trasa z aktywnością tablicy.
+- **Definicja „W toku"** — schemat nie zna semantyki kolumn; reguła to nazwa kolumny
+  (`w toku|w trakcie|in progress|doing|realizacja`), a w zapasie „ma status, nie pierwsza
+  kolumna, nie ukończone". Zaasertowane w `components/summary/aggregate.check.ts`.
+
+### B11 Opis
+- **„wersja 12" / „Historia wersji"** — brak wersjonowania w schemacie (D7). Zamiast tego
+  „ostatnia zmiana" z ostatniego wpisu `board.overview.updated` w `AuditLog`.
+- **Tytuł dokumentu 24px z makiety** — nie jest nazwą tablicy i nie ma pola; użytkownik
+  wpisuje własny nagłówek w treści.
+- **Menu slash („/")** — placeholder obiecuje, ale menu bloków nie istnieje; zaimplementowany
+  jest sam tekst placeholdera (tego wymaga AK117).
+- **Wstawianie obrazu** działa przez URL (`window.prompt`) — dokumenty tablic nie mają akcji
+  uploadu, a faza nie dokłada server actions.

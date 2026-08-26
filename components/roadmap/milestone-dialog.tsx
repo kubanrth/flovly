@@ -1,18 +1,31 @@
 "use client";
 
-import { useActionState, startTransition, useEffect, useState } from "react";
-import { Link as LinkIcon, X } from "lucide-react";
-import { Dialog as BaseDialog } from "@base-ui/react/dialog";
+import { startTransition, useActionState, useEffect, useState } from "react";
 import {
   createMilestoneAction,
+  deleteMilestoneAction,
   linkMilestoneAction,
   unlinkMilestoneAction,
   updateMilestoneAction,
   type CreateMilestoneState,
   type UpdateMilestoneState,
 } from "@/app/(app)/w/[workspaceId]/b/[boardId]/milestone-actions";
-import { RichTextEditor } from "@/components/task/rich-text-editor";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { IconClose, IconLink } from "@/components/ui/icons";
+import { Input, Textarea } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { textToDoc } from "@/components/roadmap/roadmap-model";
 import type {
   LinkedChildMilestone,
   WorkspaceBoardMilestones,
@@ -31,10 +44,22 @@ interface InitialMilestone {
   startAt: string;
   stopAt: string;
   assignee: MilestoneMember | null;
+  descriptionText?: string;
   linkedChildren?: LinkedChildMilestone[];
 }
 
+export interface MilestonePatch {
+  title: string;
+  startAt: string;
+  stopAt: string;
+  assignee: MilestoneMember | null;
+  descriptionText: string;
+}
+
 type Mode = "create" | "edit";
+
+const memberName = (m: MilestoneMember) => m.name ?? m.email.split("@")[0]!;
+const dayFmt = new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "short", year: "numeric" });
 
 export function MilestoneDialog({
   workspaceId,
@@ -43,7 +68,11 @@ export function MilestoneDialog({
   members,
   mode,
   initial,
+  milestoneLabel,
+  canDelete,
   onClose,
+  onSaved,
+  onDeleted,
   isAggregator,
   workspaceMilestones,
 }: {
@@ -54,147 +83,171 @@ export function MilestoneDialog({
   members: MilestoneMember[];
   mode: Mode;
   initial: InitialMilestone | null;
+  /** „M2" — pozycja na roadmapie, w nagłówku dialogu. */
+  milestoneLabel?: string;
+  canDelete?: boolean;
   onClose: () => void;
+  /** Optimistic echo — lista pokazuje zmianę zanim wróci revalidate. */
+  onSaved?: (id: string, patch: MilestonePatch) => void;
+  onDeleted?: (id: string) => void;
   isAggregator: boolean;
   workspaceMilestones: WorkspaceBoardMilestones[];
 }) {
   const isEdit = mode === "edit" && initial != null;
 
-  const [createState, createAction, creating] = useActionState<CreateMilestoneState, FormData>(
-    createMilestoneAction,
-    null,
-  );
-  const [updateState, updateAction, updating] = useActionState<UpdateMilestoneState, FormData>(
-    updateMilestoneAction,
-    null,
-  );
+  const [createState, createAction, creating] = useActionState<CreateMilestoneState, FormData>(createMilestoneAction, null);
+  const [updateState, updateAction, updating] = useActionState<UpdateMilestoneState, FormData>(updateMilestoneAction, null);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const state = isEdit ? updateState : createState;
-  const pending = isEdit ? updating : creating;
+  const pending = (isEdit ? updating : creating) || deleting;
   const fieldErrors = !state?.ok ? state?.fieldErrors : undefined;
 
-  // Close after a successful submit.
-  useEffect(() => {
-    if (state?.ok) onClose();
-  }, [state, onClose]);
-
-  // Default: new milestone spans today → +14 days. Captured once at mount
-  // so dialog re-renders don't shift the defaults mid-interaction.
+  // Default: new milestone spans today → +14 days. Captured once at mount so
+  // dialog re-renders don't shift the defaults mid-interaction.
   const [defaults] = useState(() => {
     const now = Date.now();
-    return {
-      start: new Date(now).toISOString(),
-      stop: new Date(now + 14 * 24 * 60 * 60 * 1000).toISOString(),
-    };
+    return { start: new Date(now).toISOString(), stop: new Date(now + 14 * 86_400_000).toISOString() };
   });
-  const defaultStart = initial?.startAt ?? defaults.start;
-  const defaultStop = initial?.stopAt ?? defaults.stop;
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [description, setDescription] = useState(initial?.descriptionText ?? "");
+  const [assigneeId, setAssigneeId] = useState(initial?.assignee?.id ?? "");
+  const [startAt, setStartAt] = useState(initial?.startAt ?? defaults.start);
+  const [stopAt, setStopAt] = useState(initial?.stopAt ?? defaults.stop);
+
+  // Close after a successful submit; echo the new values upwards first.
+  useEffect(() => {
+    if (!state?.ok) return;
+    onSaved?.(state.milestoneId, {
+      title,
+      startAt,
+      stopAt,
+      assignee: members.find((m) => m.id === assigneeId) ?? null,
+      descriptionText: description,
+    });
+    onClose();
+  }, [state, onSaved, onClose, title, startAt, stopAt, description, assigneeId, members]);
+
+  const remove = () => {
+    if (!initial) return;
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    const fd = new FormData();
+    fd.set("id", initial.id);
+    setDeleting(true);
+    startTransition(async () => {
+      await deleteMilestoneAction(fd);
+      onDeleted?.(initial.id);
+      onClose();
+    });
+  };
+
+  const assigneeItems = [
+    { value: "", label: "— brak —" },
+    ...members.map((m) => ({
+      value: m.id,
+      label: memberName(m),
+      icon: <Avatar name={memberName(m)} src={m.avatarUrl} size={20} />,
+    })),
+  ];
 
   return (
-    <BaseDialog.Root open onOpenChange={(open) => !open && onClose()} key={mode === "edit" && initial ? `edit-${initial.id}` : "create"}>
-      <BaseDialog.Portal>
-        {/* z-[100]/[110] === Z.modalBackdrop/modal (F12-K104). */}
-        <BaseDialog.Backdrop className="fixed inset-0 z-[100] bg-background/70" />
-        <BaseDialog.Popup className="fixed left-1/2 top-1/2 z-[110] flex max-h-[90vh] w-[min(560px,92vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-[0_24px_48px_-12px_rgba(0,0,0,0.25)]">
-          <div className="flex items-center justify-between border-b border-border px-6 py-3">
-            <BaseDialog.Title className="eyebrow">
-              {isEdit ? "Edytuj milestone" : "Nowy milestone"}
-            </BaseDialog.Title>
-            <button
-              type="button"
-              onClick={onClose}
-              className="grid h-8 w-8 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label="Zamknij"
-            >
-              <X size={16} />
-            </button>
-          </div>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent data-ui="milestone-dialog" size="sm">
+        <DialogHeader>
+          <DialogTitle>
+            {isEdit && initial
+              ? `Milestone ${milestoneLabel ? `${milestoneLabel} · ` : ""}${initial.title}`
+              : "Nowy milestone"}
+          </DialogTitle>
+        </DialogHeader>
 
-          <form
-            action={(fd) => startTransition(() => (isEdit ? updateAction(fd) : createAction(fd)))}
-            className="flex max-h-full flex-col gap-5 overflow-y-auto px-6 py-6"
-          >
-            <input type="hidden" name="workspaceId" value={workspaceId} />
-            <input type="hidden" name="boardId" value={boardId} />
-            {boardViewId && (
-              <input type="hidden" name="boardViewId" value={boardViewId} />
-            )}
-            {isEdit && initial && <input type="hidden" name="id" value={initial.id} />}
+        <form
+          action={(fd) => startTransition(() => (isEdit ? updateAction(fd) : createAction(fd)))}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <input type="hidden" name="workspaceId" value={workspaceId} />
+          <input type="hidden" name="boardId" value={boardId} />
+          {boardViewId && <input type="hidden" name="boardViewId" value={boardViewId} />}
+          {isEdit && initial && <input type="hidden" name="id" value={initial.id} />}
+          <input type="hidden" name="assigneeId" value={assigneeId} />
+          <input type="hidden" name="descriptionJson" value={textToDoc(description)} />
 
-            <label className="flex flex-col gap-2">
-              <span className="eyebrow">Tytuł</span>
-              <input
+          <DialogBody className="flex flex-col gap-3">
+            <div>
+              <Label htmlFor="milestone-title">Tytuł</Label>
+              <Input
+                id="milestone-title"
                 name="title"
-                type="text"
                 required
                 maxLength={200}
-                defaultValue={initial?.title ?? ""}
                 autoFocus
-                aria-invalid={!!fieldErrors?.title}
-                className="border-b border-border bg-transparent pb-2 font-display text-[1.4rem] leading-[1.2] tracking-[-0.02em] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                error={fieldErrors?.title}
+                className="mt-[5px]"
               />
-              {fieldErrors?.title && (
-                <span className="font-mono text-[0.68rem] text-destructive">
-                  {fieldErrors.title}
-                </span>
-              )}
-            </label>
+            </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="flex flex-col gap-2">
-                <span className="eyebrow">Start</span>
-                <DateTimePicker
-                  name="startAt"
-                  defaultValue={defaultStart}
-                  placeholder="Wybierz start"
-                  label="Data startu"
-                />
-                {fieldErrors?.startAt && (
-                  <span className="font-mono text-[0.68rem] text-destructive">
-                    {fieldErrors.startAt}
-                  </span>
-                )}
+            <div>
+              <Label htmlFor="milestone-description">Opis</Label>
+              <Textarea
+                id="milestone-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Cel, zakres, kryteria sukcesu…"
+                rows={3}
+                className="mt-[5px] min-h-[52px]"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <div className="min-w-0 flex-1">
+                <Label>Start</Label>
+                <div className="mt-[5px]">
+                  <DateTimePicker
+                    name="startAt"
+                    defaultValue={startAt}
+                    onChange={setStartAt}
+                    dateOnly
+                    label="Data startu"
+                    placeholder="Wybierz start"
+                    format={(d) => dayFmt.format(d)}
+                  />
+                </div>
+                {fieldErrors?.startAt && <p className="mt-1 text-xs text-danger-text">{fieldErrors.startAt}</p>}
               </div>
-              <div className="flex flex-col gap-2">
-                <span className="eyebrow">Koniec</span>
-                <DateTimePicker
-                  name="stopAt"
-                  defaultValue={defaultStop}
-                  placeholder="Wybierz koniec"
-                  label="Data końca"
-                />
-                {fieldErrors?.stopAt && (
-                  <span className="font-mono text-[0.68rem] text-destructive">
-                    {fieldErrors.stopAt}
-                  </span>
-                )}
+              <div className="min-w-0 flex-1">
+                <Label>Koniec</Label>
+                <div className="mt-[5px]">
+                  <DateTimePicker
+                    name="stopAt"
+                    defaultValue={stopAt}
+                    onChange={setStopAt}
+                    dateOnly
+                    label="Data końca"
+                    placeholder="Wybierz koniec"
+                    format={(d) => dayFmt.format(d)}
+                  />
+                </div>
+                {fieldErrors?.stopAt && <p className="mt-1 text-xs text-danger-text">{fieldErrors.stopAt}</p>}
               </div>
             </div>
 
-            <label className="flex flex-col gap-2">
-              <span className="eyebrow">Assignee</span>
-              <select
-                name="assigneeId"
-                defaultValue={initial?.assignee?.id ?? ""}
-                className="h-10 appearance-none border-b border-border bg-transparent pb-1 font-mono text-[0.82rem] uppercase tracking-[0.12em] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
-              >
-                <option value="">— brak —</option>
-                {members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name ?? m.email.split("@")[0]}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="flex flex-col gap-2">
-              <span className="eyebrow">Opis</span>
-              <RichTextEditor
-                name="descriptionJson"
-                initial={null}
-                readOnly={false}
-                placeholder="Cel, zakres, kryteria sukcesu…"
+            <div>
+              <Label htmlFor="milestone-assignee">Odpowiedzialny</Label>
+              <Select
+                id="milestone-assignee"
+                items={assigneeItems}
+                value={assigneeId}
+                onValueChange={setAssigneeId}
+                aria-label="Odpowiedzialny"
+                className="mt-[5px]"
               />
+              {fieldErrors?.assigneeId && <p className="mt-1 text-xs text-danger-text">{fieldErrors.assigneeId}</p>}
             </div>
 
             {isEdit && isAggregator && initial && (
@@ -205,39 +258,40 @@ export function MilestoneDialog({
               />
             )}
 
-            {!state?.ok && state?.error && (
-              <p className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-destructive">
-                {state.error}
-              </p>
-            )}
+            {!state?.ok && state?.error && <p className="text-xs text-danger-text">{state.error}</p>}
+          </DialogBody>
 
-            <div className="sticky bottom-0 -mx-6 -mb-6 flex items-center justify-end gap-2 border-t border-border bg-background/95 px-6 py-4">
+          <DialogFooter className="justify-between">
+            {isEdit && canDelete ? (
               <button
                 type="button"
-                onClick={onClose}
-                className="inline-flex h-9 items-center justify-center rounded-md border border-border px-4 font-sans text-[0.85rem] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Anuluj
-              </button>
-              <button
-                type="submit"
+                onClick={remove}
                 disabled={pending}
-                className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-5 font-sans text-[0.85rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
+                className="-ml-1.5 inline-flex h-7 items-center rounded-md px-1.5 text-xs font-medium text-danger-text outline-none hover:bg-chip-red-bg active:bg-chip-red-bg/70 disabled:text-n-400"
               >
-                {pending ? "Zapisuję…" : isEdit ? "Zapisz" : "Utwórz"}
+                {confirmDelete ? "Na pewno? Usuń milestone" : "Usuń milestone"}
               </button>
-            </div>
-          </form>
-        </BaseDialog.Popup>
-      </BaseDialog.Portal>
-    </BaseDialog.Root>
+            ) : (
+              <span />
+            )}
+            <span className="flex items-center gap-2">
+              <Button type="button" variant="secondary" onClick={onClose}>
+                Anuluj
+              </Button>
+              <Button type="submit" loading={pending} disabled={pending}>
+                Zapisz
+              </Button>
+            </span>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-// Aggregator linker inside the edit dialog. Lists existing links + a picker of
-// available milestones from other boards. Submit is a server action that
-// revalidates the roadmap, so the dialog refreshes when its parent re-renders
-// (RoadmapView passes a fresh `initial` keyed by id after revalidate).
+// Aggregator linker (Board.isAggregator). Lists the sub-board milestones this
+// one aggregates + a picker of what's still available. Both sides are server
+// actions that revalidate the roadmap.
 function LinkedMilestonesSection({
   parentId,
   existingLinks,
@@ -248,74 +302,54 @@ function LinkedMilestonesSection({
   workspaceMilestones: WorkspaceBoardMilestones[];
 }) {
   const linkedIds = new Set(existingLinks.map((l) => l.id));
-  // Hide boards that have nothing left to offer (everything already linked).
   const availableBoards = workspaceMilestones
-    .map((b) => ({
-      ...b,
-      milestones: b.milestones.filter((m) => !linkedIds.has(m.id)),
-    }))
+    .map((b) => ({ ...b, milestones: b.milestones.filter((m) => !linkedIds.has(m.id)) }))
     .filter((b) => b.milestones.length > 0);
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/20 p-4">
-      <div className="flex items-center gap-1.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-        <LinkIcon size={11} /> Linkowane z innych tablic
-      </div>
+    <div className="flex flex-col gap-2 rounded-md border border-border bg-canvas p-3">
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-n-700">
+        <IconLink width={13} height={13} /> Linkowane z innych tablic
+      </span>
 
       {existingLinks.length > 0 ? (
-        <ul className="flex flex-col gap-1.5">
+        <ul className="flex flex-col gap-1">
           {existingLinks.map((child) => (
-            <li
-              key={child.linkId}
-              className="flex items-center justify-between gap-2 rounded-md border border-border bg-card px-2.5 py-1.5"
-            >
-              <div className="flex min-w-0 flex-col">
-                <span className="truncate text-[0.86rem] font-medium">
-                  {child.title}
-                </span>
-                <span className="truncate font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground">
-                  {child.boardName}
-                </span>
-              </div>
-              <form
-                action={(fd) => {
-                  void unlinkMilestoneAction(fd);
-                }}
-                className="m-0 shrink-0"
-              >
+            <li key={child.linkId} className="flex items-center gap-2 rounded-sm border border-border bg-card px-2 py-1">
+              <span className="min-w-0 flex-1 truncate text-xs">
+                <span className="text-muted-foreground">{child.boardName} · </span>
+                {child.title}
+              </span>
+              <form action={(fd) => void unlinkMilestoneAction(fd)} className="m-0 shrink-0">
                 <input type="hidden" name="parentId" value={parentId} />
                 <input type="hidden" name="childId" value={child.id} />
                 <button
                   type="submit"
                   aria-label={`Odlinkuj ${child.title}`}
                   title="Odlinkuj"
-                  className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                  className="inline-flex size-6 items-center justify-center rounded-sm text-muted-foreground outline-none hover:bg-n-100 hover:text-danger-text active:bg-n-200"
                 >
-                  <X size={13} />
+                  <IconClose width={12} height={12} />
                 </button>
               </form>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-[0.82rem] text-muted-foreground">
-          Brak linkowanych milestonów. Dodaj poniżej żeby zagregować cele z innych tablic.
+        <p className="text-xs text-muted-foreground">
+          Brak linkowanych milestone&apos;ów. Dodaj poniżej, żeby zebrać cele z innych tablic.
         </p>
       )}
 
       {availableBoards.length > 0 ? (
-        <form
-          action={(fd) => {
-            void linkMilestoneAction(fd);
-          }}
-          className="flex items-center gap-2"
-        >
+        <form action={(fd) => void linkMilestoneAction(fd)} className="flex items-center gap-2">
           <input type="hidden" name="parentId" value={parentId} />
           <select
             name="childId"
             required
             defaultValue=""
-            className="h-9 flex-1 rounded-md border border-border bg-background px-2 text-[0.86rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+            aria-label="Milestone z innej tablicy"
+            className="h-8 min-w-0 flex-1 rounded-sm border border-input-border bg-card px-2 text-xs text-foreground outline-none hover:border-input-border-hover focus:border-orange-500"
           >
             <option value="" disabled>
               Wybierz milestone z innej tablicy…
@@ -330,17 +364,12 @@ function LinkedMilestonesSection({
               </optgroup>
             ))}
           </select>
-          <button
-            type="submit"
-            className="inline-flex h-9 items-center rounded-md border border-border bg-card px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-          >
+          <Button type="submit" variant="secondary" size="sm">
             Dodaj link
-          </button>
+          </Button>
         </form>
       ) : (
-        <p className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground/70">
-          Wszystkie dostępne milestony już zlinkowane.
-        </p>
+        <p className="text-xs text-muted-foreground">Wszystkie dostępne milestone&apos;y są już zlinkowane.</p>
       )}
     </div>
   );

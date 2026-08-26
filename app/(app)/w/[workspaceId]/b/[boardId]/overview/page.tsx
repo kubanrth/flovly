@@ -32,6 +32,26 @@ export default async function BoardOverviewPage({
   const enabledViews = parseEnabledViews(board.workspace.enabledViews);
   const canEdit = can(ctx.role, "board.update");
 
+  // „Ostatnia zmiana” w kolumnie treści (B11) — schemat nie wersjonuje
+  // dokumentu, więc autor i czas biorą się z ostatniego wpisu audytu.
+  const lastAudit = await db.auditLog.findFirst({
+    where: { workspaceId, objectType: "Board", objectId: board.id, action: "board.overview.updated" },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true, actor: { select: { name: true, email: true, avatarUrl: true } } },
+  });
+  const time = lastAudit?.createdAt.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" }) ?? "";
+  const sameDay = lastAudit ? lastAudit.createdAt.toDateString() === new Date().toDateString() : false;
+  const lastChange = lastAudit
+    ? {
+        name: lastAudit.actor?.name ?? lastAudit.actor?.email ?? "System",
+        avatarUrl: lastAudit.actor?.avatarUrl ?? null,
+        label: sameDay
+          ? `dziś ${time}`
+          : `${lastAudit.createdAt.toLocaleDateString("pl-PL", { day: "numeric", month: "short", year: "numeric" })}, ${time}`,
+        time,
+      }
+    : null;
+
   const bgCss = backgroundToCss((board as unknown as { background?: BackgroundConfig | null }).background ?? null);
 
   return (
@@ -44,12 +64,13 @@ export default async function BoardOverviewPage({
       />
 
       <ViewTransition>
-      <BoardOverviewEditor
-        workspaceId={workspaceId}
-        boardId={board.id}
-        initial={(board.overviewJson ?? null) as RichTextDoc | null}
-        canEdit={canEdit}
-      />
+        <BoardOverviewEditor
+          workspaceId={workspaceId}
+          boardId={board.id}
+          initial={(board.overviewJson ?? null) as RichTextDoc | null}
+          canEdit={canEdit}
+          lastChange={lastChange}
+        />
       </ViewTransition>
     </BoardShell>
   );

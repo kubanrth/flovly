@@ -1,441 +1,495 @@
 "use client";
 
-// F12-K78: Calendar view — miesieczny grid zadan po startAt/stopAt.
-// Klasyczny 7x6 grid (week starts Mon dla PL). Eventy renderowane jako
-// poziome pill'ki w komórce dnia. Klik = otwiera task drawer. Drag-drop
-// kafelka na inny dzień przesuwa stopAt (deadline).
-//
-// Nawigacja: ← Today → przyciski, klik miesiąca otwiera year picker.
-// Mobile: ten sam grid, ciaśniejszy. Klik dnia rozwija listę zadań pod
-// gridem (mobilny pattern: tap day = expand below).
+// Kalendarz tablicy (B7): Monday-first month grid, 20px task pills with a 3px
+// status bar, „+N więcej" overflow, 280px day popover, pointer drag to
+// reschedule. Mobile (<768px) → CalendarMobile (mini grid + day list).
 
-import { useMemo, useState, useTransition } from "react";
+import { startTransition, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { patchTaskAction } from "@/app/(app)/w/[workspaceId]/t/actions";
-import type { TaskPriorityValue } from "@/lib/task-priority";
-import { PRIORITY_META } from "@/lib/task-priority";
+import { useWorkspaceRealtime } from "@/hooks/use-workspace-realtime";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { taskPl } from "@/lib/pluralize";
+import { cn } from "@/lib/utils";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import { Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuLabel, MenuTrigger } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
+import { IconChevronDown, IconChevronLeft, IconChevronRight, IconCopy, IconMore } from "@/components/ui/icons";
+import { useToast } from "@/components/ui/toast";
+import { CalendarMobile } from "./calendar-mobile";
+import { QuickAddTask, StatusBar, pillSurface, statusHue } from "./calendar-parts";
+import {
+  WEEKDAYS,
+  addMonths,
+  countTasksInMonth,
+  dayKey,
+  dayKeyOf,
+  dayTitle,
+  dayTitleLong,
+  monthGrid,
+  monthLocative,
+  monthTitle,
+  parseDayKey,
+  pillsByDay,
+  shiftTaskDates,
+  shortDate,
+  splitDay,
+  type CalendarMilestone,
+  type CalendarTask,
+  type TaskPill,
+} from "./calendar-math";
 
-export interface CalendarTask {
+export type { CalendarTask, CalendarMilestone } from "./calendar-math";
+
+export interface CalendarMember {
   id: string;
-  displayId: number;
-  title: string;
-  statusName: string | null;
-  statusColor: string | null;
-  priority: TaskPriorityValue;
-  startAt: string | null; // ISO
-  stopAt: string | null; // ISO
+  name: string;
+  avatarUrl: string | null;
 }
 
-const POLISH_WEEKDAYS = ["Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd"];
-const POLISH_MONTHS = [
-  "Styczeń",
-  "Luty",
-  "Marzec",
-  "Kwiecień",
-  "Maj",
-  "Czerwiec",
-  "Lipiec",
-  "Sierpień",
-  "Wrzesień",
-  "Październik",
-  "Listopad",
-  "Grudzień",
-];
-
-// Tydzień zaczyna się od poniedziałku w PL. JS getDay() zwraca 0=niedziela.
-// Konwertujemy: niedz=6, pon=0, wt=1, ..., sob=5.
-function weekdayMonFirst(date: Date): number {
-  const d = date.getDay();
-  return d === 0 ? 6 : d - 1;
+export interface CalendarStatus {
+  id: string;
+  name: string;
+  colorHex: string | null;
 }
 
-function startOfMonth(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
-function addDays(date: Date, days: number): Date {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-}
-
-function sameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-
-// Build 6×7=42 grid komorek (klasyczny Outlook/Google Calendar pattern —
-// niektóre miesiące potrzebują 6 wierszy, mniejszy CLS).
-function buildCalendarGrid(focusDate: Date): Date[] {
-  const monthStart = startOfMonth(focusDate);
-  const startDow = weekdayMonFirst(monthStart);
-  const gridStart = addDays(monthStart, -startDow);
-  return Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
-}
-
-type CalScale = "day" | "week" | "month";
+const MAX_PILLS = 3;
 
 export function CalendarBoard({
   workspaceId,
   boardId,
   canEdit,
+  canCreate,
   tasks,
+  milestones,
+  statusColumns,
+  members,
 }: {
   workspaceId: string;
   boardId: string;
   canEdit: boolean;
+  canCreate: boolean;
   tasks: CalendarTask[];
+  milestones: CalendarMilestone[];
+  statusColumns: CalendarStatus[];
+  members: CalendarMember[];
 }) {
-  const [focusDate, setFocusDate] = useState<Date>(new Date());
-  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
-  const [scale, setScale] = useState<CalScale>("month");
-  const [, startTransition] = useTransition();
+  const router = useRouter();
+  const toast = useToast();
+  useWorkspaceRealtime(workspaceId);
+  const isMobile = useIsMobile();
 
-  const days = useMemo(() => buildCalendarGrid(focusDate), [focusDate]);
+  const [focus, setFocus] = useState(() => new Date());
+  const [selected, setSelected] = useState(() => dayKey(new Date()));
+  const [openDay, setOpenDay] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [personFilter, setPersonFilter] = useState<string[]>([]);
+  // Drag lands before the server answers — keep the pill where it was dropped.
+  // Reset during render (not an effect) the moment fresh tasks arrive.
+  const [optimistic, setOptimistic] = useState<{ base: CalendarTask[]; patch: Record<string, { startAt?: string; stopAt?: string }> }>({ base: tasks, patch: {} });
+  if (optimistic.base !== tasks) setOptimistic({ base: tasks, patch: {} });
 
-  // Mapa: yyyy-mm-dd → tasks[]. Klucz po lokalnej dacie żeby uniknąć off-by-one
-  // przy UTC ↔ local. Task pokazuje się w komórce stopAt (deadline) jeśli jest;
-  // inaczej w komórce startAt. Bez żadnej daty = nie wyświetlamy.
-  const tasksByDay = useMemo(() => {
-    const map = new Map<string, CalendarTask[]>();
-    for (const t of tasks) {
-      const dateStr = t.stopAt ?? t.startAt;
-      if (!dateStr) continue;
-      const d = new Date(dateStr);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      const bucket = map.get(key) ?? [];
-      bucket.push(t);
-      map.set(key, bucket);
-    }
-    // Sort priorytet (URGENT pierwszy) + then title.
-    for (const bucket of map.values()) {
-      bucket.sort((a, b) => {
-        const pa =
-          a.priority === "URGENT"
-            ? 0
-            : a.priority === "HIGH"
-              ? 1
-              : a.priority === "MEDIUM"
-                ? 2
-                : a.priority === "LOW"
-                  ? 3
-                  : 4;
-        const pb =
-          b.priority === "URGENT"
-            ? 0
-            : b.priority === "HIGH"
-              ? 1
-              : b.priority === "MEDIUM"
-                ? 2
-                : b.priority === "LOW"
-                  ? 3
-                  : 4;
-        if (pa !== pb) return pa - pb;
-        return a.title.localeCompare(b.title);
-      });
+  const visible = useMemo(() => {
+    const patch = optimistic.base === tasks ? optimistic.patch : {};
+    const patched = tasks.map((t) => (patch[t.id] ? { ...t, ...patch[t.id] } : t));
+    return patched.filter(
+      (t) =>
+        (statusFilter.length === 0 || (t.statusId !== null && statusFilter.includes(t.statusId))) &&
+        (personFilter.length === 0 || t.assignees.some((a) => personFilter.includes(a.id))),
+    );
+  }, [tasks, optimistic, statusFilter, personFilter]);
+
+  const byDay = useMemo(() => pillsByDay(visible), [visible]);
+  const milestonesByDay = useMemo(() => {
+    const map = new Map<string, CalendarMilestone[]>();
+    for (const m of milestones) {
+      const key = dayKeyOf(m.stopAt);
+      const bucket = map.get(key);
+      if (bucket) bucket.push(m);
+      else map.set(key, [m]);
     }
     return map;
-  }, [tasks]);
+  }, [milestones]);
 
-  const focusMonth = focusDate.getMonth();
-  const focusYear = focusDate.getFullYear();
-  const today = new Date();
+  const days = useMemo(() => monthGrid(focus), [focus]);
+  const todayKey = dayKey(new Date());
+  const monthCount = countTasksInMonth(visible, focus);
 
-  const handlePrevMonth = () => {
-    setFocusDate(new Date(focusYear, focusMonth - 1, 1));
+  // ─── drag = move the whole task (pointer events, so touch + Playwright work) ─
+  const dragRef = useRef<{ pill: TaskPill; x: number; y: number; moved: boolean; over: string | null } | null>(null);
+  const swallowClick = useRef(false);
+  const [dragging, setDragging] = useState<{ key: string; over: string | null } | null>(null);
+
+  const onPillPointerDown = (e: ReactPointerEvent<HTMLElement>, pill: TaskPill) => {
+    if (!canEdit || e.button !== 0) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    swallowClick.current = false;
+    dragRef.current = { pill, x: e.clientX, y: e.clientY, moved: false, over: null };
   };
-  const handleNextMonth = () => {
-    setFocusDate(new Date(focusYear, focusMonth + 1, 1));
+  const onPillPointerMove = (e: ReactPointerEvent<HTMLElement>) => {
+    const d = dragRef.current;
+    if (!d) return;
+    if (!d.moved && Math.abs(e.clientX - d.x) < 4 && Math.abs(e.clientY - d.y) < 4) return;
+    d.moved = true;
+    d.over = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>("[data-day]")?.dataset.day ?? null;
+    setDragging({ key: d.pill.key, over: d.over });
   };
-  const handleToday = () => setFocusDate(new Date());
+  const onPillPointerCancel = () => {
+    dragRef.current = null;
+    setDragging(null);
+  };
+  const onPillClick = (e: { preventDefault: () => void }) => {
+    if (!swallowClick.current) return;
+    e.preventDefault();
+    swallowClick.current = false;
+  };
+  const onPillPointerUp = (e: ReactPointerEvent<HTMLElement>) => {
+    const d = dragRef.current;
+    dragRef.current = null;
+    setDragging(null);
+    if (!d) return;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+    if (!d.moved) return;
+    swallowClick.current = true;
+    if (d.over && d.over !== d.pill.day) moveTask(d.pill, d.over);
+  };
 
-  // Drag-drop: przeciągnij kafelek na inny dzień → patchTaskAction(stopAt = newDay).
-  // Zachowujemy godzinę z aktualnego stopAt (lub 17:00 default).
-  const handleDropOnDay = (taskId: string, day: Date) => {
-    if (!canEdit) return;
-    const task = tasks.find((t) => t.id === taskId);
-    if (!task) return;
-    const sourceDate = task.stopAt
-      ? new Date(task.stopAt)
-      : task.startAt
-        ? new Date(task.startAt)
-        : new Date();
-    const newStopAt = new Date(day);
-    newStopAt.setHours(
-      sourceDate.getHours() || 17,
-      sourceDate.getMinutes() || 0,
-      0,
-      0,
-    );
+  const moveTask = (pill: TaskPill, day: string) => {
+    const patch = shiftTaskDates(pill.task, pill.kind, day);
+    if (!patch) return;
+    setOptimistic((o) => ({ base: o.base, patch: { ...o.patch, [pill.task.id]: patch } }));
     const fd = new FormData();
-    fd.set("id", taskId);
-    fd.set("stopAt", newStopAt.toISOString());
+    fd.set("id", pill.task.id);
+    if (patch.startAt) fd.set("startAt", patch.startAt);
+    if (patch.stopAt) fd.set("stopAt", patch.stopAt);
     startTransition(async () => {
-      await patchTaskAction(fd);
+      try {
+        await patchTaskAction(fd);
+      } catch {
+        // Odrzucone przez serwer (uprawnienia/konflikt) — cofnij podgląd.
+        setOptimistic((o) => {
+          const next = { ...o.patch };
+          delete next[pill.task.id];
+          return { base: o.base, patch: next };
+        });
+      }
+      router.refresh();
     });
   };
 
+  const goToday = () => {
+    const now = new Date();
+    setFocus(now);
+    setSelected(dayKey(now));
+  };
+
+  if (isMobile) {
+    return (
+      <div data-ui="calendar-view" className="-mx-4 -my-4">
+        <CalendarMobile
+          workspaceId={workspaceId}
+          boardId={boardId}
+          canCreate={canCreate}
+          focus={focus}
+          onFocus={setFocus}
+          selected={selected}
+          onSelect={setSelected}
+          byDay={byDay}
+          onToday={goToday}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-4">
-      {/* v4 card — rounded-[22px] plain with brand shadow. Toolbar (month label
-          + nav arrows + Today + Day/Week/Month switcher) + dow header + 7x6
-          grid + hint footer. BoardHeader stays OUTSIDE. */}
-      <div className="relative overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_30px_70px_-30px_rgba(122,92,255,0.4)]">
-        {/* Toolbar — v4: padding 14px 18px, plain bg, border-bottom */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card/60 px-[18px] py-[14px]">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handlePrevMonth}
-              aria-label="Poprzedni miesiąc"
-              className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-foreground transition-colors hover:bg-accent"
+    <div data-ui="calendar-view" className="-mx-6 -my-4 flex min-h-[calc(100dvh-260px)] flex-col bg-card">
+      {/* Toolbar — ‹ Miesiąc › Dzisiaj … Status Osoba ⋯ */}
+      <div data-ui="calendar-toolbar" className="flex flex-none items-center gap-2 border-b border-border px-6 py-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          iconOnly
+          aria-label="Poprzedni miesiąc"
+          onClick={() => setFocus(addMonths(focus, -1))}
+        >
+          <IconChevronLeft width={13} height={13} strokeWidth={1.6} />
+        </Button>
+        <span className="min-w-[150px] text-center text-md font-semibold">{monthTitle(focus)}</span>
+        <Button
+          variant="secondary"
+          size="sm"
+          iconOnly
+          aria-label="Następny miesiąc"
+          onClick={() => setFocus(addMonths(focus, 1))}
+        >
+          <IconChevronRight width={13} height={13} strokeWidth={1.6} />
+        </Button>
+        <Button variant="secondary" size="sm" onClick={goToday}>Dzisiaj</Button>
+        <span className="flex-1" />
+        <FilterMenu
+          label="Status"
+          active={statusFilter.length}
+          items={statusColumns.map((s) => ({ id: s.id, label: <Chip hue={statusHue(s.colorHex)} dot size="md">{s.name}</Chip> }))}
+          selected={statusFilter}
+          onToggle={(id) => setStatusFilter((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]))}
+          onClear={() => setStatusFilter([])}
+        />
+        <FilterMenu
+          label="Osoba"
+          active={personFilter.length}
+          items={members.map((m) => ({ id: m.id, label: <span className="flex items-center gap-2"><Avatar name={m.name} src={m.avatarUrl} size={20} />{m.name}</span> }))}
+          selected={personFilter}
+          onToggle={(id) => setPersonFilter((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]))}
+          onClear={() => setPersonFilter([])}
+        />
+        <Menu>
+          <MenuTrigger
+            aria-label="Więcej opcji"
+            className="inline-flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200 focus-visible:shadow-[var(--focus)]"
+          >
+            <IconMore width={16} height={16} />
+          </MenuTrigger>
+          <MenuContent align="end">
+            <MenuItem
+              icon={<IconCopy />}
+              onClick={() => {
+                void navigator.clipboard.writeText(window.location.href);
+                toast.add({ title: "Skopiowano link do widoku" });
+              }}
             >
-              <ChevronLeft size={14} />
-            </button>
-            <button
-              type="button"
-              onClick={handleToday}
-              className="inline-flex h-8 items-center rounded-md border border-border bg-card px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
-              Dziś
-            </button>
-            <button
-              type="button"
-              onClick={handleNextMonth}
-              aria-label="Następny miesiąc"
-              className="grid h-8 w-8 place-items-center rounded-md border border-border bg-card text-foreground transition-colors hover:bg-accent"
-            >
-              <ChevronRight size={14} />
-            </button>
-            <h2 className="ml-2 font-display text-[1rem] font-bold leading-none tracking-[-0.02em] text-foreground">
-              {POLISH_MONTHS[focusMonth]} {focusYear}
-            </h2>
-          </div>
-          {/* Day/Week/Month segmented control — v4 spec: rounded-[11px] padding-[3px] gap-[3px] */}
-          <div className="flex gap-[3px] rounded-[11px] bg-muted/40 p-[3px]">
-            <button
-              type="button"
-              onClick={() => setScale("day")}
-              className={`rounded-[7px] px-3 py-[5px] text-[0.74rem] transition-colors ${
-                scale === "day"
-                  ? "bg-primary font-semibold text-white "
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Dzień
-            </button>
-            <button
-              type="button"
-              onClick={() => setScale("week")}
-              className={`rounded-[7px] px-3 py-[5px] text-[0.74rem] transition-colors ${
-                scale === "week"
-                  ? "bg-primary font-semibold text-white "
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Tydzień
-            </button>
-            <button
-              type="button"
-              onClick={() => setScale("month")}
-              className={`rounded-[7px] px-3 py-[5px] text-[0.74rem] transition-colors ${
-                scale === "month"
-                  ? "bg-primary font-semibold text-white "
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Miesiąc
-            </button>
-          </div>
-        </div>
-
-        {/* DOW header — v4: 7-col grid, center text, muted */}
-        <div className="grid grid-cols-7 border-b border-border bg-card/40">
-          {POLISH_WEEKDAYS.map((d, i) => (
-            <div
-              key={d}
-              className={`py-2 text-center font-mono text-[0.66rem] font-semibold uppercase tracking-[0.06em] ${i >= 5 ? "text-rose-400/70" : "text-muted-foreground"}`}
-            >
-              {d}
-            </div>
-          ))}
-        </div>
-
-        {/* 42 cells — v4: 7×6 grid with min 88px rows.
-            Renderowany tylko gdy scale === "month" (Day/Week na razie wizualnie
-            ten sam grid; przełącznik ready do późniejszej rozbudowy). */}
-        <div className="grid grid-cols-7 grid-rows-6">
-          {days.map((day, i) => {
-            const inMonth = day.getMonth() === focusMonth;
-            const isToday = sameDay(day, today);
-            const isWeekend = weekdayMonFirst(day) >= 5;
-            const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
-            const dayTasks = tasksByDay.get(key) ?? [];
-            return (
-              <CalendarCell
-                key={i}
-                day={day}
-                inMonth={inMonth}
-                isToday={isToday}
-                isWeekend={isWeekend}
-                tasks={dayTasks}
-                workspaceId={workspaceId}
-                canEdit={canEdit}
-                draggingTaskId={draggingTaskId}
-                onDragStart={(id) => setDraggingTaskId(id)}
-                onDragEnd={() => setDraggingTaskId(null)}
-                onDropTask={handleDropOnDay}
-              />
-            );
-          })}
-        </div>
-
-        {/* Hint footer — v4 spec */}
-        <div className="border-t border-border bg-card/40 px-[18px] py-[10px]">
-          <span className="text-[0.72rem] text-muted-foreground">
-            Hint · przeciągnij event na inny dzień aby zmienić termin
-          </span>
-        </div>
+              Kopiuj link do widoku
+            </MenuItem>
+          </MenuContent>
+        </Menu>
       </div>
 
-      {/* boardId suppress unused warning */}
-      <span hidden>{boardId}</span>
-    </div>
-  );
-}
-
-// ─────────── CalendarCell — komórka 1 dnia ────────────────────────────────
-
-function CalendarCell({
-  day,
-  inMonth,
-  isToday,
-  isWeekend,
-  tasks,
-  workspaceId,
-  canEdit,
-  draggingTaskId,
-  onDragStart,
-  onDragEnd,
-  onDropTask,
-}: {
-  day: Date;
-  inMonth: boolean;
-  isToday: boolean;
-  isWeekend: boolean;
-  tasks: CalendarTask[];
-  workspaceId: string;
-  canEdit: boolean;
-  draggingTaskId: string | null;
-  onDragStart: (id: string) => void;
-  onDragEnd: () => void;
-  onDropTask: (id: string, day: Date) => void;
-}) {
-  const [hover, setHover] = useState(false);
-  // v4: pokazujemy max 2 pille + "+N więcej" overflow chip (zachowujemy 3 jak
-  // wcześniej żeby nie zmniejszyć utility na wider screens).
-  const visibleTasks = tasks.slice(0, 3);
-  const overflow = tasks.length - visibleTasks.length;
-
-  return (
-    <div
-      onDragOver={(e) => {
-        if (!canEdit || !draggingTaskId) return;
-        e.preventDefault();
-        setHover(true);
-      }}
-      onDragLeave={() => setHover(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setHover(false);
-        if (draggingTaskId) onDropTask(draggingTaskId, day);
-      }}
-      data-hover={hover ? "true" : "false"}
-      className={`relative flex min-h-[88px] flex-col gap-[3px] border-b border-r border-border/60 p-[7px] transition-colors data-[hover=true]:bg-primary/5 ${
-        inMonth ? "" : "bg-muted/15"
-      } ${isWeekend && inMonth ? "bg-muted/10" : ""}`}
-    >
-      {/* Day number — v4: today ringed with brand gradient.
-          Self-align flex-start per v4 spec. */}
-      <span
-        className={`inline-flex h-[22px] min-w-[22px] items-center justify-center self-start rounded-full px-1 font-mono text-[0.7rem] font-semibold leading-none ${
-          isToday
-            ? "bg-primary text-white  ring-2 ring-[var(--brand-500)]/40"
-            : inMonth
-              ? "text-foreground"
-              : "text-muted-foreground/40"
-        }`}
+      {/* Grid — first row = Pon…Nd headers, then whole Mon-first weeks. */}
+      <div
+        data-ui="calendar-grid"
+        className="grid flex-1 grid-cols-7 border-b border-border"
+        style={{ gridTemplateRows: `32px repeat(${days.length / 7}, minmax(112px, 1fr))` }}
       >
-        {day.getDate()}
-      </span>
-
-      <div className="flex min-w-0 flex-1 flex-col gap-[2px] overflow-hidden">
-        {visibleTasks.map((task) => (
-          <CalendarEventPill
-            key={task.id}
-            task={task}
-            workspaceId={workspaceId}
-            draggable={canEdit}
-            onDragStart={() => onDragStart(task.id)}
-            onDragEnd={onDragEnd}
-          />
+        {WEEKDAYS.map((name, i) => (
+          <div
+            key={name}
+            className={cn(
+              "eyebrow flex items-center border-b border-border px-2.5",
+              i < 6 && "border-r border-table-grid",
+              i >= 5 ? "bg-canvas text-fg-3" : "text-fg-2",
+            )}
+          >
+            {name}
+          </div>
         ))}
-        {overflow > 0 && (
-          <span className="self-start rounded-full bg-muted/50 px-[7px] py-[1px] font-mono text-[0.58rem] uppercase tracking-[0.08em] text-muted-foreground">
-            +{overflow} więcej
-          </span>
-        )}
+
+        {days.map((date, i) => {
+          const key = dayKey(date);
+          const inMonth = date.getMonth() === focus.getMonth();
+          const weekend = i % 7 >= 5;
+          const isToday = key === todayKey;
+          const pills = byDay.get(key) ?? [];
+          const dayMilestones = milestonesByDay.get(key) ?? [];
+          const { visible: shown, overflow } = splitDay(pills, MAX_PILLS);
+          const dropTarget = dragging?.over === key;
+
+          return (
+            <Popover key={key} open={openDay === key} onOpenChange={(o) => { setOpenDay(o ? key : null); if (o) setSelected(key); }}>
+              <div
+                data-ui="calendar-day"
+                data-day={key}
+                data-today={isToday || undefined}
+                className={cn(
+                  "relative flex flex-col gap-[3px] overflow-hidden px-1.5 py-1",
+                  i % 7 !== 6 && "border-r border-table-grid",
+                  i < days.length - 7 && "border-b border-table-grid",
+                  weekend && "bg-canvas",
+                  (isToday || selected === key || dropTarget) && "shadow-[inset_0_0_0_1px_var(--orange-500)]",
+                  (selected === key || dropTarget) && "bg-selected",
+                )}
+              >
+                <PopoverTrigger
+                  aria-label={`Zadania na ${dayTitleLong(date)}`}
+                  className="absolute inset-0 z-0 cursor-pointer outline-none hover:bg-row-hover active:bg-n-200 focus-visible:shadow-[var(--focus)]"
+                />
+                <span
+                  className={cn(
+                    "relative z-10 self-start text-xs leading-[18px]",
+                    !inMonth && "text-n-400",
+                    inMonth && weekend && "text-fg-3",
+                    inMonth && !weekend && "font-medium",
+                    isToday && "font-semibold text-orange-700",
+                  )}
+                >
+                  {!inMonth && (i === 0 || date.getDate() === 1) ? shortDate(date) : date.getDate()}
+                </span>
+
+                {dayMilestones.map((m) => (
+                  <Link
+                    key={m.id}
+                    href={`/w/${workspaceId}/b/${boardId}/roadmap`}
+                    className="relative z-10 flex h-5 shrink-0 items-center gap-[5px] overflow-hidden rounded-sm bg-chip-orange-bg px-1.5 text-chip-orange-fg outline-none transition-opacity duration-[120ms] ease-[var(--ease-out)] hover:opacity-80 active:opacity-70 focus-visible:shadow-[var(--focus)]"
+                    title={`Milestone: ${m.title}`}
+                  >
+                    <StatusBar hue="orange" />
+                    <span className="truncate text-2xs font-semibold">◆ {m.title}</span>
+                  </Link>
+                ))}
+
+                {shown.map((pill) => (
+                  <CalendarPill
+                    key={pill.key}
+                    pill={pill}
+                    workspaceId={workspaceId}
+                    draggable={canEdit}
+                    dragging={dragging?.key === pill.key}
+                    onPointerDown={onPillPointerDown}
+                    onPointerMove={onPillPointerMove}
+                    onPointerUp={onPillPointerUp}
+                    onPointerCancel={onPillPointerCancel}
+                    onClick={onPillClick}
+                  />
+                ))}
+
+                {overflow > 0 && (
+                  <span className="pointer-events-none relative z-10 text-2xs font-medium text-orange-700">
+                    +{overflow} więcej
+                  </span>
+                )}
+              </div>
+
+              <PopoverContent data-ui="calendar-day-popover" align="start" className="w-[280px] p-3">
+                <div className="mb-2 flex items-center gap-2">
+                  <PopoverTitle>{dayTitle(date)}</PopoverTitle>
+                  <span className="ml-auto font-mono text-[10px] text-fg-3">
+                    {pills.length} {taskPl(pills.length)}
+                  </span>
+                </div>
+                {pills.length === 0 && <p className="py-1 text-xs text-muted-foreground">Brak zadań tego dnia.</p>}
+                {pills.map((pill) => (
+                  <Link
+                    key={pill.key}
+                    href={`/w/${workspaceId}/t/${pill.task.id}`}
+                    className="-mx-1 flex h-[26px] items-center gap-1.5 rounded-sm px-1 outline-none hover:bg-n-100 active:bg-n-200 focus-visible:shadow-[var(--focus)]"
+                  >
+                    <StatusBar hue={statusHue(pill.task.statusColor)} tall />
+                    <span className="font-mono text-[10px] text-fg-3">#{pill.task.displayId}</span>
+                    <span className="flex-1 truncate text-xs text-foreground">{pill.label}</span>
+                    {pill.task.assignees[0] && (
+                      <Avatar name={pill.task.assignees[0].name} src={pill.task.assignees[0].avatarUrl} size={20} />
+                    )}
+                  </Link>
+                ))}
+                {canCreate && (
+                  <div className="mt-1.5 border-t border-n-100 pt-2">
+                    <QuickAddTask workspaceId={workspaceId} boardId={boardId} day={key} onDone={() => setOpenDay(null)} />
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+          );
+        })}
+      </div>
+
+      <div className="flex h-8 flex-none items-center border-t border-border bg-canvas px-6">
+        <span className="font-mono text-2xs text-fg-2">
+          {monthCount} {taskPl(monthCount)} {monthLocative(focus)} · pasek koloru = status
+        </span>
+        <span className="flex-1" />
+        <span className="font-mono text-2xs text-fg-3">
+          zaznaczony dzień: {shortDate(parseDayKey(selected))} · ◆ = milestone
+        </span>
       </div>
     </div>
   );
 }
 
-// ─────────── CalendarEventPill — pojedyncze zadanie w komórce ─────────────
-
-function CalendarEventPill({
-  task,
+function CalendarPill({
+  pill,
   workspaceId,
   draggable,
-  onDragStart,
-  onDragEnd,
+  dragging,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+  onClick,
 }: {
-  task: CalendarTask;
+  pill: TaskPill;
   workspaceId: string;
   draggable: boolean;
-  onDragStart: () => void;
-  onDragEnd: () => void;
+  dragging: boolean;
+  onPointerDown: (e: ReactPointerEvent<HTMLElement>, pill: TaskPill) => void;
+  onPointerMove: (e: ReactPointerEvent<HTMLElement>) => void;
+  onPointerUp: (e: ReactPointerEvent<HTMLElement>) => void;
+  onPointerCancel: () => void;
+  onClick: (e: { preventDefault: () => void }) => void;
 }) {
-  const priorityMeta =
-    task.priority !== "NONE" ? PRIORITY_META[task.priority] : null;
-
-  // v4: event jako pill rounded-full gradient brand. Brak status-color
-  // kolorystyki — wszystko brand, status dot pokazuje statusColor.
+  const hue = statusHue(pill.task.statusColor);
   return (
     <Link
-      href={`/w/${workspaceId}/t/${task.id}`}
-      draggable={draggable}
-      onDragStart={() => onDragStart()}
-      onDragEnd={onDragEnd}
-      className="group flex items-center gap-[5px] rounded-full bg-primary px-[8px] py-[2px] text-left text-[0.66rem] leading-tight text-white shadow-[0_4px_10px_-4px_rgba(124,92,255,0.5)] transition-transform hover:-translate-y-[1px] hover:shadow-[0_6px_14px_-4px_rgba(124,92,255,0.6)]"
-      title={`#${task.displayId} — ${task.title}${task.statusName ? ` · ${task.statusName}` : ""}`}
+      href={`/w/${workspaceId}/t/${pill.task.id}`}
+      data-ui="calendar-pill"
+      data-task-id={pill.task.id}
+      draggable={false}
+      title={`#${pill.task.displayId} ${pill.label}${pill.task.statusName ? ` · ${pill.task.statusName}` : ""}${draggable ? " · przeciągnij, aby przenieść" : ""}`}
+      onPointerDown={draggable ? (e) => onPointerDown(e, pill) : undefined}
+      onPointerMove={draggable ? onPointerMove : undefined}
+      onPointerUp={draggable ? onPointerUp : undefined}
+      onPointerCancel={draggable ? onPointerCancel : undefined}
+      onClick={onClick}
+      className={cn(
+        "relative z-10 flex h-5 shrink-0 items-center gap-[5px] overflow-hidden rounded-sm px-1.5 outline-none transition-opacity duration-[120ms] ease-[var(--ease-out)] hover:opacity-80 active:opacity-70 focus-visible:shadow-[var(--focus)]",
+        pillSurface(hue),
+        draggable && "cursor-grab",
+        dragging && "cursor-grabbing opacity-50",
+      )}
     >
-      {priorityMeta && (
-        <span
-          className="h-[6px] w-[6px] shrink-0 rounded-full ring-1 ring-white/40"
-          style={{ background: priorityMeta.dotColor }}
-        />
-      )}
-      {!priorityMeta && task.statusColor && (
-        <span
-          className="h-[6px] w-[6px] shrink-0 rounded-full ring-1 ring-white/40"
-          style={{ background: task.statusColor }}
-        />
-      )}
-      <span className="truncate font-semibold">{task.title}</span>
+      <StatusBar hue={hue} />
+      <span className="truncate text-2xs font-medium">{pill.label}</span>
     </Link>
+  );
+}
+
+function FilterMenu({
+  label,
+  active,
+  items,
+  selected,
+  onToggle,
+  onClear,
+}: {
+  label: string;
+  active: number;
+  items: { id: string; label: ReactNode }[];
+  selected: string[];
+  onToggle: (id: string) => void;
+  onClear: () => void;
+}) {
+  return (
+    <Menu>
+      <MenuTrigger
+        className={cn(
+          "inline-flex h-7 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-medium outline-none hover:bg-n-100 active:bg-n-200 focus-visible:shadow-[var(--focus)]",
+          active > 0 ? "bg-selected text-orange-800" : "text-n-700",
+        )}
+      >
+        {label}
+        {active > 0 && ` · ${active}`}
+        <IconChevronDown width={11} height={11} strokeWidth={1.8} />
+      </MenuTrigger>
+      <MenuContent align="end">
+        <MenuLabel>{label}</MenuLabel>
+        {items.length === 0 && <MenuItem disabled>Brak opcji</MenuItem>}
+        {items.map((item) => (
+          <MenuCheckboxItem key={item.id} checked={selected.includes(item.id)} closeOnClick={false} onCheckedChange={() => onToggle(item.id)}>
+            {item.label}
+          </MenuCheckboxItem>
+        ))}
+        {active > 0 && <MenuItem onClick={onClear}>Wyczyść</MenuItem>}
+      </MenuContent>
+    </Menu>
   );
 }

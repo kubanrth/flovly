@@ -12,10 +12,11 @@ import { ImportTasksDialog } from "@/components/task/import-tasks-dialog";
 import { ShareBoardButton } from "@/components/board/share-board-button";
 import {
   CalendarBoard,
+  type CalendarMilestone,
   type CalendarTask,
 } from "@/components/calendar/calendar-board";
 
-// F12-K78: Calendar view — miesieczny grid zadan z deadline'em.
+// Kalendarz tablicy (B7): miesięczny grid zadań po startAt/stopAt + milestone'y.
 export default async function BoardCalendarPage({
   params,
 }: {
@@ -24,10 +25,18 @@ export default async function BoardCalendarPage({
   const { workspaceId, boardId } = await params;
   const ctx = await requireWorkspaceMembership(workspaceId);
 
+  const memberships = await db.workspaceMembership.findMany({
+    where: { workspaceId },
+    include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+    orderBy: { joinedAt: "asc" },
+  });
+
   const board = await db.board.findFirst({
     where: { id: boardId, workspaceId, deletedAt: null },
     include: {
       workspace: { select: { enabledViews: true } },
+      statusColumns: { orderBy: { order: "asc" } },
+      milestones: { where: { deletedAt: null }, select: { id: true, title: true, stopAt: true } },
       tasks: {
         where: {
           deletedAt: null,
@@ -40,8 +49,9 @@ export default async function BoardCalendarPage({
           title: true,
           startAt: true,
           stopAt: true,
-          priority: true,
+          statusColumnId: true,
           statusColumn: { select: { name: true, colorHex: true } },
+          assignees: { select: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } } },
         },
       },
     },
@@ -56,11 +66,22 @@ export default async function BoardCalendarPage({
     id: t.id,
     displayId: t.displayId,
     title: t.title,
+    statusId: t.statusColumnId,
     statusName: t.statusColumn?.name ?? null,
     statusColor: t.statusColumn?.colorHex ?? null,
-    priority: t.priority,
     startAt: t.startAt ? t.startAt.toISOString() : null,
     stopAt: t.stopAt ? t.stopAt.toISOString() : null,
+    assignees: t.assignees.map((a) => ({
+      id: a.user.id,
+      name: a.user.name ?? a.user.email,
+      avatarUrl: a.user.avatarUrl,
+    })),
+  }));
+
+  const milestones: CalendarMilestone[] = board.milestones.map((m) => ({
+    id: m.id,
+    title: m.title,
+    stopAt: m.stopAt.toISOString(),
   }));
 
   return (
@@ -90,7 +111,15 @@ export default async function BoardCalendarPage({
           workspaceId={workspaceId}
           boardId={board.id}
           canEdit={canEdit}
+          canCreate={canCreate}
           tasks={calendarTasks}
+          milestones={milestones}
+          statusColumns={board.statusColumns.map((c) => ({ id: c.id, name: c.name, colorHex: c.colorHex }))}
+          members={memberships.map((m) => ({
+            id: m.user.id,
+            name: m.user.name ?? m.user.email,
+            avatarUrl: m.user.avatarUrl,
+          }))}
         />
       </ViewTransition>
     </BoardShell>

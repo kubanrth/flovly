@@ -6,7 +6,6 @@ import { createPortal } from "react-dom";
 import {
   ReactFlow,
   ReactFlowProvider,
-  Background,
   ConnectionMode,
   MarkerType,
   MiniMap,
@@ -37,16 +36,13 @@ import {
   Link2,
   Lock,
   Maximize2,
-  Minus as MinusIcon,
   MousePointer2,
   MoveRight as ArrowIcon,
-  Plus as PlusIcon,
   Pencil,
   Save,
   Square as SquareIcon,
   StickyNote,
   Timer as TimerIcon,
-  Info,
   Minimize2,
   Trash2,
   Type as TypeIcon,
@@ -54,7 +50,35 @@ import {
   Workflow,
   X,
 } from "lucide-react";
+import { UndoManager } from "yjs";
 import { toPng } from "html-to-image";
+import {
+  IconClose,
+  IconCursor,
+  IconDownload,
+  IconGrid,
+  IconImage,
+  IconMore,
+  IconPen,
+  IconTrash,
+  IconUndo,
+  IconWhiteboard,
+} from "@/components/ui/icons";
+import {
+  IconMinusSmall,
+  IconPlusSmall,
+  IconRedo,
+  IconShapeCircle,
+  IconShapeDiamond,
+  IconShapeFrame,
+  IconShapeRect,
+  IconShapeText,
+  IconTaskCard,
+} from "@/components/canvas/canvas-icons";
+import {
+  CANVAS_PRESENCE_EVENT,
+  type CanvasPresenceDetail,
+} from "@/components/canvas/canvas-presence";
 import {
   requestCanvasImageUploadAction,
   saveCanvasSnapshotAction,
@@ -137,64 +161,72 @@ type RFEdgeData = { style: "solid" | "dashed"; endStyle: CanvasEdgeEnd };
 type RFNode = Node<ShapeNodeData>;
 type RFEdge = Edge<RFEdgeData>;
 
+// Paleta v5 — pastele chip-*-bg z tokens.css (A1), bez saturowanych 500-ek.
 const PALETTE = [
-  "#FFFFFF", // white (transparent baseline)
-  "#000000", // black
-  "#EF4444", // red 500
-  "#F97316", // orange 500
-  "#FACC15", // yellow 500
-  "#84CC16", // lime 500
-  "#22C55E", // green 500
-  "#14B8A6", // teal 500
-  "#06B6D4", // cyan 500
-  "#3B82F6", // blue 500
-  "#6366F1", // indigo 500
-  "#8B5CF6", // violet 500
-  "#EC4899", // pink 500
+  "#FFFFFF", // n-0
+  "#1C1A17", // n-900 (chip-black-bg)
+  "#FDE3E1", // chip-red-bg
+  "#FFE8DB", // chip-orange-bg
+  "#FBF0C8", // chip-yellow-bg
+  "#DDF3E6", // chip-green-bg
+  "#D8F1EF", // chip-teal-bg
+  "#DDE9FC", // chip-blue-bg
+  "#E3E4FB", // chip-indigo-bg
+  "#EDE3FA", // chip-purple-bg
+  "#FBE2EE", // chip-pink-bg
+  "#EFE4DA", // chip-brown-bg
+  "#EDEBE7", // chip-gray-bg
 ];
 
 const SHAPE_DEFAULTS: Record<ShapeKind, { width: number; height: number; color: string }> = {
   RECTANGLE: { width: 160, height: 80, color: "#FFFFFF" },
   DIAMOND: { width: 160, height: 80, color: "#FFFFFF" },
   CIRCLE: { width: 120, height: 120, color: "#FFFFFF" },
-  STICKY: { width: 150, height: 150, color: "#FEF3C7" },
-  FRAME: { width: 520, height: 320, color: "#F1F5F9" },
+  STICKY: { width: 220, height: 120, color: "#FBF0C8" },
+  FRAME: { width: 520, height: 320, color: "#FAF9F7" },
   // Fallback only — real size set in handleImageUpload after the PUT.
   IMAGE: { width: 280, height: 200, color: "#FFFFFF" },
   // TEXT uses colorHex as background + separate textColorHex for text color.
   TEXT: { width: 220, height: 60, color: "#FFFFFF" },
   // F12-K73 TASK_REF — task card sizing. Renderowany tylko w view 'taskline',
   // przez external drop z TaskLineSidebar.
-  TASK_REF: { width: 240, height: 90, color: "#FFFFFF" },
+  TASK_REF: { width: 264, height: 116, color: "#FFFFFF" },
 };
 
 const STICKY_COLORS = [
-  "#FEF3C7", // yellow
-  "#FBCFE8", // pink
-  "#FED7AA", // orange
-  "#BBF7D0", // green
-  "#BFDBFE", // blue
-  "#DDD6FE", // purple
-  "#FECACA", // red
-  "#E5E7EB", // gray
+  "#FBF0C8", // chip-yellow-bg (domyślna karteczka z B9)
+  "#FBE2EE", // chip-pink-bg
+  "#FFE8DB", // chip-orange-bg
+  "#DDF3E6", // chip-green-bg
+  "#DDE9FC", // chip-blue-bg
+  "#EDE3FA", // chip-purple-bg
+  "#FDE3E1", // chip-red-bg
+  "#EDEBE7", // chip-gray-bg
 ];
 
 // Kept parallel to STICKY_COLORS count so toolbar layout doesn't reflow when switching tools.
 const PEN_COLORS = [
-  "#1F2937", // ink
-  "#EF4444", // red
-  "#F59E0B", // amber
-  "#10B981", // emerald
-  "#3B82F6", // blue
-  "#8B5CF6", // violet
-  "#EC4899", // pink
-  "#64748B", // slate
+  "#1C1A17", // n-900
+  "#D6382C", // danger
+  "#E8A100", // warning
+  "#1E9E5A", // success
+  "#2F6FE8", // info
+  "#FF5C00", // orange-500
+  "#8A1F52", // chip-pink-fg
+  "#8A857D", // n-500
 ];
 
 const PEN_SIZES = [2, 4, 8] as const;
 type PenSize = (typeof PEN_SIZES)[number];
 
-// Snap grid step — same as the visual Background gap.
+// B9: kanwa = kropki 1px `--n-300` co 24px na `--canvas` (#FAF9F7).
+const CANVAS_SURFACE: React.CSSProperties = {
+  backgroundColor: "var(--canvas)",
+  backgroundImage: "radial-gradient(var(--n-300) 1px, transparent 1px)",
+  backgroundSize: "24px 24px",
+};
+
+// Snap grid step — same as the dotted canvas gap.
 const SNAP_STEP = 8;
 
 type ToolMode = "select" | "pen" | "eraser";
@@ -350,7 +382,10 @@ function CanvasEditorInner({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const [isConnected, setIsConnected] = useState(false);
-  const [templateOpen, setTemplateOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [taskPickerOpen, setTaskPickerOpen] = useState(false);
+  // Minimapa: makieta B9 jej nie ma, ale to nawigacja — zostaje pod ⋯.
+  const [miniMap, setMiniMap] = useState(false);
 
   const [toolMode, setToolMode] = useState<ToolMode>("select");
   const [penColor, setPenColor] = useState<string>(PEN_COLORS[0]);
@@ -486,7 +521,28 @@ function CanvasEditorInner({
     return () => wrap.removeEventListener("mousemove", onMove);
   }, [canEdit, reactFlow, myCursorIdentity]);
 
+  // RF doesn't emit data-deltas via onNodesChange; ShapeNode dispatches 'canvas-node:commit' to force Yjs sync.
+  useEffect(() => {
+    if (!canEdit) return;
+    const onCommit = (e: Event) => {
+      const ce = e as CustomEvent<{ nodeId: string }>;
+      const id = ce.detail?.nodeId;
+      if (!id) return;
+      // Functional setNodes — closure read could be stale.
+      setNodes((ns) => {
+        const target = ns.find((n) => n.id === id);
+        // eslint-disable-next-line react-hooks/immutability
+        if (target) commitNodeToY(target);
+        return ns;
+      });
+    };
+    window.addEventListener("canvas-node:commit", onCommit);
+    return () => window.removeEventListener("canvas-node:commit", onCommit);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canEdit]);
+
   const commitNodeToY = useCallback(
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     (node: RFNode) => {
       yRefs.ydoc.transact(() => {
         setNodeValue(yRefs.nodes, {
@@ -509,25 +565,6 @@ function CanvasEditorInner({
     },
     [yRefs],
   );
-
-  // RF doesn't emit data-deltas via onNodesChange; ShapeNode dispatches 'canvas-node:commit' to force Yjs sync.
-  useEffect(() => {
-    if (!canEdit) return;
-    const onCommit = (e: Event) => {
-      const ce = e as CustomEvent<{ nodeId: string }>;
-      const id = ce.detail?.nodeId;
-      if (!id) return;
-      // Functional setNodes — closure read could be stale.
-      setNodes((ns) => {
-        const target = ns.find((n) => n.id === id);
-        if (target) commitNodeToY(target);
-        return ns;
-      });
-    };
-    window.addEventListener("canvas-node:commit", onCommit);
-    return () => window.removeEventListener("canvas-node:commit", onCommit);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canEdit]);
 
   const commitEdgeToY = useCallback(
     (edge: RFEdge) => {
@@ -997,6 +1034,67 @@ function CanvasEditorInner({
     [rfOnEdgesChange, deleteEdgeFromY],
   );
 
+  // Cofnij / ponów — własna historia lokalnych zmian nad współdzielonymi
+  // typami. Dokłada się do dokumentu, niczego w jego wiringu nie zmienia:
+  // śledzi wyłącznie transakcje z tego klienta (LOCAL_ORIGIN), a zmiany
+  // zdalne zostają nietknięte.
+  const historyRef = useRef<UndoManager | null>(null);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+
+  useEffect(() => {
+    const um = new UndoManager([yRefs.nodes, yRefs.edges, yRefs.strokes], {
+      trackedOrigins: new Set([LOCAL_ORIGIN]),
+    });
+    historyRef.current = um;
+    const sync = () => {
+      setCanUndo(um.undoStack.length > 0);
+      setCanRedo(um.redoStack.length > 0);
+    };
+    um.on("stack-item-added", sync);
+    um.on("stack-item-popped", sync);
+    return () => {
+      um.off("stack-item-added", sync);
+      um.off("stack-item-popped", sync);
+      um.destroy();
+      historyRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvasId]);
+
+  const undo = useCallback(() => historyRef.current?.undo(), []);
+  const redo = useCallback(() => historyRef.current?.redo(), []);
+
+  useEffect(() => {
+    if (!canEdit) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "z") return;
+      const el = e.target as HTMLElement | null;
+      if (el?.isContentEditable || el?.closest("input, textarea")) return;
+      e.preventDefault();
+      if (e.shiftKey) historyRef.current?.redo();
+      else historyRef.current?.undo();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [canEdit]);
+
+  // Most do nagłówka tablicy: stos awatarów obecnych osób renderuje się poza
+  // drzewem edytora, więc dostaje listę jednokierunkowym eventem.
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent<CanvasPresenceDetail>(CANVAS_PRESENCE_EVENT, {
+        detail: {
+          canvasId,
+          people: [...remoteCursors.entries()].map(([id, c]) => ({
+            id,
+            name: c.name ?? "Gość",
+          })),
+        },
+      }),
+    );
+  }, [remoteCursors, canvasId]);
+
   const save = useCallback(() => {
     setSaveState("saving");
     setSaveError(null);
@@ -1014,6 +1112,13 @@ function CanvasEditorInner({
           colorHex: n.data.colorHex,
           reactions: n.data.reactions,
           locked: n.data.locked,
+          imagePath: n.data.imagePath ?? null,
+          textColorHex: n.data.textColorHex ?? null,
+          taskId: (n.data.taskId as string | null) ?? null,
+          taskTitle: (n.data.taskTitle as string | null) ?? null,
+          statusName: (n.data.statusName as string | null) ?? null,
+          statusColor: (n.data.statusColor as string | null) ?? null,
+          flowMark: (n.data.flowMark as "start" | "end" | null) ?? null,
         })),
         edges: edges.map((e) => ({
           id: e.id,
@@ -1324,6 +1429,7 @@ function CanvasEditorInner({
       </svg>
 
       <ReactFlow
+        style={CANVAS_SURFACE}
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
@@ -1400,10 +1506,15 @@ function CanvasEditorInner({
         onNodeDragStop={() => setGuides({ vx: [], hy: [] })}
         onPaneClick={() => setContextMenu(null)}
       >
-        <Background gap={24} size={1} />
-        {/* Custom controls — native <Controls/> has no dark-mode parity. */}
+        {/* Własne kontrolki — natywne <Controls/> nie trzymają tokenów v5. */}
         <CanvasZoomControls wrapperRef={flowWrapperRef} />
-        <MiniMap pannable zoomable className="!bg-card" />
+        {miniMap && (
+          <MiniMap
+            pannable
+            zoomable
+            className="!bottom-16 !right-3 !rounded-lg !border !border-border !bg-card"
+          />
+        )}
         <StrokeViewportLayer strokes={strokes} />
         <AlignmentGuides vx={guides.vx} hy={guides.hy} />
         <RemoteCursorsLayer cursors={remoteCursors} />
@@ -1448,55 +1559,188 @@ function CanvasEditorInner({
         />
       )}
 
-      {/* Top toolbar tylko na desktop (md:flex) — na mobile używamy vertical
-          left toolbar'a (Mural-style) renderowanego poniżej.
-          F12-K91 fix: z-10 żeby toolbar był NAD PenOverlay (z-4). Bez tego
-          klik na color swatch trafiał w PenOverlay (które ma onPointerDown
-          na cały canvas) zamiast w przycisk — kolor się nie zmieniał i każdy
-          klik spawnowal nowy drawing state (memory + render kaskada). */}
+      {/* B9 — dolny centralny toolbar: 8 narzędzi · separator · cofnij/ponów ·
+          separator · zapis + menu ⋯. Kontekstowy pasek (kolory, pisak,
+          końcówki strzałek) wychodzi nad nim tylko gdy jest co formatować.
+          Na mobile zostaje pionowy toolbar Mural-style (poniżej).
+          F12-K91: z-10 trzyma pasek NAD PenOverlay (z-4) — inaczej klik w
+          swatch trafiał w overlay i spawnował nowy drawing state. */}
       {canEdit && (
-        <div className="pointer-events-none absolute left-1/2 top-3 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 md:flex">
-          <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-border bg-card/95 p-1 shadow-lg">
+        <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 md:flex">
+          {saveState === "error" && saveError && (
+            <span className="pointer-events-auto rounded-md border border-danger/40 bg-chip-red-bg px-3 py-1 text-2xs font-medium text-danger-text">
+              {saveError}
+            </span>
+          )}
+
+          {toolMode === "pen" ? (
+            <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-border bg-card p-1 shadow-e1">
+              {PEN_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setPenColor(c)}
+                  aria-label={`Kolor pisaka ${c}`}
+                  title={`Kolor pisaka ${c}`}
+                  className="h-5 w-5 rounded-full border border-border transition-transform duration-150 ease-out hover:scale-110 focus-visible:shadow-[var(--focus)] focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:scale-100"
+                  style={{
+                    background: c,
+                    outline: penColor === c ? "2px solid var(--fg)" : "none",
+                    outlineOffset: penColor === c ? 2 : 0,
+                  }}
+                />
+              ))}
+              <ToolSep />
+              {PEN_SIZES.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setPenSize(s)}
+                  aria-label={`Grubość ${s}px`}
+                  title={`Grubość ${s}px`}
+                  className={`grid h-7 w-7 place-items-center rounded-md transition-colors duration-150 ease-out focus-visible:shadow-[var(--focus)] focus-visible:outline-none ${
+                    penSize === s
+                      ? "bg-n-100 text-foreground"
+                      : "text-muted-foreground hover:bg-n-100"
+                  }`}
+                >
+                  <span
+                    className="block rounded-full"
+                    style={{ background: penColor, width: s + 2, height: s + 2 }}
+                  />
+                </button>
+              ))}
+              {strokes.length > 0 && (
+                <>
+                  <ToolSep />
+                  <ToolButton
+                    label={`Wyczyść rysunki (${strokes.length})`}
+                    onClick={clearAllStrokes}
+                  >
+                    <IconTrash />
+                  </ToolButton>
+                </>
+              )}
+            </div>
+          ) : selectedCount > 0 || hasEdgeSelection ? (
+            <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-border bg-card p-1 shadow-e1">
+              {/* TASK_REF dostaje pastelową paletę tak jak STICKY — klient:
+                  „dodaj opcje zmieniania kolorow tez tych zadan". */}
+              {(selectedNodes.some(
+                (n) => n.data.shape === "STICKY" || n.data.shape === "TASK_REF",
+              )
+                ? STICKY_COLORS
+                : PALETTE
+              ).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => recolorSelected(c)}
+                  disabled={selectedNodes.length === 0}
+                  className="h-5 w-5 rounded-full border border-border transition-transform duration-150 ease-out hover:scale-110 focus-visible:shadow-[var(--focus)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none motion-reduce:hover:scale-100"
+                  style={{ background: c }}
+                  aria-label={`Tło ${c}`}
+                  title={`Tło ${c}`}
+                />
+              ))}
+              <TextColorPicker selectedNodes={selectedNodes} onPick={recolorTextSelected} />
+              <FontSizePicker selectedNodes={selectedNodes} onPick={resizeFontSelected} />
+              {hasEdgeSelection && (
+                <>
+                  <ToolSep />
+                  <ToolButton label="Końcówka: strzałka" onClick={() => setEdgeEndStyle("arrow")}>
+                    <ArrowIcon size={14} />
+                  </ToolButton>
+                  <ToolButton label="Końcówka: brak" onClick={() => setEdgeEndStyle("none")}>
+                    <IconMinusSmall />
+                  </ToolButton>
+                  <ToolButton label="Końcówka: romb" onClick={() => setEdgeEndStyle("diamond")}>
+                    <IconShapeDiamond width={12} height={12} />
+                  </ToolButton>
+                  <ToolButton label="Końcówka: koło" onClick={() => setEdgeEndStyle("circle")}>
+                    <IconShapeCircle width={12} height={12} />
+                  </ToolButton>
+                </>
+              )}
+              <ToolSep />
+              <ToolButton label="Usuń" onClick={deleteSelected} disabled={selectedCount === 0}>
+                <IconTrash />
+              </ToolButton>
+            </div>
+          ) : null}
+
+          <div
+            data-ui="whiteboard-toolbar"
+            role="toolbar"
+            aria-label="Narzędzia tablicy"
+            className="pointer-events-auto flex items-center gap-0.5 rounded-lg border border-border bg-card p-1 shadow-e2"
+          >
             <ToolButton
               label="Wskaźnik (V)"
               active={toolMode === "select"}
               onClick={() => setToolMode("select")}
             >
-              <MousePointer2 size={14} />
+              <IconCursor width={15} height={15} />
+            </ToolButton>
+            <ToolButton label="Prostokąt" onClick={() => addShape("RECTANGLE")}>
+              <IconShapeRect />
+            </ToolButton>
+            <ToolButton label="Koło" onClick={() => addShape("CIRCLE")}>
+              <IconShapeCircle />
+            </ToolButton>
+            <ToolButton label="Romb" onClick={() => addShape("DIAMOND")}>
+              <IconShapeDiamond />
+            </ToolButton>
+            <ToolButton label="Notatka" onClick={() => addShape("STICKY")}>
+              <IconPen width={15} height={15} />
             </ToolButton>
             <ToolButton
               label="Pisak (P)"
               active={toolMode === "pen"}
               onClick={() => setToolMode("pen")}
             >
-              <Pencil size={14} />
-            </ToolButton>
-            <span className="mx-1 h-5 w-px bg-border" aria-hidden />
-
-            <ToolButton label="Prostokąt" onClick={() => addShape("RECTANGLE")}>
-              <SquareIcon size={14} />
-            </ToolButton>
-            <ToolButton label="Romb" onClick={() => addShape("DIAMOND")}>
-              <DiamondIcon size={14} />
-            </ToolButton>
-            <ToolButton label="Koło" onClick={() => addShape("CIRCLE")}>
-              <CircleIcon size={14} />
-            </ToolButton>
-            <ToolButton label="Sticky note" onClick={() => addShape("STICKY")}>
-              <StickyNote size={14} />
+              <IconWhiteboard width={15} height={15} />
             </ToolButton>
             <ToolButton label="Tekst" onClick={() => addShape("TEXT")}>
-              <TypeIcon size={14} />
+              <IconShapeText />
             </ToolButton>
             <ToolButton label="Ramka" onClick={() => addShape("FRAME")}>
-              <FrameIcon size={14} />
+              <IconShapeFrame />
             </ToolButton>
+
+            <ToolSep />
+            <ToolButton label="Cofnij (⌘Z)" onClick={undo} disabled={!canUndo}>
+              <IconUndo width={15} height={15} />
+            </ToolButton>
+            <ToolButton label="Ponów (⌘⇧Z)" onClick={redo} disabled={!canRedo}>
+              <IconRedo />
+            </ToolButton>
+
+            <ToolSep />
             <ToolButton
-              label="Obraz"
-              onClick={() => imageInputRef.current?.click()}
+              label={
+                saveState === "saving"
+                  ? "Zapisuję…"
+                  : saveState === "saved"
+                    ? "Zapisano"
+                    : "Zapisz"
+              }
+              onClick={save}
+              disabled={saveState === "saving"}
+              active={saveState === "saved"}
             >
-              <ImageIcon size={14} />
+              <Save size={15} />
             </ToolButton>
+            <CanvasMoreMenu
+              open={moreOpen}
+              setOpen={setMoreOpen}
+              onPickTemplate={(k) => applyTemplate(k)}
+              onAddTaskCard={boardTasks ? () => setTaskPickerOpen(true) : undefined}
+              onAddImage={() => imageInputRef.current?.click()}
+              onExport={exportPng}
+              miniMap={miniMap}
+              setMiniMap={setMiniMap}
+            />
             <input
               ref={imageInputRef}
               type="file"
@@ -1508,177 +1752,45 @@ function CanvasEditorInner({
                 e.target.value = "";
               }}
             />
-            <span className="mx-1 h-5 w-px bg-border" aria-hidden />
-            {toolMode === "pen" ? (
-              <div className="flex items-center gap-1 px-1">
-                {PEN_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setPenColor(c)}
-                    aria-label={`Kolor pisaka ${c}`}
-                    title={`Kolor pisaka ${c}`}
-                    className="h-5 w-5 rounded-full border border-border transition-transform hover:scale-110"
-                    style={{
-                      background: c,
-                      outline: penColor === c ? "2px solid var(--foreground)" : "none",
-                      outlineOffset: penColor === c ? 2 : 0,
-                    }}
-                  />
-                ))}
-                <span className="mx-1 h-5 w-px bg-border" aria-hidden />
-                {PEN_SIZES.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setPenSize(s)}
-                    aria-label={`Grubość ${s}px`}
-                    title={`Grubość ${s}px`}
-                    className={`grid h-7 w-7 place-items-center rounded-md transition-colors ${
-                      penSize === s
-                        ? "bg-primary/15 text-primary"
-                        : "text-muted-foreground hover:bg-accent"
-                    }`}
-                  >
-                    <span
-                      className="block rounded-full"
-                      style={{
-                        background: penColor,
-                        width: s + 2,
-                        height: s + 2,
-                      }}
-                    />
-                  </button>
-                ))}
-                {strokes.length > 0 && (
-                  <ToolButton
-                    label={`Wyczyść rysunki (${strokes.length})`}
-                    onClick={clearAllStrokes}
-                  >
-                    <Trash2 size={13} />
-                  </ToolButton>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-1 px-1">
-                {/* TASK_REF dostaje też pastelową paletę (STICKY_COLORS) —
-                    biały task card + delikatne tła ładnie się komponują.
-                    Klient: "dodaj opcje zmieniania kolorow tez tych zadan". */}
-                {(selectedNodes.some(
-                  (n) => n.data.shape === "STICKY" || n.data.shape === "TASK_REF",
-                )
-                  ? STICKY_COLORS
-                  : PALETTE
-                ).map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => recolorSelected(c)}
-                    disabled={selectedNodes.length === 0}
-                    // mobile h-7 w-7 (28px) zamiast h-5 w-5 (20px) — bliżej
-                    // iOS HIG min hit-area (44px) bez rozsadzania toolbar'a.
-                    className="h-7 w-7 rounded-full border border-border transition-transform hover:scale-110 disabled:cursor-not-allowed disabled:opacity-40 md:h-5 md:w-5"
-                    style={{ background: c }}
-                    aria-label={`Tło ${c}`}
-                    title={`Tło ${c}`}
-                  />
-                ))}
-                <TextColorPicker
-                  selectedNodes={selectedNodes}
-                  onPick={recolorTextSelected}
-                />
-                <FontSizePicker
-                  selectedNodes={selectedNodes}
-                  onPick={resizeFontSelected}
-                />
-              </div>
-            )}
+          </div>
 
-            {hasEdgeSelection && (
-              <>
-                <span className="mx-1 h-5 w-px bg-border" aria-hidden />
-                <ToolButton
-                  label="Końcówka: strzałka"
-                  onClick={() => setEdgeEndStyle("arrow")}
-                >
-                  <ArrowIcon size={14} />
-                </ToolButton>
-                <ToolButton
-                  label="Końcówka: brak"
-                  onClick={() => setEdgeEndStyle("none")}
-                >
-                  <MinusIcon size={14} />
-                </ToolButton>
-                <ToolButton
-                  label="Końcówka: romb"
-                  onClick={() => setEdgeEndStyle("diamond")}
-                >
-                  <DiamondIcon size={12} />
-                </ToolButton>
-                <ToolButton
-                  label="Końcówka: koło"
-                  onClick={() => setEdgeEndStyle("circle")}
-                >
-                  <CircleIcon size={12} />
-                </ToolButton>
-              </>
-            )}
-
-            <span className="mx-1 h-5 w-px bg-border" aria-hidden />
-
-            <TemplatesDropdown
-              open={templateOpen}
-              setOpen={setTemplateOpen}
-              onPick={(k) => {
-                applyTemplate(k);
-                setTemplateOpen(false);
+          {taskPickerOpen && boardTasks && (
+            <TaskCardPicker
+              tasks={[...boardTasks.values()]}
+              onClose={() => setTaskPickerOpen(false)}
+              onPick={(taskId) => {
+                const rect = flowWrapperRef.current?.getBoundingClientRect();
+                const world = reactFlow.screenToFlowPosition({
+                  x: (rect?.left ?? 0) + (rect?.width ?? 0) / 2,
+                  y: (rect?.top ?? 0) + (rect?.height ?? 0) / 2,
+                });
+                addTaskRefNode(taskId, world.x, world.y);
+                setTaskPickerOpen(false);
               }}
             />
-
-            <TimerWidget />
-
-            <ToolButton label="Eksport PNG" onClick={exportPng}>
-              <Download size={14} />
-            </ToolButton>
-
-            <span className="mx-1 h-5 w-px bg-border" aria-hidden />
-            <ToolButton label="Usuń" onClick={deleteSelected} disabled={selectedCount === 0}>
-              <Trash2 size={14} />
-            </ToolButton>
-            <span className="mx-1 h-5 w-px bg-border" aria-hidden />
-            <button
-              type="button"
-              onClick={save}
-              disabled={saveState === "saving"}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 font-sans text-[0.82rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[0.5px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary disabled:opacity-60"
-            >
-              <Save size={13} />
-              {saveState === "saving"
-                ? "Zapisuję…"
-                : saveState === "saved"
-                  ? "Zapisano"
-                  : "Zapisz"}
-            </button>
-          </div>
-          {saveState === "error" && saveError && (
-            <span className="pointer-events-auto rounded-md border border-destructive/40 bg-destructive/10 px-3 py-1 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-destructive">
-              {saveError}
-            </span>
           )}
         </div>
       )}
 
-      {/* z-[30] === Z.dropdown — connection badge nad canvas, ale pod MobileFullscreenToggle (z-50/fab) */}
-      <div className="pointer-events-none absolute bottom-3 right-3 z-[30] flex items-center gap-1.5 rounded-full border border-border bg-card/95 px-2 py-1 shadow-sm">
-        <span
-          className={`inline-block h-1.5 w-1.5 rounded-full ${
-            isConnected ? "bg-primary" : "bg-muted-foreground/50"
-          }`}
-          aria-hidden
-        />
-        <span className="font-mono text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground">
-          {isConnected ? "live" : "offline"}
+      {/* Stan połączenia + minutnik: prawy dolny róg trzyma zoom (B9), więc
+          te dwa siedzą w lewym. z-[30] === Z.dropdown. */}
+      <div className="absolute bottom-4 left-4 z-[30] flex items-center gap-2">
+        <span className="pointer-events-none inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1 shadow-sm">
+          <span
+            className={`inline-block h-1.5 w-1.5 rounded-full ${
+              isConnected ? "bg-success" : "bg-n-400"
+            }`}
+            aria-hidden
+          />
+          <span className="font-mono text-2xs text-muted-foreground">
+            {isConnected ? "live" : "offline"}
+          </span>
         </span>
+        {canEdit && (
+          <span className="rounded-md border border-border bg-card p-0.5 shadow-sm">
+            <TimerWidget />
+          </span>
+        )}
       </div>
 
       {canEdit && singleSelectedNode && (
@@ -1700,44 +1812,189 @@ function CanvasEditorInner({
   );
 }
 
-function TemplatesDropdown({
+function ToolSep() {
+  return <span className="mx-[3px] h-5 w-px bg-border" aria-hidden />;
+}
+
+// Nadmiarowe narzędzia, których makieta B9 nie pokazuje w pasku: karta
+// zadania, obraz, szablony, eksport, minimapa. Popover otwiera się w górę —
+// pasek stoi przy dolnej krawędzi kanwy.
+function CanvasMoreMenu({
   open,
   setOpen,
-  onPick,
+  onPickTemplate,
+  onAddTaskCard,
+  onAddImage,
+  onExport,
+  miniMap,
+  setMiniMap,
 }: {
   open: boolean;
   setOpen: (v: boolean) => void;
-  onPick: (k: TemplateKey) => void;
+  onPickTemplate: (k: TemplateKey) => void;
+  onAddTaskCard?: () => void;
+  onAddImage: () => void;
+  onExport: () => void;
+  miniMap: boolean;
+  setMiniMap: (v: boolean) => void;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as globalThis.Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, setOpen]);
+
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        aria-label="Szablony"
-        title="Szablony"
-        className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-      >
-        <LayoutTemplate size={14} />
-      </button>
+    <div className="relative" ref={ref}>
+      <ToolButton label="Więcej narzędzi" active={open} onClick={() => setOpen(!open)}>
+        <IconMore width={15} height={15} />
+      </ToolButton>
       {open && (
-        <div className="absolute left-0 top-[calc(100%+4px)] z-20 w-44 overflow-hidden rounded-md border border-border bg-popover p-1 shadow-[0_8px_20px_-8px_rgba(10,10,40,0.25)]">
+        <div className="absolute bottom-[calc(100%+6px)] right-0 z-[200] w-56 rounded-lg border border-border bg-popover p-1 shadow-e2">
+          {onAddTaskCard && (
+            <MoreMenuItem
+              icon={<IconTaskCard />}
+              label="Karta zadania…"
+              onClick={() => {
+                onAddTaskCard();
+                setOpen(false);
+              }}
+            />
+          )}
+          <MoreMenuItem
+            icon={<IconImage />}
+            label="Obraz…"
+            onClick={() => {
+              onAddImage();
+              setOpen(false);
+            }}
+          />
+          <MoreMenuItem
+            icon={<IconDownload />}
+            label="Eksport PNG"
+            onClick={() => {
+              onExport();
+              setOpen(false);
+            }}
+          />
+          <MoreMenuItem
+            icon={<IconGrid />}
+            label={miniMap ? "Ukryj minimapę" : "Pokaż minimapę"}
+            onClick={() => {
+              setMiniMap(!miniMap);
+              setOpen(false);
+            }}
+          />
+          <div className="my-1 h-px bg-border" />
+          <p className="px-2 pb-1 pt-0.5 text-2xs font-semibold uppercase tracking-[.06em] text-fg-3">
+            Szablony
+          </p>
           {TEMPLATES.map((t) => (
-            <button
+            <MoreMenuItem
               key={t.key}
-              type="button"
-              onClick={() => onPick(t.key)}
-              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-[0.82rem] transition-colors hover:bg-accent"
-            >
-              <span className="text-primary" aria-hidden>
-                {t.glyph}
-              </span>
-              <span className="flex-1 truncate">{t.label}</span>
-            </button>
+              icon={<span aria-hidden>{t.glyph}</span>}
+              label={t.label}
+              onClick={() => {
+                onPickTemplate(t.key);
+                setOpen(false);
+              }}
+            />
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function MoreMenuItem({
+  icon,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm text-foreground transition-colors duration-150 ease-out hover:bg-n-100 focus-visible:shadow-[var(--focus)] focus-visible:outline-none active:bg-n-200"
+    >
+      <span className="grid h-4 w-4 shrink-0 place-items-center text-muted-foreground">{icon}</span>
+      <span className="flex-1 truncate">{label}</span>
+    </button>
+  );
+}
+
+// Wstawia kartę zadania (#ID) na środek widoku — na tablicy nie ma puli
+// zadań do przeciągania, więc wybór idzie przez listę z wyszukiwarką.
+function TaskCardPicker({
+  tasks,
+  onPick,
+  onClose,
+}: {
+  tasks: BoardTaskMeta[];
+  onPick: (taskId: string) => void;
+  onClose: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const shown = tasks
+    .filter((t) => !q || `#${t.displayId} ${t.title}`.toLowerCase().includes(q))
+    .slice(0, 30);
+
+  return (
+    <div className="pointer-events-auto absolute bottom-[calc(100%+8px)] left-1/2 w-[320px] -translate-x-1/2 rounded-lg border border-border bg-popover p-2 shadow-e2">
+      <div className="mb-1.5 flex items-center gap-2">
+        <span className="flex-1 text-2xs font-semibold uppercase tracking-[.06em] text-fg-3">
+          Karta zadania
+        </span>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Zamknij"
+          className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground transition-colors duration-150 ease-out hover:bg-n-100 hover:text-foreground focus-visible:shadow-[var(--focus)] focus-visible:outline-none active:bg-n-200"
+        >
+          <IconClose width={12} height={12} />
+        </button>
+      </div>
+      <input
+        autoFocus
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Szukaj zadania…"
+        className="mb-1 h-8 w-full rounded-sm border border-input-border px-2.5 text-sm outline-none placeholder:text-fg-3 hover:border-input-border-hover focus:border-orange-500 focus-visible:shadow-[var(--focus)]"
+      />
+      <ul className="max-h-[220px] overflow-y-auto">
+        {shown.length === 0 ? (
+          <li className="px-2 py-3 text-center text-xs text-muted-foreground">Brak dopasowań.</li>
+        ) : (
+          shown.map((t) => (
+            <li key={t.id}>
+              <button
+                type="button"
+                onClick={() => onPick(t.id)}
+                className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left transition-colors duration-150 ease-out hover:bg-n-100 focus-visible:shadow-[var(--focus)] focus-visible:outline-none active:bg-n-200"
+              >
+                <span className="font-mono text-2xs text-fg-3">#{t.displayId}</span>
+                <span className="flex-1 truncate text-sm">{t.title}</span>
+              </button>
+            </li>
+          ))
+        )}
+      </ul>
     </div>
   );
 }
@@ -1921,10 +2178,10 @@ function ToolButton({
       aria-label={label}
       title={label}
       aria-pressed={active}
-      className={`grid h-8 w-8 place-items-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+      className={`grid h-8 w-8 place-items-center rounded-md transition-colors duration-150 ease-out focus-visible:shadow-[var(--focus)] focus-visible:outline-none active:bg-n-200 disabled:cursor-not-allowed disabled:bg-transparent disabled:text-n-400 ${
         active
-          ? "bg-primary/15 text-primary"
-          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+          ? "bg-n-100 text-foreground"
+          : "text-muted-foreground hover:bg-n-100 hover:text-foreground"
       }`}
     >
       {children}
@@ -2514,6 +2771,7 @@ function CanvasZoomControls({
   wrapperRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const rf = useReactFlow();
+  const { zoom } = useViewport();
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
@@ -2538,20 +2796,23 @@ function CanvasZoomControls({
 
   return (
     <div
-      className="absolute bottom-4 left-4 z-[5] flex flex-col gap-1 rounded-lg border border-border bg-card/95 p-1 shadow-lg"
+      className="absolute bottom-4 right-4 z-[5] flex items-center gap-0.5 rounded-lg border border-border bg-card p-1 shadow-sm"
       data-canvas-controls=""
     >
       <ControlButton label="Powiększ" onClick={() => rf.zoomIn()}>
-        <PlusIcon size={14} />
+        <IconPlusSmall width={13} height={13} />
       </ControlButton>
+      <span className="px-1 font-mono text-2xs tabular-nums text-n-700" aria-live="polite">
+        {Math.round(zoom * 100)}%
+      </span>
       <ControlButton label="Pomniejsz" onClick={() => rf.zoomOut()}>
-        <MinusIcon size={14} />
+        <IconMinusSmall width={13} height={13} />
       </ControlButton>
       <ControlButton
         label={isFullscreen ? "Wyjdź z pełnego ekranu" : "Pełny ekran"}
         onClick={toggleFullscreen}
       >
-        {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+        {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
       </ControlButton>
     </div>
   );
@@ -2572,7 +2833,7 @@ function ControlButton({
       onClick={onClick}
       title={label}
       aria-label={label}
-      className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors duration-150 ease-out hover:bg-n-100 hover:text-foreground focus-visible:shadow-[var(--focus)] focus-visible:outline-none active:bg-n-200"
     >
       {children}
     </button>
