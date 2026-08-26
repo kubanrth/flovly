@@ -90,3 +90,26 @@ Stan po F1 (B4: nagłówek tablicy / tabsy / toolbar / dialog nowego widoku, 202
   została — `reorderStatusColumnsAction` obsługuje picker statusu (`components/table/status-picker.tsx`).
 - **Mobilny „Utwórz zadanie"** otwiera wspólny `CreateTaskDialog` bez wstępnie wybranej kolumny —
   dialog nie przyjmuje `statusColumnId`.
+
+### B5 Oś czasu
+- **Toolbar z makiety** (`Szukaj na osi`, `Milestone ▾`, `Kategoria statusu ▾`) — nie zbudowany:
+  to wspólny `BoardToolbar` z zapisem w `BoardView.configJson` (D16), a „Kategoria statusu"
+  nie ma pola w `StatusColumn`.
+- **Szerokość osi na mobile** jest stała (420px), nie wyliczana z danych — AK102 przypina
+  wewnętrzną szerokość do 560px, co jest deterministyczne tylko przy stałej osi. Skutek:
+  na mobile zoom zmienia wyłącznie pasma nagłówka.
+
+### B6 Roadmapa
+- **„Gotowe" bez wsparcia schematu** — `StatusColumn` nie ma `isDone`, więc `doneStatusIds()`
+  rozpoznaje po nazwie, a w zapasie bierze ostatnią kolumnę wg `order`. Ta sama reguła co
+  w `/my-tasks` i w Podsumowaniu.
+- **Opis milestone'u to zwykły `Textarea`, nie Tiptap** — makieta rysuje zwykłe pole, a stary
+  dialog montował edytor z `initial={null}` i **kasował opis przy każdym zapisie**. Teraz treść
+  robi rundę przez `docToText`/`textToDoc`; ewentualne formatowanie spłaszcza się do linii.
+
+### B7 Kalendarz
+- **„Dodaj zadanie na <data>"** to inline quick-add (tworzy zadanie i ustawia `startAt` na 09:00
+  tego dnia), a nie `CreateTaskDialog` z wstępną datą — dialog nie przyjmuje daty domyślnej.
+- **Zadania z samym terminem** — przeciągnięcie przesuwa całe zadanie; przy braku `startAt`
+  patchowany jest sam `stopAt` (nie wymyślamy daty startu).
+- **Filtry Status/Osoba w kalendarzu są lokalne**, nie lądują w `BoardView.configJson` (D16).

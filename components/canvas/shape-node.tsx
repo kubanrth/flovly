@@ -2,6 +2,9 @@
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Lock } from "lucide-react";
+import { Chip } from "@/components/ui/chip";
+import { IconExternal } from "@/components/ui/icons";
+import { hueForColor } from "@/components/ui/status-hue";
 import {
   Handle,
   NodeResizer,
@@ -47,8 +50,10 @@ export interface ShapeNodeData {
   imagePath?: string;
   // null/undef = auto-contrast text color from fill.
   textColorHex?: string | null;
-  // null/undef = baseline (text-[0.94rem]); for TEXT shapes auto-calc from height.
+  // null/undef = baseline; for TEXT shapes auto-calc from height.
   fontSize?: number | null;
+  // TASK_REF: numer zadania w tablicy (#ID) — rehydratowany z listy zadań.
+  displayId?: number | null;
   [key: string]: unknown;
 }
 
@@ -202,7 +207,6 @@ export const ShapeNode = memo(function ShapeNode({
         nodeId={id}
         width={d.width}
         height={d.height}
-        colorHex={d.colorHex}
         label={label}
         editing={!!d.editing}
         selected={!!selected}
@@ -252,6 +256,7 @@ export const ShapeNode = memo(function ShapeNode({
         colorHex={d.colorHex}
         taskId={(d.taskId as string | null) ?? null}
         taskTitle={(d.taskTitle as string | null) ?? null}
+        displayId={typeof d.displayId === "number" ? d.displayId : null}
         statusName={(d.statusName as string | null) ?? null}
         statusColor={(d.statusColor as string | null) ?? null}
         flowMark={(d.flowMark as "start" | "end" | null | undefined) ?? null}
@@ -414,10 +419,9 @@ function ShapeLabel({
     isEditing: editing,
   });
 
-  const fontFamily = isSticky
-    ? "ui-serif, Georgia, 'Times New Roman', serif"
-    : undefined;
-  const fontSizeClass = fontSize ? "" : "text-[0.94rem]";
+  // B9: karteczka = 13/19 od lewej; pozostałe kształty 12/500 na środku.
+  const fontSizeClass = fontSize ? "" : isSticky ? "text-sm" : "text-xs";
+  const align = isSticky ? "w-full text-left leading-[19px]" : "text-center leading-tight";
 
   if (editing) {
     return (
@@ -437,8 +441,8 @@ function ShapeLabel({
           e.stopPropagation();
         }}
         onMouseDown={(e) => e.stopPropagation()}
-        className={`nodrag select-text px-3 text-center font-display ${fontSizeClass} font-semibold tracking-[-0.01em] leading-tight outline-none`}
-        style={{ color: textColor, fontFamily, fontSize: fontSize ?? undefined }}
+        className={`nodrag select-text ${isSticky ? "" : "px-3"} ${align} ${fontSizeClass} font-medium outline-none`}
+        style={{ color: textColor, fontSize: fontSize ?? undefined }}
       >
         {label}
       </div>
@@ -447,11 +451,11 @@ function ShapeLabel({
 
   return (
     <span
-      className={`pointer-events-none select-none px-3 text-center font-display ${fontSizeClass} font-semibold tracking-[-0.01em] leading-tight`}
+      className={`pointer-events-none select-none ${isSticky ? "" : "px-3"} ${align} ${fontSizeClass} font-medium`}
       data-label=""
-      style={{ color: textColor, fontFamily, fontSize: fontSize ?? undefined }}
+      style={{ color: textColor, fontSize: fontSize ?? undefined }}
     >
-      {label || <span className="opacity-50">dwuklik aby nazwać</span>}
+      {label || <span className="text-fg-3">dwuklik aby nazwać</span>}
     </span>
   );
 }
@@ -653,7 +657,7 @@ function TextShape({
     initialLabel: label,
     isEditing: editing,
   });
-  const ink = textColorHex ?? (isPaleHex(bgColorHex) ? "#1F2937" : "#FFFFFF");
+  const ink = textColorHex ?? (isPaleHex(bgColorHex) ? "#4A4640" : "#FFFFFF");
   const fontSize = fontSizeOverride ?? Math.max(14, Math.min(48, height * 0.36));
   return (
     <>
@@ -666,10 +670,8 @@ function TextShape({
           // Empty/transparent bg = text-only overlay.
           background:
             bgColorHex && bgColorHex !== "transparent" ? bgColorHex : "transparent",
-          boxShadow: selected
-            ? "0 0 0 2px color-mix(in oklch, var(--primary) 40%, transparent)"
-            : "none",
-          borderRadius: 6,
+          boxShadow: selected ? "0 0 0 2px var(--orange-500)" : "none",
+          borderRadius: 4,
         }}
         className="grid place-items-center px-2"
       >
@@ -726,7 +728,6 @@ function FrameShape({
   nodeId,
   width,
   height,
-  colorHex,
   label,
   editing,
   selected,
@@ -735,7 +736,6 @@ function FrameShape({
   nodeId: string;
   width: number;
   height: number;
-  colorHex: string;
   label: string;
   editing: boolean;
   selected: boolean;
@@ -746,9 +746,7 @@ function FrameShape({
     initialLabel: label,
     isEditing: editing,
   });
-  const accent = selected
-    ? "var(--primary)"
-    : "color-mix(in oklch, currentColor 40%, var(--border))";
+  const accent = selected ? "var(--orange-500)" : "var(--n-400)";
   return (
     <>
       <ShapeResizer
@@ -762,15 +760,11 @@ function FrameShape({
         style={{
           width,
           height,
-          background: `
-            linear-gradient(135deg, color-mix(in oklch, ${colorHex} 60%, transparent) 0%, color-mix(in oklch, ${colorHex} 20%, transparent) 100%)
-          `,
-          border: `2px dashed ${accent}`,
-          borderRadius: 14,
+          background: "rgba(255,255,255,.6)",
+          border: `1.5px solid ${accent}`,
+          borderRadius: 8,
           position: "relative",
-          boxShadow: selected
-            ? "0 0 0 2px color-mix(in oklch, var(--primary) 40%, transparent)"
-            : "none",
+          boxShadow: "none",
         }}
       >
         {editing ? (
@@ -790,23 +784,17 @@ function FrameShape({
               e.stopPropagation();
             }}
             onMouseDown={(e) => e.stopPropagation()}
-            className="nodrag absolute -top-3 left-3 select-text rounded-md bg-card px-2 py-0.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] outline-none"
-            style={{
-              color: accent,
-              border: `1px solid ${accent}`,
-            }}
+            className="nodrag absolute -top-[11px] left-3 select-text bg-canvas px-1.5 text-2xs font-semibold uppercase tracking-[.06em] leading-[16px] outline-none"
+            style={{ color: selected ? "var(--orange-700)" : "var(--fg-2)" }}
           >
             {label}
           </div>
         ) : (
           <div
-            className="absolute -top-3 left-3 rounded-md bg-card px-2 py-0.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em]"
-            style={{
-              color: accent,
-              border: `1px solid ${accent}`,
-            }}
+            className="absolute -top-[11px] left-3 bg-canvas px-1.5 text-2xs font-semibold uppercase tracking-[.06em] leading-[16px]"
+            style={{ color: selected ? "var(--orange-700)" : "var(--fg-2)" }}
           >
-            {label || "frame"}
+            {label || "Ramka"}
           </div>
         )}
       </div>
@@ -937,9 +925,9 @@ function textColorFor(hex: string): string {
   return y > 0.6 ? "#1C1A17" : "#FFFFFF";
 }
 
-// F12-K73: Task Line reference node. Renderuje task card z displayId pill +
-// title + status badge. flowMark='start' = emerald ring + "START" badge;
-// 'end' = rose ring + "KONIEC" badge. Click → /t/[taskId] otwiera kartę.
+// Karta zadania na kanwie (B9): nagłówek #ID + chip statusu + „otwórz",
+// tytuł 13/500. Podwójny klik otwiera zadanie. flowMark z Linii zadań
+// pokazujemy jako mały chip, żeby oznaczenie nie znikało z widoku.
 function TaskRefShape({
   nodeId,
   width,
@@ -947,6 +935,7 @@ function TaskRefShape({
   colorHex,
   taskId,
   taskTitle,
+  displayId,
   statusName,
   statusColor,
   flowMark,
@@ -956,123 +945,61 @@ function TaskRefShape({
   nodeId: string;
   width: number;
   height: number;
-  // Color picker w top toolbar'ze recolor'uje TASK_REF tak samo jak STICKY
-  // (klient: "dodaj opcje zmieniania kolorow tez tych zadan"). Default
-  // #FFFFFF gdy node świeży, ale po zmianie w UI siedzi w node.colorHex.
+  // Color picker recoloruje TASK_REF tak samo jak STICKY (klient: „dodaj
+  // opcje zmieniania kolorow tez tych zadan"). Domyślnie biel.
   colorHex: string;
   taskId: string | null;
   taskTitle: string | null;
+  displayId: number | null;
   statusName: string | null;
   statusColor: string | null;
   flowMark: "start" | "end" | null | undefined;
   workspaceId: string | null;
   selected: boolean;
 }) {
-  const ringColor =
-    flowMark === "start"
-      ? "rgba(16, 185, 129, 0.85)" // emerald-500
-      : flowMark === "end"
-        ? "rgba(244, 63, 94, 0.85)" // rose-500
-        : null;
-  const selectedRing = selected
-    ? "0 0 0 2px color-mix(in oklch, var(--primary) 50%, transparent)"
-    : "none";
-  const flowRing = ringColor ? `0 0 0 3px ${ringColor}` : "none";
-  const boxShadow = [selectedRing, flowRing].filter((s) => s !== "none").join(", ") || "none";
-
-  const fillColor = statusColor ?? "#94A3B8";
+  const hue = hueForColor(statusColor);
   return (
     <>
-      <ShapeResizer
-        nodeId={nodeId}
-        visible={selected}
-        minWidth={180}
-        minHeight={70}
-        keepAspectRatio={false}
-      />
+      <ShapeResizer nodeId={nodeId} visible={selected} minWidth={200} minHeight={90} />
       <ShapeHandles />
       <div
         style={{
           width,
           height,
-          borderRadius: 12,
           background: colorHex || "#FFFFFF",
-          border: "1px solid rgba(15, 23, 42, 0.12)",
-          boxShadow,
-          padding: 10,
-          position: "relative",
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-          overflow: "hidden",
+          boxShadow: selected
+            ? "0 0 0 2px var(--orange-500), var(--shadow-e1)"
+            : "var(--shadow-e1)",
           cursor: workspaceId && taskId ? "pointer" : "default",
         }}
+        className="flex flex-col overflow-hidden rounded-lg border border-border"
         onDoubleClick={() => {
           if (workspaceId && taskId && typeof window !== "undefined") {
             window.open(`/w/${workspaceId}/t/${taskId}`, "_self");
           }
         }}
       >
-        {/* Status row: dot + status name + (auto spacer) + flow mark badge.
-            Badge inline w wierszu, nie floating poza kartą (klient: "to co
-            sie oznacza jest jakby off widok"). */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 999,
-              background: fillColor,
-              flexShrink: 0,
-            }}
-          />
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 600,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: "#64748B",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              flex: 1,
-            }}
-          >
-            {statusName ?? "Bez statusu"}
-          </span>
+        <div className="flex items-center gap-1.5 border-b border-n-100 px-2.5 py-2">
+          {displayId !== null && (
+            <span className="font-mono text-2xs text-fg-2">#{displayId}</span>
+          )}
+          {statusName && (
+            <Chip hue={hue} size="sm" dot>
+              {statusName}
+            </Chip>
+          )}
           {flowMark && (
-            <span
-              style={{
-                padding: "2px 7px",
-                borderRadius: 999,
-                fontSize: 9,
-                fontWeight: 700,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "#fff",
-                background: flowMark === "start" ? "#10B981" : "#F43F5E",
-                flexShrink: 0,
-              }}
-            >
+            <Chip hue={flowMark === "start" ? "green" : "red"} size="sm">
               {flowMark === "start" ? "Start" : "Koniec"}
+            </Chip>
+          )}
+          {workspaceId && taskId && (
+            <span className="ml-auto text-fg-3">
+              <IconExternal width={12} height={12} />
             </span>
           )}
         </div>
-
-        {/* Title */}
-        <div
-          style={{
-            fontSize: 14,
-            fontWeight: 600,
-            color: "#0F172A",
-            lineHeight: 1.3,
-            overflow: "hidden",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-          }}
-        >
+        <div className="line-clamp-3 px-2.5 py-2.5 text-sm font-medium leading-[18px] text-foreground">
           {taskTitle ?? "(zadanie usunięte)"}
         </div>
       </div>
