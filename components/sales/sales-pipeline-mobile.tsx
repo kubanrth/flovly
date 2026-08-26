@@ -143,7 +143,7 @@ export function SalesPipelineMobile({
             </span>
           </div>
           {totals.size > 0 && (
-            <div className="flex flex-wrap items-center justify-center gap-1.5 font-mono text-[0.7rem] font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+            <div className="flex flex-wrap items-center justify-center gap-1.5 font-mono text-[0.7rem] font-bold tabular-nums text-emerald-600">
               {[...totals.entries()].map(([cur, sum]) => (
                 <span key={cur}>{formatMoney(sum, cur)}</span>
               ))}
@@ -174,7 +174,7 @@ export function SalesPipelineMobile({
             <span>Brak deal&apos;ów na tym etapie.</span>
             <Link
               href={`/w/${workspaceId}/sales/new?stageId=${stage.id}`}
-              className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-gradient px-3 font-sans text-[0.82rem] font-semibold text-white shadow-brand"
+              className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 font-sans text-[0.82rem] font-semibold text-white"
             >
               <Plus size={13} /> Dodaj deal
             </Link>
@@ -189,7 +189,7 @@ export function SalesPipelineMobile({
             <span className="font-display text-[0.94rem] font-semibold leading-tight">
               {d.title}
             </span>
-            <span className="font-mono text-[1.05rem] font-bold tabular-nums leading-tight text-emerald-600 dark:text-emerald-400">
+            <span className="font-mono text-[1.05rem] font-bold tabular-nums leading-tight text-emerald-600">
               {d.valueAmount != null
                 ? formatMoney(d.valueAmount, d.valueCurrency)
                 : "—"}
@@ -202,7 +202,7 @@ export function SalesPipelineMobile({
               </span>
               {d.owner && (
                 <span
-                  className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-md bg-brand-gradient font-display text-[0.55rem] font-bold text-white"
+                  className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-md bg-primary font-display text-[0.55rem] font-bold text-white"
                   aria-label={d.owner.name ?? d.owner.email}
                 >
                   {d.owner.avatarUrl ? (

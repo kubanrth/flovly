@@ -605,7 +605,7 @@ function NewFolderForm({
         disabled={!name.trim()}
         aria-label="Dodaj folder linków"
         title="Dodaj folder linków (Enter)"
-        className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-brand-gradient px-3 font-mono text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-white shadow-brand transition-[transform,opacity] duration-150 hover:-translate-y-px hover:opacity-95 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-none disabled:bg-muted disabled:text-muted-foreground disabled:opacity-60 disabled:shadow-none"
+        className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 font-mono text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-white transition-[transform,opacity] duration-150 hover:-translate-y-px hover:opacity-95 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-none disabled:bg-muted disabled:text-muted-foreground disabled:opacity-60 disabled:shadow-none"
       >
         <Plus size={13} />
         <span>Dodaj</span>

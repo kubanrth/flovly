@@ -280,7 +280,7 @@ function HeaderContextMenu({
     };
   }, [onClose]);
   // Portal to document.body so the menu's `position: fixed` is anchored
-  // to the viewport. Without this, ancestor th cells with `backdrop-blur`
+  // to the viewport. Without this, ancestor th cells with ``
   // create a containing block (filter property → forms a containing
   // block for fixed descendants) and the menu opens at completely wrong
   // coordinates — invisible or under other UI.

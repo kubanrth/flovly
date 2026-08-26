@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useEffect, useState } from "react";
-import { FileText, Check } from "lucide-react";
+import { IconCheck, IconDoc } from "@/components/ui/icons";
 import {
   RichTextEditor,
   type RichTextDoc,
@@ -51,14 +51,14 @@ export function BoardOverviewEditor({
     <section className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(46,19,52,0.08)]">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <FileText size={16} className="text-muted-foreground" />
+          <IconDoc className="text-muted-foreground" />
           <h3 className="font-display text-[1.15rem] font-bold tracking-[-0.02em]">
             Opis ogólny
           </h3>
         </div>
         {savedAt && canEdit && (
           <span className="inline-flex items-center gap-1 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-primary">
-            <Check size={11} /> zapisano {savedAt}
+            <IconCheck width={11} height={11} /> zapisano {savedAt}
           </span>
         )}
         {!canEdit && (

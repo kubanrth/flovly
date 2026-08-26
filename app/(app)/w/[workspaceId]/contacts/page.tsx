@@ -126,7 +126,7 @@ export default async function ContactsListPage({
             {canCreate && (
               <Link
                 href={`/w/${workspaceId}/contacts/new`}
-                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-gradient px-3 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90"
+                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 font-sans text-[0.85rem] font-semibold text-white transition-opacity hover:opacity-90"
               >
                 <Plus size={13} /> Nowy kontakt
               </Link>

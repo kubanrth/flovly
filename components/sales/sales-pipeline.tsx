@@ -88,6 +88,7 @@ export function SalesPipeline({
   // Replay server state when the user navigates back or revalidate fires —
   // otherwise an aborted drag leaves the optimistic state out of sync.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDeals(initialDeals);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialDeals.map((d) => `${d.id}:${d.stageId}:${d.rowOrder}`).join(",")]);
@@ -237,7 +238,7 @@ export function SalesPipeline({
         deals={deals}
       />
 
-      <DndContext
+      <DndContext id="sales-pipeline"
         sensors={sensors}
         collisionDetection={collisionDetection}
         // Re-measure droppable rects on every layout change — columns reflow
@@ -503,7 +504,7 @@ function DealCard({
             {deal.owner && (
               <span
                 title={deal.owner.name ?? deal.owner.email}
-                className="grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.55rem] font-bold text-white"
+                className="grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.55rem] font-bold text-white"
               >
                 {deal.owner.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element

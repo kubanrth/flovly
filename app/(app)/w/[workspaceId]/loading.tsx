@@ -32,7 +32,7 @@ export default function WorkspaceLoading() {
 
 function BoardCardSkeleton() {
   return (
-    <div className="relative flex h-[200px] flex-col gap-3.5 overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-5 pl-12 backdrop-blur-xl">
+    <div className="relative flex h-[200px] flex-col gap-3.5 overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-5 pl-12">
       {/* 3px top accent strip */}
       <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-muted" />
       <div className="flex items-start gap-3">

@@ -77,10 +77,10 @@ export function DeleteBoardDialog({
                 <span className="eyebrow text-destructive">Usuń tablicę</span>
                 <DialogTitle className="font-display text-[1.4rem] font-bold leading-tight tracking-[-0.02em]">
                   Usunąć{" "}
-                  <span className="text-brand-gradient">„{boardName}"</span>?
+                  <span className="">„{boardName}”</span>?
                 </DialogTitle>
                 <DialogDescription className="mt-1 text-[0.9rem] leading-[1.55]">
-                  Tablica zniknie z sidebara i widoków workspace'u. Zadania,
+                  Tablica zniknie z sidebara i widoków workspace&apos;u. Zadania,
                   statusy, linki i whiteboard zostaną w bazie — admin systemu
                   może przywrócić tablicę, ale z poziomu aplikacji nie da się
                   tego cofnąć.

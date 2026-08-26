@@ -250,7 +250,7 @@ export default async function ProfilePage() {
             <span className="eyebrow">Dashboard</span>
             <h1 className="font-display text-[1.6rem] font-bold leading-[1.1] tracking-[-0.03em] md:text-[2rem]">
               Cześć,{" "}
-              <span className="text-brand-gradient">
+              <span className="">
                 {user.name ?? user.email.split("@")[0]}
               </span>
               .

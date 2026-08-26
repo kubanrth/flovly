@@ -55,12 +55,12 @@ export function RemindersWorkspace({
       <div className="flex flex-col gap-2">
         <span className="eyebrow">Prywatne</span>
         <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em] max-md:text-[1.7rem]">
-          Twoje <span className="text-brand-gradient">przypomnienia</span>.
+          Twoje <span className="">przypomnienia</span>.
         </h1>
         <p className="max-w-[60ch] text-[0.95rem] leading-[1.55] text-muted-foreground">
           Przypomnienia wyskakują jako dymek w prawym górnym rogu gdy
           nadejdzie ich termin. Możesz je wysłać sobie lub członkom
-          workspace'u.
+          workspace&apos;u.
         </p>
       </div>
 
@@ -160,7 +160,7 @@ function NewReminderForm({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 w-fit items-center gap-2 rounded-lg bg-brand-gradient px-4 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px] max-md:fixed max-md:inset-x-4 max-md:bottom-[max(1rem,env(safe-area-inset-bottom))] max-md:z-30 max-md:h-12 max-md:w-auto max-md:justify-center max-md:text-[0.95rem]"
+        className="inline-flex h-10 w-fit items-center gap-2 rounded-lg bg-primary px-4 font-sans text-[0.9rem] font-semibold text-white transition-[transform,opacity] hover:-translate-y-[1px] max-md:fixed max-md:inset-x-4 max-md:bottom-[max(1rem,env(safe-area-inset-bottom))] max-md:z-30 max-md:h-12 max-md:w-auto max-md:justify-center max-md:text-[0.95rem]"
       >
         <Plus size={14} /> <span className="max-md:hidden">Dodaj przypomnienie</span><span className="hidden max-md:inline">Nowe przypomnienie</span>
       </button>
@@ -244,7 +244,7 @@ function NewReminderForm({
         </button>
         <button
           type="submit"
-          className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px]"
+          className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-5 font-sans text-[0.9rem] font-semibold text-white transition-[transform,opacity] hover:-translate-y-[1px]"
         >
           Utwórz przypomnienie
         </button>
@@ -307,6 +307,7 @@ function ReminderRowCard({
   members: ReminderMember[];
 }) {
   const due = new Date(reminder.dueAt);
+  // eslint-disable-next-line react-hooks/purity
   const overdue = due.getTime() < Date.now();
   const dismissed = !!reminder.dismissedAt;
   const isOwnCreator = reminder.creatorId === currentUserId;
@@ -598,7 +599,7 @@ function RecipientPicker({
         className="inline-flex h-10 w-[240px] items-center gap-2 rounded-md border border-border bg-background px-3 text-left transition-colors hover:border-primary/60 focus-visible:border-primary focus-visible:outline-none"
       >
         <span
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-gradient font-display text-[0.62rem] font-bold text-white"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary font-display text-[0.62rem] font-bold text-white"
           aria-hidden
         >
           {selected.name.slice(0, 2).toUpperCase()}
@@ -709,7 +710,7 @@ function RecipientItem({
       className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-[0.86rem] transition-colors hover:bg-accent data-[active=true]:bg-primary/10 data-[active=true]:text-foreground"
     >
       <span
-        className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-gradient font-display text-[0.62rem] font-bold text-white"
+        className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary font-display text-[0.62rem] font-bold text-white"
         aria-hidden
       >
         {member.name.slice(0, 2).toUpperCase()}

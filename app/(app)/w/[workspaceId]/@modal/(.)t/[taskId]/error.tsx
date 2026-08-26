@@ -30,7 +30,7 @@ export default function TaskModalError({
   return (
     <BaseDialog.Root open onOpenChange={(next) => !next && close()}>
       <BaseDialog.Portal>
-        <BaseDialog.Backdrop className="fixed inset-0 z-[100] bg-background/70 backdrop-blur-sm data-[open]:opacity-100" />
+        <BaseDialog.Backdrop className="fixed inset-0 z-[100] bg-background/70 data-[open]:opacity-100" />
         <BaseDialog.Popup
           className="fixed inset-y-0 right-0 z-[110] flex w-full max-w-[960px] flex-col overflow-y-auto border-l border-border bg-background shadow-[0_18px_40px_-16px_rgba(76,29,149,0.40)] data-[open]:translate-x-0"
           initialFocus={undefined}
@@ -69,7 +69,7 @@ export default function TaskModalError({
               <button
                 type="button"
                 onClick={reset}
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand-gradient px-4 font-sans text-[0.86rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px]"
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 font-sans text-[0.86rem] font-semibold text-white transition-[transform,opacity] hover:-translate-y-[1px]"
               >
                 <RotateCcw size={14} /> Spróbuj ponownie
               </button>

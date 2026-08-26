@@ -86,8 +86,14 @@ export function CommandPalette({ data }: { data: CommandPaletteData }) {
         return !v;
       });
     };
+    // Top bar search box / `/` hotkey (components/layout/hotkeys.tsx).
+    const onOpen = () => setOpen(true);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("cmdk:open", onOpen);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("cmdk:open", onOpen);
+    };
   }, []);
 
   // Reset query po zamknięciu — wrapper który toggle'uje open + czyści input
@@ -135,7 +141,7 @@ export function CommandPalette({ data }: { data: CommandPaletteData }) {
         <DialogPrimitive.Backdrop
           className={cn(
             // z-[100] === Z.modalBackdrop (F12-K104).
-            "fixed inset-0 z-[100] bg-black/30 supports-backdrop-filter:backdrop-blur-sm",
+            "fixed inset-0 z-[100] bg-scrim",
             "data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 duration-100",
           )}
         />
@@ -143,7 +149,7 @@ export function CommandPalette({ data }: { data: CommandPaletteData }) {
           // z-[110] === Z.modal (F12-K104) — nad sidebar (z-40) i toaster (z-[80]).
           // Margin-top żeby paleta wyświetlała się "z góry" jak Spotlight.
           className={cn(
-            "dialog-glass fixed left-1/2 top-[18%] z-[110] w-[600px] max-w-[calc(100%-2rem)] -translate-x-1/2 overflow-hidden rounded-2xl outline-none",
+            "dialog-surface fixed left-1/2 top-[18%] z-[110] w-[600px] max-w-[calc(100%-2rem)] -translate-x-1/2 overflow-hidden outline-none",
             "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 duration-100",
           )}
         >
@@ -159,7 +165,7 @@ export function CommandPalette({ data }: { data: CommandPaletteData }) {
             // cmdk default: arrow keys + enter; nasz UI tylko stylowanie.
             className="flex max-h-[480px] flex-col"
           >
-            <div className="flex items-center gap-2.5 border-b border-black/5 px-4 py-3 dark:border-white/10">
+            <div className="flex items-center gap-2.5 border-b border-black/5 px-4 py-3">
               <Search size={16} className="text-muted-foreground" />
               <Command.Input
                 value={query}
@@ -169,7 +175,7 @@ export function CommandPalette({ data }: { data: CommandPaletteData }) {
                 className="flex-1 bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground/70 outline-none"
                 autoFocus
               />
-              <kbd className="font-mono text-[11px] text-muted-foreground/90 rounded-md border border-black/10 dark:border-white/10 px-1.5 py-0.5">
+              <kbd className="font-mono text-[11px] text-muted-foreground/90 rounded-md border border-black/10 px-1.5 py-0.5">
                 Esc
               </kbd>
             </div>
@@ -195,11 +201,10 @@ export function CommandPalette({ data }: { data: CommandPaletteData }) {
                       }}
                       className={cn(
                         "flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13.5px] text-foreground",
-                        "data-[selected=true]:bg-[linear-gradient(135deg,rgba(124,92,255,0.16),rgba(210,71,181,0.10))]",
-                        "data-[selected=true]:shadow-[inset_0_0_0_1px_rgba(124,92,255,0.22)]",
+                        "data-[selected=true]:bg-n-100",
                       )}
                     >
-                      <span className="grid size-7 shrink-0 place-items-center rounded-md bg-white/40 text-foreground/70 dark:bg-white/[0.06]">
+                      <span className="grid size-7 shrink-0 place-items-center rounded-md bg-white/40 text-foreground/70 ]">
                         {item.icon}
                       </span>
                       <span className="min-w-0 flex-1 truncate">{item.label}</span>
@@ -214,7 +219,7 @@ export function CommandPalette({ data }: { data: CommandPaletteData }) {
               ))}
             </Command.List>
 
-            <div className="flex items-center justify-between gap-3 border-t border-black/5 px-4 py-2 text-[11px] text-muted-foreground/90 dark:border-white/10">
+            <div className="flex items-center justify-between gap-3 border-t border-black/5 px-4 py-2 text-[11px] text-muted-foreground/90">
               <span>
                 <kbd className="font-mono">↑↓</kbd> nawiguj ·{" "}
                 <kbd className="font-mono">↵</kbd> wybierz
@@ -356,11 +361,8 @@ interface Section {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
-      <div className="grid size-14 place-items-center rounded-2xl bg-white/40 ring-1 ring-white/40 dark:bg-white/[0.05] dark:ring-white/10">
-        <span
-          className="grid size-9 place-items-center rounded-xl text-white"
-          style={{ background: "linear-gradient(135deg, #7C5CFF, #E1318F)" }}
-        >
+      <div className="grid size-14 place-items-center rounded-xl bg-n-100">
+        <span className="grid size-9 place-items-center rounded-lg bg-orange-500 text-ink">
           <Search size={16} />
         </span>
       </div>

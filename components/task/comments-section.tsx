@@ -90,7 +90,7 @@ function CommentItemView({
     // The `group` flag exposes inline "Odpowiedz" link on hover.
     <article className="group flex gap-3">
       <span
-        className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.68rem] font-bold text-white"
+        className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.68rem] font-bold text-white"
         aria-hidden
       >
         {comment.author.avatarUrl ? (
@@ -206,7 +206,7 @@ function NewCommentForm({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex h-9 items-center justify-center rounded-lg bg-brand-gradient px-4 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
+          className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 font-sans text-[0.85rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
         >
           {pending ? "Dodaję…" : "Dodaj komentarz"}
         </button>
@@ -255,7 +255,7 @@ function EditCommentForm({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex h-8 items-center justify-center gap-1 rounded-md bg-brand-gradient px-3 font-sans text-[0.8rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="inline-flex h-8 items-center justify-center gap-1 rounded-md bg-primary px-3 font-sans text-[0.8rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           <Check size={13} /> {pending ? "Zapisuję…" : "Zapisz"}
         </button>

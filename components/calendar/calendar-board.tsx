@@ -181,12 +181,12 @@ export function CalendarBoard({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* v4 card — rounded-[22px] glass with brand shadow. Toolbar (month label
+      {/* v4 card — rounded-[22px] plain with brand shadow. Toolbar (month label
           + nav arrows + Today + Day/Week/Month switcher) + dow header + 7x6
           grid + hint footer. BoardHeader stays OUTSIDE. */}
       <div className="relative overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_30px_70px_-30px_rgba(122,92,255,0.4)]">
-        {/* Toolbar — v4: padding 14px 18px, glass bg, border-bottom */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card/60 px-[18px] py-[14px] backdrop-blur-xl">
+        {/* Toolbar — v4: padding 14px 18px, plain bg, border-bottom */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card/60 px-[18px] py-[14px]">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -222,7 +222,7 @@ export function CalendarBoard({
               onClick={() => setScale("day")}
               className={`rounded-[7px] px-3 py-[5px] text-[0.74rem] transition-colors ${
                 scale === "day"
-                  ? "bg-brand-gradient font-semibold text-white shadow-brand"
+                  ? "bg-primary font-semibold text-white "
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -233,7 +233,7 @@ export function CalendarBoard({
               onClick={() => setScale("week")}
               className={`rounded-[7px] px-3 py-[5px] text-[0.74rem] transition-colors ${
                 scale === "week"
-                  ? "bg-brand-gradient font-semibold text-white shadow-brand"
+                  ? "bg-primary font-semibold text-white "
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -244,7 +244,7 @@ export function CalendarBoard({
               onClick={() => setScale("month")}
               className={`rounded-[7px] px-3 py-[5px] text-[0.74rem] transition-colors ${
                 scale === "month"
-                  ? "bg-brand-gradient font-semibold text-white shadow-brand"
+                  ? "bg-primary font-semibold text-white "
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -364,7 +364,7 @@ function CalendarCell({
       <span
         className={`inline-flex h-[22px] min-w-[22px] items-center justify-center self-start rounded-full px-1 font-mono text-[0.7rem] font-semibold leading-none ${
           isToday
-            ? "bg-brand-gradient text-white shadow-brand ring-2 ring-[var(--brand-500)]/40"
+            ? "bg-primary text-white  ring-2 ring-[var(--brand-500)]/40"
             : inMonth
               ? "text-foreground"
               : "text-muted-foreground/40"
@@ -420,7 +420,7 @@ function CalendarEventPill({
       draggable={draggable}
       onDragStart={() => onDragStart()}
       onDragEnd={onDragEnd}
-      className="group flex items-center gap-[5px] rounded-full bg-brand-gradient px-[8px] py-[2px] text-left text-[0.66rem] leading-tight text-white shadow-[0_4px_10px_-4px_rgba(124,92,255,0.5)] transition-transform hover:-translate-y-[1px] hover:shadow-[0_6px_14px_-4px_rgba(124,92,255,0.6)]"
+      className="group flex items-center gap-[5px] rounded-full bg-primary px-[8px] py-[2px] text-left text-[0.66rem] leading-tight text-white shadow-[0_4px_10px_-4px_rgba(124,92,255,0.5)] transition-transform hover:-translate-y-[1px] hover:shadow-[0_6px_14px_-4px_rgba(124,92,255,0.6)]"
       title={`#${task.displayId} — ${task.title}${task.statusName ? ` · ${task.statusName}` : ""}`}
     >
       {priorityMeta && (

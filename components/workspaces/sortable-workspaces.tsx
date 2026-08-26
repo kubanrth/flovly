@@ -31,11 +31,11 @@ import { boardPl } from "@/lib/pluralize";
 // =============================================================================
 
 const WORKSPACE_SWATCHES: { color: string; shadow: string }[] = [
-  { color: "#7A33EC", shadow: "rgba(122,51,236,.45)" }, // brand violet
-  { color: "#34BEF8", shadow: "rgba(52,190,248,.40)" }, // sky accent
+  { color: "#FF5C00", shadow: "rgba(255,92,0,.35)" }, // brand violet
+  { color: "#2F6FE8", shadow: "rgba(52,190,248,.40)" }, // sky accent
   { color: "#10B981", shadow: "rgba(16,185,129,.40)" }, // emerald
   { color: "#F59E0B", shadow: "rgba(245,158,11,.40)" }, // amber
-  { color: "#E1318F", shadow: "rgba(225,49,143,.40)" }, // magenta brand-b
+  { color: "#E04E00", shadow: "rgba(224,78,0,.35)" }, // magenta brand-b
   { color: "#0EA5E9", shadow: "rgba(14,165,233,.40)" }, // info deep
 ];
 
@@ -96,7 +96,7 @@ export function SortableWorkspacesGrid({ rows }: { rows: WorkspaceRow[] }) {
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+    <DndContext id="workspaces-grid" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={items.map((w) => w.id)} strategy={verticalListSortingStrategy}>
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {items.map((w) => (
@@ -132,8 +132,8 @@ function SortableWorkspaceCard({ workspace: w }: { workspace: WorkspaceRow }) {
       className={`group relative ${isDragging ? "cursor-grabbing" : ""}`}
     >
       {/* Karta v4 — ten sam pattern co board card w sortable-boards.tsx:
-          liquid-glass + 3px top accent strip + 38px init badge + spring hover. */}
-      <div className="relative flex h-full flex-col gap-3.5 overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-5 pl-12 backdrop-blur-xl shadow-[0_1px_0_rgba(255,255,255,.6)_inset,0_14px_30px_-18px_rgba(76,29,149,.30)] transition-[transform,box-shadow,border-color] duration-300 [transition-timing-function:cubic-bezier(.34,1.56,.64,1)] group-hover:-translate-y-[3px] group-hover:border-primary/30 group-hover:shadow-[0_1px_0_rgba(255,255,255,.7)_inset,0_22px_44px_-18px_rgba(76,29,149,.45),0_30px_70px_-24px_rgba(225,49,143,.20)] max-md:min-h-[200px] md:h-[200px]">
+          liquid-plain + 3px top accent strip + 38px init badge + spring hover. */}
+      <div className="relative flex h-full flex-col gap-3.5 overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-5 pl-12 shadow-[0_1px_0_rgba(255,255,255,.6)_inset,0_14px_30px_-18px_rgba(76,29,149,.30)] transition-[transform,box-shadow,border-color] duration-300 [transition-timing-function:ease-out] group-hover:-translate-y-[3px] group-hover:border-primary/30 group-hover:shadow-[0_1px_0_rgba(255,255,255,.7)_inset,0_22px_44px_-18px_rgba(76,29,149,.45),0_30px_70px_-24px_rgba(225,49,143,.20)] max-md:min-h-[200px] md:h-[200px]">
         {/* 3px top accent strip — workspace color identity (ZAWSZE, nie tylko mobile) */}
         <span
           aria-hidden
@@ -182,7 +182,7 @@ function SortableWorkspaceCard({ workspace: w }: { workspace: WorkspaceRow }) {
 
         {/* Footer row — slug pill po lewej + "wejdź" arrow po prawej (mt-auto) */}
         <div className="-mx-1 mt-auto flex flex-wrap items-center gap-1.5 px-1 pb-0.5">
-          <span className="inline-flex h-7 items-center rounded-lg border border-border/60 bg-background/70 px-2 font-mono text-[0.62rem] font-medium uppercase tracking-[0.12em] text-muted-foreground backdrop-blur-sm">
+          <span className="inline-flex h-7 items-center rounded-lg border border-border/60 bg-background/70 px-2 font-mono text-[0.62rem] font-medium uppercase tracking-[0.12em] text-muted-foreground">
             /{w.slug}
           </span>
           <span className="ml-auto inline-flex items-center gap-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground transition-colors group-hover:text-primary">
@@ -248,7 +248,7 @@ export function SortableWorkspacesList({ rows }: { rows: WorkspaceRow[] }) {
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+    <DndContext id="workspaces-list" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={items.map((w) => w.id)} strategy={verticalListSortingStrategy}>
         <ul className="overflow-hidden rounded-xl border border-border bg-card">
           {items.map((w) => (

@@ -1,61 +1,42 @@
 "use client";
 
-import { useActionState, useEffect, useState, startTransition } from "react";
+// Redesign v5 (B12): `+` 32×40 in the tabs row → 720px dialog with 9 type
+// tiles, name, visibility, footer Anuluj / Utwórz widok.
+//
+// Two creation modes (unchanged): if the picked type has no default
+// BoardView on this board, an empty name recreates the default (→ /<view>);
+// otherwise a name is required and a custom view is created (→ /v/<id>).
+
+import { startTransition, useActionState, useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Table2,
-  KanbanSquare,
-  GitBranch,
-  BarChart3,
-  Calendar,
-  Pencil,
-  Plus,
-  Workflow,
-} from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { IconDoc, IconGrid, IconPlus } from "@/components/ui/icons";
+import { cn } from "@/lib/utils";
 import {
   createBoardViewAction,
   type CreateViewState,
 } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
-import type { ViewName } from "@/components/view/view-switcher";
+import { VIEW_ICON, VIEW_LABEL, type ViewName } from "@/components/view/view-switcher";
 
-const TYPE_OPTIONS: {
-  value:
-    | "TABLE"
-    | "KANBAN"
-    | "ROADMAP"
-    | "GANTT"
-    | "CALENDAR"
-    | "WHITEBOARD"
-    | "TASKLINE";
-  name: ViewName;
-  label: string;
-  icon: typeof Table2;
-}[] = [
-  { value: "TABLE", name: "table", label: "Tabela", icon: Table2 },
-  { value: "KANBAN", name: "kanban", label: "Kanban", icon: KanbanSquare },
-  { value: "ROADMAP", name: "roadmap", label: "Roadmapa", icon: GitBranch },
-  { value: "GANTT", name: "gantt", label: "Gantt", icon: BarChart3 },
-  { value: "CALENDAR", name: "calendar", label: "Kalendarz", icon: Calendar },
-  { value: "WHITEBOARD", name: "whiteboard", label: "Whiteboard", icon: Pencil },
-  { value: "TASKLINE", name: "taskline", label: "Linia zadań", icon: Workflow },
+type ViewType = "TABLE" | "KANBAN" | "GANTT" | "ROADMAP" | "CALENDAR" | "WHITEBOARD" | "TASKLINE";
+
+const TILES: { value: ViewType | null; name?: ViewName; label: string; desc: string; icon: ReactNode }[] = [
+  { value: "TABLE", name: "table", label: VIEW_LABEL.table, desc: "Tabela z kolumnami pól, grupowaniem i sumami.", icon: VIEW_ICON.table },
+  { value: "KANBAN", name: "kanban", label: VIEW_LABEL.kanban, desc: "Kanban z kolumnami statusów i limitem WIP.", icon: VIEW_ICON.kanban },
+  { value: "GANTT", name: "gantt", label: VIEW_LABEL.gantt, desc: "Gantt z milestone'ami i zależnościami.", icon: VIEW_ICON.gantt },
+  { value: "ROADMAP", name: "roadmap", label: VIEW_LABEL.roadmap, desc: "Milestone'y wielu tablic na jednej osi.", icon: VIEW_ICON.roadmap },
+  { value: "CALENDAR", name: "calendar", label: VIEW_LABEL.calendar, desc: "Zadania na siatce miesiąca wg terminów.", icon: VIEW_ICON.calendar },
+  { value: "WHITEBOARD", name: "whiteboard", label: VIEW_LABEL.whiteboard, desc: "Notatki, ramki, strzałki i karty zadań.", icon: VIEW_ICON.whiteboard },
+  { value: "TASKLINE", name: "taskline", label: VIEW_LABEL.taskline, desc: "Pipeline etapów od zgłoszenia do wdrożenia.", icon: VIEW_ICON.taskline },
+  // Not a BoardView type (one per board, always present) → disabled tiles.
+  { value: null, label: "Opis", desc: "Dokument tablicy — zasady, notatki, linki.", icon: <IconDoc /> },
+  { value: null, label: "Podsumowanie", desc: "Liczniki, wykresy statusów, obciążenie zespołu.", icon: <IconGrid /> },
 ];
 
-// Compact `+ Nowy widok` button rendered next to the ViewSwitcher.
-//
-// Two creation modes:
-// - If the picked type doesn't yet have a default BoardView on this
-//   board (e.g. the user previously deleted the default Kanban),
-//   submitting WITHOUT a name recreates that default — the canonical
-//   pill (Kanban) reappears and we route to /kanban.
-// - If a default already exists, the user must type a name — that
-//   creates a custom BoardView under /v/[viewId].
 export function CreateViewDialog({
   workspaceId,
   boardId,
@@ -64,42 +45,31 @@ export function CreateViewDialog({
 }: {
   workspaceId: string;
   boardId: string;
-  // All types enabled at the workspace level (independent of which
-  // currently have a default row on this board).
+  // Workspace-level enabled set — kept for API compat; the server accepts any type.
   enabled: ViewName[];
-  // Types whose default BoardView (name=null) currently exists on this
-  // board. Used to decide whether a name is required.
+  // Types whose default BoardView (name=null) exists on this board.
   existingDefaultTypes: ViewName[];
 }) {
+  void enabled;
   const router = useRouter();
+  const nameRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
-  const [state, formAction, pending] = useActionState<CreateViewState, FormData>(
-    createBoardViewAction,
-    null,
-  );
-  const [selectedType, setSelectedType] = useState<string>("TABLE");
+  const [type, setType] = useState<ViewType>("TABLE");
+  const [name, setName] = useState("");
+  const [state, formAction, pending] = useActionState<CreateViewState, FormData>(createBoardViewAction, null);
 
   useEffect(() => {
     if (state?.ok) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setOpen(false);
-      router.push(
-        state.defaultPath ?? `/w/${workspaceId}/b/${boardId}/v/${state.viewId}`,
-      );
+      router.push(state.defaultPath ?? `/w/${workspaceId}/b/${boardId}/v/${state.viewId}`);
       router.refresh();
     }
   }, [state, router, workspaceId, boardId]);
 
-  // Show all 5 view types — server accepts any regardless of workspace.enabledViews.
-  // Picking a type not in enabledViews triggers the "recreating default" path.
-  void enabled;
-  const options = TYPE_OPTIONS;
-  // For the picked type: are we recreating a default (no name needed)
-  // or creating a custom (name required)?
-  const selectedName = TYPE_OPTIONS.find((t) => t.value === selectedType)?.name;
-  const recreatingDefault =
-    !!selectedName && !existingDefaultTypes.includes(selectedName);
-  const selectedLabel = TYPE_OPTIONS.find((t) => t.value === selectedType)?.label ?? "widok";
+  const tile = TILES.find((t) => t.value === type);
+  const recreatingDefault = !!tile?.name && !existingDefaultTypes.includes(tile.name);
+  const nameError = state && !state.ok ? state.fieldErrors?.name : undefined;
 
   return (
     <>
@@ -108,113 +78,81 @@ export function CreateViewDialog({
         onClick={() => setOpen(true)}
         aria-label="Nowy widok"
         title="Nowy widok"
-        className="lg-vs-add-view"
+        className="inline-flex h-10 w-8 shrink-0 items-center justify-center text-n-500 outline-none hover:text-foreground active:text-foreground max-md:h-11"
       >
-        <Plus size={12} strokeWidth={2.4} />
-        <span>Widok</span>
+        <IconPlus />
       </button>
 
-      <Dialog open={open} onOpenChange={setOpen} key={open ? "open" : "closed"}>
-        <DialogContent className="dialog-glass rounded-2xl border-transparent sm:max-w-[480px]">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent size="xl" data-ui="new-view-dialog" initialFocus={nameRef}>
           <DialogHeader>
-            <span className="eyebrow">Nowy widok</span>
-            <DialogTitle className="font-display text-[1.45rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">
-              Dodaj <span className="text-brand-gradient">widok</span> do
-              tablicy.
-            </DialogTitle>
-            <DialogDescription className="text-[0.9rem] leading-[1.55] text-muted-foreground">
-              Wybierz typ — jeśli dany domyślny widok został wcześniej usunięty,
-              możesz go przywrócić. Inaczej dostajesz dodatkowy widok z własną
-              nazwą (np. dwa Kanbany z różnymi filtrami).
-            </DialogDescription>
+            <DialogTitle>Nowy widok tablicy</DialogTitle>
           </DialogHeader>
-
           <form
             action={(fd) => {
               fd.set("workspaceId", workspaceId);
               fd.set("boardId", boardId);
-              fd.set("type", selectedType);
+              fd.set("type", type);
               startTransition(() => formAction(fd));
             }}
-            className="mt-2 flex flex-col gap-5"
+            className="flex min-h-0 flex-1 flex-col"
           >
-            <div className="flex flex-col gap-2">
-              <span className="eyebrow">Typ widoku</span>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {options.map((t) => {
-                  const Icon = t.icon;
-                  const on = selectedType === t.value;
+            <DialogBody className="flex flex-col gap-4">
+              <div role="radiogroup" aria-label="Typ widoku" className="grid grid-cols-3 gap-2.5 max-md:grid-cols-1">
+                {TILES.map((t) => {
+                  const on = t.value !== null && t.value === type;
                   return (
                     <button
-                      key={t.value}
+                      key={t.label}
                       type="button"
-                      onClick={() => setSelectedType(t.value)}
-                      data-on={on ? "true" : "false"}
-                      className="group flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 font-mono text-[0.72rem] uppercase tracking-[0.12em] text-muted-foreground transition-[border-color,background-color,color] data-[on=true]:border-primary/60 data-[on=true]:bg-primary/10 data-[on=true]:text-foreground hover:border-primary/40"
+                      role="radio"
+                      aria-checked={on}
+                      disabled={t.value === null}
+                      title={t.value === null ? "Ten widok jest zawsze na tablicy — nie tworzy się go jako dodatkowy." : undefined}
+                      onClick={() => t.value && setType(t.value)}
+                      className={cn(
+                        "flex flex-col items-start rounded-lg border border-border bg-card p-3 text-left outline-none hover:border-n-400 active:bg-n-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-border",
+                        on && "border-orange-500 bg-selected shadow-[inset_0_0_0_1px_var(--orange-500)] hover:border-orange-500",
+                      )}
                     >
-                      <Icon
-                        size={14}
-                        className="text-muted-foreground group-data-[on=true]:text-primary"
-                      />
-                      <span className="flex-1 text-left">{t.label}</span>
+                      <span className={cn("text-n-700 [&_svg]:size-4", on && "text-orange-700")}>{t.icon}</span>
+                      <span className="mt-2 text-sm font-semibold text-foreground">{t.label}</span>
+                      <span className="mt-0.5 text-2xs text-muted-foreground">{t.desc}</span>
                     </button>
                   );
                 })}
               </div>
-            </div>
 
-            {recreatingDefault ? (
-              <p className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[0.85rem] leading-[1.5] text-foreground">
-                Domyślny widok <strong>{selectedLabel}</strong> na tej tablicy
-                nie istnieje — kliknij <em>Przywróć</em> aby wrócił jako
-                stała pigułka w pasku widoków.
-              </p>
-            ) : (
-              <label className="flex flex-col gap-2">
-                <span className="eyebrow">Nazwa widoku</span>
-                <input
-                  name="name"
-                  required
-                  autoFocus
-                  maxLength={60}
-                  placeholder="np. Sprint 4 · Kanban klienta"
-                  aria-invalid={!state?.ok && !!state?.fieldErrors?.name}
-                  className="h-10 border-b border-border bg-transparent pb-1 font-sans text-[1rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
-                />
-                {!state?.ok && state?.fieldErrors?.name && (
-                  <span className="font-mono text-[0.68rem] text-destructive">
-                    {state.fieldErrors.name}
-                  </span>
-                )}
-              </label>
-            )}
+              <div className="flex gap-3 max-md:flex-col">
+                <div className="flex flex-1 flex-col gap-1.5">
+                  <Label htmlFor="new-view-name" className="text-xs font-medium text-n-700">Nazwa widoku</Label>
+                  <Input
+                    ref={nameRef}
+                    id="new-view-name"
+                    name="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    maxLength={60}
+                    required={!recreatingDefault}
+                    placeholder={recreatingDefault ? `Puste = przywróć domyślny widok ${tile?.label}` : "np. Backlog P3"}
+                    error={nameError}
+                  />
+                </div>
+                <div className="flex w-[200px] flex-col gap-1.5 max-md:w-full">
+                  <Label htmlFor="new-view-visibility" className="text-xs font-medium text-n-700">Widoczność</Label>
+                  {/* ponytail: BoardView has no visibility column — display-only until the backend adds one */}
+                  <Select id="new-view-visibility" aria-label="Widoczność" items={[{ value: "team", label: "Cały zespół" }]} value="team" disabled />
+                </div>
+              </div>
 
-            {!state?.ok && state?.error && (
-              <p className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-destructive">
-                {state.error}
-              </p>
-            )}
-
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Anuluj
-              </button>
-              <button
-                type="submit"
-                disabled={pending}
-                className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
-              >
-                {pending
-                  ? "Tworzę…"
-                  : recreatingDefault
-                    ? `Przywróć ${selectedLabel}`
-                    : "Utwórz widok"}
-              </button>
-            </div>
+              {state && !state.ok && state.error && <p className="text-xs text-danger-text">{state.error}</p>}
+            </DialogBody>
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={() => setOpen(false)}>Anuluj</Button>
+              <Button type="submit" loading={pending}>
+                {recreatingDefault && !name.trim() ? `Przywróć ${tile?.label}` : "Utwórz widok"}
+              </Button>
+            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

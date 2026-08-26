@@ -21,7 +21,7 @@ export default function SalesLoading() {
         {/* Stage columns — kanban-style */}
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3 lg:grid-cols-5">
           {Array.from({ length: 5 }).map((_, col) => (
-            <div key={col} className="flex flex-col gap-2 rounded-2xl border border-border bg-card/60 p-3 backdrop-blur-xl">
+            <div key={col} className="flex flex-col gap-2 rounded-2xl border border-border bg-card/60 p-3">
               <div className="flex items-center justify-between gap-2 px-1">
                 <Skeleton className="h-3.5 w-20" />
                 <Skeleton className="h-4 w-6 rounded-full" />

@@ -138,7 +138,7 @@ export function DealForm({
           sublabel: m.email,
           searchText: `${m.name ?? ""} ${m.email}`,
           leading: (
-            <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.55rem] font-bold text-white">
+            <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.55rem] font-bold text-white">
               {m.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -240,7 +240,7 @@ export function DealForm({
           <Bell size={13} className="text-primary" />
           <span className="eyebrow">Przypomnienie email</span>
           {initial?.reminderAt && (
-            <span className="ml-auto inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 font-mono text-[0.58rem] uppercase tracking-[0.12em] text-emerald-700 dark:border-emerald-400/40 dark:text-emerald-300">
+            <span className="ml-auto inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 font-mono text-[0.58rem] uppercase tracking-[0.12em] text-emerald-700">
               <Check size={9} /> ustawione
             </span>
           )}
@@ -268,7 +268,7 @@ export function DealForm({
             className="min-h-[80px] resize-y rounded-md border border-border bg-background p-2.5 text-[0.88rem] leading-[1.55] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
           />
           <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground/70">
-            wkleja się w mailu jako blockquote pod tytułem deal'a
+            wkleja się w mailu jako blockquote pod tytułem deal&apos;a
           </span>
         </div>
       </div>
@@ -339,7 +339,7 @@ export function DealForm({
         </div>
       )}
       {flash && (
-        <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[0.88rem] text-emerald-700 dark:text-emerald-300">
+        <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[0.88rem] text-emerald-700">
           {flash}
         </div>
       )}
@@ -348,7 +348,7 @@ export function DealForm({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex h-10 items-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex h-10 items-center rounded-lg bg-primary px-5 font-sans text-[0.9rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? "Zapisuję…" : isEdit ? "Zapisz" : "Utwórz deal"}
         </button>

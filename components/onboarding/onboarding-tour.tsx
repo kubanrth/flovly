@@ -99,14 +99,14 @@ export function OnboardingTour() {
         <DialogPrimitive.Backdrop
           className={cn(
             // z-[100] === Z.modalBackdrop (F12-K104).
-            "fixed inset-0 z-[100] bg-black/40 supports-backdrop-filter:backdrop-blur-sm",
+            "fixed inset-0 z-[100] bg-black/40 supports-backdrop-filter:",
             "data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 duration-150",
           )}
         />
         <DialogPrimitive.Popup
           className={cn(
             // z-[110] === Z.modal (F12-K104).
-            "dialog-glass fixed left-1/2 top-1/2 z-[110] w-[350px] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[22px] outline-none",
+            "dialog-surface fixed left-1/2 top-1/2 z-[110] w-[350px] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[22px] outline-none",
             "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 duration-150",
           )}
         >
@@ -164,7 +164,7 @@ export function OnboardingTour() {
                       i === step
                         ? {
                             background:
-                              "linear-gradient(135deg, #7C5CFF, #E1318F)",
+                              "#FF5C00",
                           }
                         : undefined
                     }
@@ -189,7 +189,7 @@ export function OnboardingTour() {
                   disabled={pending}
                   className="rounded-[10px] px-4 py-2 text-[13px] font-semibold text-white shadow-[0_8px_20px_-8px_rgba(124,92,255,0.6)] transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
                   style={{
-                    background: "linear-gradient(135deg, #7C5CFF, #E1318F)",
+                    background: "#FF5C00",
                   }}
                 >
                   {current.cta}

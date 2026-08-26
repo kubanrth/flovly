@@ -465,7 +465,7 @@ export function TaskDetail({
 
         {/* ============ META SIDEBAR (sticky 280px) ============ */}
         <aside className="md:sticky md:top-4 md:self-start">
-          <div className="flex flex-col gap-5 rounded-2xl border border-border bg-card/40 p-5 shadow-[0_4px_24px_-12px_rgba(0,0,0,0.12)] backdrop-blur-sm">
+          <div className="flex flex-col gap-5 rounded-2xl border border-border bg-card/40 p-5 shadow-[0_4px_24px_-12px_rgba(0,0,0,0.12)]">
             {/* STATUS picker inline */}
             <MetaBlock label="Status">
               <StatusPill
@@ -607,12 +607,12 @@ export function TaskDetail({
           Save button usunięty: zmiany lecą autosave-em (patchTaskAction).
           `pending` z useActionState dalej żyje na potrzeby wskaźnika
           "Zapisuję…" obok timera, ale dedykowany Save CTA jest zbędny.
-          Sticky liquid-glass bar — backdrop-blur z hairline shadow.
+          Sticky liquid-plain bar —  z hairline shadow.
           ===================================================================== */}
       {/* F12-K86: footer wyrównany do jednej linii baseline. flex-nowrap na
           desktop wymusza single row; min-w-0 na timer wrapperze + shrink/grow
           radzi sobie z długimi nazwami. Autosave indicator middle, Usuń right. */}
-      <footer className="sticky bottom-0 z-10 -mx-4 mt-2 flex items-center gap-3 border-t border-border bg-background/80 px-4 py-3 backdrop-blur-md max-md:flex-wrap md:-mx-6 md:flex-nowrap md:px-6">
+      <footer className="sticky bottom-0 z-10 -mx-4 mt-2 flex items-center gap-3 border-t border-border bg-background/80 px-4 py-3 max-md:flex-wrap md:-mx-6 md:flex-nowrap md:px-6">
         {/* Timer pill (zachowuje pełną logikę startedAt/completedAt + duration display) */}
         <div className="flex min-w-0 shrink-0 items-center">
           <TaskTimer
@@ -743,7 +743,7 @@ function HeaderPriorityPill({ priority }: { priority: TaskPriorityValue }) {
     Exclude<TaskPriorityValue, "NONE">,
     { label: string; color: string; bg: string; border: string }
   > = {
-    LOW: { label: "P3 · Niski", color: "#34BEF8", bg: "rgba(52,190,248,.14)", border: "rgba(52,190,248,.3)" },
+    LOW: { label: "P3 · Niski", color: "#2F6FE8", bg: "rgba(52,190,248,.14)", border: "rgba(52,190,248,.3)" },
     MEDIUM: { label: "P2 · Średni", color: "#A78BFA", bg: "rgba(167,139,250,.14)", border: "rgba(167,139,250,.3)" },
     HIGH: { label: "P1 · Wysoki", color: "#F59E0B", bg: "rgba(245,158,11,.14)", border: "rgba(245,158,11,.3)" },
     URGENT: { label: "P0 · Pilny", color: "#FB7185", bg: "rgba(244,63,94,.14)", border: "rgba(244,63,94,.3)" },
@@ -812,7 +812,7 @@ function AssigneesStack({
         {visible.map((m, i) => (
           <span
             key={m.id}
-            className="grid h-7 w-7 place-items-center overflow-hidden rounded-lg border-2 border-card bg-brand-gradient font-display text-[0.62rem] font-bold text-white"
+            className="grid h-7 w-7 place-items-center overflow-hidden rounded-lg border-2 border-card bg-primary font-display text-[0.62rem] font-bold text-white"
             style={{ marginLeft: i === 0 ? 0 : -7, zIndex: 10 - i }}
             title={m.name ?? m.email}
           >
@@ -848,7 +848,7 @@ function AssigneesStack({
 
       {/* Picker — rozwijana lista członków (toggle per user) */}
       {open && canEdit && (
-        <div className="popover-glass popover-enter flex flex-col gap-1 p-2">
+        <div className="popover-surface popover-enter flex flex-col gap-1 p-2">
           {/* Search input — filtruje członków po name/email */}
           <label className="mx-1 mt-1 mb-1 flex items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-2.5 py-1.5">
             <Search size={13} className="text-muted-foreground" aria-hidden />
@@ -878,7 +878,7 @@ function AssigneesStack({
                     className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.82rem] transition-colors hover:bg-primary/10 data-[active=true]:bg-primary/12 data-[active=true]:text-foreground"
                     title={m.email}
                   >
-                    <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-md bg-brand-gradient font-display text-[0.6rem] font-bold text-white">
+                    <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-md bg-primary font-display text-[0.6rem] font-bold text-white">
                       {m.avatarUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={m.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
@@ -989,7 +989,7 @@ function ReminderField({
     { value: "none", label: "Brak" },
   ];
   return (
-    <div className="popover-glass shadow-aura flex flex-col gap-1.5 p-2">
+    <div className="popover-surface flex flex-col gap-1.5 p-2">
       <input
         type="hidden"
         form="task-update-form"
@@ -1111,7 +1111,7 @@ function TagsSection({
 
       {/* Picker — pełna lista tagów (toggle) + przycisk "Nowy tag" */}
       {picking && canEdit && (
-        <div className="popover-glass popover-enter flex flex-col gap-2 p-2.5">
+        <div className="popover-surface popover-enter flex flex-col gap-2 p-2.5">
           {/* Search input — filtruje tagi po name */}
           <label className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-2.5 py-1.5">
             <Search size={13} className="text-muted-foreground" aria-hidden />
@@ -1214,7 +1214,7 @@ function TagsSection({
               </div>
               <button
                 type="submit"
-                className="grid h-7 w-7 place-items-center rounded-md bg-brand-gradient text-white transition-opacity hover:opacity-90"
+                className="grid h-7 w-7 place-items-center rounded-md bg-primary text-white transition-opacity hover:opacity-90"
                 aria-label="Utwórz tag"
               >
                 <Check size={12} />

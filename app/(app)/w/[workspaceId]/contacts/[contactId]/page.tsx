@@ -241,7 +241,7 @@ export default async function ContactDetailPage({
               poniżej (hidden md:flex / flex md:hidden). */}
           <div className="flex flex-col items-center gap-2 pt-2 text-center md:hidden">
             <span
-              className="grid h-20 w-20 place-items-center overflow-hidden rounded-2xl bg-brand-gradient font-display text-[1.5rem] font-bold text-white shadow-brand"
+              className="grid h-20 w-20 place-items-center overflow-hidden rounded-2xl bg-primary font-display text-[1.5rem] font-bold text-white"
               aria-hidden
             >
               {mobileInitials}
@@ -491,7 +491,7 @@ function ContactTasksTile({
                   {a ? (
                     <span
                       title={a.name ?? a.email}
-                      className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.58rem] font-bold text-white"
+                      className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.58rem] font-bold text-white"
                     >
                       {a.avatarUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element

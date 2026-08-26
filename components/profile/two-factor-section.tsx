@@ -94,7 +94,7 @@ function EnrollFlow() {
           type="button"
           onClick={begin}
           disabled={pending}
-          className="inline-flex h-10 w-fit items-center justify-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
+          className="inline-flex h-10 w-fit items-center justify-center rounded-lg bg-primary px-5 font-sans text-[0.9rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
         >
           {pending ? "Generuję…" : "Włącz 2FA"}
         </button>
@@ -168,7 +168,7 @@ function EnrollFlow() {
                 onClick={verify}
                 disabled={pending || token.length !== 6}
                 // Mobile: 52px tall touch target. Desktop: h-10 jak było.
-                className="inline-flex h-[52px] items-center justify-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.88rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] disabled:opacity-60 md:h-10 md:px-4"
+                className="inline-flex h-[52px] items-center justify-center rounded-lg bg-primary px-5 font-sans text-[0.88rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] disabled:opacity-60 md:h-10 md:px-4"
               >
                 {pending ? "Sprawdzam…" : "Potwierdź"}
               </button>

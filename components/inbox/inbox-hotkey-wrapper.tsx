@@ -103,7 +103,7 @@ export function InboxHotkeyList({
   if (total === 0) {
     return (
       <>
-        <div className="rounded-[22px] border border-dashed border-white/60 bg-white/40 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.02]">
+        <div className="rounded-[22px] border border-dashed border-white/60 bg-white/40 ]">
           <EmptyState
             icon={BellOff}
             title="Pusto"
@@ -123,20 +123,20 @@ export function InboxHotkeyList({
 
   return (
     <>
-      {/* v4: jedna karta rounded-[22px] glass surface z brand-tinted shadow. */}
-      <div className="relative overflow-hidden rounded-[22px] border border-white/60 bg-card/95 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] dark:border-white/10 dark:bg-white/[0.03]">
+      {/* v4: jedna karta rounded-[22px] plain surface z brand-tinted shadow. */}
+      <div className="relative overflow-hidden rounded-[22px] border border-white/60 bg-card/95 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] ]">
         <div className="flex flex-col gap-3 px-4 py-4 md:px-5 md:py-5">
           {groups.map((group, idx) => (
             <section key={group.key} className={idx === 0 ? "" : "mt-2"}>
               <div className="mb-1.5 flex items-center gap-2.5 px-2">
                 <span
                   aria-hidden
-                  className="h-4 w-[3px] rounded-[2px] bg-brand-gradient"
+                  className="h-4 w-[3px] rounded-[2px] bg-primary"
                 />
                 <h2 className="text-[0.78rem] font-bold tracking-[-0.01em] text-foreground">
                   {group.label}
                 </h2>
-                <span className="rounded-full bg-white/40 px-2 py-0.5 font-mono text-[0.66rem] text-muted-foreground dark:bg-white/[0.06]">
+                <span className="rounded-full bg-white/40 px-2 py-0.5 font-mono text-[0.66rem] text-muted-foreground ]">
                   {group.items.length}
                 </span>
               </div>
@@ -153,7 +153,7 @@ export function InboxHotkeyList({
 
         {/* v4 footer: bulk akcja "Oznacz wszystkie jako przeczytane" + bulk delete.
             Mobile: sticky-bottom z safe-area, full-width row. */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/50 bg-white/30 px-5 py-3 dark:border-white/[0.06] dark:bg-white/[0.02] max-md:sticky max-md:bottom-0 max-md:z-10 max-md:px-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:backdrop-blur-xl">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/50 bg-white/30 px-5 py-3 ] ] max-md:sticky max-md:bottom-0 max-md:z-10 max-md:px-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:">
           <span className="font-mono text-[0.68rem] text-muted-foreground/80">
             {unread.length > 0
               ? `${unread.length} nieprzeczytan${unread.length === 1 ? "a" : "ych"} · ${read.length} przeczytan${read.length === 1 ? "a" : "ych"}`
@@ -164,7 +164,7 @@ export function InboxHotkeyList({
               <form action={markAllNotificationsReadAction} className="m-0">
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 rounded-[10px] border border-white/60 bg-white/60 px-3 py-1.5 font-mono text-[0.66rem] font-medium uppercase tracking-[0.12em] text-foreground transition-colors hover:border-primary/60 hover:text-primary dark:border-white/10 dark:bg-white/[0.04]"
+                  className="inline-flex items-center gap-1.5 rounded-[10px] border border-white/60 bg-white/60 px-3 py-1.5 font-mono text-[0.66rem] font-medium uppercase tracking-[0.12em] text-foreground transition-colors hover:border-primary/60 hover:text-primary ]"
                 >
                   <Check size={11} /> Oznacz wszystkie jako przeczytane
                 </button>
@@ -187,7 +187,7 @@ export function InboxHotkeyList({
                     void deleteAllReadNotificationsAction();
                   });
                 }}
-                className="inline-flex items-center gap-1.5 rounded-[10px] border border-white/60 bg-white/60 px-3 py-1.5 font-mono text-[0.66rem] font-medium uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:border-destructive/60 hover:text-destructive dark:border-white/10 dark:bg-white/[0.04]"
+                className="inline-flex items-center gap-1.5 rounded-[10px] border border-white/60 bg-white/60 px-3 py-1.5 font-mono text-[0.66rem] font-medium uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:border-destructive/60 hover:text-destructive ]"
               >
                 <Trash2 size={11} /> Usuń przeczytane
               </button>
@@ -370,7 +370,7 @@ function NotificationRow({
     <div
       data-unread={unread ? "true" : "false"}
       {...(hotkeyProps ?? {})}
-      className="group flex items-start gap-3 rounded-[13px] border border-transparent px-3.5 py-3 transition-[border-color,background-color] hover:border-white/60 hover:bg-white/60 data-[unread=true]:bg-primary/[0.06] dark:hover:border-white/[0.08] dark:hover:bg-white/[0.04] max-md:gap-3 max-md:px-3 max-md:py-3.5"
+      className="group flex items-start gap-3 rounded-[13px] border border-transparent px-3.5 py-3 transition-[border-color,background-color] hover:border-white/60 hover:bg-white/60 data-[unread=true]:bg-primary/[0.06] ] ] max-md:gap-3 max-md:px-3 max-md:py-3.5"
     >
       <span
         className={`relative grid h-9 w-9 shrink-0 place-items-center rounded-[10px] text-white max-md:h-10 max-md:w-10 ${
@@ -382,7 +382,7 @@ function NotificationRow({
                 ? "bg-gradient-to-br from-sky-400 to-brand-500"
                 : isSupportCreated
                   ? "bg-gradient-to-br from-rose-400 to-brand-500"
-                  : "bg-brand-gradient"
+                  : "bg-primary"
         }`}
         aria-hidden
       >
@@ -405,7 +405,7 @@ function NotificationRow({
             {body}
           </span>
           {snippet && (
-            <span className="truncate text-[0.86rem] italic text-muted-foreground/90">„{snippet}"</span>
+            <span className="truncate text-[0.86rem] italic text-muted-foreground/90">„{snippet}”</span>
           )}
           {/* v4 relative time: mono */}
           <span className="font-mono text-[0.7rem] text-muted-foreground/70">
@@ -416,7 +416,7 @@ function NotificationRow({
             się jako 'pinned' badge nad rzędem; klik ołówka otwiera input. */}
         {!editing && savedNote && (
           <div className="flex items-start gap-1.5 rounded-md bg-amber-500/10 px-2 py-1.5 text-[0.84rem] text-foreground">
-            <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-amber-600 dark:text-amber-400">
+            <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-amber-600">
               twoja notatka
             </span>
             <span className="flex-1">{savedNote}</span>
@@ -517,7 +517,7 @@ function NotificationRow({
       {unread && (
         <span
           aria-hidden
-          className="mt-2 h-2 w-2 shrink-0 self-start rounded-full bg-brand-gradient shadow-[0_0_10px_rgba(124,92,255,0.5)]"
+          className="mt-2 h-2 w-2 shrink-0 self-start rounded-full bg-primary shadow-[0_0_10px_rgba(124,92,255,0.5)]"
         />
       )}
     </div>

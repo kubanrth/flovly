@@ -50,7 +50,7 @@ export function ResetPasswordDialog({
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4">
           <div className="relative flex w-[min(420px,100%)] flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-[0_24px_48px_-12px_rgba(10,10,40,0.35)]">
             <button
               type="button"
@@ -64,7 +64,7 @@ export function ResetPasswordDialog({
             <div className="flex flex-col gap-1.5">
               <span className="eyebrow">Reset hasła</span>
               <h2 className="font-display text-[1.3rem] font-bold leading-tight tracking-[-0.02em]">
-                Nowe hasło dla <span className="text-brand-gradient">{email}</span>
+                Nowe hasło dla <span className="">{email}</span>
               </h2>
               <p className="text-[0.82rem] text-muted-foreground">
                 Reset wyloguje wszystkie aktywne sesje user&apos;a + skasuje 2FA (jeśli było).
@@ -120,7 +120,7 @@ export function ResetPasswordDialog({
                 <button
                   type="submit"
                   disabled={pending}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-gradient px-3 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 font-sans text-[0.85rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {pending ? "Resetowanie…" : "Zmień hasło"}
                 </button>

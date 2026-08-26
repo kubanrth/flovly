@@ -51,7 +51,7 @@ export function AggregatorToggle({
         <span
           className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-colors ${
             on
-              ? "bg-fuchsia-500/15 text-fuchsia-700 dark:bg-fuchsia-400/15 dark:text-fuchsia-300"
+              ? "bg-fuchsia-500/15 text-fuchsia-700  "
               : "bg-muted text-muted-foreground"
           }`}
         >
@@ -60,10 +60,10 @@ export function AggregatorToggle({
         <div className="flex flex-col">
           <span className="eyebrow">Tablica jako agregator</span>
           <p className="text-[0.86rem] leading-[1.45] text-muted-foreground">
-            Włącz żeby milestone'y tej tablicy stały się{" "}
+            Włącz żeby milestone&apos;y tej tablicy stały się{" "}
             <strong className="text-foreground">Poziomem 2</strong> — w edycji
-            milestone'a wybierzesz wtedy child'y (Poziom 1) z innych tablic w
-            workspace. Idealne pod jedną „główną" tablicę zbierającą wszystkie
+            milestone&apos;a wybierzesz wtedy child&apos;y (Poziom 1) z innych tablic w
+            workspace. Idealne pod jedną „główną” tablicę zbierającą wszystkie
             plany (np. Kickback e-commerce + Kickback Cafe → Kickback Plan).
           </p>
         </div>

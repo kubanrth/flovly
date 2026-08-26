@@ -92,10 +92,10 @@ export function NotesWorkspace({
     : "/my/notes";
 
   return (
-    // v4 glass card — całość owinięta w rounded-[22px] z brand-tinted shadow.
+    // v4 plain card — całość owinięta w rounded-[22px] z brand-tinted shadow.
     // 3-kolumnowy układ (folders/list/editor) zachowany pod spodem, ale wizualnie
     // jako jedna karta z hairline'ami między kolumnami.
-    <div className="relative h-[calc(100dvh-0px)] overflow-hidden rounded-[22px] border border-white/60 bg-card/95 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] dark:border-white/10 dark:bg-white/[0.03]">
+    <div className="relative h-[calc(100dvh-0px)] overflow-hidden rounded-[22px] border border-white/60 bg-card/95 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] ]">
       <div className="flex h-full overflow-hidden">
         <FoldersColumn
           folders={folders}
@@ -133,7 +133,7 @@ function FoldersColumn({
 }) {
   return (
     <aside
-      className={`flex w-full flex-col gap-2 overflow-y-auto border-r border-white/50 bg-white/30 p-3 backdrop-blur-xl md:w-[280px] md:shrink-0 dark:border-white/[0.06] dark:bg-white/[0.02] ${
+      className={`flex w-full flex-col gap-2 overflow-y-auto border-r border-white/50 bg-white/30 p-3  md:w-[280px] md:shrink-0 ] ] ${
         hideOnMobile ? "max-md:hidden" : ""
       }`}
     >
@@ -211,12 +211,12 @@ function FolderLink({
     <Link
       href={href}
       data-active={active ? "true" : "false"}
-      className="flex items-center gap-2 rounded-[10px] px-2.5 py-2.5 text-[0.95rem] transition-colors hover:bg-white/50 data-[active=true]:bg-primary/12 data-[active=true]:text-foreground dark:hover:bg-white/[0.04] md:py-2 md:text-[0.88rem]"
+      className="flex items-center gap-2 rounded-[10px] px-2.5 py-2.5 text-[0.95rem] transition-colors hover:bg-white/50 data-[active=true]:bg-primary/12 data-[active=true]:text-foreground ] md:py-2 md:text-[0.88rem]"
     >
       {icon}
       <span className="flex-1 truncate">{label}</span>
       {/* v4 count pill — rounded-full bg-white/40 */}
-      <span className="rounded-full bg-white/50 px-2 py-0.5 font-mono text-[0.66rem] text-muted-foreground dark:bg-white/[0.06] md:text-[0.6rem]">
+      <span className="rounded-full bg-white/50 px-2 py-0.5 font-mono text-[0.66rem] text-muted-foreground ] md:text-[0.6rem]">
         {count}
       </span>
     </Link>
@@ -281,11 +281,11 @@ function FolderRow({
         href={`/my/notes?folderId=${folder.id}`}
         data-active={active ? "true" : "false"}
         onDoubleClick={() => setRenaming(true)}
-        className="flex min-w-0 flex-1 items-center gap-2 rounded-[10px] px-2.5 py-2.5 text-[0.95rem] text-muted-foreground transition-colors hover:bg-white/50 hover:text-foreground data-[active=true]:bg-primary/12 data-[active=true]:text-foreground dark:hover:bg-white/[0.04] md:py-2 md:text-[0.88rem]"
+        className="flex min-w-0 flex-1 items-center gap-2 rounded-[10px] px-2.5 py-2.5 text-[0.95rem] text-muted-foreground transition-colors hover:bg-white/50 hover:text-foreground data-[active=true]:bg-primary/12 data-[active=true]:text-foreground ] md:py-2 md:text-[0.88rem]"
       >
         <Folder size={13} className="text-primary/70 shrink-0" />
         <span className="flex-1 truncate">{folder.name}</span>
-        <span className="rounded-full bg-white/50 px-2 py-0.5 font-mono text-[0.66rem] text-muted-foreground dark:bg-white/[0.06] md:text-[0.6rem]">
+        <span className="rounded-full bg-white/50 px-2 py-0.5 font-mono text-[0.66rem] text-muted-foreground ] md:text-[0.6rem]">
           {count}
         </span>
       </Link>
@@ -325,7 +325,7 @@ function NewFolderForm() {
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        className="mt-1 flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-brand-gradient px-3 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="mt-1 flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 font-sans text-[0.85rem] font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         <Plus size={14} /> Nowy folder
       </button>
@@ -363,7 +363,7 @@ function NewFolderForm() {
         <button
           type="submit"
           disabled={!name.trim()}
-          className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-md bg-brand-gradient px-2 font-sans text-[0.78rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-md bg-primary px-2 font-sans text-[0.78rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Dodaj
         </button>
@@ -430,7 +430,7 @@ function NotesListColumn({
 
   return (
     <aside
-      className={`flex w-full flex-col overflow-hidden border-r border-white/50 bg-white/20 backdrop-blur-xl md:w-[320px] md:shrink-0 dark:border-white/[0.06] dark:bg-white/[0.01] ${
+      className={`flex w-full flex-col overflow-hidden border-r border-white/50 bg-white/20  md:w-[320px] md:shrink-0 ] ] ${
         hideOnMobile ? "max-md:hidden" : ""
       }`}
     >
@@ -447,7 +447,7 @@ function NotesListColumn({
         </Link>
       </div>
 
-      <div className="flex flex-col gap-2 border-b border-white/50 px-4 py-3 dark:border-white/[0.06]">
+      <div className="flex flex-col gap-2 border-b border-white/50 px-4 py-3 ]">
         <div className="md:hidden">
           <span className="font-display text-[1.7rem] font-bold tracking-[-0.02em]">
             {folderLabel}
@@ -787,7 +787,7 @@ function NoteEditor({
         </div>
       </div>
 
-      <header className="max-md:hidden flex items-center gap-3 border-b border-white/50 px-6 py-3 dark:border-white/[0.06]">
+      <header className="max-md:hidden flex items-center gap-3 border-b border-white/50 px-6 py-3 ]">
         <span className="font-mono text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground">
           {formatLongDateTime(note.updatedAt)}
         </span>

@@ -244,7 +244,7 @@ function PollCreator({
         </button>
         <button
           type="submit"
-          className="inline-flex h-9 items-center rounded-md bg-brand-gradient px-4 font-mono text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-white shadow-brand transition-opacity hover:opacity-90"
+          className="inline-flex h-9 items-center rounded-md bg-primary px-4 font-mono text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-90"
         >
           Utwórz głosowanie
         </button>

@@ -84,7 +84,7 @@ export function CzesiekThread({
             onClick={handleSubmit}
             disabled={!draft.trim() || sending}
             aria-label="Wyślij"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand-gradient text-white shadow-brand transition-[transform,opacity] hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary text-white transition-[transform,opacity] hover:-translate-y-px disabled:opacity-40 disabled:hover:translate-y-0"
           >
             <Send size={14} />
           </button>
@@ -100,13 +100,13 @@ export function CzesiekThread({
 function EmptyState({ onPick }: { onPick: (q: string) => void }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 px-2 text-center">
-      {/* F12-K81 (v4 brand polish) — 72×72 rounded-[22px] bg-brand-gradient
+      {/* F12-K81 (v4 brand polish) — 72×72 rounded-[22px] bg-primary
           z literami "At" w centrum (matches Flovly Components spec P4, linia
           470). Outside: animated fl-pulse sonar ring jako "żywy" sygnał. */}
-      <div className="relative grid h-[72px] w-[72px] place-items-center rounded-[22px] bg-brand-gradient text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_16px_36px_-10px_rgba(122,51,236,0.7)]">
+      <div className="relative grid h-[72px] w-[72px] place-items-center rounded-[22px] bg-primary text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_16px_36px_-10px_rgba(122,51,236,0.7)]">
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute -inset-1 rounded-[24px] border-2 border-accent-sky animate-fl-pulse"
+          className="pointer-events-none absolute -inset-1 rounded-[24px] border-2 border-accent-sky"
         />
         <span className="relative font-display text-[1.6rem] font-extrabold leading-none tracking-[-0.03em]">
           At
@@ -140,7 +140,7 @@ function EmptyState({ onPick }: { onPick: (q: string) => void }) {
 function ThinkingBubble() {
   return (
     <div className="flex gap-2">
-      <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-gradient text-white shadow-sm">
+      <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-white shadow-sm">
         <Bot size={14} />
       </div>
       <div className="flex items-center gap-1 rounded-2xl rounded-tl-md border border-border bg-card px-3.5 py-2.5">

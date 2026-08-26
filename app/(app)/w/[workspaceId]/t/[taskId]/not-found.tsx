@@ -15,7 +15,7 @@ export default function TaskNotFound() {
       <Ghost size={48} className="text-muted-foreground/40" />
       <div className="flex flex-col gap-2">
         <h1 className="font-display text-[1.4rem] font-bold leading-[1.15] tracking-[-0.02em] md:text-[1.7rem]">
-          Tego zadania już <span className="text-brand-gradient">nie ma</span>
+          Tego zadania już <span className="">nie ma</span>
         </h1>
         <p className="text-[0.95rem] leading-[1.55] text-muted-foreground">
           Mogło zostać usunięte, przeniesione do innej przestrzeni, albo masz
@@ -24,7 +24,7 @@ export default function TaskNotFound() {
       </div>
       <Link
         href="/workspaces"
-        className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-brand-gradient px-5 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90"
+        className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-5 font-sans text-[0.9rem] font-semibold text-white transition-opacity hover:opacity-90"
       >
         <ArrowLeft size={14} /> Wszystkie przestrzenie
       </Link>

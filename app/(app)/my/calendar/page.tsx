@@ -114,7 +114,7 @@ export default async function MyCalendarPage({
       <div className="mb-6 flex flex-col gap-2">
         <span className="eyebrow">Twój kalendarz</span>
         <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
-          Co masz <span className="text-brand-gradient">na osi</span>.
+          Co masz <span className="">na osi</span>.
         </h1>
         <p className="max-w-[60ch] text-[0.95rem] leading-[1.55] text-muted-foreground">
           Wszystkie zadania, w których jesteś assignee, na siatce miesiąca.

@@ -176,7 +176,7 @@ export function ColumnSettings({
             nową kolumnę dodaj klikając „+” na końcu nagłówków tabeli
           </p>
 
-          <DndContext
+          <DndContext id="column-settings"
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}

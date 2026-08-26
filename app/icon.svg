@@ -1,15 +1,1 @@
-<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#7C5CFF"/>
-      <stop offset="100%" stop-color="#D247B5"/>
-    </linearGradient>
-    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#fff" stop-opacity="1"/>
-      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
-  <rect x="0" y="0" width="48" height="48" rx="12" fill="url(#g)"/>
-  <rect x="0" y="0" width="48" height="22" rx="12" fill="url(#sheen)" opacity="0.3"/>
-  <path d="M16 12H34V18H22V22H32V28H22V37H16V12Z" fill="#fff"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 80 80"><clipPath id="c"><circle cx="40" cy="40" r="40"/></clipPath><g clip-path="url(#c)"><circle cx="40" cy="40" r="40" fill="#FF5C00"/><rect x="50" y="50" width="48" height="48" transform="rotate(45 50 50)" fill="#14110D"/></g></svg>

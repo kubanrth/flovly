@@ -58,7 +58,7 @@ export function TaskTimer({
     // than a heavy "section" block (spec).
     <div className="flex flex-wrap items-center gap-2">
       <div
-        className="inline-flex items-center gap-2 rounded-full border border-border/40 bg-card/60 px-3 py-1.5 backdrop-blur"
+        className="inline-flex items-center gap-2 rounded-full border border-border/40 bg-card/60 px-3 py-1.5"
         data-running={isRunning ? "true" : "false"}
         data-completed={isCompleted ? "true" : "false"}
       >
@@ -101,7 +101,7 @@ export function TaskTimer({
               <input type="hidden" name="id" value={taskId} />
               <button
                 type="submit"
-                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-brand-gradient px-4 font-sans text-[0.82rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px]"
+                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-primary px-4 font-sans text-[0.82rem] font-semibold text-white transition-[transform,opacity] hover:-translate-y-[1px]"
               >
                 <Play size={12} fill="currentColor" />
                 Rozpocznij
@@ -123,7 +123,7 @@ export function TaskTimer({
               <button
                 type="button"
                 onClick={() => setConfirmingComplete(true)}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 font-sans text-[0.82rem] font-semibold text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 font-sans text-[0.82rem] font-semibold text-emerald-600 transition-colors hover:bg-emerald-500/20"
               >
                 <CheckCircle2 size={12} />
                 Zakończ
@@ -134,7 +134,7 @@ export function TaskTimer({
       )}
 
       {isCompleted && (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 font-mono text-[0.64rem] uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-400">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 font-mono text-[0.64rem] uppercase tracking-[0.14em] text-emerald-600">
           <CheckCircle2 size={11} />
           Zakończone
         </span>
@@ -182,7 +182,7 @@ function CompleteConfirmDialog({
       onClick={(e) => {
         if (e.target === e.currentTarget) onCancel();
       }}
-      className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4"
     >
       <div
         className="relative flex w-[min(440px,100%)] flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-[0_24px_48px_-12px_rgba(10,10,40,0.35)]"
@@ -199,7 +199,7 @@ function CompleteConfirmDialog({
 
         <div className="flex items-start gap-3">
           <span
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-emerald-500/10 text-emerald-600"
             aria-hidden
           >
             <AlertTriangle size={16} />

@@ -82,7 +82,7 @@ export function CreateBoardDialog({
         className={
           variant === "cta"
             ? // v4 brand polish — gradient pill (workspace hero CTA).
-              "inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-gradient px-3.5 font-sans text-[0.84rem] font-semibold text-white shadow-brand transition-[transform,box-shadow] hover:-translate-y-px hover:shadow-[0_10px_28px_-10px_rgba(122,51,236,0.75),0_4px_12px_-4px_rgba(225,49,143,0.55)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              "inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3.5 font-sans text-[0.84rem] font-semibold text-white  transition-[transform,box-shadow] hover:-translate-y-px hover:shadow-[0_10px_28px_-10px_rgba(122,51,236,0.75),0_4px_12px_-4px_rgba(225,49,143,0.55)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             : size === "sm"
               ? "grid h-7 w-7 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground"
               : "inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-background px-3 font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
@@ -93,11 +93,11 @@ export function CreateBoardDialog({
       </button>
 
       <Dialog open={open} onOpenChange={setOpen} key={open ? "open" : "closed"}>
-        <DialogContent className="dialog-glass rounded-2xl border-transparent sm:max-w-[480px]">
+        <DialogContent className="dialog-surface rounded-2xl border-transparent sm:max-w-[480px]">
           <DialogHeader>
             <span className="eyebrow">Nowa tablica</span>
             <DialogTitle className="font-display text-[1.5rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">
-              Dodaj kolejny zbiór <span className="text-brand-gradient">danych</span>.
+              Dodaj kolejny zbiór <span className="">danych</span>.
             </DialogTitle>
             <DialogDescription className="text-[0.9rem] leading-[1.55] text-muted-foreground">
               Nowa tablica dostanie te same 4 statusy i widoki co reszta tej
@@ -191,7 +191,7 @@ export function CreateBoardDialog({
               <button
                 type="submit"
                 disabled={pending}
-                className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
+                className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-5 font-sans text-[0.9rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
               >
                 {pending ? "Tworzę…" : "Utwórz tablicę"}
               </button>

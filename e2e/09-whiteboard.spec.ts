@@ -1,38 +1,41 @@
+import type { Page } from "@playwright/test";
 import { test, expect } from "./fixtures/console-errors";
+import { boardTab, gotoFirstBoard, openView } from "./helpers";
 
-async function gotoWhiteboard(page: import("@playwright/test").Page) {
-  await page.goto("/workspaces");
-  await page.locator('a[href^="/w/"]').first().click();
-  await page.waitForURL(/\/w\/[^/]+/);
-  await page.locator('a[href*="/b/"]').first().click();
-  await page.waitForURL(/\/b\/[^/]+/);
-  const tab = page.getByRole("link", { name: /^whiteboard$/i }).first();
-  if (!(await tab.isVisible().catch(() => false))) return false;
-  await tab.click();
-  await page.waitForURL(/\/whiteboard/, { timeout: 10_000 });
-  return true;
+// The seed board has no Whiteboard view — create it once via the `+` tab
+// (idempotent: the tab is checked first; later runs just switch to it).
+async function openWhiteboard(page: Page) {
+  await gotoFirstBoard(page);
+  if ((await boardTab(page, "Whiteboard").count()) > 0) {
+    await openView(page, "Whiteboard");
+    return;
+  }
+  await page.getByRole("button", { name: "Nowy widok" }).click();
+  const dialog = page.locator('[data-ui="new-view-dialog"]');
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("radio", { name: /^Whiteboard/ }).click();
+  // Empty name + no default view of that type → "Przywróć Whiteboard".
+  await dialog.getByRole("button", { name: /^(Utwórz widok|Przywróć Whiteboard)$/ }).click();
+  await page.waitForURL(/\/whiteboard/, { timeout: 15_000 });
 }
 
 test.describe("whiteboard (F12-K91 regression)", () => {
-  test("opens without console errors and shows canvas", async ({ page }) => {
-    const ok = await gotoWhiteboard(page);
-    if (!ok) test.skip(true, "whiteboard view not available");
-    // Whiteboard uses React Flow or a <canvas>.
-    const surface = page.locator("canvas, .react-flow, [data-testid='whiteboard-canvas']").first();
-    await expect(surface).toBeVisible({ timeout: 10_000 });
+  test.beforeEach(async ({ page }) => {
+    await openWhiteboard(page);
   });
 
-  test("color swatches toggle active state", async ({ page }) => {
-    const ok = await gotoWhiteboard(page);
-    if (!ok) test.skip(true, "whiteboard view not available");
-    const swatch = page.locator('[data-color], button[aria-label*="kolor"], button[aria-label*="color"]').first();
-    if (!(await swatch.isVisible().catch(() => false))) {
-      test.skip(true, "no color picker found");
-    }
-    await swatch.click();
-    // Active state could be aria-pressed=true or data-active=true.
-    const pressed = await swatch.getAttribute("aria-pressed");
-    const active = await swatch.getAttribute("data-active");
-    expect(pressed === "true" || active === "true").toBeTruthy();
+  test("opens without console errors and shows canvas", async ({ page }) => {
+    // Canvas editor is lazy-loaded (CanvasEditorLazy) → generous timeout.
+    await expect(page.locator(".react-flow").first()).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("pen color swatches toggle active state", async ({ page }) => {
+    await page.getByRole("button", { name: "Pisak (P)" }).click({ timeout: 15_000 });
+    const swatches = page.locator('button[aria-label^="Kolor pisaka"]');
+    await expect(swatches.first()).toHaveCSS("outline-style", "solid");
+    await swatches.nth(1).click();
+    // Active state = 2px outline on the picked swatch, cleared on the previous one.
+    await expect(swatches.nth(1)).toHaveCSS("outline-style", "solid");
+    await expect(swatches.first()).toHaveCSS("outline-style", "none");
   });
 });

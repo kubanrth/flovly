@@ -39,6 +39,7 @@ export function ReminderPopups({
   const cancelledRef = useRef(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setList(initial);
   }, [initial]);
 
@@ -58,6 +59,7 @@ export function ReminderPopups({
   useEffect(() => {
     cancelledRef.current = false;
     // Immediate poll on mount so fresh reminders appear without waiting.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refetch();
     // Realtime (useUserRealtime reminder.due) is primary; this 60s poll is the fallback.
     const id = setInterval(refetch, 60_000);
@@ -124,7 +126,7 @@ function ReminderBubble({
   onDismiss: () => void;
 }) {
   return (
-    <div className="pointer-events-auto flex items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)] backdrop-blur">
+    <div className="pointer-events-auto flex items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)]">
       <span
         className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary"
         aria-hidden

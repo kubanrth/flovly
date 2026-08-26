@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
+import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import {
   DeleteWorkspaceForm,
   UpdateWorkspaceForm,
@@ -25,7 +26,8 @@ export default async function WorkspaceSettingsPage({
   const canDelete = can(ctx.role, "workspace.delete");
 
   return (
-    <div className="mx-auto flex max-w-[640px] flex-col gap-8 md:gap-12">
+    <div className="flex flex-col gap-8 md:gap-12">
+      <WorkspaceHeader workspace={workspace} canEditSettings={can(ctx.role, "workspace.updateSettings")} />
       <section className="flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           <span className="eyebrow">Ustawienia ogólne</span>

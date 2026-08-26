@@ -6,7 +6,7 @@ import {
   PRIORITY_META,
   type TaskPriorityValue,
 } from "@/lib/task-priority";
-import { FlovlyMark } from "@/components/brand/flovly-logo";
+import { Mark } from "@/components/brand/mark";
 
 // F12-K79: PUBLIC route — bez auth. Token w URL → fetchujemy tablicę read-only.
 // Sprawdzamy: token istnieje, !revoked, !expired.
@@ -99,10 +99,10 @@ export default async function ShareViewerPage({ params }: { params: Params }) {
     // Mobile v4 (B10 — Public viewer): pb-16 so sticky watermark doesn't overlap content.
     <div className="min-h-screen bg-background pb-16 text-foreground md:pb-0">
       {/* Minimal brand header. Mobile: sticky w/ view-only badge top per spec. */}
-      <header className="sticky top-0 z-10 border-b border-border bg-card/85 backdrop-blur md:static md:bg-card/80">
+      <header className="sticky top-0 z-10 border-b border-border bg-card/85 md:static md:bg-card/80">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 md:gap-4 md:px-6 md:py-4">
           <div className="flex min-w-0 items-center gap-3">
-            <FlovlyMark size={32} className="shadow-brand rounded-[10px] md:h-9 md:w-9" />
+            <Mark size={32} className="rounded-[10px] md:h-9 md:w-9" />
             <div className="flex min-w-0 flex-col">
               <span className="truncate font-mono text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground md:text-[0.62rem]">
                 {board.workspace.name}
@@ -170,13 +170,13 @@ export default async function ShareViewerPage({ params }: { params: Params }) {
           href="/"
           className="inline-flex items-center gap-1.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
         >
-          Powered by <span className="text-brand-gradient font-semibold">FLOVLY</span>
+          Powered by <span className="font-semibold">FLOVLY</span>
           <ExternalLink size={10} />
         </Link>
       </footer>
 
       {/* Mobile sticky watermark — fixed bottom strip with brand mark. Read-only signal. */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/90 backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/90 md:hidden">
         <div
           className="flex items-center justify-center gap-1.5 px-4"
           style={{ minHeight: "48px", paddingBottom: "env(safe-area-inset-bottom)" }}
@@ -186,7 +186,7 @@ export default async function ShareViewerPage({ params }: { params: Params }) {
             className="inline-flex items-center gap-1.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
           >
             Udostępnione przez{" "}
-            <span className="text-brand-gradient font-semibold">FLOVLY</span>
+            <span className="font-semibold">FLOVLY</span>
             <ExternalLink size={10} />
           </Link>
         </div>
@@ -290,7 +290,7 @@ function ReadOnlyTaskCard({
         {task.assignees.slice(0, 3).map((a, i) => (
           <span
             key={i}
-            className="grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient text-[0.5rem] font-bold text-white"
+            className="grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-primary text-[0.5rem] font-bold text-white"
             title={a.user.name ?? a.user.email}
           >
             {a.user.avatarUrl ? (
@@ -354,7 +354,7 @@ function StateMessage({
           href="/"
           className="mt-2 inline-flex items-center gap-1.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
         >
-          Powered by <span className="text-brand-gradient font-semibold">FLOVLY</span>
+          Powered by <span className="font-semibold">FLOVLY</span>
         </Link>
       </div>
     </div>

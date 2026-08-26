@@ -159,7 +159,7 @@ export function TimesheetView({
             Billable: {fmtDuration(totalBillable)}
           </span>
           {totalEarnings > 0 && (
-            <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+            <span className="font-mono font-semibold text-emerald-600">
               {fmtMoney(totalEarnings)}
             </span>
           )}
@@ -318,7 +318,7 @@ export function TimesheetView({
         <button
           type="button"
           onClick={() => setAddOpen({ date: new Date() })}
-          className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand-gradient px-4 font-sans text-[0.86rem] font-semibold text-white shadow-brand transition-transform hover:-translate-y-[1px]"
+          className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 font-sans text-[0.86rem] font-semibold text-white transition-transform hover:-translate-y-[1px]"
         >
           <Plus size={14} /> Dodaj wpis manualny
         </button>
@@ -353,7 +353,7 @@ function EntryChip({
     <div
       className={`flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[0.66rem] ${
         entry.approvedAt
-          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 "
           : "border-border bg-background"
       }`}
       title={entry.note ?? undefined}
@@ -438,7 +438,7 @@ function ManualEntryDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-background/70 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-background/70 sm:items-center"
       onClick={onClose}
     >
       <div
@@ -471,7 +471,7 @@ function ManualEntryDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1">
-              <span className="text-eyebrow">Start</span>
+              <span className="eyebrow">Start</span>
               <input
                 type="datetime-local"
                 name="startedAt"
@@ -481,7 +481,7 @@ function ManualEntryDialog({
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-eyebrow">Koniec</span>
+              <span className="eyebrow">Koniec</span>
               <input
                 type="datetime-local"
                 name="stoppedAt"
@@ -493,7 +493,7 @@ function ManualEntryDialog({
           </div>
 
           <label className="flex flex-col gap-1">
-            <span className="text-eyebrow">Notatka (opcjonalna)</span>
+            <span className="eyebrow">Notatka (opcjonalna)</span>
             <input
               name="note"
               maxLength={500}
@@ -530,7 +530,7 @@ function ManualEntryDialog({
             <button
               type="submit"
               disabled={pending}
-              className="inline-flex h-10 items-center rounded-lg bg-brand-gradient px-4 text-[0.88rem] font-semibold text-white shadow-brand disabled:opacity-60"
+              className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-[0.88rem] font-semibold text-white disabled:opacity-60"
             >
               {pending ? "Zapisuję…" : "Zapisz wpis"}
             </button>

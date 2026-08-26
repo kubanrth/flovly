@@ -1,11 +1,10 @@
 import type { ReactNode } from "react";
 
-// Shared outer shell for all 5 board-level views (table/kanban/roadmap/
-// gantt/whiteboard). Guarantees identical viewport width, padding, and
-// background handling so switching views doesn't "shift" the layout.
-//
-// Inner frame is fixed at max-w-[1400px] — widest of the original per-view
-// widths — so content never jumps between views.
+// Shared outer shell for every board-level view. Full width of <main>, no
+// max-w; `bgCss` (board background) on the container. The header is
+// edge-to-edge; every other child gets the 24px view padding.
+// ponytail: the child padding selector goes away once each view owns its
+// 24px (F2+); then this is just the bg container.
 export function BoardShell({
   bgCss,
   children,
@@ -15,12 +14,10 @@ export function BoardShell({
 }) {
   return (
     <div
-      className="relative -mx-4 -my-5 min-h-[calc(100dvh-14rem)] px-4 py-5 md:-mx-14 md:-my-10 md:px-14 md:py-10"
+      className="flex w-full flex-1 flex-col [&>*:not([data-ui=board-header])]:px-6 [&>*:not([data-ui=board-header])]:py-4 max-md:[&>*:not([data-ui=board-header])]:px-4"
       style={bgCss ? { background: bgCss } : undefined}
     >
-      <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-4 md:gap-6">
-        {children}
-      </div>
+      {children}
     </div>
   );
 }

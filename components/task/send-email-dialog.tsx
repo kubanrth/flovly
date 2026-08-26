@@ -81,17 +81,17 @@ export function SendEmailDialog({
 // transform — active:scale-[0.97] daje tylko bardzo subtelny press feedback
 // (~30ms percepcji) bez czytania jako "ozdobne". motion-reduce respect przez
 // active:scale na transformie który prefers-reduced-motion neutralizuje.
-className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 font-sans text-[0.78rem] font-semibold text-sky-700 transition-colors hover:border-sky-500/50 hover:bg-sky-500/15 active:scale-[0.97] motion-reduce:active:scale-100 dark:border-sky-400/40 dark:bg-sky-400/10 dark:text-sky-300"
+className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 font-sans text-[0.78rem] font-semibold text-sky-700 transition-colors hover:border-sky-500/50 hover:bg-sky-500/15 active:scale-[0.97] motion-reduce:active:scale-100"
       >
         <Mail size={12} /> Wyślij mailem
       </button>
 
       <Dialog open={open} onOpenChange={setOpen} key={open ? "open" : "closed"}>
-        <DialogContent className="rounded-2xl border-border bg-card shadow-aura sm:max-w-[540px]">
+        <DialogContent className="rounded-2xl border-border bg-card sm:max-w-[540px]">
           <DialogHeader>
             <span className="eyebrow">Wyślij zadanie</span>
             <DialogTitle className="font-display text-[1.45rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">
-              <span className="text-brand-gradient">Email</span> z tym zadaniem i
+              <span className="">Email</span> z tym zadaniem i
               załącznikami.
             </DialogTitle>
             <DialogDescription className="text-[0.9rem] leading-[1.55] text-muted-foreground">
@@ -186,7 +186,7 @@ className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border bor
               <button
                 type="submit"
                 disabled={pending}
-                className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
+                className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-5 font-sans text-[0.9rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
               >
                 {pending ? "Wysyłam…" : "Wyślij"}
               </button>

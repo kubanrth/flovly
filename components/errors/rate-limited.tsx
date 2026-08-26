@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Hourglass } from "lucide-react";
+import { Clock } from "lucide-react";
 
 // 429 — rate limit. Pokazujemy odliczanie do `retryAfterSec` sekund a po
 // 0 enable'ujemy "Spróbuj ponownie". Hook setInterval w client component.
@@ -41,7 +41,7 @@ export function RateLimited({
         className="pointer-events-none absolute left-1/2 top-[28%] h-[240px] w-[240px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(52,190,248,0.22),transparent_65%)] blur-3xl"
       />
       <div className="relative grid h-16 w-16 place-items-center rounded-[19px] border border-sky-500/30 bg-sky-500/10">
-        <Hourglass size={28} strokeWidth={1.75} className="text-sky-500" aria-hidden />
+        <Clock size={28} strokeWidth={1.75} className="text-sky-500" aria-hidden />
       </div>
       <div className="relative flex flex-col gap-2">
         <h2 className="font-mono text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-sky-500">
@@ -63,7 +63,7 @@ export function RateLimited({
         type="button"
         onClick={onRetry}
         disabled={!canRetry}
-        className="relative inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-brand-gradient px-5 font-sans text-[0.95rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 md:h-10 md:rounded-lg md:text-[0.9rem]"
+        className="relative inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-primary px-5 font-sans text-[0.95rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 md:h-10 md:rounded-lg md:text-[0.9rem]"
       >
         {canRetry ? "Spróbuj ponownie" : `Odczekaj · ${remaining}s`}
       </button>

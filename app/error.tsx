@@ -37,7 +37,7 @@ export default function GlobalError({
 
       <div className="relative flex flex-col gap-2">
         <h1 className="font-display text-[1.25rem] font-bold leading-[1.15] tracking-[-0.02em] md:text-[1.9rem]">
-          Coś poszło <span className="text-brand-gradient">nie tak</span>
+          Coś poszło <span className="">nie tak</span>
         </h1>
         <p className="text-[0.9rem] leading-[1.55] text-muted-foreground md:text-[0.95rem]">
           Wystąpił nieoczekiwany błąd. Spróbuj jeszcze raz — jeśli problem
@@ -54,7 +54,7 @@ export default function GlobalError({
         <button
           type="button"
           onClick={() => reset()}
-          className="inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-brand-gradient px-5 font-sans text-[0.95rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 md:h-10 md:rounded-lg md:text-[0.9rem]"
+          className="inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-primary px-5 font-sans text-[0.95rem] font-semibold text-white transition-opacity hover:opacity-90 md:h-10 md:rounded-lg md:text-[0.9rem]"
         >
           <RotateCcw size={14} /> Spróbuj ponownie
         </button>

@@ -70,7 +70,7 @@ export function WikiEditor({
           <div className="hidden items-center gap-4 md:flex">
             <button
               type="submit"
-              className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-5 font-sans text-[0.9rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               Zapisz wiki
             </button>
@@ -83,13 +83,13 @@ export function WikiEditor({
 
           {/* Mobile sticky save bar — sits above safe-area-inset-bottom. */}
           <div
-            className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 px-4 py-3 backdrop-blur md:hidden"
+            className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 px-4 py-3 md:hidden"
             style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
           >
             <div className="flex items-center gap-3">
               <button
                 type="submit"
-                className="inline-flex h-12 flex-1 items-center justify-center rounded-xl bg-brand-gradient px-5 text-[0.95rem] font-semibold text-white shadow-brand"
+                className="inline-flex h-12 flex-1 items-center justify-center rounded-xl bg-primary px-5 text-[0.95rem] font-semibold text-white"
               >
                 Zapisz wiki
               </button>

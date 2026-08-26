@@ -317,7 +317,7 @@ function DayExpandDialog({
       onKeyDown={(e) => {
         if (e.key === "Escape") onClose();
       }}
-      className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4"
     >
       <div className="relative flex max-h-[80vh] w-[min(520px,100%)] flex-col gap-3 rounded-2xl border border-border bg-card p-6 shadow-[0_24px_48px_-12px_rgba(10,10,40,0.35)]">
         <button

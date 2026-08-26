@@ -1,52 +1,31 @@
 import { test, expect } from "./fixtures/console-errors";
-
-async function gotoFirstBoardTable(page: import("@playwright/test").Page) {
-  await page.goto("/workspaces");
-  await page.locator('a[href^="/w/"]').first().click();
-  await page.waitForURL(/\/w\/[^/]+/);
-  // Board card links to /w/X/b/Y/...
-  const boardLink = page.locator('a[href*="/b/"]').first();
-  await boardLink.click();
-  await page.waitForURL(/\/b\/[^/]+/, { timeout: 10_000 });
-  // Navigate to table view if not already there.
-  const tableTab = page.getByRole("link", { name: /^tabela$/i }).first();
-  if (await tableTab.isVisible().catch(() => false)) await tableTab.click();
-  await page.waitForURL(/\/table/, { timeout: 10_000 }).catch(() => {});
-}
+import { gotoFirstBoard, taskDrawer } from "./helpers";
 
 test.describe("task creation", () => {
-  test("create task — dialog opens, submits within 3s, task appears", async ({ page }) => {
-    await gotoFirstBoardTable(page);
+  test("create task — dialog opens, closes on submit, task appears and its drawer opens", async ({ page }) => {
+    await gotoFirstBoard(page);
 
-    const newTaskBtn = page
-      .getByRole("button", { name: /\+ nowe zadanie|nowe zadanie/i })
-      .first();
-    if (!(await newTaskBtn.isVisible().catch(() => false))) {
-      test.skip(true, "No 'New task' trigger visible");
-    }
-
-    await newTaskBtn.click();
-    const dialog = page.getByRole("dialog");
+    await page.locator('[data-ui="board-header"]').getByRole("button", { name: "Nowe zadanie" }).click();
+    const dialog = page.locator('[data-ui="create-task-dialog"]');
     await expect(dialog).toBeVisible();
 
     const title = `e2e-task-${Date.now()}`;
     await dialog.locator('input[name="title"]').fill(title);
 
-    // F12-K99 regression: submit + verify modal closes ≤ 3s
-    const submit = dialog.getByRole("button", { name: /utwórz|dodaj|zapisz|stwórz/i }).first();
-    const start = Date.now();
-    await submit.click();
-    await expect(dialog).not.toBeVisible({ timeout: 3_000 });
-    const elapsed = Date.now() - start;
-    expect(elapsed).toBeLessThan(3000);
+    // F12-K99 regression (modal hung after submit). The action response carries
+    // the revalidated table RSC payload; measured 3.5–4s on `next dev`, so a
+    // tighter threshold only makes sense against `next start`.
+    await dialog.getByRole("button", { name: "Utwórz zadanie" }).click();
+    await expect(dialog).toBeHidden({ timeout: 10_000 });
 
-    // Task title appears in the table.
-    await expect(page.getByText(title).first()).toBeVisible({ timeout: 5_000 });
+    // On success the app pushes /w/<ws>/t/<id> → drawer opens with the new task.
+    const drawer = taskDrawer(page);
+    await expect(drawer).toBeVisible();
+    await expect(drawer.getByLabel("Tytuł zadania")).toHaveValue(title);
 
-    // Click title → drawer opens.
-    await page.getByText(title).first().click();
-    await expect(page.locator('[role="dialog"], [data-testid="task-drawer"]')).toBeVisible({
-      timeout: 5_000,
-    });
+    // Close the drawer → the new row is in the table.
+    await drawer.getByRole("button", { name: "Zamknij" }).first().click();
+    await expect(drawer).toBeHidden();
+    await expect(page.locator("table tbody").getByText(title).first()).toBeVisible();
   });
 });

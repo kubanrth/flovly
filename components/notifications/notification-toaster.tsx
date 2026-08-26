@@ -180,7 +180,7 @@ function ToastCard({
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }) {
-  const Icon = iconFor(item.iconKind);
+  const Icon = ICON_FOR[item.iconKind] ?? Bell;
   const colorClass = colorFor(item.iconKind);
 
   return (
@@ -193,7 +193,7 @@ function ToastCard({
         // bezpieczne usunięcie. Enter-animacja nie ma ustawionego leaving.
         if (item.leaving) onRemove();
       }}
-      className="toast-card pointer-events-auto flex items-start gap-3 rounded-2xl border border-border bg-card p-3 shadow-[0_18px_40px_-16px_rgba(76,29,149,0.32),0_10px_26px_-10px_rgba(124,92,255,0.20)] backdrop-blur"
+      className="toast-card pointer-events-auto flex items-start gap-3 rounded-2xl border border-border bg-card p-3 shadow-[0_18px_40px_-16px_rgba(76,29,149,0.32),0_10px_26px_-10px_rgba(124,92,255,0.20)]"
     >
       <span
         className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${colorClass}`}
@@ -233,22 +233,15 @@ function ToastCard({
   );
 }
 
-function iconFor(
-  kind: ToastNotificationPayload["iconKind"],
-): typeof Bell {
-  switch (kind) {
-    case "mention":
-      return AtSign;
-    case "poll":
-      return Vote;
-    case "assigned":
-      return UserPlus;
-    case "support":
-      return CheckCircle2;
-    default:
-      return Bell;
-  }
-}
+// Static lookup — a function returning a component reads as "creating a
+// component during render" to the React Compiler lint.
+const ICON_FOR: Record<ToastNotificationPayload["iconKind"], typeof Bell> = {
+  mention: AtSign,
+  poll: Vote,
+  assigned: UserPlus,
+  support: CheckCircle2,
+  default: Bell,
+};
 
 function colorFor(kind: ToastNotificationPayload["iconKind"]): string {
   switch (kind) {

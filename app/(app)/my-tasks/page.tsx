@@ -281,7 +281,7 @@ export default async function MyTasksPage({
             <>
               <span className="eyebrow">Zadania dla Ciebie</span>
               <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
-                Twoja lista. <span className="text-brand-gradient">{totalCount}</span>{" "}
+                Twoja lista. <span className="">{totalCount}</span>{" "}
                 {taskPl(totalCount)}.
               </h1>
               <p className="max-w-[60ch] text-[0.95rem] leading-[1.55] text-muted-foreground">
@@ -300,7 +300,7 @@ export default async function MyTasksPage({
               </a>
               <span className="eyebrow">Zadania pracownika</span>
               <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
-                <span className="text-brand-gradient">
+                <span className="">
                   {viewedUser?.name ?? viewedUser?.email}
                 </span>
                 . <span className="text-foreground">{totalCount}</span>{" "}

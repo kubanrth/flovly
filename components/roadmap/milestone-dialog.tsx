@@ -94,7 +94,7 @@ export function MilestoneDialog({
     <BaseDialog.Root open onOpenChange={(open) => !open && onClose()} key={mode === "edit" && initial ? `edit-${initial.id}` : "create"}>
       <BaseDialog.Portal>
         {/* z-[100]/[110] === Z.modalBackdrop/modal (F12-K104). */}
-        <BaseDialog.Backdrop className="fixed inset-0 z-[100] bg-background/70 backdrop-blur-sm" />
+        <BaseDialog.Backdrop className="fixed inset-0 z-[100] bg-background/70" />
         <BaseDialog.Popup className="fixed left-1/2 top-1/2 z-[110] flex max-h-[90vh] w-[min(560px,92vw)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-border bg-background shadow-[0_24px_48px_-12px_rgba(0,0,0,0.25)]">
           <div className="flex items-center justify-between border-b border-border px-6 py-3">
             <BaseDialog.Title className="eyebrow">
@@ -211,7 +211,7 @@ export function MilestoneDialog({
               </p>
             )}
 
-            <div className="sticky bottom-0 -mx-6 -mb-6 flex items-center justify-end gap-2 border-t border-border bg-background/95 px-6 py-4 backdrop-blur">
+            <div className="sticky bottom-0 -mx-6 -mb-6 flex items-center justify-end gap-2 border-t border-border bg-background/95 px-6 py-4">
               <button
                 type="button"
                 onClick={onClose}
@@ -222,7 +222,7 @@ export function MilestoneDialog({
               <button
                 type="submit"
                 disabled={pending}
-                className="inline-flex h-9 items-center justify-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
+                className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-5 font-sans text-[0.85rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
               >
                 {pending ? "Zapisuję…" : isEdit ? "Zapisz" : "Utwórz"}
               </button>

@@ -1,53 +1,38 @@
 import { test, expect } from "./fixtures/console-errors";
+import { gotoFirstBoard, openFirstTask } from "./helpers";
 
-// 12 — Mobile-only project (configured in playwright.config.ts).
-// Tests bottom-sheet behaviour vs popovers, sidebar opacity, FAB drawers.
+// 12 — Mobile-only project (iPhone 12 / WebKit, see playwright.config.ts).
 
-test.describe("mobile bottom sheets (375×812)", () => {
-  test("mobile sidebar has solid background (F12-K84/K94)", async ({ page }) => {
+test.describe("mobile bottom sheets", () => {
+  test("mobile sidebar drawer has solid background (F12-K84/K94)", async ({ page }) => {
     await page.goto("/workspaces");
-    const hamburger = page.getByRole("button", { name: /menu|otwórz menu|hamburger/i }).first();
-    if (!(await hamburger.isVisible().catch(() => false))) {
-      test.skip(true, "no hamburger trigger on mobile");
-    }
-    await hamburger.click();
-    const drawer = page.locator('[role="dialog"], aside, [data-state="open"]').first();
-    await expect(drawer).toBeVisible({ timeout: 5_000 });
+    await page.getByRole("button", { name: "Przełącz pasek boczny" }).click();
+    const drawer = page.locator('[data-ui="mobile-drawer"]');
+    await expect(drawer).toBeVisible();
 
-    // Read the background-color RGB — alpha channel must be 1 (not transparent).
+    // "rgb(r, g, b)" is opaque; for "rgba(...)" the alpha must be ~1.
     const bg = await drawer.evaluate((el) => getComputedStyle(el).backgroundColor);
-    // "rgba(... , 1)" or "rgb(...)" — both are opaque.
-    const alphaMatch = bg.match(/rgba?\([^)]*?,\s*([0-9.]+)\)/);
-    if (alphaMatch && alphaMatch[1]) {
-      expect(Number(alphaMatch[1])).toBeGreaterThanOrEqual(0.95);
-    }
+    const alpha = bg.match(/^rgba\([^)]*,\s*([0-9.]+)\)$/)?.[1];
+    expect(alpha === undefined || Number(alpha) >= 0.95, `background-color was ${bg}`).toBe(true);
   });
 
-  test("date picker opens as bottom sheet, not popover", async ({ page }) => {
-    // Reach any task drawer's "Start" date.
-    await page.goto("/workspaces");
-    const wsLink = page.locator('a[href^="/w/"]').first();
-    if (!(await wsLink.isVisible().catch(() => false))) test.skip(true, "no workspace");
-    await wsLink.click();
-    await page.waitForURL(/\/w\/[^/]+/);
-    const boardLink = page.locator('a[href*="/b/"]').first();
-    if (!(await boardLink.isVisible().catch(() => false))) test.skip(true, "no board");
-    await boardLink.click();
-    await page.waitForURL(/\/b\/[^/]+/);
-    const task = page.locator('[data-task-id], table tbody tr a').first();
-    if (!(await task.isVisible().catch(() => false))) test.skip(true, "no task to open");
-    await task.click();
+  test("date picker opens as a bottom sheet, not a popover", async ({ page }) => {
+    await gotoFirstBoard(page);
+    await openFirstTask(page);
 
-    const startBtn = page.getByRole("button", { name: /start|początek/i }).first();
-    if (!(await startBtn.isVisible().catch(() => false))) {
-      test.skip(true, "no Start date trigger");
-    }
-    await startBtn.click();
-    const sheet = page.locator('[data-bottom-sheet], [role="dialog"]').last();
-    await expect(sheet).toBeVisible({ timeout: 3_000 });
-    // Heuristic: bottom sheet is anchored to the bottom — its Y > viewport/2.
+    await page.getByRole("button", { name: "Data startu" }).click();
+    const sheet = page.locator('[data-slot="sheet-content"][data-side="bottom"]');
+    await expect(sheet).toBeVisible();
+    await expect(sheet.locator('[role="grid"]')).toBeVisible();
+
+    // Anchored to the bottom edge and fully inside the viewport. Poll: the
+    // sheet slides in (translate-y transition) and toBeVisible passes mid-animation.
     const viewport = page.viewportSize()!;
-    const box = await sheet.boundingBox();
-    if (box) expect(box.y).toBeGreaterThan(viewport.height / 3);
+    const edges = async () => {
+      const box = (await sheet.boundingBox())!;
+      return { top: box.y, bottom: box.y + box.height };
+    };
+    await expect.poll(async () => (await edges()).bottom).toBeLessThanOrEqual(viewport.height + 1);
+    expect((await edges()).top).toBeGreaterThan(viewport.height / 3);
   });
 });

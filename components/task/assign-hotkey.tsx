@@ -226,7 +226,7 @@ function AssignMenu({
                   data-active={active ? "true" : "false"}
                   className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.84rem] transition-colors hover:bg-accent data-[active=true]:bg-primary/10"
                 >
-                  <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.6rem] font-bold text-white">
+                  <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.6rem] font-bold text-white">
                     {m.avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={m.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />

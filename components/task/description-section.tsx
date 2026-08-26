@@ -61,9 +61,9 @@ export function DescriptionSection({
   // krzykliwa. Dopasowane do "Opis" badge'a w TaskActivityHints który też
   // ma violet'owy theme — cross-view spójność.
   return (
-    <section className="flex flex-col gap-2 rounded-xl border border-violet-500/15 bg-violet-500/[0.04] px-3 py-3 dark:border-violet-400/20 dark:bg-violet-400/[0.05] md:px-4 md:py-3.5">
+    <section className="flex flex-col gap-2 rounded-xl border border-violet-500/15 bg-violet-500/[0.04] px-3 py-3 ] md:px-4 md:py-3.5">
       <div className="flex items-center justify-between">
-        <span className="eyebrow text-violet-700/80 dark:text-violet-300/80">Opis</span>
+        <span className="eyebrow text-violet-700/80">Opis</span>
         {mode === "view" && canEdit && (
           <button
             type="button"
@@ -104,7 +104,7 @@ export function DescriptionSection({
               type="button"
               onClick={save}
               disabled={saving}
-              className="inline-flex h-9 items-center justify-center rounded-lg bg-brand-gradient px-4 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:opacity-60"
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 font-sans text-[0.85rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
             >
               {saving ? "Zapisuję…" : "Zapisz"}
             </button>

@@ -49,7 +49,7 @@ export function TeamTasksTable({ rows }: { rows: TeamMemberRow[] }) {
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.6rem] font-bold text-white">
+                      <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.6rem] font-bold text-white">
                         {r.avatarUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img

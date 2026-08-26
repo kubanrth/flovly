@@ -2,1372 +2,203 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
-
 /* ════════════════════════════════════════════════════════════════════════
- * FLOVLY v4 DESIGN TOKENS — Liquid Glass
- * ────────────────────────────────────────────────────────────────────────
- * Brand: violet #7A33EC → magenta #E1318F (140deg)  // v4 Brand & Hero spec
- * Accent: sky #34BEF8 (cool sparkling highlights — badges, focus)
- * Neutral: warm gray 50→950 (cieplejsze niż klasyczny slate)
- * Surfaces: Light canvas #ECE8F4 · Dark canvas #0B0912
- * ──────────────────────────────────────────────────────────────────────── */
-
-@theme inline {
-  /* ─── Bazowe tokeny semantyczne (kompat z shadcn) ─── */
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-paper: var(--paper);
-  --color-ink: var(--ink);
-  --color-accent-brand: var(--accent-brand);
-  --color-accent-brand-fg: var(--accent-brand-fg);
-  --color-accent-brand-2: var(--accent-brand-2);
-  --color-accent-sky: var(--accent-sky);
-
-  /* ─── Brand Primary (violet) 50→950 ─── */
-  --color-brand-50: var(--brand-50);
-  --color-brand-100: var(--brand-100);
-  --color-brand-200: var(--brand-200);
-  --color-brand-300: var(--brand-300);
-  --color-brand-400: var(--brand-400);
-  --color-brand-500: var(--brand-500);
-  --color-brand-600: var(--brand-600);
-  --color-brand-700: var(--brand-700);
-  --color-brand-800: var(--brand-800);
-  --color-brand-900: var(--brand-900);
-  --color-brand-950: var(--brand-950);
-
-  /* ─── Sky accent 50→950 ─── */
-  --color-sky-50: var(--sky-50);
-  --color-sky-100: var(--sky-100);
-  --color-sky-200: var(--sky-200);
-  --color-sky-300: var(--sky-300);
-  --color-sky-400: var(--sky-400);
-  --color-sky-500: var(--sky-500);
-  --color-sky-600: var(--sky-600);
-  --color-sky-700: var(--sky-700);
-  --color-sky-800: var(--sky-800);
-  --color-sky-900: var(--sky-900);
-  --color-sky-950: var(--sky-950);
-
-  /* ─── Neutral warm gray 50→950 ─── */
-  --color-n-50: var(--n-50);
-  --color-n-100: var(--n-100);
-  --color-n-200: var(--n-200);
-  --color-n-300: var(--n-300);
-  --color-n-400: var(--n-400);
-  --color-n-500: var(--n-500);
-  --color-n-600: var(--n-600);
-  --color-n-700: var(--n-700);
-  --color-n-800: var(--n-800);
-  --color-n-900: var(--n-900);
-  --color-n-950: var(--n-950);
-
-  /* ─── Fonts ─── */
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
-  --font-display: var(--font-display);
-  --font-heading: var(--font-display);
-
-  /* ─── shadcn semantic tokens (zachowane dla kompat) ─── */
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-
-  /* ─── Radius (v4 scale: 8/12/16/22/28/full) ─── */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
-  --radius-2xl: 28px;
-  --radius-3xl: 36px;
-  --radius-4xl: 48px;
-}
-
-/* ════════════════════════════════════════════════════════════════════════
- * LIGHT MODE (domyślny, ale aplikacja defaultuje user'a na dark)
- * Canvas: #ECE8F4 — warm lavender-white
- * Card: #FFFFFF — pure white na lekkim cieple z aury
+ * FLOVLY v5 — design tokens (source of truth: docs/redesign/v5/tokens.css)
+ * Light only (dark mode removed 2026-08-26). Orange #FF5C00 = CTA/nav/focus.
  * ──────────────────────────────────────────────────────────────────────── */
 :root {
-  /* ─── Brand Primary (violet) — z v4 Brand & Hero spec ───
-   * Heavier violet, deeper magenta. Brand-500 = #7A33EC (anchor for
-   * .bg-brand-gradient + accent-brand). Ramp scaled around that anchor. */
-  --brand-50: #F0E9FE;
-  --brand-100: #E1D2FD;
-  --brand-200: #C7AAFB;
-  --brand-300: #AC83F7;
-  --brand-400: #9B6BF2;
-  --brand-500: #7A33EC; /* PRIMARY */
-  --brand-600: #6A24DC;
-  --brand-700: #571CB8;
-  --brand-800: #43168F;
-  --brand-900: #2F1066;
-  --brand-950: #1B0942;
+  --orange-50:#FFF4EE;--orange-100:#FFE8DB;--orange-200:#FFCFB3;--orange-300:#FFAE80;--orange-400:#FF8640;
+  --orange-500:#FF5C00;--orange-600:#E04E00;--orange-700:#B83F00;--orange-800:#8A3000;--orange-900:#5C2000;--orange-950:#331200;
+  --n-0:#FFFFFF;--n-50:#FAF9F7;--n-100:#F3F1EE;--n-200:#E6E3DE;--n-300:#D2CEC7;--n-400:#B0ABA3;--n-500:#8A857D;--n-600:#66625B;--n-700:#4A4640;--n-800:#2E2B27;--n-900:#1C1A17;--n-950:#0F0E0C;--ink:#14110D;
+  --success:#1E9E5A;--success-text:#157A45;--warning:#E8A100;--warning-text:#8A5F00;--danger:#D6382C;--danger-text:#B7291F;--info:#2F6FE8;--info-text:#2457B8;
+  --chip-gray-bg:#EDEBE7;--chip-gray-fg:#4A4640;--chip-orange-bg:#FFE8DB;--chip-orange-fg:#8A3000;--chip-red-bg:#FDE3E1;--chip-red-fg:#8F1F16;
+  --chip-yellow-bg:#FBF0C8;--chip-yellow-fg:#6E4F00;--chip-green-bg:#DDF3E6;--chip-green-fg:#14603A;--chip-teal-bg:#D8F1EF;--chip-teal-fg:#0F5C57;
+  --chip-blue-bg:#DDE9FC;--chip-blue-fg:#1D3F8A;--chip-indigo-bg:#E3E4FB;--chip-indigo-fg:#2F3A8F;--chip-purple-bg:#EDE3FA;--chip-purple-fg:#5A2E8A;
+  --chip-pink-bg:#FBE2EE;--chip-pink-fg:#8A1F52;--chip-brown-bg:#EFE4DA;--chip-brown-fg:#5C3A1E;--chip-black-bg:#1C1A17;--chip-black-fg:#FFFFFF;
 
-  /* ─── Sky accent ─── */
-  --sky-50: #E6F7FE;
-  --sky-100: #C6ECFD;
-  --sky-200: #94DDFB;
-  --sky-300: #5BCBFA;
-  --sky-400: #34BEF8; /* ACCENT */
-  --sky-500: #14A6E4;
-  --sky-600: #0E8AC4;
-  --sky-700: #0E6E9C;
-  --sky-800: #11587C;
-  --sky-900: #134965;
-  --sky-950: #0A2F44;
+  --bg:#FFFFFF;--canvas:#FAF9F7;--fg:#1C1A17;--fg-2:#66625B;--fg-3:#8A857D;--link:#B83F00;
+  --input-border:#D2CEC7;--input-border-hover:#B0ABA3;
+  --selected-bg:#FFF4EE;--selected-bar:2px solid #FF5C00;--row-hover:#F3F1EE;
+  --status-todo-bg:#EDEBE7;--status-todo-fg:#4A4640;--status-todo-dot:#8A857D;
+  --status-progress-bg:#DDE9FC;--status-progress-fg:#1D3F8A;--status-progress-dot:#2F6FE8;
+  --status-review-bg:#FBF0C8;--status-review-fg:#6E4F00;--status-review-dot:#E8A100;
+  --status-done-bg:#DDF3E6;--status-done-fg:#14603A;--status-done-dot:#1E9E5A;
+  --prio-p0:#D6382C;--prio-p1:#E04E00;--prio-p2:#E8A100;--prio-p3:#8A857D;
+  --gantt-bar-radius:4px;--gantt-today:#FF5C00;--gantt-grid:#ECE9E4;--gantt-dependency:#B0ABA3;
+  --control-on:#1C1A17;--control-off-border:#B0ABA3;
+  --scrim:rgba(15,14,12,.4);
+  --btn-sm:28px;--btn-md:32px;--btn-lg:36px;--touch-target:44px;
+  --table-header-bg:#FAF9F7;--table-grid:#ECE9E4;--table-header-h:32px;
+  --z-sticky:10;--z-panel:40;--z-dropdown:50;--z-dialog:60;--z-toast:70;--z-tooltip:80;
+  --row-compact:28px;--row-comfortable:36px;--row-spacious:44px;--row-h:var(--row-comfortable);
+  --topbar:48px;--sidebar:240px;--sidebar-rail:56px;--tabs:40px;--panel:600px;
+  --shadow-e1:0 1px 2px rgba(20,17,13,.06),0 4px 12px rgba(20,17,13,.08);
+  --shadow-e2:0 8px 24px rgba(20,17,13,.12),0 2px 6px rgba(20,17,13,.06);
+  --focus:0 0 0 2px #FFFFFF,0 0 0 4px #FF5C00;
+  --ease-out:cubic-bezier(.2,.8,.2,1);--dur-fast:100ms;--dur-normal:150ms;--dur-slow:220ms;
 
-  /* ─── Neutral warm gray ─── */
-  --n-50: #FBFAFC;
-  --n-100: #F5F3F8;
-  --n-200: #ECE9F1;
-  --n-300: #DEDAE6;
-  --n-400: #C9C3D4;
-  --n-500: #A9A1B8;
-  --n-600: #847B96;
-  --n-700: #655C77;
-  --n-800: #4B4359;
-  --n-900: #221E2A;
-  --n-950: #14111B;
+  /* ─── shadcn-compatible semantic aliases (kept so existing screens recolor) ─── */
+  --background:var(--bg);--foreground:var(--fg);
+  --paper:var(--canvas);
+  --card:#FFFFFF;--card-foreground:var(--fg);
+  --popover:#FFFFFF;--popover-foreground:var(--fg);
+  --primary:var(--orange-500);--primary-foreground:var(--ink);
+  --secondary:var(--orange-50);--secondary-foreground:var(--orange-800);
+  --muted:var(--n-100);--muted-foreground:var(--fg-2);
+  --accent:var(--n-100);--accent-foreground:var(--fg);
+  --destructive:var(--danger);
+  --border:var(--n-200);--input:var(--input-border);--ring:var(--orange-500);
+  --sidebar:var(--canvas);--sidebar-foreground:var(--fg);--sidebar-primary:var(--orange-500);--sidebar-primary-foreground:var(--ink);
+  --sidebar-accent:var(--n-100);--sidebar-accent-foreground:var(--fg);--sidebar-border:var(--n-200);--sidebar-ring:var(--orange-500);
+  --chart-1:var(--orange-500);--chart-2:var(--info);--chart-3:var(--success);--chart-4:var(--warning);--chart-5:var(--n-400);
+  --radius:6px;
+  --shadow-sm:0 1px 2px rgba(20,17,13,.06);--shadow-md:var(--shadow-e1);--shadow-lg:var(--shadow-e2);--shadow-xl:var(--shadow-e2);--shadow-2xl:var(--shadow-e2);
+  --motion-instant:100ms ease-out;--motion-quick:150ms var(--ease-out);--motion-smooth:220ms var(--ease-out);--motion-dramatic:220ms var(--ease-out);
+}
 
-  /* ─── Brand gradient stops (140deg violet → magenta) — v4 Brand & Hero spec ─── */
-  --accent-brand: #7A33EC;
-  --accent-brand-2: #E1318F;
-  --accent-brand-fg: #FFFFFF;
-  --accent-sky: #34BEF8;
+@theme inline {
+  --color-background:var(--background);--color-foreground:var(--foreground);
+  --color-paper:var(--paper);--color-canvas:var(--canvas);--color-ink:var(--ink);
+  --color-card:var(--card);--color-card-foreground:var(--card-foreground);
+  --color-popover:var(--popover);--color-popover-foreground:var(--popover-foreground);
+  --color-primary:var(--primary);--color-primary-foreground:var(--primary-foreground);
+  --color-secondary:var(--secondary);--color-secondary-foreground:var(--secondary-foreground);
+  --color-muted:var(--muted);--color-muted-foreground:var(--muted-foreground);
+  --color-accent:var(--accent);--color-accent-foreground:var(--accent-foreground);
+  --color-destructive:var(--destructive);--color-border:var(--border);--color-input:var(--input);--color-ring:var(--ring);
+  --color-sidebar:var(--sidebar);--color-sidebar-foreground:var(--sidebar-foreground);--color-sidebar-primary:var(--sidebar-primary);--color-sidebar-primary-foreground:var(--sidebar-primary-foreground);
+  --color-sidebar-accent:var(--sidebar-accent);--color-sidebar-accent-foreground:var(--sidebar-accent-foreground);--color-sidebar-border:var(--sidebar-border);--color-sidebar-ring:var(--sidebar-ring);
+  --color-chart-1:var(--chart-1);--color-chart-2:var(--chart-2);--color-chart-3:var(--chart-3);--color-chart-4:var(--chart-4);--color-chart-5:var(--chart-5);
 
-  /* ─── Surfaces (light) ─── */
-  --paper: #ECE8F4;          /* Workspace canvas — warm lavender-white */
-  --ink: #14111B;             /* Highest contrast text */
-  --background: var(--paper);
-  --foreground: var(--ink);
+  --color-orange-50:var(--orange-50);--color-orange-100:var(--orange-100);--color-orange-200:var(--orange-200);--color-orange-300:var(--orange-300);--color-orange-400:var(--orange-400);
+  --color-orange-500:var(--orange-500);--color-orange-600:var(--orange-600);--color-orange-700:var(--orange-700);--color-orange-800:var(--orange-800);--color-orange-900:var(--orange-900);--color-orange-950:var(--orange-950);
+  /* brand-* = orange (legacy alias; prefer orange-*) */
+  --color-brand-50:var(--orange-50);--color-brand-100:var(--orange-100);--color-brand-200:var(--orange-200);--color-brand-300:var(--orange-300);--color-brand-400:var(--orange-400);
+  --color-brand-500:var(--orange-500);--color-brand-600:var(--orange-600);--color-brand-700:var(--orange-700);--color-brand-800:var(--orange-800);--color-brand-900:var(--orange-900);--color-brand-950:var(--orange-950);
+  --color-n-0:var(--n-0);--color-n-50:var(--n-50);--color-n-100:var(--n-100);--color-n-200:var(--n-200);--color-n-300:var(--n-300);--color-n-400:var(--n-400);
+  --color-n-500:var(--n-500);--color-n-600:var(--n-600);--color-n-700:var(--n-700);--color-n-800:var(--n-800);--color-n-900:var(--n-900);--color-n-950:var(--n-950);
+  /* sky-* = info blue (legacy alias) */
+  --color-sky-50:#EEF4FE;--color-sky-100:var(--chip-blue-bg);--color-sky-200:#B9D0F7;--color-sky-300:#8FB3F1;--color-sky-400:#5C8FEC;--color-sky-500:var(--info);--color-sky-600:var(--info-text);--color-sky-700:var(--chip-blue-fg);--color-sky-800:#173068;--color-sky-900:#112450;--color-sky-950:#0B1836;
+  --color-success:var(--success);--color-success-text:var(--success-text);--color-warning:var(--warning);--color-warning-text:var(--warning-text);
+  --color-danger:var(--danger);--color-danger-text:var(--danger-text);--color-info:var(--info);--color-info-text:var(--info-text);--color-link:var(--link);
+  --color-chip-gray-bg:var(--chip-gray-bg);--color-chip-gray-fg:var(--chip-gray-fg);--color-chip-orange-bg:var(--chip-orange-bg);--color-chip-orange-fg:var(--chip-orange-fg);
+  --color-chip-red-bg:var(--chip-red-bg);--color-chip-red-fg:var(--chip-red-fg);--color-chip-yellow-bg:var(--chip-yellow-bg);--color-chip-yellow-fg:var(--chip-yellow-fg);
+  --color-chip-green-bg:var(--chip-green-bg);--color-chip-green-fg:var(--chip-green-fg);--color-chip-teal-bg:var(--chip-teal-bg);--color-chip-teal-fg:var(--chip-teal-fg);
+  --color-chip-blue-bg:var(--chip-blue-bg);--color-chip-blue-fg:var(--chip-blue-fg);--color-chip-indigo-bg:var(--chip-indigo-bg);--color-chip-indigo-fg:var(--chip-indigo-fg);
+  --color-chip-purple-bg:var(--chip-purple-bg);--color-chip-purple-fg:var(--chip-purple-fg);--color-chip-pink-bg:var(--chip-pink-bg);--color-chip-pink-fg:var(--chip-pink-fg);
+  --color-chip-brown-bg:var(--chip-brown-bg);--color-chip-brown-fg:var(--chip-brown-fg);--color-chip-black-bg:var(--chip-black-bg);--color-chip-black-fg:var(--chip-black-fg);
+  --color-selected:var(--selected-bg);--color-row-hover:var(--row-hover);--color-table-header:var(--table-header-bg);--color-table-grid:var(--table-grid);--color-scrim:var(--scrim);
+  --color-input-border:var(--input-border);--color-input-border-hover:var(--input-border-hover);--color-control-on:var(--control-on);
 
-  --card: #FFFFFF;
-  --card-foreground: var(--ink);
-  --popover: #FFFFFF;
-  --popover-foreground: var(--ink);
-  --primary: var(--brand-500);
-  --primary-foreground: #FFFFFF;
-  --secondary: var(--brand-50);
-  --secondary-foreground: var(--brand-700);
-  --muted: var(--n-100);
-  /* WCAG AA fix: n-600 (#847B96) on paper (#ECE8F4) was 4.4:1 — failed AA
-   * (needs ≥4.5:1 for body text). n-700 (#655C77) hits ~5.3:1 on paper and
-   * ~6.3:1 on card (#FFFFFF). Dark mode --muted-foreground already passes. */
-  --muted-foreground: var(--n-700);
-  --accent: var(--brand-50);
-  --accent-foreground: var(--brand-700);
+  --font-sans:var(--font-sans);--font-mono:var(--font-mono);--font-display:var(--font-sans);--font-heading:var(--font-sans);
 
-  /* ─── Semantic ─── */
-  --destructive: #E11D48;
-  --success: #10B981;
-  --warning: #F59E0B;
-  --info: #0EA5E9;
+  --text-2xs:11px;--text-2xs--line-height:16px;
+  --text-xs:12px;--text-xs--line-height:18px;
+  --text-sm:13px;--text-sm--line-height:20px;
+  --text-base:14px;--text-base--line-height:20px;
+  --text-md:16px;--text-md--line-height:22px;
+  --text-lg:20px;--text-lg--line-height:26px;
+  --text-xl:24px;--text-xl--line-height:30px;
+  --text-2xl:32px;--text-2xl--line-height:38px;
 
-  --border: var(--n-200);
-  --input: var(--n-200);
-  --ring: rgba(122, 51, 236, 0.42);
-
-  --chart-1: var(--brand-500);
-  --chart-2: #E1318F;
-  --chart-3: var(--sky-400);
-  --chart-4: #10B981;
-  --chart-5: var(--n-400);
-  --radius: 12px;
-
-  --sidebar: rgba(255, 255, 255, 0.62);
-  --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--brand-500);
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: var(--brand-50);
-  --sidebar-accent-foreground: var(--brand-700);
-  --sidebar-border: rgba(20, 17, 27, 0.06);
-  --sidebar-ring: rgba(122, 51, 236, 0.42);
-
-  /* ─── Shadows (brand-tinted, z v4 design system) ─── */
-  --shadow-sm: 0 1px 2px rgba(46, 19, 52, 0.08);
-  --shadow-md: 0 4px 12px -4px rgba(46, 19, 52, 0.14);
-  --shadow-lg: 0 10px 26px -10px rgba(46, 19, 52, 0.2);
-  --shadow-xl: 0 18px 40px -16px rgba(76, 29, 149, 0.26);
-  --shadow-2xl: 0 30px 70px -24px rgba(76, 29, 149, 0.34);
-
-  /* ─── Motion (v4 spec) ─── */
-  --motion-instant: 100ms ease-out;
-  --motion-quick: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  --motion-smooth: 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
-  --motion-dramatic: 500ms cubic-bezier(0.16, 1, 0.3, 1);
+  --radius-xs:4px;--radius-sm:4px;--radius-md:6px;--radius-lg:8px;--radius-xl:12px;--radius-2xl:12px;--radius-3xl:16px;--radius-4xl:24px;
+  --shadow-e1:var(--shadow-e1);--shadow-e2:var(--shadow-e2);
+  --shadow-sm:var(--shadow-sm);--shadow-md:var(--shadow-e1);--shadow-lg:var(--shadow-e2);--shadow-xl:var(--shadow-e2);--shadow-2xl:var(--shadow-e2);
+  --ease-out:var(--ease-out);
 }
 
 /* ════════════════════════════════════════════════════════════════════════
- * DARK MODE (default w app'ce — klient lubi dark)
- * Canvas: #0B0912 — deep violet-black
- * Card: glass rgba(255,255,255,.04-.08)
- * ──────────────────────────────────────────────────────────────────────── */
-.dark {
-  /* Surfaces — F12-K139: klient chce FULL CZARNY dark mode (bez fioletowego
-     tint'u). paper #000, karty ledwo-elevated neutralną czernią (#0A0A0A)
-     żeby warstwy dalej się czytały przez border + elevation. */
-  --paper: #000000;
-  --ink: #F5F3F8;
-  --background: var(--paper);
-  --foreground: var(--ink);
-
-  --card: #0A0A0A;
-  --card-foreground: var(--ink);
-  --popover: #0D0D0D;
-  --popover-foreground: var(--ink);
-  --primary: var(--brand-400);
-  --primary-foreground: #14111B;
-  --secondary: rgba(122, 51, 236, 0.12);
-  --secondary-foreground: var(--brand-200);
-  --muted: rgba(255, 255, 255, 0.05);
-  --muted-foreground: var(--n-500);
-  --accent: rgba(122, 51, 236, 0.12);
-  --accent-foreground: var(--brand-200);
-
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.12);
-  --ring: rgba(155, 107, 242, 0.58);
-
-  --sidebar: rgba(10, 10, 10, 0.6);
-  --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--brand-400);
-  --sidebar-primary-foreground: #14111B;
-  --sidebar-accent: rgba(122, 51, 236, 0.18);
-  --sidebar-accent-foreground: var(--brand-200);
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: rgba(155, 107, 242, 0.58);
-
-  /* Shadows — F12-K139: neutralna czerń (bez violet tint'u 20,5,50). */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 12px -4px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 10px 26px -10px rgba(0, 0, 0, 0.55);
-  --shadow-xl: 0 18px 40px -16px rgba(0, 0, 0, 0.65);
-  --shadow-2xl: 0 30px 70px -24px rgba(0, 0, 0, 0.75);
-}
-
-/* ════════════════════════════════════════════════════════════════════════
- * BASE STYLES
+ * BASE
  * ──────────────────────────────────────────────────────────────────────── */
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
+  * { @apply border-border; }
+  html { @apply font-sans; touch-action: pan-x pan-y; /* K115 zoom lock fallback */ }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "ss01", "ss02", "cv01", "cv11", "tnum";
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
+    font-size: 13px; line-height: 20px;
+    font-feature-settings: "cv11", "tnum";
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
   }
-  html {
-    @apply font-sans;
-  }
-  h1, h2, h3, h4 {
-    font-family: var(--font-display);
-    letter-spacing: -0.025em;
-  }
-
-  /* ─── Eyebrow — mono small caps, używane masowo do labelek ─── */
-  .eyebrow {
-    font-family: var(--font-mono);
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    font-size: 0.68rem;
-    font-weight: 500;
-    color: var(--muted-foreground);
-  }
-
-  /* ─── Brand gradient utilities ─── */
-  /* v4: 140deg start (vs poprzednie 135deg) — bardziej diagonal */
-  .bg-brand-gradient {
-    background-image: linear-gradient(140deg, var(--accent-brand) 0%, var(--accent-brand-2) 100%);
-  }
-  .text-brand-gradient {
-    background: linear-gradient(140deg, var(--accent-brand) 0%, var(--accent-brand-2) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  .shadow-brand {
-    box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.2) inset,
-      0 10px 28px -10px rgba(122, 51, 236, 0.55),
-      0 4px 12px -4px rgba(225, 49, 143, 0.4);
-  }
-
-  /* ─── v4 NEW: Aura background ─── */
-  /* Soft mesh blobs jak iOS wallpaper. Aplikowany na full-page surfaces
-     (auth, public viewer, splash). Bardzo subtelny — ~15% opacity. */
-  .bg-aura-light {
-    background:
-      radial-gradient(ellipse 80% 60% at 12% 10%, rgba(122, 51, 236, 0.16), transparent 55%),
-      radial-gradient(ellipse 70% 50% at 88% 88%, rgba(225, 49, 143, 0.14), transparent 60%),
-      radial-gradient(ellipse 50% 40% at 90% 10%, rgba(52, 190, 248, 0.10), transparent 60%),
-      #ECE8F4;
-  }
-  /* F12-K139: dark aura = flat black (klient: bez fioletowego gradientu). */
-  .bg-aura-dark {
-    background: #000000;
-  }
-  /* Auto-switch po theme */
-  body.bg-aura,
-  .bg-aura {
-    background:
-      radial-gradient(ellipse 80% 60% at 12% 10%, rgba(122, 51, 236, 0.16), transparent 55%),
-      radial-gradient(ellipse 70% 50% at 88% 88%, rgba(225, 49, 143, 0.14), transparent 60%),
-      radial-gradient(ellipse 50% 40% at 90% 10%, rgba(52, 190, 248, 0.10), transparent 60%),
-      #ECE8F4;
-  }
-  .dark body.bg-aura,
-  .dark .bg-aura {
-    /* F12-K139: flat black — zero fioletowych radial'i w dark mode. */
-    background: #000000;
-  }
-
-  /* ─── Glass surface utility ───
-   * F12-K85 perf: blur 28→12 (klient zgłasza zamulanie). 12px nadal daje
-   * "glass" feel, ale repaint kosztuje ~3x mniej na GPU. */
-  .glass-surface {
-    background: rgba(255, 255, 255, 0.78);
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
-    backdrop-filter: blur(12px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.85);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      inset 0 -1px 0 rgba(12, 13, 18, 0.05),
-      0 10px 30px -10px rgba(46, 19, 52, 0.18);
-  }
-  .dark .glass-surface {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.08);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.08),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-      0 18px 50px -18px rgba(0, 0, 0, 0.6);
-  }
-
-  /* ─── Volumetric brand shadow utility ─── */
-  .shadow-aura {
-    box-shadow:
-      0 18px 40px -16px rgba(76, 29, 149, 0.26),
-      0 30px 70px -24px rgba(122, 51, 236, 0.18);
-  }
-  /* F12-K139: dark = neutralny cień (fioletowa poświata na czarnym tle
-     czytała się jak gradient). */
-  .dark .shadow-aura {
-    box-shadow:
-      0 18px 40px -16px rgba(0, 0, 0, 0.6),
-      0 30px 70px -24px rgba(0, 0, 0, 0.45);
-  }
-
-  /* ─── v4 dialog glass surface ───
-   * Wszystkie modalne dialogi (Create board / Share / Import tasks /
-   * Create view / Create task) używają tej samej szyby: rgba(20,17,30,.72)
-   * + blur(40px) saturate(160%), hairline border, inset top highlight +
-   * brand-tinted aura shadow. 1:1 z v4 spec (linia ~317).
-   *
-   * Light mode: jasna szyba na białym papierze.
-   * Dark mode: ciemna szyba (spec primary case).
-   */
-  .dialog-glass {
-    background: rgba(255, 255, 255, 0.88);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
-    backdrop-filter: blur(20px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.85);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      0 30px 70px -24px rgba(76, 29, 149, 0.34),
-      0 18px 40px -16px rgba(76, 29, 149, 0.26);
-  }
-  .dark .dialog-glass {
-    /* F12-K139: neutralna czarna szyba (bez violet tint'u). */
-    background: rgba(8, 8, 8, 0.8);
-    border-color: rgba(255, 255, 255, 0.12);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      0 30px 70px -24px rgba(0, 0, 0, 0.7),
-      0 18px 40px -16px rgba(0, 0, 0, 0.65);
-  }
-
-  /* ─── v4 floating glass popover card ───
-   * Wszystkie pickery (status / priority / assignee / date / tag /
-   * reminder / recurrence) używają tej samej powłoki: rounded-12,
-   * blur(24px) saturate(160%), bg-popover/95, border + brand-tinted
-   * shadow. Reusable żeby było 1:1 w każdym miejscu.
-   */
-  .popover-glass {
-    background: color-mix(in oklch, var(--popover) 98%, transparent);
-    -webkit-backdrop-filter: blur(10px) saturate(140%);
-    backdrop-filter: blur(10px) saturate(140%);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow:
-      0 24px 50px -20px rgba(122, 51, 236, 0.45),
-      0 8px 16px -8px rgba(76, 29, 149, 0.18);
-  }
-  .dark .popover-glass {
-    /* F12-K139: neutralny cień zamiast fioletowej poświaty. */
-    box-shadow:
-      0 24px 50px -20px rgba(0, 0, 0, 0.7),
-      0 12px 28px -12px rgba(0, 0, 0, 0.5);
-  }
-
-  /* Enter animation — opacity + 4px translateY rise.
-   * Reduced-motion media query (głębiej w pliku) wyłącza to. */
-  .popover-enter {
-    animation: pop-in 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
-    transform-origin: top left;
-  }
-
-  /* ─── v4 mobile bottom-sheet surface ───
-   * Mobile bottom sheets (Status / Date / Create task / Bulk toolbar / Ateron):
-   *   - rounded-t-[24px], glass blur 40px (więcej niż popover bo viewport full-bleed)
-   *   - brand-tinted shadow ku górze (negative y) — symuluje że płyta wystaje z dołu
-   *   - safe-area-inset-bottom padding już aplikujemy inline (calc(... + env(safe-area-inset-bottom)))
-   * Reusable żeby Status/Date/Create task/Bulk sheet wyglądały spójnie.
-   */
-  .sheet-mobile-surface {
-    background: color-mix(in oklch, var(--popover) 96%, transparent);
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
-    backdrop-filter: blur(40px) saturate(180%);
-    border-top: 1px solid var(--border);
-    border-top-left-radius: 24px;
-    border-top-right-radius: 24px;
-    box-shadow:
-      0 -20px 50px -20px rgba(122, 51, 236, 0.32),
-      0 -8px 24px -8px rgba(0, 0, 0, 0.35);
-  }
-  .dark .sheet-mobile-surface {
-    box-shadow:
-      0 -20px 50px -20px rgba(122, 51, 236, 0.55),
-      0 -8px 24px -8px rgba(0, 0, 0, 0.7);
-  }
-
-  /* Drag handle 36×4 — visual cue dla swipe-to-dismiss. Bez logiki swipe'u
-   * (Base UI Dialog ma kliknij-poza/Escape) — handle to czysto wizualne
-   * affordance znane z iOS sheet'ów. */
-  .sheet-drag-handle {
-    width: 36px;
-    height: 4px;
-    border-radius: 9999px;
-    background: color-mix(in oklch, var(--muted-foreground) 35%, transparent);
-    margin: 0 auto 8px auto;
-  }
-
-  /* Safe-area bottom padding — kompozycyjny utility dla sticky footerów
-   * w bottom sheet'ach. Dodaje 16px + env(safe-area-inset-bottom). */
-  .pb-safe-bottom {
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  }
-
-  /* ─── v4 Typography ladder ───────────────────────────────────────────
-   * 1:1 z Flovly Brand & Hero spec (sekcja 03 — Typography).
-   * Display tiers use --font-display (Onest), tighter tracking, leading-tight.
-   * Body tiers stay on --font-sans (Inter) z normal leading. */
-  .text-display-xl {
-    font-family: var(--font-display);
-    font-size: 4rem;          /* 64px */
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 0.95;
-  }
-  .text-display-lg {
-    font-family: var(--font-display);
-    font-size: 3rem;          /* 48px */
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    line-height: 1.02;
-  }
-  .text-display-md {
-    font-family: var(--font-display);
-    font-size: 2.25rem;       /* 36px */
-    font-weight: 700;
-    letter-spacing: -0.025em;
-    line-height: 1.08;
-  }
-  .text-display-sm {
-    font-family: var(--font-display);
-    font-size: 1.75rem;       /* 28px */
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 1.15;
-  }
-  .text-h1 {
-    font-family: var(--font-display);
-    font-size: 2.25rem;       /* 36px */
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
-  }
-  .text-h2 {
-    font-family: var(--font-display);
-    font-size: 1.75rem;       /* 28px */
-    font-weight: 700;
-    letter-spacing: -0.015em;
-    line-height: 1.2;
-  }
-  .text-h3 {
-    font-family: var(--font-display);
-    font-size: 1.375rem;      /* 22px */
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    line-height: 1.3;
-  }
-  .text-h4 {
-    font-family: var(--font-display);
-    font-size: 1.125rem;      /* 18px */
-    font-weight: 600;
-    letter-spacing: -0.005em;
-    line-height: 1.35;
-  }
-  .text-h5 {
-    font-family: var(--font-display);
-    font-size: 1rem;          /* 16px */
-    font-weight: 600;
-    letter-spacing: -0.002em;
-    line-height: 1.4;
-  }
-  .text-body-lg {
-    font-family: var(--font-sans);
-    font-size: 1.0625rem;     /* 17px */
-    font-weight: 400;
-    line-height: 1.5;
-  }
-  .text-body-md {
-    font-family: var(--font-sans);
-    font-size: 0.9375rem;     /* 15px */
-    font-weight: 400;
-    line-height: 1.55;
-  }
-  .text-body-sm {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;      /* 14px */
-    font-weight: 400;
-    line-height: 1.5;
-  }
-  .text-body-xs {
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;     /* 13px */
-    font-weight: 500;
-    letter-spacing: 0.005em;
-    line-height: 1.4;
-  }
-  /* Eyebrow — mono uppercase, 11px @ 0.14em tracking (per v4 spec).
-   * Use anywhere as <span class="text-eyebrow">…</span>. */
-  .text-eyebrow {
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;     /* 11px */
-    font-weight: 500;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--muted-foreground);
-  }
-
-  /* ─── v4 Tracking ladder ─── */
-  .tracking-display { letter-spacing: -0.04em; }
-  .tracking-tight   { letter-spacing: -0.02em; }
-  .tracking-snug    { letter-spacing: -0.01em; }
-  .tracking-eyebrow { letter-spacing: 0.14em; }
-  .tracking-mono    { letter-spacing: 0.02em; }
+  h1, h2, h3, h4 { font-family: var(--font-sans); font-weight: 600; letter-spacing: -0.2px; }
+  h1 { font-size: 24px; line-height: 30px; letter-spacing: -0.3px; }
+  h2 { font-size: 20px; line-height: 26px; }
+  h3 { font-size: 16px; line-height: 22px; }
+  a { color: var(--link); }
+  a:hover { color: var(--orange-800); }
+  ::selection { background: var(--orange-100); }
+  :focus-visible { outline: none; box-shadow: var(--focus); }
+  input::placeholder, textarea::placeholder { color: var(--fg-3); }
+  /* Eyebrow — section labels (11px uppercase, tracking .06em) */
+  .eyebrow { font-family: var(--font-sans); font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3); }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 }
 
-/* ════════════════════════════════════════════════════════════════════════
- * v4 BRAND MOTION — fl-drift (workspace hero aura) + fl-pulse (Ateron ping)
- * ──────────────────────────────────────────────────────────────────────── */
+/* ─── Surfaces (flat: white + 1px border; shadow only on floating layers) ─── */
+.surface { background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
+.popover-surface { background: var(--popover); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-e1); }
+.dialog-surface { background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-e2); }
+.sheet-mobile-surface { background: var(--card); border-top: 1px solid var(--border); border-radius: 12px 12px 0 0; box-shadow: var(--shadow-e2); }
+.sheet-drag-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--n-300); margin: 8px auto 0; }
 
-/* Subtle translate + scale on radial blobs. 24s loop ensures background
- * "breathes" without distracting from foreground content. */
-@keyframes fl-drift {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(18px, -22px) scale(1.08);
-  }
-}
+/* ─── Density (rows) ─── */
+[data-density="compact"] { --row-h: var(--row-compact); }
+[data-density="comfortable"] { --row-h: var(--row-comfortable); }
+[data-density="spacious"] { --row-h: var(--row-spacious); }
 
-/* Mirror direction for second blob — feels like two layers of liquid. */
-@keyframes fl-drift2 {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(-20px, 16px) scale(1.1);
-  }
-}
+/* ─── Scrollbars (thin, neutral) ─── */
+* { scrollbar-width: thin; scrollbar-color: var(--n-300) transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: var(--n-300); border-radius: 4px; border: 2px solid transparent; background-clip: padding-box; }
+*::-webkit-scrollbar-track { background: transparent; }
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
 
-/* Sonar-style ring pulse outward — Ateron empty state + FAB sonar ring.
- * 2s loop; opacity fades while scale grows. */
-@keyframes fl-pulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.55;
-  }
-  70% {
-    transform: scale(2.4);
-    opacity: 0;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-.animate-fl-drift {
-  animation: fl-drift 24s ease-in-out infinite;
-}
-.animate-fl-drift2 {
-  animation: fl-drift2 26s ease-in-out infinite;
-}
-.animate-fl-pulse {
-  animation: fl-pulse 2s ease-out infinite;
-}
-
-/* fl-pop — spring scale na activate, używany w ViewSwitcher pill active state.
- * 300ms cubic-bezier(.34,1.56,.64,1) — subtle overshoot 1.04 → 1.0. */
-@keyframes fl-pop {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.04);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-/* ─── ViewSwitcher v5 (liquid-glass single-row, scroll + chevrony) ─────────
- * Single-row tablist that NEVER wraps. Track jest scrollowalny z gradient
- * mask 22px na obu krawędziach (subtle fade-out), chevrony left/right
- * pojawiają się gdy track ma overflow. Active pill = liquid-glass gradient
- * z inner ring + brand-clip text label + fl-pop spring.
- * ───────────────────────────────────────────────────────────────────────── */
-.lg-vs-frame {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-  height: 44px;
-  padding: 4px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.78);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
-  backdrop-filter: blur(12px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow:
-    0 2px 8px -2px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-.dark .lg-vs-frame {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 4px 16px -4px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-.lg-vs-chevron {
-  flex: none;
-  width: 30px;
-  height: 36px;
-  border-radius: 10px;
-  border: none;
-  background: rgba(122, 51, 236, 0.07);
-  /* WCAG AA fix: #847b96 → #655C77 (n-700) bumps contrast on lavender bg
-   * past 4.5:1 for the inactive chevron icon. */
-  color: #655c77;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 3;
-  position: relative;
-  transition: background 160ms cubic-bezier(0.22, 1, 0.36, 1),
-    color 160ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 160ms ease;
-}
-.lg-vs-chevron:hover {
-  background: rgba(122, 51, 236, 0.14);
-  color: var(--foreground);
-}
-.lg-vs-chevron:disabled {
-  /* A11y polish: 0.25 → 0.4. Still clearly disabled, but visible enough
-   * for low-vision users to notice the affordance exists. */
-  opacity: 0.4;
-  cursor: default;
-  pointer-events: none;
-}
-.dark .lg-vs-chevron {
-  background: rgba(255, 255, 255, 0.05);
-  color: #8b8398;
-}
-.dark .lg-vs-chevron:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--foreground);
-}
-
-.lg-vs-track {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  height: 36px;
-  margin: 0 2px;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  scrollbar-width: none;
-  -webkit-mask-image: linear-gradient(
-    90deg,
-    transparent 0,
-    #000 22px,
-    #000 calc(100% - 22px),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    90deg,
-    transparent 0,
-    #000 22px,
-    #000 calc(100% - 22px),
-    transparent 100%
-  );
-}
-.lg-vs-track::-webkit-scrollbar {
-  display: none;
-}
-
-.lg-vs-pill {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 14px;
-  border-radius: 10px;
-  border: none;
-  background: transparent;
-  /* WCAG AA fix: inactive pill on lavender bg was 4.1:1 — failed AA.
-   * #544A5E (n-750-ish) hits ~6.9:1 on paper, ~7.6:1 on card. */
-  color: #544a5e;
-  font-family: "Inter", system-ui, sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  text-decoration: none;
-  position: relative;
-  transition: background 160ms cubic-bezier(0.22, 1, 0.36, 1),
-    color 160ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-.dark .lg-vs-pill {
-  color: #8b8398;
-}
-.lg-vs-pill:hover {
-  background: rgba(122, 51, 236, 0.1);
-  color: var(--foreground);
-}
-.dark .lg-vs-pill:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--foreground);
-}
-.lg-vs-pill:focus-visible {
-  outline: 2px solid var(--brand-500);
-  outline-offset: 2px;
-}
-.lg-vs-pill[data-active="true"] {
-  background: linear-gradient(
-    140deg,
-    rgba(122, 51, 236, 0.16),
-    rgba(225, 49, 143, 0.12)
-  );
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.85),
-    0 6px 16px -8px rgba(122, 51, 236, 0.5);
-  font-weight: 600;
-  color: var(--foreground);
-  animation: fl-pop 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.dark .lg-vs-pill[data-active="true"] {
-  background: linear-gradient(
-    140deg,
-    rgba(122, 51, 236, 0.32),
-    rgba(225, 49, 143, 0.26)
-  );
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
-    0 6px 16px -8px rgba(122, 51, 236, 0.5);
-}
-.lg-vs-pill[data-active="true"] .lg-vs-label {
-  background: linear-gradient(140deg, #7a33ec, #e1318f);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.lg-vs-pill[data-active="true"] svg {
-  color: #c9a8f5;
-}
-
-/* ─── ViewSwitcher v5 "+ Widok" slot ───
- * Sits INSIDE .lg-vs-frame between the scrollable track and the right
- * chevron. Wrapper exists only so a <CreateViewDialog/> ReactNode can be
- * dropped in without leaking flex sizing into the dialog content.
- */
-.lg-vs-add-slot {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  z-index: 3;
-  position: relative;
-}
-.lg-vs-add-view {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 36px;
-  padding: 0 12px;
-  border-radius: 10px;
-  border: 1px dashed rgba(122, 51, 236, 0.4);
-  background: transparent;
-  color: #847b96;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-  transition: background 160ms, border-color 160ms, color 160ms;
-  margin: 0 2px;
-}
-.lg-vs-add-view:hover {
-  background: rgba(122, 51, 236, 0.08);
-  border-color: rgba(122, 51, 236, 0.7);
-  color: var(--foreground);
-}
-.lg-vs-add-view:focus-visible {
-  outline: 2px solid var(--brand-500);
-  outline-offset: 2px;
-}
-.dark .lg-vs-add-view {
-  color: #8b8398;
-}
-
-@keyframes pop-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* ─── v4 Create task: blinking caret pulse na title input ───
- * Spec: 1.1s steps(1), pulsuje opacity między widoczna/niewidoczna jak
- * tradycyjny terminal caret. Reused na input::after via .fl-caret-input.
- * Zostaje wyciszone przez globalny reduced-motion safety net (niżej).
- */
-@keyframes fl-caret {
-  0%,
-  49% {
-    opacity: 1;
-  }
-  50%,
-  100% {
-    opacity: 0;
-  }
-}
-.fl-caret-input {
-  position: relative;
-}
-.fl-caret-input::after {
-  content: "";
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  width: 2px;
-  height: 1.05em;
-  background: var(--accent-sky);
-  transform: translateY(-50%);
-  animation: fl-caret 1.1s steps(1) infinite;
-  pointer-events: none;
-  opacity: 0;
-}
-/* Caret tylko gdy input jest focus'em — bez focusu schowane. */
-.fl-caret-input:focus-within::after {
-  opacity: 1;
-}
-
-/* ════════════════════════════════════════════════════════════════════════
- * F12-K6: react-day-picker theme
- * ──────────────────────────────────────────────────────────────────────── */
+/* ─── react-day-picker ─── */
 .rdp-host .rdp-root {
-  --rdp-accent-color: var(--primary);
-  --rdp-accent-background-color: color-mix(in oklch, var(--primary) 18%, transparent);
-  --rdp-day-height: 36px;
-  --rdp-day-width: 36px;
-  --rdp-day_button-height: 32px;
-  --rdp-day_button-width: 32px;
-  --rdp-day_button-border-radius: 0.5rem;
-  --rdp-nav_button-height: 1.75rem;
-  --rdp-nav_button-width: 1.75rem;
-  --rdp-nav-height: 2.25rem;
-  --rdp-week_number-border-radius: 0.5rem;
-  font-family: var(--font-sans);
-  color: var(--foreground);
+  --rdp-accent-color: var(--orange-500);
+  --rdp-accent-background-color: var(--orange-50);
+  --rdp-day-height: 32px; --rdp-day-width: 32px;
+  --rdp-day_button-height: 28px; --rdp-day_button-width: 28px; --rdp-day_button-border-radius: 4px;
+  --rdp-nav_button-height: 28px; --rdp-nav_button-width: 28px; --rdp-nav-height: 32px;
+  font-family: var(--font-sans); font-size: 13px; color: var(--fg);
 }
-.rdp-host .rdp-month_caption {
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  text-transform: capitalize;
-  color: var(--foreground);
-}
-.rdp-host .rdp-weekday {
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
-  opacity: 1;
-}
-.rdp-host .rdp-day_button {
-  border: none;
-  font-size: 0.84rem;
-  color: var(--foreground);
-  transition: background-color 120ms, color 120ms;
-}
-.rdp-host .rdp-day_button:hover {
-  background-color: var(--accent);
-}
-.rdp-host .rdp-day.rdp-today .rdp-day_button {
-  color: var(--primary);
-  font-weight: 600;
-}
-.rdp-host .rdp-day.rdp-selected .rdp-day_button {
-  background-color: var(--primary) !important;
-  color: var(--primary-foreground) !important;
-  font-weight: 600;
-}
-.rdp-host .rdp-day.rdp-outside .rdp-day_button {
-  color: var(--muted-foreground);
-}
-.rdp-host .rdp-button_previous,
-.rdp-host .rdp-button_next {
-  color: var(--foreground);
-  border-radius: 0.375rem;
-}
-.rdp-host .rdp-button_previous:hover,
-.rdp-host .rdp-button_next:hover {
-  background-color: var(--accent);
-}
+.rdp-host .rdp-month_caption { font-weight: 600; font-size: 13px; text-transform: capitalize; color: var(--fg); }
+.rdp-host .rdp-weekday { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3); opacity: 1; }
+.rdp-host .rdp-day_button { border: none; font-size: 13px; color: var(--fg); transition: background-color var(--dur-fast); }
+.rdp-host .rdp-day_button:hover { background-color: var(--n-100); }
+.rdp-host .rdp-day.rdp-today .rdp-day_button { box-shadow: inset 0 0 0 1px var(--orange-500); font-weight: 600; }
+.rdp-host .rdp-day.rdp-selected .rdp-day_button { background-color: var(--n-900) !important; color: #fff !important; font-weight: 600; }
+.rdp-host .rdp-day.rdp-outside .rdp-day_button { color: var(--n-400); }
+.rdp-host .rdp-button_previous, .rdp-host .rdp-button_next { color: var(--fg-2); border-radius: 6px; }
+.rdp-host .rdp-button_previous:hover, .rdp-host .rdp-button_next:hover { background-color: var(--n-100); }
 
-/* ════════════════════════════════════════════════════════════════════════
- * FLOVLY GLASS SIDEBAR + iPhone LIQUID GLASS TABS
- * (zachowane z poprzedniej iteracji — już matchują v4 vibe)
- * ──────────────────────────────────────────────────────────────────────── */
-
-/* Floating glass card wrapper dla sidebara. */
-.sidebar-glass {
-  background: rgba(255,255,255,0.62);
-  border: 1px solid rgba(255,255,255,0.85);
-  box-shadow:
-    0 0 0 0.5px rgba(12,13,18,0.07),
-    0 1px 2px rgba(12,13,18,0.04),
-    0 16px 40px rgba(12,13,18,0.08);
-}
-.dark .sidebar-glass {
-  background: rgba(28,28,34,0.55);
-  border-color: rgba(255,255,255,0.10);
-  box-shadow:
-    0 0 0 0.5px rgba(255,255,255,0.05),
-    0 1px 2px rgba(0,0,0,0.3),
-    0 20px 60px rgba(0,0,0,0.45);
-}
-.sidebar-glass::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, transparent 35%);
-}
-.dark .sidebar-glass::before {
-  background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 30%);
-}
-
-/* Mobile override: drawer needs solid bg (glass transparency shows hero behind) */
-@media (max-width: 767px) {
-  .sidebar-glass {
-    background: #ECE8F4;
-    border-color: rgba(12,13,18,0.08);
-  }
-  .dark .sidebar-glass {
-    background: #0B0912;
-    border-color: rgba(255,255,255,0.08);
-  }
-  /* Disable gradient highlight on mobile — solid background doesn't need it */
-  .sidebar-glass::before,
-  .dark .sidebar-glass::before {
-    display: none;
-  }
-}
-
-/* F12-K94: ukryj mobile sidebar hamburger gdy Ateron panel jest open.
- * User myślał że hamburger zamyka chat (był w prawym górnym przy fullscreen
- * Aterona), ale on otwierał sidebar = mylące. CzesiekFab ustawia
- * `document.body.dataset.czesiekOpen = "true"` gdy panel jest open. */
-body[data-czesiek-open="true"] .mobile-sidebar-toggle {
-  display: none;
-}
-
-/* Nav row states */
-.sidebar-row {
-  transition: background-color 120ms ease, color 120ms ease;
-}
-.sidebar-row:hover {
-  background: rgba(12,13,18,0.05);
-}
-.dark .sidebar-row:hover {
-  background: rgba(255,255,255,0.05);
-}
-.sidebar-row[data-active="true"] {
-  background: rgba(255,255,255,0.78);
-  color: var(--foreground);
-  box-shadow:
-    0 0 0 0.5px rgba(12,13,18,0.08),
-    inset 0 1px 0 rgba(255,255,255,0.9),
-    0 1px 2px rgba(12,13,18,0.04);
-}
-.dark .sidebar-row[data-active="true"] {
-  background: rgba(255,255,255,0.07);
-  box-shadow:
-    inset 0 0 0 0.5px rgba(255,255,255,0.10),
-    inset 0 1px 0 rgba(255,255,255,0.06);
-}
-
-.sidebar-hairline {
-  border-color: rgba(12,13,18,0.06);
-}
-.dark .sidebar-hairline {
-  border-color: rgba(255,255,255,0.05);
-}
-
-/* iPhone liquid-glass segmented (view switcher) */
-.lg-seg {
-  display: inline-flex;
-  gap: 4px;
-  padding: 5px;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.55);
-  border: 1px solid rgba(255,255,255,0.85);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  backdrop-filter: blur(28px) saturate(180%);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.9),
-    inset 0 -1px 0 rgba(12,13,18,0.05),
-    0 1px 2px rgba(12,13,18,0.05),
-    0 10px 24px rgba(12,13,18,0.06);
-  position: relative;
-  isolation: isolate;
-}
-.dark .lg-seg {
-  background: rgba(255,255,255,0.04);
-  border-color: rgba(255,255,255,0.08);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.08),
-    inset 0 -1px 0 rgba(0,0,0,0.3),
-    0 1px 2px rgba(0,0,0,0.35),
-    0 10px 24px rgba(0,0,0,0.25);
-}
-.lg-seg-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 14px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--muted-foreground);
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 13px;
-  letter-spacing: -0.005em;
-  transition: color 180ms ease, transform 200ms cubic-bezier(.2,.7,.2,1);
-}
-.lg-seg-btn:hover {
-  color: var(--foreground);
-}
-.lg-seg-btn:active {
-  transform: translateY(0.5px) scale(0.985);
-}
-.lg-seg-btn[data-active="true"] {
-  color: var(--foreground);
-  background:
-    radial-gradient(120% 90% at 30% 0%, rgba(255,255,255,1), rgba(255,255,255,0.7) 55%, rgba(255,255,255,0.55) 100%);
-  border-color: rgba(255,255,255,1);
-  -webkit-backdrop-filter: blur(40px) saturate(220%);
-  backdrop-filter: blur(40px) saturate(220%);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,1),
-    inset 0 0 0 0.5px rgba(255,255,255,0.7),
-    inset 0 -8px 12px -8px rgba(122,51,236,0.35),
-    0 1px 0 rgba(12,13,18,0.06),
-    0 6px 18px rgba(12,13,18,0.10),
-    0 0 0 0.5px rgba(12,13,18,0.06);
-}
-.dark .lg-seg-btn[data-active="true"] {
-  color: #fff;
-  background:
-    radial-gradient(120% 90% at 30% 0%, rgba(255,255,255,0.28), rgba(255,255,255,0.10) 55%, rgba(255,255,255,0.06) 100%);
-  border-color: rgba(255,255,255,0.55);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.55),
-    inset 0 0 0 0.5px rgba(255,255,255,0.30),
-    inset 0 -8px 12px -8px rgba(122,51,236,0.45),
-    0 1px 0 rgba(0,0,0,0.25),
-    0 6px 18px rgba(0,0,0,0.45),
-    0 0 0 0.5px rgba(255,255,255,0.30);
-}
-.lg-seg-btn[data-active="true"]::before {
-  content: "";
-  position: absolute;
-  inset: 1px 1px auto 1px;
-  height: 45%;
-  border-radius: 9px 9px 14px 14px / 9px 9px 22px 22px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.05) 90%);
-  pointer-events: none;
-  z-index: -1;
-}
-.dark .lg-seg-btn[data-active="true"]::before {
-  background: linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0.02) 90%);
-}
-.lg-seg-btn[data-active="true"]::after {
-  content: "";
-  position: absolute;
-  inset: auto 6px -6px 6px;
-  height: 12px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(122,51,236,0.28), transparent 70%);
-  filter: blur(4px);
-  pointer-events: none;
-  z-index: -1;
-}
-.dark .lg-seg-btn[data-active="true"]::after {
-  background: radial-gradient(ellipse at center, rgba(122,51,236,0.35), transparent 70%);
-}
-
-/* Sliding indicator (JS-driven) */
-.lg-seg-indicator {
-  position: absolute;
-  left: 0;
-  top: 0;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: 10px;
-  background:
-    radial-gradient(120% 90% at 30% 0%, rgba(255,255,255,1), rgba(255,255,255,0.7) 55%, rgba(255,255,255,0.55) 100%);
-  border: 1px solid rgba(255,255,255,1);
-  -webkit-backdrop-filter: blur(40px) saturate(220%);
-  backdrop-filter: blur(40px) saturate(220%);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,1),
-    inset 0 0 0 0.5px rgba(255,255,255,0.7),
-    inset 0 -8px 12px -8px rgba(122,51,236,0.35),
-    0 1px 0 rgba(12,13,18,0.06),
-    0 6px 18px rgba(12,13,18,0.10),
-    0 0 0 0.5px rgba(12,13,18,0.06);
-  transition: transform 340ms cubic-bezier(.2,.7,.2,1);
-}
-.lg-seg-indicator::before {
-  content: "";
-  position: absolute;
-  inset: 1px 1px auto 1px;
-  height: 45%;
-  border-radius: 9px 9px 14px 14px / 9px 9px 22px 22px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.05) 90%);
-  pointer-events: none;
-}
-.lg-seg-indicator::after {
-  content: "";
-  position: absolute;
-  inset: auto 6px -6px 6px;
-  height: 12px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(122,51,236,0.28), transparent 70%);
-  filter: blur(4px);
-  pointer-events: none;
-}
-.dark .lg-seg-indicator {
-  background:
-    radial-gradient(120% 90% at 30% 0%, rgba(255,255,255,0.28), rgba(255,255,255,0.10) 55%, rgba(255,255,255,0.06) 100%);
-  border-color: rgba(255,255,255,0.55);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.55),
-    inset 0 0 0 0.5px rgba(255,255,255,0.30),
-    inset 0 -8px 12px -8px rgba(122,51,236,0.45),
-    0 1px 0 rgba(0,0,0,0.25),
-    0 6px 18px rgba(0,0,0,0.45),
-    0 0 0 0.5px rgba(255,255,255,0.30);
-}
-.dark .lg-seg-indicator::before {
-  background: linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0.02) 90%);
-}
-.dark .lg-seg-indicator::after {
-  background: radial-gradient(ellipse at center, rgba(122,51,236,0.35), transparent 70%);
-}
+/* ─── Motion (opacity/transform only, ≤220ms) ─── */
+@keyframes toast-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes toast-out { to { opacity: 0; transform: translateY(-4px); } }
+.toast-card { animation: toast-in var(--dur-normal) var(--ease-out) both; }
+.toast-card[data-leaving] { animation: toast-out var(--dur-fast) ease-in both; }
+@keyframes panel-in { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+.panel-in { animation: panel-in var(--dur-slow) var(--ease-out) both; }
+@keyframes pulse-soft { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+.skeleton-pulse { animation: pulse-soft 1.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .lg-seg-indicator {
-    transition: none;
-  }
-  .animate-fl-drift,
-  .animate-fl-drift2,
-  .animate-fl-pulse {
-    animation: none;
-  }
-  .lg-vs-pill {
-    animation: none !important;
-    transition: none !important;
-  }
-  .lg-vs-track {
-    scroll-behavior: auto;
-  }
-}
-.lg-seg--js .lg-seg-btn[data-active="true"] {
-  background: none;
-  border-color: transparent;
-  box-shadow: none;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-.lg-seg--js .lg-seg-btn[data-active="true"]::before,
-.lg-seg--js .lg-seg-btn[data-active="true"]::after {
-  display: none;
-}
-.lg-seg-btn {
-  z-index: 1;
-}
-
-/* ════════════════════════════════════════════════════════════════════════
- * MOTION & ANIMATIONS
- * ──────────────────────────────────────────────────────────────────────── */
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.97);
-    filter: blur(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
-  }
-}
-@keyframes toast-out {
-  to {
-    opacity: 0;
-    transform: translateY(-6px);
-    filter: blur(4px);
-  }
-}
-.toast-card {
-  animation: toast-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.toast-card[data-leaving] {
-  animation: toast-out 160ms cubic-bezier(0.4, 0, 1, 1) both;
-}
-
-/* Global reduced-motion safety net. */
-@media (prefers-reduced-motion: reduce) {
-  *:not(.animate-spin),
-  *:not(.animate-spin)::before,
-  *:not(.animate-spin)::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  *:not(.animate-spin), *:not(.animate-spin)::before, *:not(.animate-spin)::after {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0s !important; scroll-behavior: auto !important;
   }
 }
 
-/* ════════════════════════════════════════════════════════════════════════
- * MOBILE — safe-area utilities for sticky bottom toolbars/sheets/FABs.
- * iOS home-indicator overlaps the bottom edge; this adds env() padding.
- * ──────────────────────────────────────────────────────────────────────── */
-.safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-.safe-bottom-plus-3 {
-  padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem);
+/* ─── Mobile safe-area ─── */
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.safe-bottom-plus-3 { padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem); }
+
+/* ─── Browser autofill (K113/K114): no yellow fill ─── */
+input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus, input:-webkit-autofill:active,
+textarea:-webkit-autofill, textarea:-webkit-autofill:focus, select:-webkit-autofill, select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--fg);
+  -webkit-box-shadow: 0 0 0 1000px transparent inset; box-shadow: 0 0 0 1000px transparent inset;
+  caret-color: var(--fg); border-radius: inherit;
+  transition: background-color 5000s ease-in-out 0s, color 5000s ease-in-out 0s;
 }
 
-/* ════════════════════════════════════════════════════════════════════════
- * F12-K115: ZOOM LOCK (mobile) — klient nie chce pinch / double-tap zoom.
- * Viewport meta (layout.tsx) handle'uje większość. CSS touch-action jest
- * fallback'iem dla iOS Safari < 16 gdzie userScalable=false bywał ignorowany.
- *
- * pan-x pan-y: zostawia normal scroll (vertical + horizontal), blokuje
- * gesty pinch i double-tap zoom. Single-finger scroll/click działa.
- *
- * `none` byłoby drastyczne (zabijałoby też scroll). pan-x pan-y to balance.
- * ──────────────────────────────────────────────────────────────────────── */
-html {
-  touch-action: pan-x pan-y;
-}
-
-/* ════════════════════════════════════════════════════════════════════════
- * F12-K113: BROWSER AUTOFILL — override default żółtego tła.
- * Chrome/Safari/Edge na zapamiętanych hasłach maluje input żółtym.
- *
- * Iteracja 2 (F12-K114): używamy `transparent` w box-shadow inset zamiast
- * var(--background). Pierwsza wersja malowała input solidnym czarnym
- * `var(--background)` co psuło glass effect wrapper'a (input wycięty
- * z aury login screen'a). Transparent zostawia tło wrapper'a widoczne.
- * Chrome/Safari honor'ują alpha w autofill box-shadow inset.
- * ──────────────────────────────────────────────────────────────────────── */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active,
-textarea:-webkit-autofill,
-textarea:-webkit-autofill:hover,
-textarea:-webkit-autofill:focus,
-select:-webkit-autofill,
-select:-webkit-autofill:hover,
-select:-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--foreground);
-  -webkit-box-shadow: 0 0 0 1000px transparent inset;
-  box-shadow: 0 0 0 1000px transparent inset;
-  caret-color: var(--foreground);
-  border-radius: inherit;
-  transition: background-color 5000s ease-in-out 0s,
-    color 5000s ease-in-out 0s;
-}
+[data-density="compact"] { --table-header-h: 28px; }

@@ -64,12 +64,12 @@ function statusBadge(status: string): { label: string; cls: string } {
     case "pending":
       return {
         label: "Oczekuje",
-        cls: "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+        cls: "border-amber-500/40 bg-amber-500/10 text-amber-600 ",
       };
     case "approved":
       return {
         label: "Zatwierdzony",
-        cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+        cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 ",
       };
     case "rejected":
       return {
@@ -113,7 +113,7 @@ export function VacationWorkspace({
           </span>
           <h1 className="font-display text-[1.6rem] font-bold leading-[1.1] tracking-[-0.03em] md:text-[2rem]">
             Cześć,{" "}
-            <span className="text-brand-gradient">{currentUserName.split(" ")[0]}</span>.
+            <span className="">{currentUserName.split(" ")[0]}</span>.
           </h1>
           <p className="text-[0.92rem] leading-[1.55] text-muted-foreground">
             Składaj wnioski, sprawdź kto z zespołu ma zaplanowany urlop.
@@ -205,7 +205,7 @@ function NewRequestForm() {
           </p>
         )}
         {state?.ok && (
-          <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[0.86rem] text-emerald-700 dark:text-emerald-300">
+          <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[0.86rem] text-emerald-700">
             {state.message}
           </p>
         )}
@@ -213,7 +213,7 @@ function NewRequestForm() {
         <button
           type="submit"
           disabled={pending}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand-gradient px-5 font-sans text-[0.95rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 font-sans text-[0.95rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Plane size={15} /> Złóż wniosek o urlop
         </button>
@@ -239,7 +239,7 @@ function AdminQueue({ items }: { items: PendingForAdminItem[] }) {
             key={it.id}
             className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card px-3 py-2"
           >
-            <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.6rem] font-bold text-white">
+            <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.6rem] font-bold text-white">
               {it.requester.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -340,7 +340,7 @@ function ColleaguesList({
               key={c.id}
               className="flex items-center gap-3 border-b border-border px-3 py-2.5 last:border-b-0"
             >
-              <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.62rem] font-bold text-white">
+              <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.62rem] font-bold text-white">
                 {c.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={c.avatarUrl} alt="" width={36} height={36} className="h-full w-full object-cover" />

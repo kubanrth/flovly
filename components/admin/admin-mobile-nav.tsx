@@ -2,7 +2,7 @@
 
 // Mobile-only bottom sheet replacing the horizontal-scroll sidebar on
 // admin pages. Per Mobile v4 spec (B7 — Admin nav · bottom sheet):
-// hamburger trigger top-right, sheet rises with rounded-t-24 glass surface,
+// hamburger trigger top-right, sheet rises with rounded-t-24 plain surface,
 // each row 44px+ tap target, Super Admin badge above the list.
 //
 // Desktop sidebar (md:flex) stays untouched — we render this only inside
@@ -71,7 +71,7 @@ export function AdminMobileNav() {
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className="rounded-t-2xl border-t border-white/10 bg-popover/95 px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_-12px_rgba(10,10,40,0.5)] backdrop-blur-xl"
+        className="rounded-t-2xl border-t border-white/10 bg-popover/95 px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_-12px_rgba(10,10,40,0.5)]"
       >
         <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-foreground/20" aria-hidden />
         <SheetTitle className="sr-only">Panel admina · nawigacja</SheetTitle>

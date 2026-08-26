@@ -67,7 +67,7 @@ export function DealMobileActions({
         // safe-area-inset-bottom (iPhone) — content row dostaje 12px padding
         // + dodatkowy env padding pod nim. Z-index 30 nad standardowym
         // contentem, pod stagepicker overlay'em (z-40).
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 backdrop-blur-md md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 md:hidden"
         style={{
           paddingBottom: "max(12px, env(safe-area-inset-bottom))",
         }}
@@ -149,7 +149,7 @@ function StagePickerSheet({
         type="button"
         aria-label="Zamknij"
         onClick={onClose}
-        className="flex-1 bg-black/40 backdrop-blur-sm"
+        className="flex-1 bg-black/40"
       />
       <div
         className="rounded-t-2xl border-t border-border bg-popover shadow-[0_-20px_40px_-12px_rgba(0,0,0,0.4)]"
@@ -182,12 +182,12 @@ function StagePickerSheet({
                     {s.name}
                   </span>
                   {s.closedKind === "won" && (
-                    <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-400">
+                    <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-emerald-600">
                       wygrane
                     </span>
                   )}
                   {s.closedKind === "lost" && (
-                    <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-rose-600 dark:text-rose-400">
+                    <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-rose-600">
                       przegrane
                     </span>
                   )}

@@ -142,7 +142,7 @@ export function BoardLinks({
           />
           <button
             type="submit"
-            className="grid h-6 w-6 place-items-center rounded-full bg-brand-gradient text-white shadow-brand transition-opacity hover:opacity-90"
+            className="grid h-6 w-6 place-items-center rounded-full bg-primary text-white transition-opacity hover:opacity-90"
             aria-label="Zapisz link"
           >
             <Plus size={12} />

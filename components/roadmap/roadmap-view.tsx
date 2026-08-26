@@ -128,7 +128,7 @@ export function RoadmapView({
 
   return (
     <div className="flex flex-col gap-5">
-      {/* v4 card — one rounded-[22px] glass surface with brand-tinted shadow.
+      {/* v4 card — one rounded-[22px] plain surface with brand-tinted shadow.
           Inside: toolbar (top) + month axis + swimlanes/markers + hint footer.
           BoardHeader stays OUTSIDE this card (renderowany przez page.tsx).
           F12-K114: chart NIE jest już chowany na mobile — user chce widzieć
@@ -136,7 +136,7 @@ export function RoadmapView({
           scrollable horizontally jeśli nie mieszczą się. */}
       <div className="relative overflow-hidden rounded-[22px] border border-border bg-card shadow-[0_30px_70px_-30px_rgba(122,92,255,0.4)]">
         {/* Toolbar row — counter + aggregator badge/toggle + create button */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card/60 px-[18px] py-[14px] backdrop-blur-xl">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card/60 px-[18px] py-[14px]">
           <div className="flex items-center gap-3">
             <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
               {milestones.length} {plPlural(milestones.length, "milestone", "milestone’y", "milestone’ów")}
@@ -171,7 +171,7 @@ export function RoadmapView({
               <button
                 type="button"
                 onClick={() => setDialog({ mode: "create" })}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-gradient px-4 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-4 font-sans text-[0.85rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
                 <Plus size={14} /> Nowy milestone
               </button>
@@ -181,7 +181,7 @@ export function RoadmapView({
 
         {/* Month axis — referencyjny pasek miesięcy. F12-K114: mobile dostaje
             mniejszy padding (16px zamiast 150px legacy swimlane offset). */}
-        <div data-roadmap-chart className="flex border-b border-border bg-card/40 py-[10px] pl-4 pr-4 backdrop-blur-xl md:pl-[150px] md:pr-[18px]">
+        <div data-roadmap-chart className="flex border-b border-border bg-card/40 py-[10px] pl-4 pr-4 md:pl-[150px] md:pr-[18px]">
           {range.ticks.map((t) => (
             <div
               key={t.ts}
@@ -330,7 +330,7 @@ export function RoadmapView({
                   </div>
                   {m.assignee && (
                     <span
-                      className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.58rem] font-bold text-white"
+                      className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.58rem] font-bold text-white"
                       title={m.assignee.name ?? m.assignee.email}
                     >
                       {(m.assignee.name ?? m.assignee.email).slice(0, 2).toUpperCase()}

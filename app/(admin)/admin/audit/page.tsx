@@ -163,7 +163,7 @@ function AuditCardMobile({ entry }: { entry: AuditRow }) {
   return (
     <li className="rounded-xl border border-border bg-card p-3">
       <div className="flex items-center gap-2.5">
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-brand-gradient font-mono text-[0.62rem] font-bold text-white">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-primary font-mono text-[0.62rem] font-bold text-white">
           {initials}
         </span>
         <span className="min-w-0 flex-1 truncate text-[0.86rem] font-semibold text-foreground">
@@ -220,7 +220,7 @@ function AuditRowView({ entry }: { entry: AuditRow }) {
         <div className="flex items-center gap-2">
           {/* Brand-gradient avatar matches the design spec: 24×24 rounded-md,
               initials in mono. Mirrors the mobile card treatment for consistency. */}
-          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-brand-gradient font-mono text-[0.58rem] font-bold text-white">
+          <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-primary font-mono text-[0.58rem] font-bold text-white">
             {initials}
           </span>
           <span className="truncate text-[0.82rem]">{actorLabel}</span>

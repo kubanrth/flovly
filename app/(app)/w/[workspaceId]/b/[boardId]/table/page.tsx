@@ -10,6 +10,7 @@ import { ShareBoardButton } from "@/components/board/share-board-button";
 import { BoardShell } from "@/components/view/board-shell";
 import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
+import { TableToolbar } from "@/components/view/table-toolbar";
 import { docHasText } from "@/lib/prosemirror-text";
 import { BoardLinksServer } from "@/components/board/board-links-server";
 import { parseEnabledViews } from "@/lib/board-views";
@@ -132,6 +133,15 @@ export default async function BoardTablePage({
         board={{ name: board.name, description: board.description }}
         active="table"
         enabledViews={enabledViews}
+        toolbar={
+          <TableToolbar
+            people={memberships.map((m) => ({
+              id: m.user.id,
+              name: m.user.name ?? m.user.email,
+              avatarUrl: m.user.avatarUrl,
+            }))}
+          />
+        }
         extra={<BoardLinksServer workspaceId={workspaceId} boardId={board.id} />}
         actions={
           <>

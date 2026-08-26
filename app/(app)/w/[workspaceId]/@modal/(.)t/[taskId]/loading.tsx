@@ -10,13 +10,13 @@ export default function TaskModalLoading() {
   return (
     <BaseDialog.Root open>
       <BaseDialog.Portal>
-        <BaseDialog.Backdrop className="fixed inset-0 z-[100] bg-background/70 backdrop-blur-sm data-[open]:opacity-100" />
+        <BaseDialog.Backdrop className="fixed inset-0 z-[100] bg-background/70 data-[open]:opacity-100" />
         <BaseDialog.Popup
           className="fixed inset-y-0 right-0 z-[110] flex w-full max-w-[960px] flex-col overflow-y-auto border-l border-border bg-background shadow-[0_18px_40px_-16px_rgba(76,29,149,0.40),0_30px_70px_-24px_rgba(124,92,255,0.24)] data-[open]:translate-x-0"
           initialFocus={undefined}
         >
           {/* Header skeleton */}
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 backdrop-blur sm:px-8">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 sm:px-8">
             <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
               Szczegóły zadania
             </span>

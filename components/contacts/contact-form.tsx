@@ -80,7 +80,7 @@ export function ContactForm({
           sublabel: m.email,
           searchText: `${m.name ?? ""} ${m.email}`,
           leading: (
-            <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.55rem] font-bold text-white">
+            <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.55rem] font-bold text-white">
               {m.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={m.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
@@ -149,7 +149,7 @@ export function ContactForm({
         </div>
       )}
       {flash && (
-        <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[0.88rem] text-emerald-700 dark:text-emerald-300">
+        <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[0.88rem] text-emerald-700">
           {flash}
         </div>
       )}
@@ -158,7 +158,7 @@ export function ContactForm({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex h-10 items-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex h-10 items-center rounded-lg bg-primary px-5 font-sans text-[0.9rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? "Zapisuję…" : isEdit ? "Zapisz" : "Utwórz kontakt"}
         </button>

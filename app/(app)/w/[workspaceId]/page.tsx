@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import Image from "next/image";
 import { PencilRuler, Search } from "lucide-react";
 import { db } from "@/lib/db";
@@ -6,6 +7,7 @@ import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { CreateTaskButton } from "@/components/task/create-task-button";
 import { AppShell } from "@/components/layout/app-shell";
+import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import {
   computeBoardEnabledViews,
   parseEnabledViews,
@@ -32,7 +34,7 @@ export default async function WorkspaceOverviewPage({
   const [workspace, memberCount, memberships, boards] = await Promise.all([
     db.workspace.findUnique({
       where: { id: workspaceId },
-      select: { enabledViews: true, name: true },
+      select: { id: true, enabledViews: true, name: true, slug: true, description: true },
     }),
     db.workspaceMembership.count({ where: { workspaceId } }),
     db.workspaceMembership.findMany({
@@ -133,9 +135,11 @@ export default async function WorkspaceOverviewPage({
       (DIALOG_VIEWS as readonly string[]).includes(v),
     );
 
+  if (!workspace) notFound();
   return (
     <AppShell>
       <div className="flex flex-col gap-6 md:gap-10">
+        <WorkspaceHeader workspace={workspace} canEditSettings={can(ctx.role, "workspace.updateSettings")} />
         <WorkspaceHero
           workspaceId={workspaceId}
           workspaceName={workspace?.name ?? "Workspace"}
@@ -149,7 +153,7 @@ export default async function WorkspaceOverviewPage({
               + (optional) quick "+ Zadanie" once a board exists. */}
           <Link
             href={`/w/${workspaceId}/canvases`}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/60 bg-white/55 px-3 font-sans text-[0.82rem] font-medium text-foreground/80 backdrop-blur transition-colors hover:bg-white/75 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:border-white/10 dark:bg-white/5 dark:text-foreground/70 dark:hover:bg-white/10 dark:hover:text-foreground"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/60 bg-white/55 px-3 font-sans text-[0.82rem] font-medium text-foreground/80 transition-colors hover:bg-white/75 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <PencilRuler size={14} /> Whiteboard
           </Link>
@@ -171,7 +175,7 @@ export default async function WorkspaceOverviewPage({
 // F12-K81 (v4 brand polish): workspace hero band.
 // Glass card rounded-[22px] z animated fl-drift radial aura blobs, eyebrow
 // mono "Workspace", workspace name 17px display bold, avatar stack (5 + +N),
-// glass search bar + "+ Tablica" gradient CTA pill po prawej.
+// plain search bar + "+ Tablica" gradient CTA pill po prawej.
 // Layout 1:1 z Flovly Brand & Hero spec (sekcja 05 — Workspace Overview).
 // ─────────────────────────────────────────────────────────────────────────
 function WorkspaceHero({
@@ -201,19 +205,19 @@ function WorkspaceHero({
   return (
     <section
       aria-label="Workspace overview"
-      // F12-K107: mobile bez glass card wrapper + blobs (klient raportował
+      // F12-K107: mobile bez plain card wrapper + blobs (klient raportował
       // że hero wygląda mały vs pełnoekranowe board cards = visual mismatch).
-      // Mobile = inline (border-b only). Desktop md+ = glass card z aurą.
-      className="relative md:overflow-hidden md:rounded-[22px] md:border md:border-white/60 md:bg-white/70 md:px-6 md:py-5 md:shadow-[0_18px_40px_-24px_rgba(76,29,149,0.26)] md:dark:border-white/10 md:dark:bg-white/[0.04] max-md:border-b max-md:border-border max-md:pb-4"
+      // Mobile = inline (border-b only). Desktop md+ = plain card z aurą.
+      className="relative md:overflow-hidden md:rounded-[22px] md:border md:border-white/60 md:bg-white/70 md:px-6 md:py-5 md:shadow-[0_18px_40px_-24px_rgba(76,29,149,0.26)] md: md:] max-md:border-b max-md:border-border max-md:pb-4"
     >
       {/* F12-K85 perf: blobs są STATIC. F12-K107: tylko desktop (md+). */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-32 -left-24 hidden h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(122,51,236,0.28),transparent_65%)] blur-3xl md:block dark:md:hidden"
+        className="pointer-events-none absolute -top-32 -left-24 hidden h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(122,51,236,0.28),transparent_65%)] blur-3xl md:block"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-28 -right-16 hidden h-[380px] w-[380px] rounded-full bg-[radial-gradient(circle,rgba(225,49,143,0.22),transparent_65%)] blur-3xl md:block dark:md:hidden"
+        className="pointer-events-none absolute -bottom-28 -right-16 hidden h-[380px] w-[380px] rounded-full bg-[radial-gradient(circle,rgba(225,49,143,0.22),transparent_65%)] blur-3xl md:block"
       />
 
       {/* F12-K108: usunięty duplikat workspace name (layout.tsx już ma h1
@@ -239,7 +243,7 @@ function WorkspaceHero({
           ))}
           {overflow > 0 && (
             <span
-              className="grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-brand-50 font-mono text-[0.62rem] font-semibold text-brand-700 dark:border-[#15121F] dark:bg-white/10 dark:text-brand-200"
+              className="grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-brand-50 font-mono text-[0.62rem] font-semibold text-brand-700 ]"
               style={{ marginLeft: members.length > 0 ? -8 : 0, zIndex: 0 }}
             >
               +{overflow}
@@ -254,7 +258,7 @@ function WorkspaceHero({
         <div className="flex flex-wrap items-center gap-2 max-md:w-full">
           <label
             htmlFor="ws-hero-search"
-            className="flex h-9 items-center gap-2 rounded-lg border border-white/70 bg-white/65 px-3 font-sans text-[0.82rem] text-muted-foreground backdrop-blur transition-colors focus-within:border-primary/40 focus-within:bg-white/85 max-md:basis-full dark:border-white/10 dark:bg-white/5 dark:focus-within:bg-white/[0.08]"
+            className="flex h-9 items-center gap-2 rounded-lg border border-white/70 bg-white/65 px-3 font-sans text-[0.82rem] text-muted-foreground transition-colors focus-within:border-primary/40 focus-within:bg-white/85 max-md:basis-full ]"
           >
             <Search size={14} className="shrink-0" aria-hidden="true" />
             <input
@@ -301,7 +305,7 @@ function MemberAvatar({
     .toUpperCase();
   return (
     <span
-      className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-brand-gradient text-[0.62rem] font-bold uppercase text-white shadow-sm dark:border-[#15121F]"
+      className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-primary text-[0.62rem] font-bold uppercase text-white shadow-sm ]"
       style={style}
       title={name}
     >

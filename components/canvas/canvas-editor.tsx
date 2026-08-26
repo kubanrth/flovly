@@ -363,7 +363,7 @@ function CanvasEditorInner({
   const providerRef = useRef<CanvasProviderHandle | null>(null);
   // Lazy init keeps Math.random() out of render path (React Compiler flags impure calls during render).
   const [myCursorIdentity] = useState(() => {
-    const palette = ["#7C5CFF", "#10B981", "#F59E0B", "#EF4444", "#3B82F6", "#EC4899"];
+    const palette = ["#FF5C00", "#10B981", "#F59E0B", "#EF4444", "#3B82F6", "#EC4899"];
     const idx = Math.floor(Math.random() * palette.length);
     return {
       color: palette[idx],
@@ -486,25 +486,6 @@ function CanvasEditorInner({
     return () => wrap.removeEventListener("mousemove", onMove);
   }, [canEdit, reactFlow, myCursorIdentity]);
 
-  // RF doesn't emit data-deltas via onNodesChange; ShapeNode dispatches 'canvas-node:commit' to force Yjs sync.
-  useEffect(() => {
-    if (!canEdit) return;
-    const onCommit = (e: Event) => {
-      const ce = e as CustomEvent<{ nodeId: string }>;
-      const id = ce.detail?.nodeId;
-      if (!id) return;
-      // Functional setNodes — closure read could be stale.
-      setNodes((ns) => {
-        const target = ns.find((n) => n.id === id);
-        if (target) commitNodeToY(target);
-        return ns;
-      });
-    };
-    window.addEventListener("canvas-node:commit", onCommit);
-    return () => window.removeEventListener("canvas-node:commit", onCommit);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canEdit]);
-
   const commitNodeToY = useCallback(
     (node: RFNode) => {
       yRefs.ydoc.transact(() => {
@@ -528,6 +509,26 @@ function CanvasEditorInner({
     },
     [yRefs],
   );
+
+  // RF doesn't emit data-deltas via onNodesChange; ShapeNode dispatches 'canvas-node:commit' to force Yjs sync.
+  useEffect(() => {
+    if (!canEdit) return;
+    const onCommit = (e: Event) => {
+      const ce = e as CustomEvent<{ nodeId: string }>;
+      const id = ce.detail?.nodeId;
+      if (!id) return;
+      // Functional setNodes — closure read could be stale.
+      setNodes((ns) => {
+        const target = ns.find((n) => n.id === id);
+        if (target) commitNodeToY(target);
+        return ns;
+      });
+    };
+    window.addEventListener("canvas-node:commit", onCommit);
+    return () => window.removeEventListener("canvas-node:commit", onCommit);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canEdit]);
+
   const commitEdgeToY = useCallback(
     (edge: RFEdge) => {
       const d = edge.data;
@@ -1455,7 +1456,7 @@ function CanvasEditorInner({
           klik spawnowal nowy drawing state (memory + render kaskada). */}
       {canEdit && (
         <div className="pointer-events-none absolute left-1/2 top-3 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 md:flex">
-          <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-border bg-card/95 p-1 shadow-lg backdrop-blur">
+          <div className="pointer-events-auto flex items-center gap-1 rounded-lg border border-border bg-card/95 p-1 shadow-lg">
             <ToolButton
               label="Wskaźnik (V)"
               active={toolMode === "select"}
@@ -1649,7 +1650,7 @@ function CanvasEditorInner({
               type="button"
               onClick={save}
               disabled={saveState === "saving"}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-brand-gradient px-3 font-sans text-[0.82rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[0.5px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary disabled:opacity-60"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 font-sans text-[0.82rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[0.5px] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary disabled:opacity-60"
             >
               <Save size={13} />
               {saveState === "saving"
@@ -1668,7 +1669,7 @@ function CanvasEditorInner({
       )}
 
       {/* z-[30] === Z.dropdown — connection badge nad canvas, ale pod MobileFullscreenToggle (z-50/fab) */}
-      <div className="pointer-events-none absolute bottom-3 right-3 z-[30] flex items-center gap-1.5 rounded-full border border-border bg-card/95 px-2 py-1 shadow-sm backdrop-blur">
+      <div className="pointer-events-none absolute bottom-3 right-3 z-[30] flex items-center gap-1.5 rounded-full border border-border bg-card/95 px-2 py-1 shadow-sm">
         <span
           className={`inline-block h-1.5 w-1.5 rounded-full ${
             isConnected ? "bg-primary" : "bg-muted-foreground/50"
@@ -1782,7 +1783,7 @@ function TaskLinksPanel({
         onClick={() => setCollapsed(false)}
         title="Rozwiń panel zadań na węźle"
         aria-label="Rozwiń panel zadań na węźle"
-        className="pointer-events-auto absolute right-3 top-14 z-10 inline-flex items-center gap-1.5 rounded-full border border-border bg-card/95 px-3 py-1.5 shadow-lg backdrop-blur transition-colors hover:border-primary/60"
+        className="pointer-events-auto absolute right-3 top-14 z-10 inline-flex items-center gap-1.5 rounded-full border border-border bg-card/95 px-3 py-1.5 shadow-lg transition-colors hover:border-primary/60"
       >
         <Link2 size={12} className="text-primary" />
         <span className="font-mono text-[0.66rem] uppercase tracking-[0.12em] text-muted-foreground">
@@ -1796,7 +1797,7 @@ function TaskLinksPanel({
   }
 
   return (
-    <div className="pointer-events-auto absolute right-3 top-14 z-10 flex w-[300px] flex-col gap-2 rounded-lg border border-border bg-card/95 p-3 shadow-lg backdrop-blur">
+    <div className="pointer-events-auto absolute right-3 top-14 z-10 flex w-[300px] flex-col gap-2 rounded-lg border border-border bg-card/95 p-3 shadow-lg">
       <div className="flex items-center justify-between gap-2">
         <span className="eyebrow text-primary">Zadania na węźle</span>
         <div className="flex items-center gap-1">
@@ -1994,7 +1995,7 @@ function AlignmentGuides({ vx, hy }: { vx: number[]; hy: number[] }) {
             y1={-100000}
             x2={vxi}
             y2={100000}
-            stroke="#7C5CFF"
+            stroke="#FF5C00"
             strokeWidth={1 / zoom}
             strokeDasharray={`${4 / zoom} ${3 / zoom}`}
           />
@@ -2006,7 +2007,7 @@ function AlignmentGuides({ vx, hy }: { vx: number[]; hy: number[] }) {
             y1={hyi}
             x2={100000}
             y2={hyi}
-            stroke="#7C5CFF"
+            stroke="#FF5C00"
             strokeWidth={1 / zoom}
             strokeDasharray={`${4 / zoom} ${3 / zoom}`}
           />
@@ -2537,7 +2538,7 @@ function CanvasZoomControls({
 
   return (
     <div
-      className="absolute bottom-4 left-4 z-[5] flex flex-col gap-1 rounded-lg border border-border bg-card/95 p-1 shadow-lg backdrop-blur"
+      className="absolute bottom-4 left-4 z-[5] flex flex-col gap-1 rounded-lg border border-border bg-card/95 p-1 shadow-lg"
       data-canvas-controls=""
     >
       <ControlButton label="Powiększ" onClick={() => rf.zoomIn()}>
@@ -2771,6 +2772,7 @@ function FontSizePicker({
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDraft(currentSize !== null ? String(currentSize) : "");
   }, [currentSize, selectedNodes.length]);
 
@@ -3016,7 +3018,7 @@ function MobileCanvasToolbar({
 
   return (
     <>
-      <div className="pointer-events-auto absolute left-2 top-1/2 z-20 flex max-h-[calc(100dvh-48px)] -translate-y-1/2 flex-col gap-1 overflow-y-auto rounded-2xl border border-white/10 bg-neutral-900/95 p-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:hidden">
+      <div className="pointer-events-auto absolute left-2 top-1/2 z-20 flex max-h-[calc(100dvh-48px)] -translate-y-1/2 flex-col gap-1 overflow-y-auto rounded-2xl border border-white/10 bg-neutral-900/95 p-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:hidden">
         {/* MODE */}
         <MobileToolButton
           active={toolMode === "select"}
@@ -3045,7 +3047,7 @@ function MobileCanvasToolbar({
             <SquareIcon size={15} />
           </MobileToolButton>
           {shapesOpen && (
-            <div className="absolute left-[calc(100%+8px)] top-0 flex gap-1 rounded-xl border border-white/10 bg-neutral-900/95 p-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] backdrop-blur">
+            <div className="absolute left-[calc(100%+8px)] top-0 flex gap-1 rounded-xl border border-white/10 bg-neutral-900/95 p-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)]">
               <MobileToolButton
                 onClick={() => {
                   addShape("RECTANGLE");
@@ -3108,7 +3110,7 @@ function MobileCanvasToolbar({
             <LayoutTemplate size={15} />
           </MobileToolButton>
           {templatesOpen && (
-            <div className="absolute left-[calc(100%+8px)] top-0 flex max-h-[60dvh] w-[200px] flex-col gap-1 overflow-y-auto rounded-xl border border-white/10 bg-neutral-900/95 p-2 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] backdrop-blur">
+            <div className="absolute left-[calc(100%+8px)] top-0 flex max-h-[60dvh] w-[200px] flex-col gap-1 overflow-y-auto rounded-xl border border-white/10 bg-neutral-900/95 p-2 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)]">
               {TEMPLATES.map((t) => (
                 <button
                   key={t.key}
@@ -3163,7 +3165,7 @@ function MobileCanvasToolbar({
           ekranu nad fullscreen button'em. Mirror desktop'owej pen options
           row, ale w kompaktowej formie horizontal. */}
       {toolMode === "pen" && (
-        <div className="pointer-events-auto absolute bottom-3 left-1/2 z-20 flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border border-white/10 bg-neutral-900/95 px-2 py-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] backdrop-blur [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:hidden">
+        <div className="pointer-events-auto absolute bottom-3 left-1/2 z-20 flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border border-white/10 bg-neutral-900/95 px-2 py-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:hidden">
           {PEN_COLORS.map((c) => (
             <button
               key={c}
@@ -3233,7 +3235,7 @@ function MobileToolButton({
   const toneClass = active
     ? "bg-primary text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
     : tone === "primary"
-      ? "bg-brand-gradient text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+      ? "bg-primary text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
       : tone === "destructive"
         ? "bg-red-500/20 text-red-200 hover:bg-red-500/30"
         : "text-white/85 hover:bg-white/10";

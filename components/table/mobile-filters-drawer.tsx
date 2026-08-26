@@ -2,7 +2,7 @@
 
 // Mobile filter drawer — wraps TableFiltersToolbar in a bottom Sheet on
 // `max-md`. Desktop renders TableFiltersToolbar inline as before. Per Mobile
-// v4 (B11 — Filter drawer): rounded-t-24 glass surface, "Filtry" trigger
+// v4 (B11 — Filter drawer): rounded-t-24 plain surface, "Filtry" trigger
 // pill, "Wyczyść" / "Zastosuj (N)" sticky footer.
 //
 // We don't replace the inline toolbar — board-table.tsx decides via
@@ -59,7 +59,7 @@ export function MobileFiltersDrawer(props: Props) {
         <Filter size={14} />
         <span>Filtry</span>
         {activeCount > 0 && (
-          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-gradient px-1.5 font-mono text-[0.62rem] font-bold text-white">
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 font-mono text-[0.62rem] font-bold text-white">
             {activeCount}
           </span>
         )}
@@ -67,7 +67,7 @@ export function MobileFiltersDrawer(props: Props) {
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className="rounded-t-2xl border-t border-white/10 bg-popover/95 px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_-12px_rgba(10,10,40,0.5)] backdrop-blur-xl"
+        className="rounded-t-2xl border-t border-white/10 bg-popover/95 px-4 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_-12px_rgba(10,10,40,0.5)]"
       >
         <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-foreground/20" aria-hidden />
         <SheetTitle className="mb-3 font-display text-[1.05rem] font-semibold tracking-[-0.01em]">
@@ -105,7 +105,7 @@ export function MobileFiltersDrawer(props: Props) {
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="inline-flex h-12 flex-[1.3] items-center justify-center gap-1.5 rounded-xl bg-brand-gradient text-[0.95rem] font-semibold text-white shadow-brand"
+            className="inline-flex h-12 flex-[1.3] items-center justify-center gap-1.5 rounded-xl bg-primary text-[0.95rem] font-semibold text-white"
           >
             Zastosuj
             {activeCount > 0 && <span className="font-mono text-[0.78rem] opacity-90">({activeCount})</span>}

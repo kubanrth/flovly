@@ -165,7 +165,7 @@ function Toggle({
       onClick={onChange}
       data-checked={checked ? "true" : "false"}
       data-destructive={destructive ? "true" : "false"}
-      className="group relative inline-flex h-[24px] w-[42px] shrink-0 items-center rounded-full border border-border bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 data-[checked=true]:bg-brand-gradient data-[checked=true]:data-[destructive=true]:bg-[linear-gradient(135deg,#F43F5E,#E1318F)] data-[checked=true]:border-transparent"
+      className="group relative inline-flex h-[24px] w-[42px] shrink-0 items-center rounded-full border border-border bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 data-[checked=true]:bg-primary data-[checked=true]:data-[destructive=true]:bg-[linear-gradient(135deg,#F43F5E,#E04E00)] data-[checked=true]:border-transparent"
     >
       <span
         aria-hidden
@@ -187,7 +187,7 @@ function ConfirmKillSwitch({
   onConfirm: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4">
       <div className="relative flex w-[min(440px,100%)] flex-col gap-4 rounded-2xl border border-destructive/40 bg-card p-6 shadow-[0_24px_48px_-12px_rgba(244,63,94,0.25)]">
         <div className="flex items-start gap-3">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-destructive/12 text-destructive">

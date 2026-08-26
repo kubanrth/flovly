@@ -19,14 +19,14 @@ export function CzesiekMessage({ msg }: { msg: ChatMessageRow }) {
   return (
     <div className={`flex gap-2 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
       {!isUser && (
-        <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand-gradient text-white shadow-sm">
+        <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-white shadow-sm">
           <Bot size={14} />
         </div>
       )}
       <div
         className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[0.88rem] leading-[1.55] ${
           isUser
-            ? "rounded-tr-md bg-brand-gradient text-white shadow-brand"
+            ? "rounded-tr-md bg-primary text-white "
             : "rounded-tl-md border border-border bg-card text-foreground"
         }`}
       >

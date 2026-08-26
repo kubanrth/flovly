@@ -40,7 +40,7 @@ export function SalesRemindersTile({
         </div>
         <p className="text-[0.88rem] text-muted-foreground">
           Brak ustawionych przypomnień. Wejdź w dowolny deal, ustaw datę w
-          polu „Przypomnienie" i system wyśle mailem przed terminem.
+          polu „Przypomnienie” i system wyśle mailem przed terminem.
         </p>
       </section>
     );
@@ -53,7 +53,7 @@ export function SalesRemindersTile({
     <section className="flex flex-col gap-3 rounded-xl border border-border bg-card px-4 py-4 md:px-5 md:py-5">
       <div className="flex items-baseline justify-between gap-3">
         <div className="flex items-center gap-2">
-          <BellRing size={13} className="text-fuchsia-600 dark:text-fuchsia-400" />
+          <BellRing size={13} className="text-fuchsia-600" />
           <span className="eyebrow">Nadchodzące przypomnienia</span>
         </div>
         <span className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground">
@@ -64,6 +64,7 @@ export function SalesRemindersTile({
       <ul className="flex flex-col gap-1">
         {visible.map((r) => {
           const due = new Date(r.reminderAt);
+          // eslint-disable-next-line react-hooks/purity
           const past = due.getTime() < Date.now();
           return (
             <li key={r.dealId}>
@@ -87,7 +88,7 @@ export function SalesRemindersTile({
                   </span>
                   {r.note && (
                     <span className="mt-0.5 line-clamp-2 text-[0.78rem] italic leading-[1.4] text-muted-foreground/90">
-                      „{r.note}"
+                      „{r.note}”
                     </span>
                   )}
                 </div>
@@ -96,8 +97,8 @@ export function SalesRemindersTile({
                     past
                       ? "border border-destructive/40 bg-destructive/10 text-destructive"
                       : r.sent
-                        ? "border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                        : "border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300"
+                        ? "border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 "
+                        : "border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-700 "
                   }`}
                 >
                   <Clock size={9} />

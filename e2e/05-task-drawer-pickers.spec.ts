@@ -1,130 +1,91 @@
-import { test, expect, type Page } from "@playwright/test";
-import { test as baseTest } from "./fixtures/console-errors";
+import { test, expect } from "./fixtures/console-errors";
+import { gotoFirstBoard, openFirstTask, taskDrawer } from "./helpers";
 
 // 05 — MOST IMPORTANT regression suite (F12-K101 z-index stacking).
-// Open any existing task drawer, then verify each picker popover is:
-//   1. Visible
-//   2. Above any backdrop (clicking inside doesn't dismiss)
-//   3. Saves a value
-//   4. Re-opens with the saved value after reload
-//
-// We use a helper to find ANY task drawer trigger on the first reachable
-// board/table view. If none exists, skip rather than create one (keeps
-// the test focused on the picker behaviour).
-async function openFirstTaskDrawer(page: Page) {
-  await page.goto("/workspaces");
-  await page.locator('a[href^="/w/"]').first().click();
-  await page.waitForURL(/\/w\/[^/]+/);
-  await page.locator('a[href*="/b/"]').first().click();
-  await page.waitForURL(/\/b\/[^/]+/, { timeout: 10_000 });
+// Open an existing task drawer, then verify each picker popover is visible
+// (a popover under the backdrop renders but never becomes "visible" to
+// Playwright's hit-testing, so toBeVisible on its content is the assertion).
 
-  // First task row title cell — implementations vary, try a couple of selectors.
-  const taskTitle = page
-    .locator('[data-task-id], [data-testid="task-row"] a, table tbody tr td a')
-    .first();
-  if (!(await taskTitle.isVisible().catch(() => false))) {
-    return null;
-  }
-  await taskTitle.click();
-  const drawer = page.locator('[role="dialog"], [data-testid="task-drawer"]').first();
-  await drawer.waitFor({ state: "visible", timeout: 5_000 });
-  return drawer;
-}
-
-// Each picker test is wrapped so a missing trigger SKIPS instead of failing —
-// some users may have removed/renamed sub-features.
-async function openPickerByLabel(page: Page, label: RegExp) {
-  const trigger = page.getByRole("button", { name: label }).first();
-  if (!(await trigger.isVisible().catch(() => false))) return null;
-  await trigger.click();
-  // Wait for any popover to appear.
-  const popover = page.locator('[role="dialog"], [role="menu"], [data-state="open"]').last();
-  await popover.waitFor({ state: "visible", timeout: 3_000 }).catch(() => {});
-  return popover;
-}
-
-baseTest.describe("task drawer pickers (F12-K101 regression)", () => {
-  baseTest.beforeEach(async ({ page }) => {
-    const drawer = await openFirstTaskDrawer(page);
-    if (!drawer) baseTest.skip(true, "No task available to open");
+test.describe("task drawer pickers (F12-K101 regression)", () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoFirstBoard(page);
+    await openFirstTask(page);
   });
 
-  baseTest("status picker — opens, clickable above backdrop", async ({ page }) => {
-    const pop = await openPickerByLabel(page, /status/i);
-    if (!pop) baseTest.skip(true, "status trigger not found");
-    await expect(pop!).toBeVisible();
-    // F12-K101 root: popover under backdrop ⇒ pointer-events: none.
-    // We assert at least one option inside the popover is clickable.
-    const option = pop!.getByRole("option").or(pop!.getByRole("menuitem")).first();
-    await expect(option).toBeVisible();
+  test("status picker — opens, options visible above backdrop", async ({ page }) => {
+    await taskDrawer(page).locator('button[aria-haspopup="listbox"]').first().click();
+    await expect(page.getByRole("option").first()).toBeVisible();
   });
 
-  baseTest("priority picker — opens", async ({ page }) => {
-    const pop = await openPickerByLabel(page, /priorytet|priority/i);
-    if (!pop) baseTest.skip(true, "priority trigger not found");
-    await expect(pop!).toBeVisible();
+  test("priority picker — opens", async ({ page }) => {
+    await taskDrawer(page).locator('button[title="Zmień priorytet"]').click();
+    await expect(page.getByRole("menuitemradio").first()).toBeVisible();
   });
 
-  baseTest("start date picker — calendar visible", async ({ page }) => {
-    const pop = await openPickerByLabel(page, /start|początek/i);
-    if (!pop) baseTest.skip(true, "start date trigger not found");
-    await expect(pop!.locator('[role="grid"], .rdp, [data-rdp-root]')).toBeVisible({
-      timeout: 3_000,
-    });
+  test("start date picker — calendar visible", async ({ page }) => {
+    await taskDrawer(page).getByRole("button", { name: "Data startu" }).click();
+    await expect(page.locator('.rdp-host [role="grid"]').last()).toBeVisible();
   });
 
-  baseTest("end date picker — calendar visible", async ({ page }) => {
-    const pop = await openPickerByLabel(page, /koniec|deadline|due/i);
-    if (!pop) baseTest.skip(true, "end date trigger not found");
-    await expect(pop!.locator('[role="grid"], .rdp, [data-rdp-root]')).toBeVisible({
-      timeout: 3_000,
-    });
+  test("end date picker — calendar visible", async ({ page }) => {
+    await taskDrawer(page).getByRole("button", { name: "Data końca" }).click();
+    await expect(page.locator('.rdp-host [role="grid"]').last()).toBeVisible();
   });
 
-  baseTest("assignees picker — member list visible", async ({ page }) => {
-    const pop = await openPickerByLabel(page, /przypisz|assignee|członek/i);
-    if (!pop) baseTest.skip(true, "assignees trigger not found");
-    await expect(pop!).toBeVisible();
+  test("assignees picker — member search visible", async ({ page }) => {
+    await taskDrawer(page).getByRole("button", { name: "Dodaj osobę" }).click();
+    await expect(page.getByLabel("Szukaj osoby")).toBeVisible();
   });
 
-  baseTest("tags picker — list visible", async ({ page }) => {
-    const pop = await openPickerByLabel(page, /tag|etykiet/i);
-    if (!pop) baseTest.skip(true, "tags trigger not found");
-    await expect(pop!).toBeVisible();
+  test("tags picker — tag search visible", async ({ page }) => {
+    await taskDrawer(page).getByRole("button", { name: /dodaj tag/i }).click();
+    await expect(page.getByLabel("Szukaj tagu")).toBeVisible();
   });
 
-  baseTest("milestone picker — opens", async ({ page }) => {
-    const pop = await openPickerByLabel(page, /milestone|kamień|cel/i);
-    if (!pop) baseTest.skip(true, "milestone trigger not found");
-    await expect(pop!).toBeVisible();
+  test("milestone picker — opens", async ({ page }) => {
+    await taskDrawer(page).getByLabel("Wybierz milestone").click();
+    // Either the option list or the empty hint (seed has no milestones).
+    await expect(
+      page.getByRole("option").or(page.getByText("Utwórz milestone w roadmapie")).first(),
+    ).toBeVisible();
   });
 
-  baseTest("recurrence picker — opens", async ({ page }) => {
-    const pop = await openPickerByLabel(page, /powtarz|recurr|co tydzień/i);
-    if (!pop) baseTest.skip(true, "recurrence trigger not found");
-    await expect(pop!).toBeVisible();
+  test("recurrence picker — inline radiogroup visible", async ({ page }) => {
+    const group = taskDrawer(page).getByRole("radiogroup", { name: "Częstotliwość powtarzania" });
+    await expect(group).toBeVisible();
+    await expect(group.getByRole("radio", { name: "Co tydzień" })).toBeVisible();
   });
 
-  baseTest("reminder picker — opens", async ({ page }) => {
-    const pop = await openPickerByLabel(page, /przypomnien|reminder/i);
-    if (!pop) baseTest.skip(true, "reminder trigger not found");
-    await expect(pop!).toBeVisible();
+  test("reminder picker — inline radiogroup visible", async ({ page }) => {
+    const group = taskDrawer(page).getByRole("radiogroup", { name: "Czas przypomnienia" });
+    await expect(group).toBeVisible();
+    await expect(group.getByRole("radio", { name: "1 h" })).toBeVisible();
   });
 
-  baseTest("title autosave (F12-K96)", async ({ page }) => {
-    const titleField = page.locator('[contenteditable="true"], textarea, input[name="title"]').first();
-    if (!(await titleField.isVisible().catch(() => false))) {
-      baseTest.skip(true, "task title field not found in drawer");
-    }
+  test("title autosave on blur (F12-K96)", async ({ page }) => {
+    const title = () => page.getByLabel("Tytuł zadania");
+    const original = await title().inputValue();
     const newTitle = `autosave-${Date.now()}`;
-    await titleField.fill(newTitle);
-    await titleField.blur();
-    await page.waitForTimeout(1500); // give autosave a beat
+
+    // Enter = blur → patchTaskAction, a server-action POST whose FormData
+    // carries `title`. Match on the body (other actions fire while the drawer
+    // is open) and wait for the streamed response to finish, not just headers.
+    const save = () =>
+      page.waitForResponse(
+        (r) => r.request().method() === "POST" && (r.request().postData() ?? "").includes('name="1_title"'),
+      );
+    await title().fill(newTitle);
+    let saved = save();
+    await title().press("Enter");
+    await (await saved).finished();
+
     await page.reload();
-    // After reload, drawer may close — re-open it isn't easy w/o the id, so we
-    // just assert the title is visible somewhere on the page.
-    await expect(page.getByText(newTitle).first()).toBeVisible({ timeout: 10_000 });
+    await expect(title()).toHaveValue(newTitle, { timeout: 10_000 });
+
+    // Restore the seed title so the board stays stable across runs.
+    await title().fill(original);
+    saved = save();
+    await title().press("Enter");
+    await (await saved).finished();
   });
 });
-
-export { expect };

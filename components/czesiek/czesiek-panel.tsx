@@ -39,6 +39,18 @@ export function CzesiekPanel({
   const [mobileSessionsOpen, setMobileSessionsOpen] = useState(false);
   const fetchedRef = useRef(false);
 
+  const loadSession = useCallback(async (id: string) => {
+    setActiveSessionId(id);
+    // F12-K88: na mobile po wybraniu sesji zamykamy drawer (UX expected
+    // dla slide-in nav patterns). Na desktop sidebar jest zawsze widoczny
+    // więc setState na false jest no-op visually.
+    setMobileSessionsOpen(false);
+    const res = await fetch(`/api/chat/sessions/${id}`);
+    if (!res.ok) return;
+    const data = (await res.json()) as { messages: ChatMessageRow[] };
+    setMessages(data.messages);
+  }, []);
+
   // ─────────── Fetch sessions on first open ───────────
   useEffect(() => {
     if (!open || fetchedRef.current) return;
@@ -69,17 +81,6 @@ export function CzesiekPanel({
     return () => window.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
-  const loadSession = useCallback(async (id: string) => {
-    setActiveSessionId(id);
-    // F12-K88: na mobile po wybraniu sesji zamykamy drawer (UX expected
-    // dla slide-in nav patterns). Na desktop sidebar jest zawsze widoczny
-    // więc setState na false jest no-op visually.
-    setMobileSessionsOpen(false);
-    const res = await fetch(`/api/chat/sessions/${id}`);
-    if (!res.ok) return;
-    const data = (await res.json()) as { messages: ChatMessageRow[] };
-    setMessages(data.messages);
-  }, []);
 
   const handleNew = useCallback(() => {
     setActiveSessionId(null);
@@ -214,9 +215,9 @@ export function CzesiekPanel({
         style={{ pointerEvents: open ? "auto" : "none" }}
       >
         {/* Header — F12-K81 v4 brand polish:
-            - Avatar: 34×34 rounded-xl bg-brand-gradient ze "At" literami w centrum
+            - Avatar: 34×34 rounded-xl bg-primary ze "At" literami w centrum
               (1:1 z Flovly Components spec P4, linia 434).
-            - Tytuł: text-brand-gradient żeby brand drift na nazwę produktu.
+            - Tytuł:  żeby brand drift na nazwę produktu.
             - F12-K88: hamburger (mobile only) po lewej do toggla sessions
               drawer; powiększony X close po prawej (h-10 mobile / h-7 desktop)
               dla touch-friendly 40px target (WCAG 2.5.8 min 24px met). */}
@@ -233,16 +234,16 @@ export function CzesiekPanel({
             </button>
             <span
               aria-hidden="true"
-              className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-xl bg-brand-gradient text-[0.82rem] font-bold leading-none text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_6px_16px_-5px_rgba(122,51,236,0.65)]"
+              className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-xl bg-primary text-[0.82rem] font-bold leading-none text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_6px_16px_-5px_rgba(122,51,236,0.65)]"
             >
               At
             </span>
             <div className="flex min-w-0 flex-col">
-              <span className="truncate font-display text-[0.95rem] font-bold leading-none text-brand-gradient">
+              <span className="truncate font-display text-[0.95rem] font-bold leading-none">
                 Ateron AI
               </span>
               <span className="mt-1 truncate font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground/70">
-                Twój asystent workspace'u
+                Twój asystent workspace&apos;u
               </span>
             </div>
           </div>

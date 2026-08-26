@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { Sidebar } from "@/components/layout/sidebar";
-import type { SidebarWorkspace } from "@/components/layout/sidebar";
+import { Suspense } from "react";
+import { AppFrame } from "@/components/layout/app-frame";
+import type { ShellBoard, SidebarWorkspace } from "@/components/layout/shell-types";
 import { parseEnabledViews } from "@/lib/board-views";
 import { ReminderPopups } from "@/components/reminders/reminder-popups";
 import { NotificationToaster } from "@/components/notifications/notification-toaster";
@@ -10,213 +11,128 @@ import { CommandPalette } from "@/components/search/command-palette";
 import type { CommandPaletteData } from "@/components/search/command-palette";
 import { OnboardingTour } from "@/components/onboarding/onboarding-tour";
 import { RouteTracker } from "@/components/layout/route-tracker";
-import { Suspense } from "react";
+import { RouteFrame } from "@/components/layout/route-frame";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user) redirect("/secure-access-portal");
+  const userId = session.user.id;
 
   // Fresh user read — JWT session is cached, DB is source of truth for avatar/name.
-  const [user, memberships, unreadNotifs, openSupportTickets, dueReminders] = await Promise.all([
-    db.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        avatarUrl: true,
-        isSuperAdmin: true,
-        // F12-K83: null = first login → render <OnboardingTour />.
-        onboardingCompletedAt: true,
-      },
-    }),
-    db.workspaceMembership.findMany({
-      where: { userId: session.user.id, workspace: { deletedAt: null } },
-      include: {
-        workspace: {
-          include: {
-            // Fetch all boards unrestricted; filter per role below
-            // (ADMIN sees all, MEMBER/VIEWER sees PUBLIC + explicit memberships).
-            boards: {
-              where: { deletedAt: null },
-              orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-              select: {
-                id: true,
-                name: true,
-                visibility: true,
-                memberships: {
-                  where: { userId: session.user.id },
-                  select: { id: true },
-                },
+  const [user, memberships, unreadNotifs, openSupportTickets, dueReminders, myTasksCount, myAssignedTasks] =
+    await Promise.all([
+      db.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true, name: true, avatarUrl: true, isSuperAdmin: true, onboardingCompletedAt: true },
+      }),
+      db.workspaceMembership.findMany({
+        where: { userId, workspace: { deletedAt: null } },
+        include: {
+          workspace: {
+            include: {
+              // All boards; filtered per role below (ADMIN all, else PUBLIC + explicit membership).
+              boards: {
+                where: { deletedAt: null },
+                orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+                select: { id: true, name: true, visibility: true, memberships: { where: { userId }, select: { id: true } } },
               },
             },
           },
         },
-      },
-      // Order by workspace.order (user-set) instead of joinedAt.
-      orderBy: [
-        { workspace: { order: "asc" } },
-        { workspace: { createdAt: "asc" } },
-      ],
-    }),
-    db.notification.count({
-      where: { userId: session.user.id, readAt: null },
-    }),
-    // Active support ticket counts (OPEN + IN_PROGRESS) per workspace for
-    // the sidebar badge. Single groupBy avoids N+1 over workspaces.
-    db.supportTicket.groupBy({
-      by: ["workspaceId"],
-      where: {
-        status: { in: ["OPEN", "IN_PROGRESS"] },
-        workspace: {
-          deletedAt: null,
-          memberships: { some: { userId: session.user.id } },
-        },
-      },
-      _count: true,
-    }),
-    // Due, undismissed reminder popups; capped to prevent a runaway creator
-    // from DoSing the recipient's top-right corner.
-    db.personalReminder.findMany({
-      where: {
-        recipientId: session.user.id,
-        dueAt: { lte: new Date() },
-        dismissedAt: null,
-      },
-      orderBy: { dueAt: "asc" },
-      take: 5,
-      include: {
-        creator: { select: { id: true, name: true, email: true } },
-      },
-    }),
-  ]);
+        orderBy: [{ workspace: { order: "asc" } }, { workspace: { createdAt: "asc" } }],
+      }),
+      db.notification.count({ where: { userId, readAt: null } }),
+      db.supportTicket.groupBy({
+        by: ["workspaceId"],
+        where: { status: { in: ["OPEN", "IN_PROGRESS"] }, workspace: { deletedAt: null, memberships: { some: { userId } } } },
+        _count: true,
+      }),
+      db.personalReminder.findMany({
+        where: { recipientId: userId, dueAt: { lte: new Date() }, dismissedAt: null },
+        orderBy: { dueAt: "asc" },
+        take: 5,
+        include: { creator: { select: { id: true, name: true, email: true } } },
+      }),
+      // Sidebar badge "Zadania dla Ciebie": assigned tasks not in the last status column
+      // of their board (K91 heuristic — schema has no isDone flag; mirrors /my-tasks).
+      db.task
+        .findMany({
+          where: { assignees: { some: { userId } }, deletedAt: null, board: { deletedAt: null, workspace: { deletedAt: null } } },
+          select: { statusColumn: { select: { order: true } }, board: { select: { statusColumns: { select: { order: true } } } } },
+        })
+        .then((rows) =>
+          rows.filter((r) => {
+            if (!r.statusColumn) return true;
+            const max = Math.max(-1, ...r.board.statusColumns.map((c) => c.order));
+            return r.statusColumn.order !== max;
+          }).length,
+        ),
+      // Top 5 for Cmd+K (K85).
+      db.task.findMany({
+        where: { assignees: { some: { userId } }, deletedAt: null, board: { deletedAt: null, workspace: { deletedAt: null } } },
+        orderBy: { updatedAt: "desc" },
+        take: 5,
+        select: { id: true, title: true, boardId: true, workspaceId: true, workspace: { select: { name: true } } },
+      }),
+    ]);
   if (!user) redirect("/secure-access-portal");
 
   const supportCountByWs = new Map<string, number>(
-    openSupportTickets.map((row) => [
-      row.workspaceId,
-      typeof row._count === "number" ? row._count : 0,
-    ]),
+    openSupportTickets.map((row) => [row.workspaceId, typeof row._count === "number" ? row._count : 0]),
   );
 
-  // F12-K85 perf: top 5 tasków (zmniejszone z 10) dla Cmd+K palette.
-  // SSR fetch na każdy render layout (app) — klient zgłasza zamulanie.
-  // TODO: w kolejnym sprincie wyciągnij to do lazy fetch przez /api/cmdk/tasks
-  // który strzela dopiero gdy user otworzy palette (większość pageview'ów nie
-  // wymaga tej listy w ogóle). Wtedy SSR layoutu staje się ~50ms szybszy.
-  const myAssignedTasks = await db.task.findMany({
-    where: {
-      assignees: { some: { userId: session.user.id } },
-      deletedAt: null,
-      board: { deletedAt: null, workspace: { deletedAt: null } },
-    },
-    orderBy: { updatedAt: "desc" },
-    take: 5,
-    select: {
-      id: true,
-      title: true,
-      boardId: true,
-      workspaceId: true,
-      workspace: { select: { name: true } },
-    },
-  });
-
   const workspaces: SidebarWorkspace[] = memberships.map((m) => {
-    // ADMINs see all boards; others see PUBLIC + explicit memberships.
-    const visibleBoards = m.workspace.boards.filter((b) => {
-      if (m.role === "ADMIN") return true;
-      if (b.visibility === "PUBLIC") return true;
-      return b.memberships.length > 0;
-    });
+    const visibleBoards = m.workspace.boards.filter(
+      (b) => m.role === "ADMIN" || b.visibility === "PUBLIC" || b.memberships.length > 0,
+    );
     return {
       id: m.workspace.id,
       name: m.workspace.name,
       slug: m.workspace.slug,
       role: m.role,
       boards: visibleBoards.map((b) => ({ id: b.id, name: b.name })),
-      // Sidebar expects uppercase ViewType.
-      enabledViews: parseEnabledViews(m.workspace.enabledViews).map((v) =>
-        v.toUpperCase(),
-      ) as SidebarWorkspace["enabledViews"],
+      enabledViews: parseEnabledViews(m.workspace.enabledViews).map((v) => v.toUpperCase()) as SidebarWorkspace["enabledViews"],
       openSupportCount: supportCountByWs.get(m.workspace.id) ?? 0,
     };
   });
 
-  // F12-K83: flatten data dla Cmd+K. Workspaces + ich boards (flat lista
-  // z workspaceName na każdej tablicy żeby user wiedział do której workspace
-  // tablica należy) + przypisane do mnie taski.
+  const boards: ShellBoard[] = workspaces.flatMap((w) =>
+    w.boards.map((b) => ({ id: b.id, name: b.name, workspaceId: w.id, workspaceName: w.name })),
+  );
+
   const commandPaletteData: CommandPaletteData = {
     workspaces: workspaces.map((w) => ({ id: w.id, name: w.name })),
-    boards: workspaces.flatMap((w) =>
-      w.boards.map((b) => ({
-        id: b.id,
-        name: b.name,
-        workspaceId: w.id,
-        workspaceName: w.name,
-      })),
-    ),
+    boards,
     tasks: myAssignedTasks.map((t) => ({
-      id: t.id,
-      title: t.title,
-      boardId: t.boardId,
-      workspaceId: t.workspaceId,
-      workspaceName: t.workspace.name,
+      id: t.id, title: t.title, boardId: t.boardId, workspaceId: t.workspaceId, workspaceName: t.workspace.name,
     })),
   };
 
   return (
-    // Subtle radial gradient gives the sidebar glass something to blur over
-    // — flat color makes the glass look flat. Theme-independent.
-    <div
-      style={{
-        background:
-          "radial-gradient(900px 600px at 18% 30%, rgba(124,92,255,0.10), transparent 60%), radial-gradient(700px 500px at 85% 70%, rgba(255,156,230,0.05), transparent 60%), var(--background)",
-      }}
-      className="flex min-h-dvh"
+    <AppFrame
+      user={{ id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl, isSuperAdmin: user.isSuperAdmin }}
+      workspaces={workspaces}
+      boards={boards}
+      unreadNotificationCount={unreadNotifs}
+      myTasksCount={myTasksCount}
     >
-      <Sidebar
-        user={{
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          avatarUrl: user.avatarUrl,
-          isSuperAdmin: user.isSuperAdmin,
-        }}
-        workspaces={workspaces}
-        unreadNotificationCount={unreadNotifs}
-      />
-      {/* max-md:pt-14 clears the fixed hamburger (top-3 h-11) on mobile so
-          page h1s aren't hidden behind it. Desktop sidebar is inline so no padding. */}
-      <div className="flex min-w-0 flex-1 flex-col max-md:pt-14">{children}</div>
+      <RouteFrame>{children}</RouteFrame>
 
       <ReminderPopups
         userId={user.id}
         initial={dueReminders.map((r) => ({
-          id: r.id,
-          title: r.title,
-          body: r.body,
+          id: r.id, title: r.title, body: r.body,
           creatorName: r.creator.name ?? r.creator.email,
-          isSelfAuthored: r.creator.id === session.user.id,
+          isSelfAuthored: r.creator.id === userId,
         }))}
       />
-      {/* Global notification toaster (mention/assign/poll/support). Independent
-          from ReminderPopups — different data source (Notification vs PersonalReminder). */}
       <NotificationToaster userId={user.id} />
-
-      {/* F12-K83: globalny Cmd+K palette. Data fetchowany w (app) layoucie
-          żeby paleta otwierała się natychmiast bez API roundtripa. */}
       <CommandPalette data={commandPaletteData} />
-
-      {/* F12-K83: onboarding tour tylko gdy pierwszy login (flag w User).
-          Modal closeuje się sam i zapisuje flagę przez completeOnboardingAction. */}
       {user.onboardingCompletedAt === null && <OnboardingTour />}
-
-      {/* F12-K135: śledzi ostatnią nie-taskową ścieżkę — TaskModalShell
-          wraca do niej po zamknięciu drawer'a. Suspense wymagany przez
-          useSearchParams w client component pod server layoutem. */}
+      {/* K135: last non-task path + scroll for TaskModalShell return-to. */}
       <Suspense fallback={null}>
         <RouteTracker />
       </Suspense>
-    </div>
+    </AppFrame>
   );
 }

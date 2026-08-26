@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 
 import { signOutAction } from "@/app/(app)/actions";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { cn } from "@/lib/utils";
 
 export interface ProfileDropdownUser {
@@ -74,15 +73,15 @@ export function ProfileDropdown({
         >
           <PopoverPrimitive.Popup
             className={cn(
-              "popover-glass w-[300px] overflow-hidden p-0",
+              "popover-surface w-[300px] overflow-hidden p-0",
               "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 duration-100",
             )}
           >
             {/* Header: avatar + name + email */}
-            <div className="flex items-center gap-3 border-b border-black/5 px-4 py-3.5 dark:border-white/10">
+            <div className="flex items-center gap-3 border-b border-black/5 px-4 py-3.5">
               <span
                 className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-xl font-display text-[14px] font-bold text-white"
-                style={{ background: "linear-gradient(140deg,#7C5CFF,#E1318F)" }}
+                style={{ background: "#FF5C00" }}
               >
                 {user.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -112,7 +111,7 @@ export function ProfileDropdown({
                   render={
                     <Link
                       href={it.href}
-                      className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[14px] text-foreground/80 transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/[0.06]"
+                      className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[14px] text-foreground/80 transition-colors hover:bg-black/5 hover:text-foreground ]"
                     >
                       <span className="text-foreground/60">{it.icon}</span>
                       <span className="flex-1">{it.label}</span>
@@ -125,11 +124,10 @@ export function ProfileDropdown({
                 />
               ))}
 
-              <div className="my-1 h-px bg-black/5 dark:bg-white/[0.06]" />
+              <div className="my-1 h-px bg-black/5 ]" />
 
-              <ThemeToggle variant="menu-item" />
 
-              <div className="my-1 h-px bg-black/5 dark:bg-white/[0.06]" />
+              <div className="my-1 h-px bg-black/5 ]" />
 
               {/* signOutAction zostaje 1:1 — żadnej zmiany auth flow. */}
               <form action={signOutAction}>

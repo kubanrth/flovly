@@ -331,7 +331,7 @@ export function KanbanBoard({
   };
 
   return (
-    <DndContext
+    <DndContext id="kanban"
       sensors={sensors}
       collisionDetection={collisionDetection}
       // Force re-measurement of droppable rects on every layout change. Without
@@ -365,16 +365,16 @@ export function KanbanBoard({
         },
       }}
     >
-      {/* v4: Kontener kanbanu = jedna karta glass rounded-[22px] z brand-tinted
+      {/* v4: Kontener kanbanu = jedna karta plain rounded-[22px] z brand-tinted
           shadow. Wewnątrz: internal header + rail kolumn.
           BoardHeader pozostaje NA ZEWNĄTRZ tej karty — to jest osobny element. */}
-      <div className="relative overflow-hidden rounded-[22px] border border-border/60 bg-card/60 shadow-aura backdrop-blur-md dark:border-white/[0.07] dark:bg-white/[0.04]">
+      <div className="relative overflow-hidden rounded-[22px] border border-border/60 bg-card/60 ] ]">
         {/* INTERNAL HEADER — v4 calendar-style row: title eyebrow left,
             actions right ("Kolumny" ghost + "+ Zadanie" gradient). */}
-        <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-white/[0.02] px-4 py-3 dark:border-white/[0.06] dark:bg-white/[0.02]">
+        <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-white/[0.02] px-4 py-3 ] ]">
           <div className="flex items-center gap-2 min-w-0">
             <span
-              className="h-2 w-2 shrink-0 rounded-full bg-brand-gradient"
+              className="h-2 w-2 shrink-0 rounded-full bg-primary"
               aria-hidden
             />
             <span className="truncate font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">
@@ -386,7 +386,7 @@ export function KanbanBoard({
               <button
                 type="button"
                 onClick={handleHeaderColumns}
-                className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border/60 bg-transparent px-2.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/40 hover:bg-white/[0.04] hover:text-foreground dark:border-white/[0.10] dark:hover:bg-white/[0.04]"
+                className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border/60 bg-transparent px-2.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/40 hover:bg-white/[0.04] hover:text-foreground ] ]"
                 aria-label="Przewiń do zarządzania kolumnami"
               >
                 <Columns3 size={12} strokeWidth={2} />
@@ -397,7 +397,7 @@ export function KanbanBoard({
               <button
                 type="button"
                 onClick={handleHeaderAddTask}
-                className="inline-flex h-7 items-center gap-1.5 rounded-md bg-brand-gradient px-2.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-white shadow-brand transition-opacity hover:opacity-95"
+                className="inline-flex h-7 items-center gap-1.5 rounded-md bg-primary px-2.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-95"
                 aria-label="Dodaj zadanie do pierwszej kolumny"
               >
                 <Plus size={12} strokeWidth={2.4} />
@@ -447,7 +447,7 @@ export function KanbanBoard({
         </div>
 
         {/* FOOTER hint — jak w v4 referencji każda board-view karta ma hint. */}
-        <div className="border-t border-border/60 bg-white/[0.02] px-4 py-2.5 dark:border-white/[0.06] dark:bg-white/[0.02]">
+        <div className="border-t border-border/60 bg-white/[0.02] px-4 py-2.5 ] ]">
           <span className="font-mono text-[0.66rem] text-muted-foreground/70">
             Hint · przeciągnij kartę między kolumnami aby zmienić status
           </span>
@@ -474,7 +474,7 @@ export function KanbanBoard({
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// COLUMN — v4: glass-surface kolumna z grip-handle + color-dot + count.
+// COLUMN — v4: surface kolumna z grip-handle + color-dot + count.
 // Sticky header zostaje (sticky top-0 wewnątrz overflow body).
 // ══════════════════════════════════════════════════════════════════════════
 
@@ -539,18 +539,18 @@ function Column({
 
   return (
     <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-      {/* v4: kolumna = glass surface, rounded-[15px] (z designu), border subtle.
+      {/* v4: kolumna = plain surface, rounded-[15px] (z designu), border subtle.
           flex-col z body który scrolluje samodzielnie (header sticky).
-          Spec: bg-white/3 + border-white/7 + backdrop-blur. */}
+          Spec: bg-white/3 + border-white/7 + . */}
       <div
         role="group"
         aria-label={`Kolumna ${name}, ${tasks.length} ${tasks.length === 1 ? "zadanie" : "zadań"}`}
-        className={`group/col flex ${COLUMN_W_BASE} ${COLUMN_W_MD} shrink-0 snap-start flex-col overflow-hidden rounded-[15px] border border-border/50 bg-white/[0.03] md:snap-none dark:border-white/[0.07] dark:bg-white/[0.04]`}
+        className={`group/col flex ${COLUMN_W_BASE} ${COLUMN_W_MD} shrink-0 snap-start flex-col overflow-hidden rounded-[15px] border border-border/50 bg-white/[0.03] md:snap-none ] ]`}
       >
         {/* HEADER — sticky w obrębie kolumny.
             Layout: grip-icon (drag/reorder visual cue) + color-dot + nazwa (bold) +
             count (mała szara) + chevrons reorder z prawej. */}
-        <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-white/[0.07] bg-card/95 px-3 py-3 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] dark:border-white/[0.07] dark:bg-card/95">
+        <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-white/[0.07] bg-card/95 px-3 py-3 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] ]">
           {/* Grip icon — 6 kropek z designu, czysto wizualny (sygnał reorder) */}
           <GripVertical
             size={13}
@@ -580,7 +580,7 @@ function Column({
                 disabled={isFirstReal}
                 aria-label="Przesuń kolumnę w lewo"
                 title="Przesuń kolumnę w lewo"
-                className="grid h-5 w-5 place-items-center rounded-md text-muted-foreground/60 transition-colors hover:bg-white/[0.06] hover:text-foreground disabled:cursor-not-allowed disabled:opacity-25 disabled:hover:bg-transparent dark:hover:bg-white/[0.06]"
+                className="grid h-5 w-5 place-items-center rounded-md text-muted-foreground/60 transition-colors hover:bg-white/[0.06] hover:text-foreground disabled:cursor-not-allowed disabled:opacity-25 disabled:hover:bg-transparent ]"
               >
                 <ChevronLeft size={12} />
               </button>
@@ -590,7 +590,7 @@ function Column({
                 disabled={isLastReal}
                 aria-label="Przesuń kolumnę w prawo"
                 title="Przesuń kolumnę w prawo"
-                className="grid h-5 w-5 place-items-center rounded-md text-muted-foreground/60 transition-colors hover:bg-white/[0.06] hover:text-foreground disabled:cursor-not-allowed disabled:opacity-25 disabled:hover:bg-transparent dark:hover:bg-white/[0.06]"
+                className="grid h-5 w-5 place-items-center rounded-md text-muted-foreground/60 transition-colors hover:bg-white/[0.06] hover:text-foreground disabled:cursor-not-allowed disabled:opacity-25 disabled:hover:bg-transparent ]"
               >
                 <ChevronRight size={12} />
               </button>
@@ -717,7 +717,7 @@ function InlineAddTask({
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className="mt-1 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-left text-[0.78rem] font-medium text-muted-foreground transition-colors hover:bg-primary/[0.08] hover:text-primary dark:hover:bg-primary/[0.10]"
+        className="mt-1 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-left text-[0.78rem] font-medium text-muted-foreground transition-colors hover:bg-primary/[0.08] hover:text-primary ]"
       >
         <Plus size={14} strokeWidth={2} />
         <span>Nowe zadanie</span>
@@ -855,15 +855,15 @@ function CardShell({
     <article
       {...(hotkeyProps ?? {})}
       className={[
-        // v4: rounded-[13px], glass surface (bg-white/5, border-white/10),
+        // v4: rounded-[13px], plain surface (bg-white/5, border-white/10),
         // p-3. Light mode override przez non-dark fallback z bg-card.
         "group/card flex cursor-grab flex-col gap-2 rounded-[13px] border border-border/60 bg-card p-3",
-        "dark:border-white/[0.10] dark:bg-white/[0.05]",
+        "] ]",
         // v4: shadow 0 8px 18px -10px black (low-opacity drop shadow, jak w referencji).
-        "shadow-[0_8px_18px_-10px_rgba(46,19,52,0.12)] dark:shadow-[0_8px_18px_-10px_rgba(0,0,0,0.5)]",
-        // Hover: translate-y i glow (tylko transform + box-shadow — żadnego transition-all).
+        "shadow-[0_8px_18px_-10px_rgba(46,19,52,0.12)] ]",
+        // Hover: translate-y i glow (tylko transform + box-shadow — żadnego transition-colors).
         "transition-[transform,box-shadow,border-color] duration-200 ease-out",
-        "hover:-translate-y-px hover:border-primary/30 hover:shadow-[0_12px_26px_-10px_rgba(124,92,255,0.28)] dark:hover:border-primary/40",
+        "hover:-translate-y-px hover:border-primary/30 hover:shadow-[0_12px_26px_-10px_rgba(124,92,255,0.28)] ",
         "active:cursor-grabbing",
         // Drag state — silniejsza ramka + ring.
         dragging
@@ -935,7 +935,7 @@ function CardShell({
               <span
                 key={a.id}
                 title={a.name ?? a.email}
-                className="grid h-[22px] w-[22px] place-items-center overflow-hidden rounded-md border-2 border-card bg-brand-gradient font-display text-[0.55rem] font-bold text-white dark:border-[#0C0A14]"
+                className="grid h-[22px] w-[22px] place-items-center overflow-hidden rounded-md border-2 border-card bg-primary font-display text-[0.55rem] font-bold text-white ]"
               >
                 {a.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -947,7 +947,7 @@ function CardShell({
             ))}
             {extraAssignees > 0 && (
               <span
-                className="grid h-[22px] min-w-[22px] place-items-center rounded-md border-2 border-card bg-muted px-1 font-mono text-[0.56rem] font-bold text-muted-foreground dark:border-[#0C0A14]"
+                className="grid h-[22px] min-w-[22px] place-items-center rounded-md border-2 border-card bg-muted px-1 font-mono text-[0.56rem] font-bold text-muted-foreground ]"
                 title={`+${extraAssignees} więcej`}
               >
                 +{extraAssignees}
@@ -963,10 +963,10 @@ function CardShell({
               // v4: rounded-full px-2 py-0.5, 3-state palette.
               "inline-flex items-center rounded-full px-2 py-0.5 font-mono text-[0.65rem] font-semibold uppercase tabular-nums tracking-[0.04em]",
               dueState === "overdue"
-                ? "bg-rose-500/15 text-rose-500 dark:bg-rose-400/15 dark:text-rose-300"
+                ? "bg-rose-500/15 text-rose-500  "
                 : dueState === "today"
-                  ? "bg-amber-500/15 text-amber-700 dark:bg-amber-400/15 dark:text-amber-300"
-                  : "bg-primary/[0.10] text-primary dark:bg-primary/[0.14]",
+                  ? "bg-amber-500/15 text-amber-700  "
+                  : "bg-primary/[0.10] text-primary ]",
             ].join(" ")}
           >
             {new Date(task.stopAt).toLocaleDateString("pl-PL", {
@@ -1083,13 +1083,13 @@ function AddKanbanColumnButton({
   return (
     <>
       {/* v4: self-start + fixed height żeby trigger nie rozciągał się do wysokości
-          kolumn. Trigger dopasowany do v4 estetyki — dashed border, glass tint. */}
+          kolumn. Trigger dopasowany do v4 estetyki — dashed border, plain tint. */}
       <button
         ref={triggerRef}
         type="button"
         onClick={() => (open ? closeReset() : openWithCoords())}
         aria-label="Dodaj kolumnę"
-        className={`inline-flex h-[52px] ${COLUMN_W_BASE} ${COLUMN_W_MD} shrink-0 snap-start self-start items-center justify-center gap-2 rounded-[15px] border border-dashed border-white/[0.12] bg-white/[0.02] px-3 text-[0.78rem] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-white/[0.04] hover:text-foreground dark:border-white/[0.12] dark:bg-white/[0.02]`}
+        className={`inline-flex h-[52px] ${COLUMN_W_BASE} ${COLUMN_W_MD} shrink-0 snap-start self-start items-center justify-center gap-2 rounded-[15px] border border-dashed border-white/[0.12] bg-white/[0.02] px-3 text-[0.78rem] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-white/[0.04] hover:text-foreground ] ]`}
       >
         <Plus size={14} strokeWidth={2} />
         <span>Dodaj kolumnę</span>

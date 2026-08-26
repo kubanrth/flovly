@@ -226,11 +226,11 @@ export function ImportTasksDialog({
           if (!o) reset();
         }}
       >
-        <DialogContent className="dialog-glass rounded-2xl border-transparent sm:max-w-[680px]">
+        <DialogContent className="dialog-surface rounded-2xl border-transparent sm:max-w-[680px]">
           <DialogHeader>
             <span className="eyebrow">Import zadań</span>
             <DialogTitle className="font-display text-[1.45rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">
-              Wczytaj <span className="text-brand-gradient">CSV / XLSX</span>
+              Wczytaj <span className="">CSV / XLSX</span>
             </DialogTitle>
             <DialogDescription className="text-[0.9rem] leading-[1.55] text-muted-foreground">
               Przeciągnij plik albo kliknij &mdash; sprawdzimy nagłówki i automatycznie
@@ -395,7 +395,7 @@ export function ImportTasksDialog({
                   type="button"
                   onClick={handleImport}
                   disabled={importing || titleColIdx === -1}
-                  className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px] disabled:opacity-60"
+                  className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-5 font-sans text-[0.9rem] font-semibold text-white transition-[transform,opacity] hover:-translate-y-[1px] disabled:opacity-60"
                 >
                   {importing ? "Importuję…" : `Importuj ${parsed.rows.length} zadań`}
                 </button>

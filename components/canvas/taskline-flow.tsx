@@ -462,7 +462,7 @@ function LineSection({
       {isEmpty ? (
         <EmptyLineDropZone canEdit={canEdit} onDrop={(e) => onDrop(e, -1)} />
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <DndContext id="taskline" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={bodyIds} strategy={rectSortingStrategy}>
             <div
               // Grid daje przewidywalne 3 kafelki w rzędzie. Strzałki sa
@@ -775,8 +775,8 @@ function FlowMarkButton({
 }) {
   const activeCls =
     color === "emerald"
-      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-      : "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300";
+      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 "
+      : "border-rose-500/40 bg-rose-500/10 text-rose-700 ";
   return (
     <button
       type="button"

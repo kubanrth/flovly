@@ -2,10 +2,10 @@
 
 import { renameBoardAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
 import { EditableTitle } from "@/components/ui/editable-title";
+import { cn } from "@/lib/utils";
 
-// Cienki client wrapper dla board name inline edit. renameBoardAction
-// już istnieje (wcześniej tylko serwer, zero UI), tu po prostu wystawiamy go
-// w nagłówku BoardHeader przez generyczny EditableTitle.
+// Board name inline edit (A2: 20/600 + always-visible pencil). Thin wrapper
+// over EditableTitle → renameBoardAction.
 export function EditableBoardName({
   workspaceId,
   boardId,
@@ -23,7 +23,7 @@ export function EditableBoardName({
     <EditableTitle
       value={name}
       canEdit={canEdit}
-      className={className}
+      className={cn("text-lg font-semibold tracking-[-0.2px] [&>svg]:opacity-100", className)}
       maxLength={80}
       ariaLabel="Edytuj nazwę tablicy"
       onCommit={async (next) => {
@@ -31,8 +31,8 @@ export function EditableBoardName({
         fd.set("workspaceId", workspaceId);
         fd.set("id", boardId);
         fd.set("name", next);
-        // NIE set description — renameBoardAction po fix'ie pomija
-        // pole gdy nie podane, więc istniejący opis tablicy zostaje nietknięty.
+        // No description field — renameBoardAction skips it when absent, so
+        // the existing board description stays untouched.
         await renameBoardAction(fd);
       }}
     />

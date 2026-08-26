@@ -66,7 +66,7 @@ export default async function CanvasEditorPage({
 
   return (
     <div className="flex h-[calc(100dvh-4rem)] flex-col">
-      <header className="flex items-center justify-between border-b border-border bg-background/95 px-8 py-3 backdrop-blur md:px-14">
+      <header className="flex items-center justify-between border-b border-border bg-background/95 px-8 py-3 md:px-14">
         <div className="flex items-center gap-3">
           <Link
             href={`/w/${workspaceId}/canvases`}

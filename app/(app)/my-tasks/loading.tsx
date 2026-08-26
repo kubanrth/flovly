@@ -20,7 +20,7 @@ export default function MyTasksLoading() {
           <Skeleton className="h-9 w-24 rounded-lg" />
         </div>
 
-        <div className="relative overflow-hidden rounded-[22px] border border-white/60 bg-white/55 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.03]">
+        <div className="relative overflow-hidden rounded-[22px] border border-white/60 bg-white/55 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] ]">
           <div className="flex flex-col gap-2 px-4 py-4 md:px-5 md:py-5">
             {/* Section 1: Po terminie */}
             <section>
@@ -57,7 +57,7 @@ export default function MyTasksLoading() {
 
 function TaskRowSkeleton() {
   return (
-    <li className="flex items-center gap-3 rounded-[13px] border border-white/60 bg-white/70 px-3.5 py-3 dark:border-white/[0.08] dark:bg-white/[0.04]">
+    <li className="flex items-center gap-3 rounded-[13px] border border-white/60 bg-white/70 px-3.5 py-3 ] ]">
       <Skeleton className="h-3 w-10" />
       <Skeleton className="h-4 flex-1" />
       <Skeleton className="h-6 w-20 rounded-full" />

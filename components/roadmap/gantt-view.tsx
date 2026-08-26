@@ -131,7 +131,7 @@ export function GanttView({
 
   return (
     <div className="flex flex-col gap-5">
-      {/* v4 card — single rounded-[22px] glass surface with brand shadow.
+      {/* v4 card — single rounded-[22px] plain surface with brand shadow.
           Inside: column header (Zadanie + Tydz./Mies. pill switcher) + body
           (left task list, right timeline) + hint footer.
           Mobile (spec lines 81-96): hide timeline, list zajmuje 100% szerokości,
@@ -144,7 +144,7 @@ export function GanttView({
             style={{ width: TASK_COL_W }}
           >
             {/* Column header */}
-            <div className="flex items-center justify-between border-b border-border bg-card/60 px-4 py-[10px] backdrop-blur-xl">
+            <div className="flex items-center justify-between border-b border-border bg-card/60 px-4 py-[10px]">
               <span className="font-mono text-[0.7rem] font-bold uppercase tracking-[0.04em] text-muted-foreground">
                 Zadanie
               </span>
@@ -156,7 +156,7 @@ export function GanttView({
                   onClick={() => setZoom("week")}
                   className={`rounded-md px-2 py-[3px] font-mono text-[0.62rem] uppercase tracking-[0.04em] transition-colors ${
                     zoom === "week"
-                      ? "bg-brand-gradient font-semibold text-white shadow-brand"
+                      ? "bg-primary font-semibold text-white "
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -167,7 +167,7 @@ export function GanttView({
                   onClick={() => setZoom("month")}
                   className={`rounded-md px-2 py-[3px] font-mono text-[0.62rem] uppercase tracking-[0.04em] transition-colors ${
                     zoom === "month"
-                      ? "bg-brand-gradient font-semibold text-white shadow-brand"
+                      ? "bg-primary font-semibold text-white "
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -210,7 +210,7 @@ export function GanttView({
                 pill.tone === "danger"
                   ? "bg-destructive/15 text-destructive"
                   : pill.tone === "warn"
-                    ? "bg-amber-500/15 text-amber-600 dark:text-amber-300"
+                    ? "bg-amber-500/15 text-amber-600 "
                     : "bg-primary/12 text-primary";
               return (
                 <Link
@@ -238,7 +238,7 @@ export function GanttView({
                   </span>
                   {initials && (
                     <span
-                      className="ml-auto grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.54rem] font-bold text-white max-md:hidden"
+                      className="ml-auto grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.54rem] font-bold text-white max-md:hidden"
                       aria-label={t.assignee?.name ?? t.assignee?.email}
                     >
                       {t.assignee?.avatarUrl ? (
@@ -263,7 +263,7 @@ export function GanttView({
               renderowane bezpośrednio w wierszach po lewej (poniżej w pętli). */}
           <div className="relative min-w-0 flex-1 overflow-hidden max-md:hidden">
             {/* Tick header (week labels) */}
-            <div className="flex border-b border-border bg-card/60 backdrop-blur-xl">
+            <div className="flex border-b border-border bg-card/60">
               {range.ticks.map((t) => (
                 <div
                   key={t.ts}

@@ -252,7 +252,7 @@ function UserRow({ user, isSelf }: { user: UserRow; isSelf: boolean }) {
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
-          <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.68rem] font-bold text-white">
+          <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.68rem] font-bold text-white">
             {user.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={user.avatarUrl} alt="" width={32} height={32} className="h-full w-full object-cover" />

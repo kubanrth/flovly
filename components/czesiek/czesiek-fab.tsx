@@ -78,7 +78,7 @@ export function CzesiekFab({ workspaceId }: { workspaceId: string }) {
         // F12-K81 (v4 brand polish): square corners per Flovly Components
         // spec (P4 — Ateron AI · FAB 56×56 z rounded-[18px]). Wszystkie
         // 3 warstwy (button + sonar + halo) używają tego samego radius.
-        className="fixed z-30 grid h-14 w-14 place-items-center rounded-[18px] bg-brand-gradient text-white shadow-brand transition-[transform,box-shadow,opacity] duration-200 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary data-[open=true]:scale-90 data-[open=true]:opacity-0 md:!bottom-6 md:!right-6 md:h-[58px] md:w-[58px]"
+        className="fixed z-30 grid h-14 w-14 place-items-center rounded-[18px] bg-primary text-white transition-[transform,box-shadow,opacity] duration-200 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary data-[open=true]:scale-90 data-[open=true]:opacity-0 md:!bottom-6 md:!right-6 md:h-[58px] md:w-[58px]"
       >
         <span className="font-display text-[1.1rem] font-bold leading-none tracking-[-0.02em]">
           At
@@ -86,7 +86,7 @@ export function CzesiekFab({ workspaceId }: { workspaceId: string }) {
         {/* Soft halo — pulsująca poświata w miejscu (motion-reduce respect) */}
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -z-10 rounded-[18px] bg-brand-gradient opacity-50 blur-lg animate-pulse motion-reduce:animate-none"
+          className="pointer-events-none absolute inset-0 -z-10 rounded-[18px] bg-primary opacity-50 blur-lg animate-pulse motion-reduce:animate-none"
         />
       </button>
 

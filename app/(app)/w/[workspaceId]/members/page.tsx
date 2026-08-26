@@ -7,6 +7,7 @@ import { InviteForm } from "@/components/members/invite-form";
 import { MemberRow } from "@/components/members/member-row";
 import { PendingInviteRow } from "@/components/members/pending-invite-row";
 import { BoardMembersSection } from "@/components/members/board-members-section";
+import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 
 export default async function MembersPage({
   params,
@@ -21,7 +22,7 @@ export default async function MembersPage({
 
   const workspace = await db.workspace.findFirst({
     where: { id: workspaceId, deletedAt: null },
-    select: { id: true, ownerId: true, name: true },
+    select: { id: true, ownerId: true, name: true, slug: true, description: true },
   });
   if (!workspace) notFound();
 
@@ -77,14 +78,15 @@ export default async function MembersPage({
     : [];
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 md:gap-10">
+    <div className="flex flex-col gap-6 md:gap-10">
+      <WorkspaceHeader workspace={workspace} canEditSettings={can(ctx.role, "workspace.updateSettings")} />
       <div className="flex flex-col gap-2">
         <span className="eyebrow">Członkowie</span>
         <h2 className="font-display text-[1.4rem] leading-[1.1] tracking-[-0.02em] md:text-[1.8rem]">
           Kto pracuje w tej przestrzeni
         </h2>
         <p className="text-[0.88rem] leading-[1.5] text-muted-foreground md:text-[0.92rem] md:leading-[1.55]">
-          Admini mogą zapraszać do całego workspace'a albo do konkretnej
+          Admini mogą zapraszać do całego workspace&apos;a albo do konkretnej
           tablicy. Tablica może być publiczna (wszyscy widzą) lub prywatna
           (tylko wyraźnie dodani).
         </p>

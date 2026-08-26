@@ -34,6 +34,7 @@ export function PendingInviteRow({
 
   const daysLeft = Math.max(
     0,
+    // eslint-disable-next-line react-hooks/purity
     Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
   );
 

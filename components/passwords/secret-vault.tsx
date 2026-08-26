@@ -71,13 +71,13 @@ export function SecretVault({
           Manager haseł
         </h1>
         <p className="max-w-[62ch] text-[0.94rem] leading-[1.55] text-muted-foreground">
-          Wspólny sejf workspace'u. Hasła szyfrowane AES-256-GCM at-rest.
+          Wspólny sejf workspace&apos;u. Hasła szyfrowane AES-256-GCM at-rest.
           Widoczne po jawnym kliknięciu &quot;Pokaż&quot;.
         </p>
       </header>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <label className="flex h-10 flex-1 items-center gap-2 rounded-lg border border-border bg-card/60 px-3 text-[0.88rem] backdrop-blur focus-within:border-primary/50">
+        <label className="flex h-10 flex-1 items-center gap-2 rounded-lg border border-border bg-card/60 px-3 text-[0.88rem] focus-within:border-primary/50">
           <Search size={14} className="shrink-0 text-muted-foreground" />
           <input
             type="search"
@@ -90,7 +90,7 @@ export function SecretVault({
         <button
           type="button"
           onClick={() => setAddOpen(true)}
-          className="inline-flex h-10 items-center gap-2 self-start rounded-xl bg-brand-gradient px-4 font-sans text-[0.86rem] font-semibold text-white shadow-brand transition-transform hover:-translate-y-[1px]"
+          className="inline-flex h-10 items-center gap-2 self-start rounded-xl bg-primary px-4 font-sans text-[0.86rem] font-semibold text-white transition-transform hover:-translate-y-[1px]"
         >
           <Plus size={14} /> Nowy sekret
         </button>
@@ -108,7 +108,7 @@ export function SecretVault({
 
       {filtered.length === 0 && items.length > 0 && (
         <p className="text-[0.86rem] text-muted-foreground">
-          Nic nie pasuje do „{query}".
+          Nic nie pasuje do „{query}”.
         </p>
       )}
 
@@ -181,7 +181,7 @@ function SecretRow({ item }: { item: SecretListItem }) {
   return (
     <li className="flex flex-col gap-2 px-4 py-3">
       <div className="flex items-start gap-3">
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand-gradient text-white shadow-brand">
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary text-white">
           <KeyRound size={14} />
         </div>
         <div className="flex min-w-0 flex-1 flex-col">
@@ -299,7 +299,7 @@ function CreateSecretDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-background/70 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-background/70 sm:items-center"
       onClick={onClose}
     >
       <div
@@ -414,7 +414,7 @@ function CreateSecretDialog({
             <button
               type="submit"
               disabled={pending}
-              className="inline-flex h-10 items-center rounded-lg bg-brand-gradient px-4 font-sans text-[0.88rem] font-semibold text-white shadow-brand disabled:opacity-60"
+              className="inline-flex h-10 items-center rounded-lg bg-primary px-4 font-sans text-[0.88rem] font-semibold text-white disabled:opacity-60"
             >
               {pending ? "Zapisuję…" : "Zapisz"}
             </button>

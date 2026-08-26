@@ -59,6 +59,7 @@ export function SubscriptionsTable({
   members: WorkspaceMemberItem[];
 }) {
   const [rows, setRows] = useState<SubscriptionRow[]>(serverRows);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setRows(serverRows), [serverRows]);
   const [projectsOpen, setProjectsOpen] = useState(false);
   // Filtr widoku po projekcie ("" = wszystkie widoczne).
@@ -315,7 +316,7 @@ export function SubscriptionsTable({
         <button
           type="button"
           onClick={addRow}
-          className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand-gradient px-4 font-sans text-[0.86rem] font-semibold text-white shadow-brand transition-transform hover:-translate-y-[1px]"
+          className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 font-sans text-[0.86rem] font-semibold text-white transition-transform hover:-translate-y-[1px]"
         >
           <Plus size={14} /> Dodaj subskrypcję
         </button>
@@ -378,7 +379,7 @@ function ProjectsDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-background/70 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-background/70 sm:items-center"
       onClick={onClose}
     >
       <div
@@ -418,7 +419,7 @@ function ProjectsDialog({
             type="button"
             onClick={addProject}
             disabled={!newName.trim()}
-            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-brand-gradient px-3 text-[0.86rem] font-semibold text-white shadow-brand disabled:opacity-60"
+            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-3 text-[0.86rem] font-semibold text-white disabled:opacity-60"
           >
             <Plus size={14} /> Dodaj
           </button>

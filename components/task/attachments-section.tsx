@@ -282,7 +282,7 @@ function AttachmentTile({
           disabled={isPending}
           aria-label="Pobierz"
           title="Pobierz"
-          className="grid h-5 w-5 place-items-center rounded-md bg-background/80 text-muted-foreground backdrop-blur-sm transition-colors hover:text-foreground disabled:opacity-60"
+          className="grid h-5 w-5 place-items-center rounded-md bg-background/80 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60"
         >
           <Download size={11} />
         </button>
@@ -293,7 +293,7 @@ function AttachmentTile({
               type="submit"
               aria-label="Usuń"
               title="Usuń"
-              className="grid h-5 w-5 place-items-center rounded-md bg-background/80 text-muted-foreground backdrop-blur-sm transition-colors hover:text-destructive"
+              className="grid h-5 w-5 place-items-center rounded-md bg-background/80 text-muted-foreground transition-colors hover:text-destructive"
             >
               <Trash2 size={11} />
             </button>

@@ -75,7 +75,7 @@ export const MentionList = forwardRef<MentionListHandle, MentionListProps>(
               data-active={i === selected ? "true" : "false"}
               className="group flex items-center gap-2 rounded-sm px-2 py-1.5 text-[0.86rem] text-foreground transition-colors data-[active=true]:bg-accent"
             >
-              <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.58rem] font-bold text-white">
+              <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.58rem] font-bold text-white">
                 {m.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={m.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />

@@ -15,7 +15,7 @@ export function CollapsibleColumnManager(props: {
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-border bg-card/60 px-4 py-2 backdrop-blur">
+    <div className="flex flex-col gap-2 rounded-lg border border-border bg-card/60 px-4 py-2">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

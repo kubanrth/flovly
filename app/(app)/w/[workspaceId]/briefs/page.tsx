@@ -40,7 +40,7 @@ export default async function CreativeBriefsListPage({
         <div className="flex flex-col gap-2">
           <span className="eyebrow">Workspace</span>
           <h1 className="font-display text-[1.6rem] font-bold leading-[1.1] tracking-[-0.03em] md:text-[2.2rem]">
-            <span className="text-brand-gradient">Creative</span> Board.
+            <span className="">Creative</span> Board.
           </h1>
           <p className="max-w-[60ch] text-[0.88rem] leading-[1.5] text-muted-foreground md:text-[0.95rem] md:leading-[1.55]">
             Strukturalne dokumenty projektowe — cele, grupa docelowa,
@@ -79,7 +79,7 @@ export default async function CreativeBriefsListPage({
               >
                 <div
                   className="h-1 w-full rounded-full"
-                  style={{ background: b.headerColor ?? "#7C5CFF" }}
+                  style={{ background: b.headerColor ?? "#FF5C00" }}
                   aria-hidden
                 />
                 <div className="flex items-center gap-2">

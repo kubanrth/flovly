@@ -20,14 +20,14 @@ export default function AppNotFound() {
 
       {/* Gradient 404 mark — mobile spec calls for a strong typographic anchor. */}
       <div className="relative font-display text-[4.5rem] font-extrabold leading-none tracking-[-0.04em] md:text-[5rem]">
-        <span className="text-brand-gradient">404</span>
+        <span className="">404</span>
       </div>
 
       <Compass size={28} className="relative text-muted-foreground/40" aria-hidden />
 
       <div className="relative flex flex-col gap-2">
         <h1 className="font-display text-[1.25rem] font-bold leading-[1.15] tracking-[-0.02em] md:text-[1.9rem]">
-          Tej strony <span className="text-brand-gradient">już nie ma</span>
+          Tej strony <span className="">już nie ma</span>
         </h1>
         <p className="text-[0.9rem] leading-[1.55] text-muted-foreground md:text-[0.95rem]">
           Link mógł się zestarzeć albo obiekt został usunięty. Zacznij od
@@ -39,7 +39,7 @@ export default function AppNotFound() {
       <div className="relative flex w-full max-w-[320px] flex-col items-stretch gap-2 md:max-w-none md:flex-row md:flex-wrap md:justify-center">
         <Link
           href="/workspaces"
-          className="inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-brand-gradient px-5 font-sans text-[0.95rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 md:h-10 md:rounded-lg md:text-[0.9rem]"
+          className="inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-primary px-5 font-sans text-[0.95rem] font-semibold text-white transition-opacity hover:opacity-90 md:h-10 md:rounded-lg md:text-[0.9rem]"
         >
           <ArrowLeft size={14} /> Wszystkie przestrzenie
         </Link>

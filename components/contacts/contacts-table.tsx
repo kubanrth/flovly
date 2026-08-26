@@ -103,6 +103,7 @@ export function ContactsTable({
           ALL_COLUMNS.some((c) => c.key === k),
         );
         // Refuse to render with zero columns — at least company stays on.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (known.length > 0) setVisible(new Set(known));
       }
     } catch {
@@ -256,7 +257,7 @@ function ContactRow({
       case "owner":
         return row.owner ? (
           <span className="inline-flex items-center gap-2">
-            <span className="grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.55rem] font-bold text-white">
+            <span className="grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.55rem] font-bold text-white">
               {row.owner.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

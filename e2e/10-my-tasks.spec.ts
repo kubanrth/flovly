@@ -13,16 +13,11 @@ test.describe("my-tasks (F12-K91 regression)", () => {
   });
 
   test("done tasks do NOT appear in Zaległe (F12-K91)", async ({ page }) => {
-    // The "Zaległe" section should contain only non-done tasks. We assert
-    // no row within that section has a "Done"/"Zrobione" status badge.
     const overdueHeading = page.getByRole("heading", { name: /zaległe/i });
-    if (!(await overdueHeading.isVisible().catch(() => false))) {
-      test.skip(true, "no overdue section");
-    }
-    // Get the section container (parent / next sibling). Safer: scope to
-    // a section whose accessible name matches "Zaległe".
-    const section = page.locator("section, div").filter({ has: overdueHeading }).first();
-    const doneBadges = section.getByText(/^zrobione$|^done$/i);
-    expect(await doneBadges.count()).toBe(0);
+    await expect(overdueHeading).toBeVisible();
+    // Each bucket is a <section> with its own h2 (hotkey-task-list.tsx).
+    const section = page.locator("section").filter({ has: overdueHeading });
+    await expect(section).toHaveCount(1);
+    await expect(section.getByText(/^(zrobione|done)$/i)).toHaveCount(0);
   });
 });

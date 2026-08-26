@@ -1,16 +1,13 @@
 import { ImageResponse } from "next/og";
 
-// F12-K125: open-graph image dla flovly.pl link previews (Telegram, Slack,
-// Messenger, FB itp.). Wcześniej brak `openGraph.images` w metadata →
-// Telegram/etc. fetch'owały Vercel default OG (czarne tło + biały trójkąt).
-// Teraz dynamic-rendered PNG z brand gradient + "FLOVLY" wordmark.
-
 export const runtime = "edge";
+export const alt = "FLOVLY";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "FLOVLY — System zarządzania projektami";
 
-export default async function OpenGraphImage() {
+const NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "FLOVLY";
+
+export default function OpenGraphImage() {
   return new ImageResponse(
     (
       <div
@@ -18,105 +15,28 @@ export default async function OpenGraphImage() {
           width: "100%",
           height: "100%",
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg, #1A1325 0%, #2D1B4E 50%, #1A1325 100%)",
-          fontFamily: "system-ui, -apple-system, sans-serif",
-          position: "relative",
+          gap: 40,
+          background: "#FFFFFF",
+          fontFamily: "Inter, system-ui, sans-serif",
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            top: -200,
-            left: -150,
-            width: 600,
-            height: 600,
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(124,92,255,0.45), transparent 60%)",
-            display: "flex",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            bottom: -180,
-            right: -120,
-            width: 520,
-            height: 520,
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(210,71,181,0.35), transparent 60%)",
-            display: "flex",
-          }}
-        />
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 24,
-            zIndex: 1,
-          }}
-        >
-          <div
-            style={{
-              width: 130,
-              height: 130,
-              borderRadius: 28,
-              background: "linear-gradient(135deg, #7C5CFF 0%, #D247B5 100%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 30px 60px -20px rgba(124,92,255,0.6)",
-            }}
-          >
-            <div
-              style={{
-                color: "#fff",
-                fontSize: 88,
-                fontWeight: 800,
-                letterSpacing: -4,
-                lineHeight: 1,
-              }}
-            >
-              F
-            </div>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
-            <div
-              style={{
-                color: "#fff",
-                fontSize: 110,
-                fontWeight: 800,
-                letterSpacing: -4,
-                lineHeight: 1,
-              }}
-            >
-              FLOVLY
-            </div>
-            <div
-              style={{
-                color: "rgba(255,255,255,0.65)",
-                fontSize: 28,
-                fontWeight: 500,
-                letterSpacing: 0,
-              }}
-            >
-              System zarządzania projektami
-            </div>
-          </div>
+        <svg width="220" height="220" viewBox="0 0 80 80">
+          <clipPath id="c">
+            <circle cx="40" cy="40" r="40" />
+          </clipPath>
+          <g clipPath="url(#c)">
+            <circle cx="40" cy="40" r="40" fill="#FF5C00" />
+            <rect x="50" y="50" width="48" height="48" transform="rotate(45 50 50)" fill="#14110D" />
+          </g>
+        </svg>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ fontSize: 120, fontWeight: 800, letterSpacing: -4, color: "#14110D" }}>{NAME}</div>
+          <div style={{ fontSize: 32, color: "#66625B" }}>System zarządzania projektami</div>
         </div>
       </div>
     ),
-    {
-      ...size,
-    },
+    size,
   );
 }

@@ -129,14 +129,14 @@ export function BoardMembersSection({
         {selected.visibility === "PUBLIC" ? (
           <>
             <strong className="text-foreground">Publiczna</strong> — widzą wszyscy
-            członkowie workspace'a. Lista poniżej dotyczy tylko explicit
+            członkowie workspace&apos;a. Lista poniżej dotyczy tylko explicit
             uprawnień (np. specjalne role na tej tablicy).
           </>
         ) : (
           <>
             <strong className="text-foreground">Prywatna</strong> — widzą tylko
-            członkowie z poniższej listy plus admini workspace'a. Reszta
-            workspace'a NIE widzi tej tablicy w sidebarze.
+            członkowie z poniższej listy plus admini workspace&apos;a. Reszta
+            workspace&apos;a NIE widzi tej tablicy w sidebarze.
           </>
         )}
       </p>
@@ -214,7 +214,7 @@ function AddExistingMember({
     <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
       <div className="flex items-center gap-2">
         <UserPlus size={14} className="text-muted-foreground" />
-        <span className="eyebrow">Dodaj istniejącego członka workspace'a</span>
+        <span className="eyebrow">Dodaj istniejącego członka workspace&apos;a</span>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <select
@@ -287,7 +287,7 @@ function BoardMemberRow({
   };
   return (
     <div className="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
-      <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.78rem] font-bold text-white">
+      <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.78rem] font-bold text-white">
         {avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={avatarUrl} alt="" width={36} height={36} className="h-full w-full object-cover" />

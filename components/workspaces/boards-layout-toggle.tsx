@@ -24,6 +24,7 @@ export function BoardsLayoutToggle({
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (stored === "list" || stored === "grid") setLayout(stored);
     } catch {
       /* storage off */

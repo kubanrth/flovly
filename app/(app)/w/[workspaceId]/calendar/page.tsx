@@ -41,7 +41,7 @@ export default async function WorkspaceCalendarPage({
       <div className="flex flex-col gap-1">
         <span className="eyebrow">{workspace.name}</span>
         <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
-          <span className="text-brand-gradient">Kalendarz</span> projektu.
+          <span className="">Kalendarz</span> projektu.
         </h1>
         <p className="max-w-[60ch] text-[0.95rem] leading-[1.55] text-muted-foreground">
           Wszystkie zadania workspace&apos;u + niestandardowe wydarzenia

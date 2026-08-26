@@ -6,26 +6,21 @@ test.describe("workspaces list", () => {
   });
 
   test("renders at least one workspace card and navigates", async ({ page }) => {
-    // Workspace cards are links to /w/[id]. Pick the first such link.
-    const card = page.locator('a[href^="/w/"]').first();
-    await expect(card).toBeVisible({ timeout: 10_000 });
-    const href = await card.getAttribute("href");
+    // Cards live in <main>; the sidebar also has /w/ links, so scope to main.
+    const card = page.locator('[data-ui="main"] a[href^="/w/"]').first();
+    await expect(card).toBeVisible();
+    const href = (await card.getAttribute("href"))!;
     await card.click();
-    await page.waitForURL(new RegExp(`${href}`));
-    await expect(page).toHaveURL(new RegExp(`^.*${href}`));
+    await page.waitForURL((url) => url.pathname === href);
   });
 
   test("create workspace dialog opens and validates", async ({ page }) => {
-    const newBtn = page.getByRole("button", { name: /nowy workspace|nowa przestrzeń|\+ workspace/i }).first();
-    if (!(await newBtn.isVisible().catch(() => false))) {
-      test.skip(true, "No 'New workspace' trigger visible on /workspaces");
-    }
-    await newBtn.click();
-    // Submit empty → expect a name field validation message.
-    const submit = page.getByRole("button", { name: /utwórz|stwórz|dodaj/i }).last();
-    await submit.click();
-    // Name field should show some validation hint OR the dialog stays open.
-    const dialog = page.getByRole("dialog");
+    await page.getByRole("button", { name: /utwórz workspace/i }).click();
+    const dialog = page.getByRole("dialog").filter({ hasText: "Jak nazwiemy tę przestrzeń?" });
     await expect(dialog).toBeVisible();
+    // Submit empty → name is required, dialog must stay open and no navigation.
+    await dialog.getByRole("button", { name: "Utwórz przestrzeń" }).click();
+    await expect(dialog).toBeVisible();
+    await expect(page).toHaveURL(/\/workspaces/);
   });
 });

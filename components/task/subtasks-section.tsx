@@ -69,7 +69,7 @@ export function SubtasksSection({
             aria-label={`Postęp podzadań: ${pct}%`}
           >
             <div
-              className="h-full rounded-full bg-brand-gradient transition-[width] duration-500 data-[complete=true]:bg-gradient-to-r data-[complete=true]:from-emerald-400 data-[complete=true]:to-emerald-500"
+              className="h-full rounded-full bg-primary transition-[width] duration-500 data-[complete=true]:bg-gradient-to-r data-[complete=true]:from-emerald-400 data-[complete=true]:to-emerald-500"
               data-complete={complete ? "true" : "false"}
               style={{ width: `${pct}%` }}
             />
@@ -169,7 +169,7 @@ export function SubtasksSection({
           <button
             type="submit"
             disabled={!title.trim()}
-            className="inline-flex h-8 items-center rounded-md bg-brand-gradient px-3 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-white shadow-brand transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="inline-flex h-8 items-center rounded-md bg-primary px-3 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-90 disabled:opacity-60"
           >
             Dodaj
           </button>
@@ -193,7 +193,7 @@ export function SubtasksSection({
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/10 font-sans text-[0.95rem] font-semibold text-fuchsia-700 shadow-[0_1px_2px_rgba(217,70,239,0.08)] transition-colors hover:border-fuchsia-500/50 hover:bg-fuchsia-500/15 dark:border-fuchsia-400/40 dark:bg-fuchsia-400/10 dark:text-fuchsia-200 dark:hover:bg-fuchsia-400/15"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/10 font-sans text-[0.95rem] font-semibold text-fuchsia-700 shadow-[0_1px_2px_rgba(217,70,239,0.08)] transition-colors hover:border-fuchsia-500/50 hover:bg-fuchsia-500/15"
         >
           <Plus size={14} /> Dodaj podzadanie
         </button>

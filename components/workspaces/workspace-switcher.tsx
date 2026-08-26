@@ -28,10 +28,10 @@ export interface WorkspaceSwitcherItem {
 }
 
 const SWATCH_GRADIENTS: ReadonlyArray<readonly [string, string]> = [
-  ["#7C5CFF", "#D247B5"],
-  ["#34BEF8", "#7C5CFF"],
-  ["#34BEF8", "#10B981"],
-  ["#F59E0B", "#E1318F"],
+  ["#FF5C00", "#FF8640"],
+  ["#2F6FE8", "#FF5C00"],
+  ["#2F6FE8", "#10B981"],
+  ["#F59E0B", "#E04E00"],
   ["#A5B4FC", "#6366F1"],
   ["#F0ABFC", "#C084FC"],
 ];
@@ -96,7 +96,7 @@ function WorkspaceItem({
         mobile ? "min-h-[48px] px-3 py-2" : "px-2.5 py-2",
         active
           ? "bg-[linear-gradient(135deg,rgba(124,92,255,0.16),rgba(210,71,181,0.10))]"
-          : "hover:bg-black/5 dark:hover:bg-white/[0.06]",
+          : "hover:bg-black/5 ]",
       )}
     >
       <span
@@ -200,19 +200,19 @@ export function WorkspaceSwitcher({
               ))}
             </div>
 
-            <div className="mx-3 my-2 h-px bg-black/5 dark:bg-white/[0.06]" />
+            <div className="mx-3 my-2 h-px bg-black/5 ]" />
 
             <div className="px-2 pb-safe-bottom">
               <Link
                 href="/workspaces"
                 onClick={() => setMobileOpen(false)}
-                className="flex min-h-[48px] items-center gap-2.5 rounded-[11px] px-3 py-2 text-[14px] font-semibold text-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.06]"
+                className="flex min-h-[48px] items-center gap-2.5 rounded-[11px] px-3 py-2 text-[14px] font-semibold text-foreground transition-colors hover:bg-black/5 ]"
               >
                 <span
                   className="grid size-9 shrink-0 place-items-center rounded-[9px] text-white"
                   style={{
                     background:
-                      "linear-gradient(135deg, #7C5CFF, #E1318F)",
+                      "#FF5C00",
                   }}
                 >
                   <Plus size={16} strokeWidth={2.4} />
@@ -222,7 +222,7 @@ export function WorkspaceSwitcher({
               <Link
                 href="/workspaces"
                 onClick={() => setMobileOpen(false)}
-                className="mt-0.5 flex min-h-[44px] items-center gap-2 rounded-[11px] px-3 py-2 pl-[58px] text-[13px] text-muted-foreground transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/[0.06]"
+                className="mt-0.5 flex min-h-[44px] items-center gap-2 rounded-[11px] px-3 py-2 pl-[58px] text-[13px] text-muted-foreground transition-colors hover:bg-black/5 hover:text-foreground ]"
               >
                 <Settings2 size={14} className="shrink-0" />
                 <span>Zarządzaj wszystkimi</span>
@@ -257,7 +257,7 @@ export function WorkspaceSwitcher({
         >
           <PopoverPrimitive.Popup
             className={cn(
-              "popover-glass w-[260px] overflow-hidden p-0",
+              "popover-surface w-[260px] overflow-hidden p-0",
               "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 duration-100",
             )}
           >
@@ -287,20 +287,20 @@ export function WorkspaceSwitcher({
               ))}
             </div>
 
-            <div className="mx-3 my-2 h-px bg-black/5 dark:bg-white/[0.06]" />
+            <div className="mx-3 my-2 h-px bg-black/5 ]" />
 
             <div className="px-1.5 pb-2">
               <PopoverPrimitive.Close
                 render={
                   <Link
                     href="/workspaces"
-                    className="flex items-center gap-2.5 rounded-[11px] px-2.5 py-2 text-[13px] font-semibold text-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.06]"
+                    className="flex items-center gap-2.5 rounded-[11px] px-2.5 py-2 text-[13px] font-semibold text-foreground transition-colors hover:bg-black/5 ]"
                   >
                     <span
                       className="grid size-8 shrink-0 place-items-center rounded-[9px] text-white"
                       style={{
                         background:
-                          "linear-gradient(135deg, #7C5CFF, #E1318F)",
+                          "#FF5C00",
                       }}
                     >
                       <Plus size={15} strokeWidth={2.4} />
@@ -313,7 +313,7 @@ export function WorkspaceSwitcher({
                 render={
                   <Link
                     href="/workspaces"
-                    className="mt-0.5 flex items-center gap-2 rounded-[11px] px-2.5 py-2 pl-[46px] text-[12.5px] text-muted-foreground transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/[0.06]"
+                    className="mt-0.5 flex items-center gap-2 rounded-[11px] px-2.5 py-2 pl-[46px] text-[12.5px] text-muted-foreground transition-colors hover:bg-black/5 hover:text-foreground ]"
                   >
                     <Settings2 size={13} className="shrink-0" />
                     <span>Zarządzaj wszystkimi</span>
@@ -347,7 +347,7 @@ export function WorkspaceSwitcherTrigger({
     );
   }
   return (
-    <span className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.06]">
+    <span className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-black/5 ]">
       <span className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-foreground">
         {workspace?.name ?? "Wybierz workspace"}
       </span>

@@ -9,6 +9,12 @@ const IGNORED_ERROR_PATTERNS: RegExp[] = [
   /\[HMR\]/,
   /sentry/i,
   /Download the React DevTools/,
+  // KNOWN APP BUG (2026-08-26): dnd-kit DndContext without a stable `id` →
+  // aria-describedby="DndDescribedBy-N" differs server/client on /workspaces,
+  // kanban and the mobile table. Tracked by e2e/00-hydration.spec.ts, which
+  // FAILS until fixed; ignored here so it doesn't mask every other spec.
+  // Remove this pattern together with that spec's failure.
+  /hydration-mismatch[\s\S]*DndDescribedBy/,
 ];
 
 function isIgnored(text: string) {
@@ -20,27 +26,33 @@ type Fixtures = {
 };
 
 export const test = base.extend<Fixtures>({
-  consoleErrors: async ({ page }, use) => {
-    const errors: string[] = [];
+  // auto: true — without it the fixture only ran for tests that destructured
+  // `consoleErrors`, i.e. never; the "hard-fail on console errors" guarantee
+  // was silently off.
+  consoleErrors: [
+    async ({ page }, provide) => {
+      const errors: string[] = [];
 
-    page.on("pageerror", (err) => {
-      const msg = `pageerror: ${err.message}`;
-      if (!isIgnored(msg)) errors.push(msg);
-    });
-    page.on("console", (msg) => {
-      if (msg.type() === "error") {
-        const text = msg.text();
-        if (!isIgnored(text)) errors.push(`console.error: ${text}`);
+      page.on("pageerror", (err) => {
+        const msg = `pageerror: ${err.message}`;
+        if (!isIgnored(msg)) errors.push(msg);
+      });
+      page.on("console", (msg) => {
+        if (msg.type() === "error") {
+          const text = msg.text();
+          if (!isIgnored(text)) errors.push(`console.error: ${text}`);
+        }
+      });
+
+      await provide(errors);
+
+      // Hard-fail any test that triggered an uncaught error.
+      if (errors.length > 0) {
+        throw new Error(`Console errors caught:\n  - ${errors.join("\n  - ")}`);
       }
-    });
-
-    await use(errors);
-
-    // Hard-fail any test that triggered an uncaught error.
-    if (errors.length > 0) {
-      throw new Error(`Console errors caught:\n  - ${errors.join("\n  - ")}`);
-    }
-  },
+    },
+    { auto: true },
+  ],
 });
 
 export { expect };

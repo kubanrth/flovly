@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
-import { can } from "@/lib/permissions";
-import { EditableWorkspaceName } from "@/components/workspaces/editable-workspace-name";
-import { WorkspaceTabs } from "@/components/workspaces/workspace-tabs";
 import { CzesiekFab } from "@/components/czesiek/czesiek-fab";
 
+// Membership gate + intercepting task modal slot. The workspace header lives in
+// the overview/members/settings pages (components/workspace/workspace-header);
+// board routes render their own BoardHeader.
 export default async function WorkspaceLayout({
   children,
   modal,
@@ -16,50 +16,16 @@ export default async function WorkspaceLayout({
   params: Promise<{ workspaceId: string }>;
 }) {
   const { workspaceId } = await params;
-  const ctx = await requireWorkspaceMembership(workspaceId);
-
+  await requireWorkspaceMembership(workspaceId);
   const workspace = await db.workspace.findFirst({
     where: { id: workspaceId, deletedAt: null },
+    select: { id: true },
   });
   if (!workspace) notFound();
 
-  const canEditSettings = can(ctx.role, "workspace.updateSettings");
-
   return (
     <>
-      {/* F12-K47: mobile shell — kompaktowy padding + hide opisu + horizontal-
-          scroll nav. Desktop bez zmian. */}
-      <header className="flex flex-col gap-3 border-b border-border px-4 pb-4 pt-5 md:flex-row md:items-end md:justify-between md:gap-4 md:px-14 md:pb-6 md:pt-8">
-        <div className="flex flex-col gap-1.5 md:gap-2">
-          <span className="eyebrow">Przestrzeń · /{workspace.slug}</span>
-          {/* F12-K61: inline edit — klik w h1, Enter zapisuje (admin only). */}
-          <h1 className="font-display text-[1.5rem] font-bold leading-[1.1] tracking-[-0.025em] text-foreground md:text-[2rem]">
-            <EditableWorkspaceName
-              workspaceId={workspace.id}
-              name={workspace.name}
-              canEdit={canEditSettings}
-            />
-          </h1>
-          {workspace.description && (
-            <p className="max-w-[64ch] text-[0.88rem] leading-[1.5] text-muted-foreground max-md:line-clamp-2 md:text-[0.95rem] md:leading-[1.55]">
-              {workspace.description}
-            </p>
-          )}
-        </div>
-
-        <WorkspaceTabs
-          workspaceId={workspace.id}
-          canEditSettings={canEditSettings}
-        />
-      </header>
-
-      {/* F12-K109: min-w-0 overflow-x-hidden — bez nich flex-1 main z workspace
-          overview rozszerzał się ponad viewport gdy w grid items były wide
-          pills (TABELA/KANBAN/WHITEBOARD/ROADMAPA), kafelki się rozjeżdżały
-          poza prawą krawędź ekranu na mobile. */}
-      <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-5 md:px-14 md:py-10">
-        {children}
-      </main>
+      <div className="min-w-0 flex-1 overflow-x-hidden">{children}</div>
       {modal}
       <CzesiekFab workspaceId={workspace.id} />
     </>

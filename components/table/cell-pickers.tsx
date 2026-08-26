@@ -173,7 +173,7 @@ export function AssigneePickerCell({
               <span
                 key={a.id}
                 title={a.name ?? a.email}
-                className="grid h-6 w-6 place-items-center overflow-hidden rounded-full border-2 border-background bg-brand-gradient font-display text-[0.6rem] font-bold text-white"
+                className="grid h-6 w-6 place-items-center overflow-hidden rounded-full border-2 border-background bg-primary font-display text-[0.6rem] font-bold text-white"
               >
                 {a.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -203,7 +203,7 @@ export function AssigneePickerCell({
               maxHeight: coords.maxHeight,
             }}
             // z-[200] === Z.popoverInModal (F12-K104).
-            className="popover-glass popover-enter shadow-aura z-[200] flex flex-col overflow-hidden p-2"
+            className="popover-surface popover-enter z-[200] flex flex-col overflow-hidden p-2"
           >
             <div className="mb-1.5 shrink-0">
               <span className="eyebrow mb-1.5 block px-1.5 text-[0.66rem]">
@@ -237,7 +237,7 @@ export function AssigneePickerCell({
                       data-active={active}
                       className="flex w-full items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition-colors hover:bg-muted active:bg-primary/10 data-[active=true]:bg-primary/10"
                     >
-                      <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-[6px] bg-brand-gradient font-display text-[10px] font-bold text-white">
+                      <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-[6px] bg-primary font-display text-[10px] font-bold text-white">
                         {m.avatarUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={m.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
@@ -338,7 +338,7 @@ export function AssigneePickerCell({
                         data-active={active}
                         className="flex min-h-[48px] w-full items-center gap-3 rounded-[12px] px-3 text-left transition-colors active:bg-primary/15 data-[active=true]:bg-primary/10"
                       >
-                        <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-[8px] bg-brand-gradient font-display text-[11px] font-bold text-white">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-[8px] bg-primary font-display text-[11px] font-bold text-white">
                           {m.avatarUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={m.avatarUrl} alt="" width={32} height={32} className="h-full w-full object-cover" />
@@ -529,7 +529,7 @@ export function TagPickerCell({
               maxHeight: coords.maxHeight,
             }}
             // z-[200] === Z.popoverInModal (F12-K104).
-            className="popover-glass popover-enter shadow-aura z-[200] flex flex-col overflow-hidden p-2"
+            className="popover-surface popover-enter z-[200] flex flex-col overflow-hidden p-2"
           >
             <div className="mb-1.5 shrink-0">
               <span className="eyebrow mb-1.5 block px-1.5 text-[0.66rem]">

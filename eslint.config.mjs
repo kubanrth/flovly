@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Not app code: mockups, design refs, one-off scripts.
+    "docs/**",
+    "design-refs/**",
+    "flovly v2/**",
+    "scripts/**",
+    "Design system specifications*/**",
   ]),
 ]);
 

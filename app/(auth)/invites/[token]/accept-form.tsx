@@ -117,7 +117,7 @@ export function AcceptInviteForm({
         <button
           type="submit"
           disabled={pending}
-          className="group relative inline-flex h-[52px] w-full items-center justify-center overflow-hidden rounded-xl bg-brand-gradient px-6 text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 md:h-12"
+          className="group relative inline-flex h-[52px] w-full items-center justify-center overflow-hidden rounded-xl bg-primary px-6 text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 md:h-12"
         >
           <span className="relative z-10 font-sans text-[0.95rem] font-semibold tracking-wide">
             {pending ? "Dołączam…" : "Akceptuj zaproszenie"}

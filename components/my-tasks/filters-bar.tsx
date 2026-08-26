@@ -157,17 +157,17 @@ export function FiltersBar({
   // Mobile (max-md): horizontal scrollable tabs (snap-x), pełna szerokość ekranu, whitespace-nowrap.
   // Desktop: kompaktowy segmented control bez scrolla.
   const pillRow = (
-    <div className="flex items-center gap-1.5 rounded-[14px] border border-white/60 bg-white/55 p-1 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] max-md:gap-2 max-md:overflow-x-auto max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:p-0 max-md:[-webkit-overflow-scrolling:touch] max-md:[scrollbar-width:none] max-md:snap-x max-md:snap-mandatory max-md:[&::-webkit-scrollbar]:hidden">
-      <span className="rounded-[11px] bg-brand-gradient px-3 py-1.5 text-[0.75rem] font-semibold text-white shadow-brand max-md:shrink-0 max-md:snap-start max-md:whitespace-nowrap max-md:px-3.5 max-md:py-2 max-md:text-[0.81rem]">
+    <div className="flex items-center gap-1.5 rounded-[14px] border border-white/60 bg-white/55 p-1 ] max-md:gap-2 max-md:overflow-x-auto max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:p-0 max-md:[-webkit-overflow-scrolling:touch] max-md:[scrollbar-width:none] max-md:snap-x max-md:snap-mandatory max-md:[&::-webkit-scrollbar]:hidden">
+      <span className="rounded-[11px] bg-primary px-3 py-1.5 text-[0.75rem] font-semibold text-white max-md:shrink-0 max-md:snap-start max-md:whitespace-nowrap max-md:px-3.5 max-md:py-2 max-md:text-[0.81rem]">
         Dziś
       </span>
-      <span className="rounded-[11px] border border-white/60 bg-white/40 px-3 py-1.5 text-[0.75rem] font-medium text-muted-foreground dark:border-white/10 dark:bg-white/[0.05] max-md:shrink-0 max-md:snap-start max-md:whitespace-nowrap max-md:px-3.5 max-md:py-2 max-md:text-[0.81rem]">
+      <span className="rounded-[11px] border border-white/60 bg-white/40 px-3 py-1.5 text-[0.75rem] font-medium text-muted-foreground ] max-md:shrink-0 max-md:snap-start max-md:whitespace-nowrap max-md:px-3.5 max-md:py-2 max-md:text-[0.81rem]">
         Tydzień
       </span>
-      <span className="rounded-[11px] border border-white/60 bg-white/40 px-3 py-1.5 text-[0.75rem] font-medium text-rose-500 dark:border-white/10 dark:bg-white/[0.05] max-md:shrink-0 max-md:snap-start max-md:whitespace-nowrap max-md:px-3.5 max-md:py-2 max-md:text-[0.81rem]">
+      <span className="rounded-[11px] border border-white/60 bg-white/40 px-3 py-1.5 text-[0.75rem] font-medium text-rose-500 ] max-md:shrink-0 max-md:snap-start max-md:whitespace-nowrap max-md:px-3.5 max-md:py-2 max-md:text-[0.81rem]">
         Zaległe
       </span>
-      <span className="rounded-[11px] border border-white/60 bg-white/40 px-3 py-1.5 text-[0.75rem] font-medium text-muted-foreground dark:border-white/10 dark:bg-white/[0.05] max-md:shrink-0 max-md:snap-start max-md:whitespace-nowrap max-md:px-3.5 max-md:py-2 max-md:text-[0.81rem]">
+      <span className="rounded-[11px] border border-white/60 bg-white/40 px-3 py-1.5 text-[0.75rem] font-medium text-muted-foreground ] max-md:shrink-0 max-md:snap-start max-md:whitespace-nowrap max-md:px-3.5 max-md:py-2 max-md:text-[0.81rem]">
         Wszystkie
       </span>
     </div>
@@ -187,7 +187,7 @@ export function FiltersBar({
             onChange={(e) => setSearch(e.target.value)}
             type="search"
             placeholder="Szukaj po tytule…"
-            className="h-9 w-full rounded-[11px] border border-white/60 bg-white/60 pl-8 pr-3 text-[0.9rem] outline-none backdrop-blur-xl placeholder:text-muted-foreground/60 focus:border-primary/60 dark:border-white/10 dark:bg-white/[0.04] max-md:h-11 max-md:text-[0.95rem]"
+            className="h-9 w-full rounded-[11px] border border-white/60 bg-white/60 pl-8 pr-3 text-[0.9rem] outline-none placeholder:text-muted-foreground/60 focus:border-primary/60 ] max-md:h-11 max-md:text-[0.95rem]"
           />
         </div>
 
@@ -197,7 +197,7 @@ export function FiltersBar({
           <button
             type="button"
             onClick={clearAll}
-            className="inline-flex h-9 items-center gap-1.5 rounded-[11px] border border-white/60 bg-white/60 px-3 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground backdrop-blur-xl transition-colors hover:border-destructive/60 hover:text-destructive dark:border-white/10 dark:bg-white/[0.04]"
+            className="inline-flex h-9 items-center gap-1.5 rounded-[11px] border border-white/60 bg-white/60 px-3 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-destructive/60 hover:text-destructive ]"
           >
             <X size={12} /> wyczyść ({activeCount})
           </button>
@@ -217,7 +217,7 @@ export function FiltersBar({
                 type="button"
                 onClick={() => toggleBoard(b.id)}
                 data-on={on ? "true" : "false"}
-                className="inline-flex h-7 items-center gap-1 rounded-full border border-white/60 px-3 font-mono text-[0.68rem] uppercase tracking-[0.1em] text-muted-foreground transition-colors data-[on=true]:border-primary data-[on=true]:bg-primary/10 data-[on=true]:text-foreground hover:border-primary/40 dark:border-white/10 max-md:h-11 max-md:shrink-0 max-md:whitespace-nowrap max-md:text-[0.72rem]"
+                className="inline-flex h-7 items-center gap-1 rounded-full border border-white/60 px-3 font-mono text-[0.68rem] uppercase tracking-[0.1em] text-muted-foreground transition-colors data-[on=true]:border-primary data-[on=true]:bg-primary/10 data-[on=true]:text-foreground hover:border-primary/40 max-md:h-11 max-md:shrink-0 max-md:whitespace-nowrap max-md:text-[0.72rem]"
               >
                 <span className="truncate max-w-[140px]">{b.name}</span>
                 <span className="text-muted-foreground/60 normal-case tracking-normal">

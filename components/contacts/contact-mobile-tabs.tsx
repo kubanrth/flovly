@@ -78,7 +78,7 @@ export function ContactMobileTabs() {
       aria-label="Sekcje kontaktu"
       // Sticky pod mobile AppShell header'em (≈56px). Top wartość iteracyjna —
       // 14 = 56px (h-14). Wyłącz na md+.
-      className="sticky top-14 z-20 -mx-4 border-b border-border bg-background/90 backdrop-blur-md md:hidden"
+      className="sticky top-14 z-20 -mx-4 border-b border-border bg-background/90 md:hidden"
     >
       <div className="flex gap-1.5 overflow-x-auto px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {TABS.map((t) => {

@@ -649,6 +649,36 @@ export function BoardTable({
     })),
   ];
 
+  // F1 hookup: header BoardToolbar (components/view/table-toolbar.tsx) talks
+  // via window events. ponytail: F2 lifts this state and deletes the bridge.
+  const toolbarBridge = useRef<(e: Event) => void>(() => {});
+  useEffect(() => {
+    toolbarBridge.current = (e) => {
+      const detail = (e as CustomEvent<{ query?: string; columnId?: string }>).detail ?? {};
+      if (e.type === "flovly:board-search") return setSearchQuery(detail.query ?? "");
+      const col = toolbarColumns.find((c) => c.id === detail.columnId);
+      if (!col) return;
+      const op: TableFilter["op"] =
+        col.kind === "BUILTIN_STATUS" || col.kind === "SINGLE_SELECT" || col.kind === "NUMBER" || col.kind === "RATING"
+          ? "equals"
+          : col.kind === "CHECKBOX"
+            ? "isChecked"
+            : "contains";
+      const nextFilters = [...filters, { columnId: col.id, kind: col.kind, op, value: "" }];
+      setFilters(nextFilters);
+      persistFilters({ filters: nextFilters, sort: tableSort, groupBy });
+    };
+  });
+  useEffect(() => {
+    const h = (e: Event) => toolbarBridge.current(e);
+    window.addEventListener("flovly:board-search", h);
+    window.addEventListener("flovly:board-add-filter", h);
+    return () => {
+      window.removeEventListener("flovly:board-search", h);
+      window.removeEventListener("flovly:board-add-filter", h);
+    };
+  }, []);
+
   // Returns ordered buckets so the rendering side can iterate without re-sorting.
   const groupedRows: { key: string; label: string; color?: string; rows: typeof filteredSorted }[] = (() => {
     if (!groupBy) return [{ key: "_all", label: "", rows: filteredSorted }];
@@ -730,7 +760,7 @@ export function BoardTable({
     <div className="flex flex-col gap-4">
       {/* Cmd+F search bar — pojawia się nad toolbarem, nie zajmuje miejsca gdy zamknięty. */}
       {searchOpen && (
-        <div className="flex items-center gap-2 rounded-xl border border-primary/40 bg-popover/95 px-3 py-2 shadow-[0_8px_24px_-8px_rgba(122,51,236,0.25)] backdrop-blur-sm">
+        <div className="flex items-center gap-2 rounded-xl border border-primary/40 bg-popover/95 px-3 py-2 shadow-[0_8px_24px_-8px_rgba(122,51,236,0.25)]">
           <Search size={14} className="text-muted-foreground" />
           <input
             ref={searchInputRef}
@@ -823,10 +853,10 @@ export function BoardTable({
         )}
       </div>
 
-      {/* v4 spec (linie 39): rounded-22px, glass surface bg, brand-tinted shadow
+      {/* v4 spec (linie 39): rounded-22px, plain surface bg, brand-tinted shadow
           `0 30px 70px -30px rgba(122,51,236,.4)` + delikatny inset highlight.
           Border: rgba(255,255,255,.06) w dark, n-200 w light. */}
-      <div className="relative overflow-hidden rounded-[22px] border border-border/60 bg-card/95 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4),inset_0_1px_0_rgba(255,255,255,0.04)] dark:bg-white/[0.02] dark:backdrop-blur-xl">
+      <div className="relative overflow-hidden rounded-[22px] border border-border/60 bg-card/95 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4),inset_0_1px_0_rgba(255,255,255,0.04)] ]">
         <div className="overflow-x-auto">
           <table
             ref={tableRef}
@@ -898,14 +928,14 @@ export function BoardTable({
                 );
                 const checkboxOffset = canEdit ? 44 : 0;
                 return (
-                  // v4 spec (linia 40): glass bg + backdrop-blur(30px) saturate(160%),
+                  // v4 spec (linia 40): plain bg + (30px) saturate(160%),
                   // border-bottom hairline. Higher saturate niż reszta sticky elementów
-                  // — header ma się czuć jak osobna warstwa "frosted glass".
-                  <tr key={hg.id} className="border-b border-border/60 bg-card/95 shadow-[0_1px_0_0_var(--border)] dark:bg-card/95">
+                  // — header ma się czuć jak osobna warstwa "frosted plain".
+                  <tr key={hg.id} className="border-b border-border/60 bg-card/95 shadow-[0_1px_0_0_var(--border)]">
                     {canEdit && (
                       // Sticky pinning disabled on mobile (max-md:!static) — couldn't scroll past pinned columns.
                       <th
-                        className="sticky left-0 top-0 z-30 h-11 w-11 bg-card/95 px-3 shadow-[1px_0_0_0_var(--border)] dark:bg-card/95 max-md:!static max-md:!shadow-none"
+                        className="sticky left-0 top-0 z-30 h-11 w-11 bg-card/95 px-3 shadow-[1px_0_0_0_var(--border)] max-md:!static max-md:!shadow-none"
                         // F12-K76: hint o shift+click range select — najczęstszy
                         // bulk-action UX, ale wymaga discovery.
                         title="Klik = zaznacz wszystkie. Klik + Shift na innym wierszu = zakres."
@@ -966,11 +996,11 @@ export function BoardTable({
                           // w TableHeaderCell, ten div tylko hostuje).
                           className={`group/th relative sticky top-0 h-11 px-[18px] text-left font-mono text-[0.69rem] font-bold uppercase tracking-[0.03em] max-md:px-3 ${
                             sortDir
-                              ? "text-brand-300 dark:text-brand-300"
+                              ? "text-brand-300 "
                               : "text-muted-foreground/80"
                           } ${
                             isPinned
-                              ? "z-20 bg-card/95 shadow-[1px_0_0_0_var(--border)] dark:bg-card/95 max-md:!static max-md:!bg-transparent max-md:!shadow-none"
+                              ? "z-20 bg-card/95 shadow-[1px_0_0_0_var(--border)]  max-md:!static max-md:!bg-transparent max-md:!shadow-none"
                               : "bg-transparent"
                           }`}
                           style={{
@@ -1225,9 +1255,9 @@ export function BoardTable({
             </tbody>
           </table>
         </div>
-        {/* v4 .tbl-foot (linia 71): padding 10/18, border-top hairline, glass tło.
+        {/* v4 .tbl-foot (linia 71): padding 10/18, border-top hairline, plain tło.
             Hint copy 11.5px, kolor hintc (faint). <kbd> w mono z chip background. */}
-        <div className="flex items-center justify-between gap-3 border-t border-border/50 bg-white/[0.02] px-[18px] py-[10px] dark:bg-white/[0.015]">
+        <div className="flex items-center justify-between gap-3 border-t border-border/50 bg-white/[0.02] px-[18px] py-[10px] ]">
           <span className="font-mono text-[0.66rem] uppercase tracking-[0.1em] text-muted-foreground">
             <strong className="font-semibold text-foreground/80">{tasks.length}</strong>{" "}
             {taskPl(tasks.length)}
@@ -1327,13 +1357,13 @@ function BulkActionsBar({
 
   if (typeof document === "undefined") return null;
   return createPortal(
-    // v4 bulk toolbar (linia 62): rounded-[14px], padding 9/15, gap 12, glass
-    // backdrop-blur(30px) + brand-tinted shadow `0 16px 36px -16px rgba(0,0,0,.6)`.
+    // v4 bulk toolbar (linia 62): rounded-[14px], padding 9/15, gap 12, plain
+    // (30px) + brand-tinted shadow `0 16px 36px -16px rgba(0,0,0,.6)`.
     // Counter badge to mała kwadratowa pill 22x22 z brand-gradient.
-    <div className="fixed z-50 flex items-center border border-white/10 bg-popover/95 shadow-[0_16px_36px_-16px_rgba(0,0,0,0.6),0_30px_70px_-30px_rgba(122,51,236,0.4)] backdrop-blur-md max-md:inset-x-0 max-md:bottom-0 max-md:gap-1.5 max-md:rounded-t-[18px] max-md:border-x-0 max-md:border-b-0 max-md:px-3 max-md:pt-2 max-md:pb-safe-bottom md:bottom-6 md:left-1/2 md:max-w-[calc(100vw-24px)] md:-translate-x-1/2 md:gap-3 md:rounded-[14px] md:px-[15px] md:py-[9px]">
+    <div className="fixed z-50 flex items-center border border-white/10 bg-popover/95 shadow-[0_16px_36px_-16px_rgba(0,0,0,0.6),0_30px_70px_-30px_rgba(122,51,236,0.4)] max-md:inset-x-0 max-md:bottom-0 max-md:gap-1.5 max-md:rounded-t-[18px] max-md:border-x-0 max-md:border-b-0 max-md:px-3 max-md:pt-2 max-md:pb-safe-bottom md:bottom-6 md:left-1/2 md:max-w-[calc(100vw-24px)] md:-translate-x-1/2 md:gap-3 md:rounded-[14px] md:px-[15px] md:py-[9px]">
       {/* Counter pill — na mobile w odrębnej "header" rzeczy. Tu rendrujemy
           ją absolutnie na top mobile sheet'a + jako pierwszy element desktopu. */}
-      <span className="inline-flex h-[22px] w-[22px] items-center justify-center rounded-[7px] bg-brand-gradient text-[11px] font-bold text-white max-md:absolute max-md:-top-2.5 max-md:left-1/2 max-md:-translate-x-1/2 max-md:rounded-full max-md:h-[26px] max-md:w-auto max-md:px-2.5 max-md:text-[12px] max-md:shadow-brand">
+      <span className="inline-flex h-[22px] w-[22px] items-center justify-center rounded-[7px] bg-primary text-[11px] font-bold text-white max-md:absolute max-md:-top-2.5 max-md:left-1/2 max-md:-translate-x-1/2 max-md:rounded-full max-md:h-[26px] max-md:w-auto max-md:px-2.5 max-md:text-[12px] max-md:">
         {selectedIds.length}
       </span>
       <span className="text-[12.5px] font-semibold text-foreground max-md:hidden">zaznaczone</span>
@@ -1350,7 +1380,7 @@ function BulkActionsBar({
           Status
         </button>
         {activeMenu === "status" && (
-          <div className="absolute bottom-[calc(100%+8px)] left-1/2 max-h-[280px] -translate-x-1/2 overflow-y-auto rounded-xl border border-border/70 bg-popover/95 p-1 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)] backdrop-blur-md">
+          <div className="absolute bottom-[calc(100%+8px)] left-1/2 max-h-[280px] -translate-x-1/2 overflow-y-auto rounded-xl border border-border/70 bg-popover/95 p-1 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)]">
             <button
               type="button"
               onClick={() => setStatus("")}
@@ -1389,7 +1419,7 @@ function BulkActionsBar({
           <span className="hidden max-md:inline">Prio</span>
         </button>
         {activeMenu === "priority" && (
-          <div className="absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 rounded-xl border border-border/70 bg-popover/95 p-1 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)] backdrop-blur-md">
+          <div className="absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 rounded-xl border border-border/70 bg-popover/95 p-1 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)]">
             {PRIORITY_VALUES.map((value) => {
               const meta = PRIORITY_META[value];
               return (
@@ -1448,7 +1478,7 @@ function BulkActionsBar({
           Osoba
         </button>
         {activeMenu === "assign" && members.length > 0 && (
-          <div className="absolute bottom-[calc(100%+8px)] left-1/2 max-h-[280px] -translate-x-1/2 overflow-y-auto rounded-xl border border-border/70 bg-popover/95 p-1 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)] backdrop-blur-md">
+          <div className="absolute bottom-[calc(100%+8px)] left-1/2 max-h-[280px] -translate-x-1/2 overflow-y-auto rounded-xl border border-border/70 bg-popover/95 p-1 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)]">
             {members.map((m) => (
               <div
                 key={m.id}
@@ -1460,7 +1490,7 @@ function BulkActionsBar({
                   className="flex flex-1 items-center gap-2 text-left text-[0.78rem] transition-colors hover:text-primary"
                   title="Przypisz do zaznaczonych"
                 >
-                  <span className="grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient text-[0.55rem] font-bold text-white">
+                  <span className="grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-primary text-[0.55rem] font-bold text-white">
                     {(m.name ?? m.email).slice(0, 2).toUpperCase()}
                   </span>
                   <span>{m.name ?? m.email.split("@")[0]}</span>
@@ -1559,6 +1589,7 @@ function DateCell({
   value: string | null;
   disabled: boolean;
 }) {
+  const router = useRouter();
   if (disabled) {
     // v4: font-mono dla dat — w designie 12px, lekko stonowane kolorystycznie.
     return value ? (
@@ -1578,7 +1609,6 @@ function DateCell({
   // constraint z PL textem). Dla unknown errors (Next.js digest hiding
   // real message): silent router.refresh() — UI wróci do canonical state
   // z DB bez intrusive alert'a.
-  const router = useRouter();
   const persist = (iso: string) => {
     const fd = new FormData();
     fd.set("id", taskId);
@@ -1643,7 +1673,7 @@ function GroupBucket({
       {/* v4 group header (linia 45): padding 9/18, ChevronDown 12px, dot 9x9,
           name 12.5/700, count pill bg rgba(255,255,255,.06) radius 999.
           Sub-row sticky-ish vibe: lekkie tło dla rozróżnienia bucketów. */}
-      <tr className="bg-white/[0.03] dark:bg-white/[0.025]">
+      <tr className="bg-white/[0.03] ]">
         <td colSpan={columnCount} className="px-[18px] py-[9px]">
           <button
             type="button"
@@ -1799,7 +1829,7 @@ function AddColumnButton({
               maxHeight: coords.maxHeight,
             }}
             // z-[200] === Z.popoverInModal (F12-K104).
-            className="z-[200] flex flex-col overflow-hidden rounded-xl border border-border/70 bg-popover/95 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)] backdrop-blur-md"
+            className="z-[200] flex flex-col overflow-hidden rounded-xl border border-border/70 bg-popover/95 shadow-[0_18px_40px_-16px_rgba(122,51,236,0.36)]"
           >
             <div className="shrink-0 border-b border-border/70 px-3 py-2.5">
               <p className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.1em] text-muted-foreground">
@@ -1842,7 +1872,7 @@ function AddColumnButton({
                 type="button"
                 onClick={submit}
                 disabled={!name.trim()}
-                className="inline-flex h-7 items-center rounded-md bg-brand-gradient px-3 font-mono text-[0.62rem] font-bold uppercase tracking-[0.1em] text-white shadow-[0_6px_16px_-6px_rgba(122,51,236,0.6)] transition-opacity hover:opacity-90 disabled:opacity-60"
+                className="inline-flex h-7 items-center rounded-md bg-primary px-3 font-mono text-[0.62rem] font-bold uppercase tracking-[0.1em] text-white shadow-[0_6px_16px_-6px_rgba(122,51,236,0.6)] transition-opacity hover:opacity-90 disabled:opacity-60"
               >
                 Dodaj kolumnę
               </button>

@@ -24,7 +24,7 @@ export function Forbidden({
         <Lock size={28} strokeWidth={1.75} className="text-amber-500" aria-hidden />
       </div>
       <div className="relative flex flex-col gap-2">
-        <h2 className="font-mono text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-amber-600 dark:text-amber-400">
+        <h2 className="font-mono text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-amber-600">
           403 · forbidden
         </h2>
         <h1 className="font-display text-[1.25rem] font-bold leading-[1.15] tracking-[-0.02em] md:text-[1.5rem]">
@@ -36,7 +36,7 @@ export function Forbidden({
       </div>
       <Link
         href={backHref}
-        className="relative inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-brand-gradient px-5 font-sans text-[0.95rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 md:h-10 md:rounded-lg md:text-[0.9rem]"
+        className="relative inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-primary px-5 font-sans text-[0.95rem] font-semibold text-white transition-opacity hover:opacity-90 md:h-10 md:rounded-lg md:text-[0.9rem]"
       >
         <ArrowLeft size={14} /> {backLabel}
       </Link>

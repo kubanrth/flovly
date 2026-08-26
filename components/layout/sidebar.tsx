@@ -1,20 +1,11 @@
 "use client";
 
-// F12-K81 (v4 sidebar refactor): pełen visual refresh do FLOVLY Brand v4.
-//  • 210px floating glass card (vs poprzednie 252px) — matchuje v4 hero mock.
-//  • Sekcjonowanie: eyebrow labels ("Twoje" / "Przestrzenie") nad każdą grupą.
-//  • Brand mark (FlovlyMark 32px) + wordmark FLOVLY w headerze.
-//  • Workspace swatches w v4 stylu (rounded-lg z gradient'em + soft shadow).
-//  • User profile widget = sub-card na dole z border + glass tint.
-//  • Active state: gradient brand tint (rgba(122,51,236,.12) → rgba(225,49,143,.1)).
-//
-// Zachowane 100%: dnd-kit workspace + board reorder, collapse toggle,
-// mobile drawer (slide-in, backdrop, body scroll lock, Esc close),
-// ThemeToggle, path-based active state, wszystkie linki + ikonki.
+// Sidebar (redesign v5, A2/A3). Expanded 240px, rail 56px, mobile drawer 300px.
+// Kept from v4: dnd-kit reorder of workspaces/boards + workspace ⋯ menu.
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useEffect, useRef, useState, type ReactNode, type SVGProps } from "react";
 import {
   closestCenter,
   DndContext,
@@ -24,976 +15,657 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  Bell,
-  BookOpen,
-  Briefcase,
-  FileText,
-  GripVertical,
-  LifeBuoy,
-  CalendarDays,
-  CheckSquare,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown,
-  Compass,
-  Inbox,
-  Layers,
-  LineChart,
-  KeyRound,
-  Clock,
-  CreditCard,
-  Menu,
-  Plane,
-  Plus,
-  Settings,
-  StickyNote,
-  X,
-} from "lucide-react";
-import type { Role } from "@/lib/generated/prisma/enums";
+import type { Role } from "@/lib/generated/prisma/client";
 import { reorderWorkspacesAction } from "@/app/(app)/workspaces/actions";
-import { FlovlyMark, FlovlyWordmark } from "@/components/brand/flovly-logo";
 import { reorderBoardsAction } from "@/app/(app)/w/[workspaceId]/b/actions";
-import { CreateBoardDialog } from "@/components/workspaces/create-board-dialog";
-import { DeleteBoardDialog } from "@/components/workspaces/delete-board-dialog";
-import { ProfileDropdown } from "@/components/profile/profile-dropdown";
+import { Wordmark } from "@/components/brand/mark";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip } from "@/components/ui/tooltip";
 import {
-  WorkspaceSwitcher,
-  type WorkspaceSwitcherItem,
-} from "@/components/workspaces/workspace-switcher";
+  IconBell,
+  IconBoards,
+  IconCalendar,
+  IconChevronRight,
+  IconClose,
+  IconContacts,
+  IconCreative,
+  IconGrid,
+  IconMore,
+  IconNotes,
+  IconPasswords,
+  IconPlus,
+  IconRecent,
+  IconReminders,
+  IconSales,
+  IconSettings,
+  IconShield,
+  IconSliders,
+  IconStar,
+  IconSubscriptions,
+  IconSupport,
+  IconTasks,
+  IconTodo,
+  IconUsers,
+  IconVacations,
+  IconWhiteboard,
+  IconWiki,
+} from "@/components/ui/icons";
+import { useUiPref } from "@/hooks/use-ui-pref";
+import { cn } from "@/lib/utils";
+import { AvatarMenu } from "./avatar-menu";
+import { CustomizeSidebarDialog, FOR_YOU_ITEMS, SIDEBAR_ITEMS_PREF, TOOL_ITEMS, type ForYouKey, type SidebarItemsPref, type ToolKey } from "./customize-sidebar-dialog";
+import type { ShellUser, SidebarProps, SidebarWorkspace } from "./shell-types";
 
-export interface SidebarUser {
+export type { SidebarWorkspace } from "./shell-types";
+
+type IconType = (props: SVGProps<SVGSVGElement>) => ReactNode;
+interface NavItem {
+  key: string;
+  label: string;
+  href: string;
+  icon: IconType;
+  badge?: ReactNode;
+}
+// Recent / starred entries (localStorage ui:recent / ui:starred).
+interface SavedItem {
+  type: string;
   id: string;
-  email: string;
-  name: string | null;
-  avatarUrl: string | null;
-  isSuperAdmin: boolean;
+  label: string;
+  href: string;
 }
 
-export interface SidebarWorkspace {
-  id: string;
-  name: string;
-  slug: string;
-  role: Role;
-  boards: { id: string; name: string }[];
-  enabledViews: Array<"TABLE" | "KANBAN" | "ROADMAP" | "GANTT" | "WHITEBOARD">;
-  // Count of OPEN + IN_PROGRESS support tickets (excludes RESOLVED/CLOSED).
-  openSupportCount?: number;
+const FOR_YOU_META: Record<ForYouKey, { href: string; icon: IconType }> = {
+  inbox: { href: "/inbox", icon: IconBell },
+  "my-tasks": { href: "/my-tasks", icon: IconTasks },
+  todo: { href: "/my/todo", icon: IconTodo },
+  calendar: { href: "/my/calendar", icon: IconCalendar },
+  notes: { href: "/my/notes", icon: IconNotes },
+  reminders: { href: "/my/reminders", icon: IconReminders },
+  vacations: { href: "/vacations", icon: IconVacations },
+};
+// ponytail: no dedicated clock icon in icons.tsx — Czas pracy reuses IconRecent (clock) like the mockup.
+const TOOL_META: Record<ToolKey, { path: string; icon: IconType }> = {
+  contacts: { path: "contacts", icon: IconContacts },
+  sales: { path: "sales", icon: IconSales },
+  time: { path: "time", icon: IconRecent },
+  passwords: { path: "passwords", icon: IconPasswords },
+  subscriptions: { path: "subscriptions", icon: IconSubscriptions },
+  briefs: { path: "briefs", icon: IconCreative },
+  support: { path: "support", icon: IconSupport },
+  wiki: { path: "wiki", icon: IconWiki },
+  canvases: { path: "canvases", icon: IconWhiteboard },
+};
+
+const ROLE_LABEL: Record<Role, string> = { ADMIN: "Administrator", MEMBER: "Członek", VIEWER: "Obserwator" };
+
+function isActive(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+function canManage(role: Role) {
+  return role === "ADMIN";
+}
+// Matches lib/permissions — ADMIN + MEMBER create/reorder boards (VIEWER cannot).
+function canCreateBoard(role: Role) {
+  return role === "ADMIN" || role === "MEMBER";
+}
+const noop = () => {};
+// Drag listeners live on the <a> rows. After an activated drag dnd-kit stops the
+// post-drop click at document capture (so React never sees it) but leaves the
+// native anchor navigation — cancel it ourselves.
+function markDragEnd() {
+  const swallow = (e: MouseEvent) => e.preventDefault();
+  document.addEventListener("click", swallow, { capture: true, once: true });
+  window.setTimeout(() => document.removeEventListener("click", swallow, { capture: true }), 50);
 }
 
-// Bumped v2 to ignore stale localStorage from prior sessions; users start expanded.
-const STORAGE_KEY = "danielos.sidebar.collapsed.v2";
-// F12-K137: stan zwinięcia sekcji TWOJE.
-const MINE_OPEN_KEY = "danielos.sidebar.mineOpen.v1";
+type Props = Omit<SidebarProps, "mode" | "mobileOpen" | "onMobileClose"> & Partial<Pick<SidebarProps, "mode" | "mobileOpen" | "onMobileClose">>;
 
-export function Sidebar({
-  user,
-  workspaces,
-  unreadNotificationCount,
-}: {
-  user: SidebarUser;
-  workspaces: SidebarWorkspace[];
-  unreadNotificationCount: number;
-}) {
+export function Sidebar({ user, workspaces, unreadNotificationCount, myTasksCount, mode = "expanded", mobileOpen = false, onMobileClose = noop }: Props) {
   const pathname = usePathname();
-  const activeWorkspaceId = pathname.match(/^\/w\/([^/]+)/)?.[1] ?? null;
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  // F12-K137: zwijanie sekcji TWOJE (klient: "mało miejsca na przestrzenie").
-  // Default open; wybór persistowany w localStorage.
-  const [mineOpen, setMineOpen] = useState(true);
+  const activeWsId = pathname.match(/^\/w\/([^/]+)/)?.[1] ?? null;
+  const toolsWs = workspaces.find((w) => w.id === activeWsId) ?? workspaces[0];
+  const [itemsPref, setItemsPref] = useUiPref<SidebarItemsPref>(SIDEBAR_ITEMS_PREF, { hidden: [] });
+  const [recent, setRecent] = useUiPref<SavedItem[]>("ui:recent", []);
+  const [starred] = useUiPref<SavedItem[]>("ui:starred", []);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const hidden = new Set(itemsPref.hidden);
+
+  // Record visited boards in ui:recent (max 5). Reads storage directly so the
+  // first visit doesn't clobber history before useUiPref hydrates.
   useEffect(() => {
+    const m = pathname.match(/^\/w\/([^/]+)\/b\/([^/]+)/);
+    if (!m) return;
+    const ws = workspaces.find((w) => w.id === m[1]);
+    const board = ws?.boards.find((b) => b.id === m[2]);
+    if (!ws || !board) return;
+    let cur: SavedItem[] = [];
     try {
-      if (window.localStorage.getItem(MINE_OPEN_KEY) === "0") setMineOpen(false);
+      cur = JSON.parse(window.localStorage.getItem("ui:recent") ?? "[]") as SavedItem[];
     } catch {
-      /* noop */
+      /* ignore */
     }
-  }, []);
-  const toggleMine = () => {
-    setMineOpen((prev) => {
-      try {
-        window.localStorage.setItem(MINE_OPEN_KEY, prev ? "0" : "1");
-      } catch {
-        /* noop */
-      }
-      return !prev;
-    });
-  };
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(
-    new Set(activeWorkspaceId ? [activeWorkspaceId] : []),
-  );
+    if (cur[0]?.id === board.id) return;
+    setRecent([{ type: "board", id: board.id, label: board.name, href: `/w/${ws.id}/b/${board.id}/table` }, ...cur.filter((r) => r.id !== board.id)].slice(0, 5));
+  }, [pathname, workspaces, setRecent]);
 
-  // Optimistic local order; useEffect re-syncs after revalidatePath from server action.
-  const [workspaceItems, setWorkspaceItems] = useState(workspaces);
+  // Mobile drawer: close on route change (not on mount) + Esc, lock body scroll.
+  const lastPath = useRef(pathname);
   useEffect(() => {
-    setWorkspaceItems(workspaces);
-  }, [workspaces]);
-
-  const sensors = useSensors(
-    // 5px threshold — clicks under it pass through to <Link>; no accidental drag.
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-
-  const onWorkspaceDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    setWorkspaceItems((prev) => {
-      const oldIdx = prev.findIndex((w) => w.id === active.id);
-      const newIdx = prev.findIndex((w) => w.id === over.id);
-      if (oldIdx < 0 || newIdx < 0) return prev;
-      const next = arrayMove(prev, oldIdx, newIdx);
-      const orderedIds = next.map((w) => w.id);
-      startTransition(() => {
-        void reorderWorkspacesAction(orderedIds);
-      });
-      return next;
-    });
-  };
-
-  // Auto-close mobile drawer on route change.
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
+    if (lastPath.current === pathname) return;
+    lastPath.current = pathname;
+    onMobileClose();
+  }, [pathname, onMobileClose]);
   useEffect(() => {
     if (!mobileOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileOpen(false);
+      if (e.key === "Escape") onMobileClose();
     };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [mobileOpen]);
-
-  // Block body scroll while mobile drawer is open.
-  useEffect(() => {
-    if (!mobileOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
+      document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
     };
-  }, [mobileOpen]);
+  }, [mobileOpen, onMobileClose]);
 
-  useEffect(() => {
-    if (activeWorkspaceId) {
-      setExpandedIds((prev) => {
-        if (prev.has(activeWorkspaceId)) return prev;
-        const next = new Set(prev);
-        next.add(activeWorkspaceId);
-        return next;
-      });
-    }
-  }, [activeWorkspaceId]);
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored === "1") setCollapsed(true);
-    } catch {
-      /* noop */
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, collapsed ? "1" : "0");
-    } catch {
-      /* noop */
-    }
-  }, [collapsed]);
-
-  const toggleWorkspace = (id: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const initials = (user.name ?? user.email).slice(0, 2).toUpperCase();
+  const forYou: NavItem[] = FOR_YOU_ITEMS.filter((i) => !hidden.has(i.key)).map((i) => ({
+    ...i,
+    ...FOR_YOU_META[i.key],
+    badge:
+      i.key === "inbox" && unreadNotificationCount > 0 ? <Badge tone="red">{unreadNotificationCount}</Badge>
+      : i.key === "my-tasks" && myTasksCount > 0 ? <Badge tone="gray">{myTasksCount}</Badge>
+      : undefined,
+  }));
+  const tools: NavItem[] = toolsWs
+    ? TOOL_ITEMS.filter((i) => !hidden.has(i.key)).map((i) => ({
+        ...i,
+        href: `/w/${toolsWs.id}/${TOOL_META[i.key].path}`,
+        icon: TOOL_META[i.key].icon,
+        badge: i.key === "support" && toolsWs.openSupportCount > 0 ? <Badge tone="gray">{toolsWs.openSupportCount}</Badge> : undefined,
+      }))
+    : [];
+  const more: NavItem[] = [
+    { key: "workspaces", label: "Wszystkie przestrzenie", href: "/workspaces", icon: IconGrid },
+    ...(user.isSuperAdmin ? [{ key: "admin", label: "Panel admina", href: "/admin", icon: IconShield }] : []),
+  ];
+  const displayName = user.name ?? user.email;
+  const roleLabel = user.isSuperAdmin ? "Administrator" : toolsWs ? ROLE_LABEL[toolsWs.role] : "Członek";
 
   return (
     <>
-      {/* Mobile hamburger — z-[90] === Z.mobileNav (F12-K104).
-          Nad NotificationToaster + ReminderPopups (z-[80] toast), pod
-          modal/drawer (z-[100]/[110]) — drawer ma się nakładać nad hamburger,
-          inaczej klient nie może zamknąć drawer'a. */}
-      {!mobileOpen && (
-        <button
-          type="button"
-          onClick={() => setMobileOpen(true)}
-          aria-label="Otwórz menu"
-          className="mobile-sidebar-toggle fixed right-3 top-3 z-[90] grid h-11 w-11 place-items-center rounded-lg border border-border bg-card/95 text-foreground shadow-lg backdrop-blur transition-colors hover:bg-accent md:hidden"
-        >
-          <Menu size={20} />
-        </button>
+      {mode === "rail" ? (
+        <nav data-ui="sidebar-rail" aria-label="Nawigacja" className="hidden w-14 shrink-0 flex-col items-center border-r border-border bg-canvas py-2 md:flex">
+          <div className="no-scrollbar flex min-h-0 w-full flex-1 flex-col items-center gap-0.5 overflow-y-auto">
+            {forYou.map((i) => (
+              <RailButton key={i.key} href={i.href} label={i.label} active={isActive(pathname, i.href)} dot={i.key === "inbox" && unreadNotificationCount > 0}>
+                <i.icon />
+              </RailButton>
+            ))}
+            <RailSep />
+            {workspaces.map((ws) => (
+              <RailButton key={ws.id} href={`/w/${ws.id}`} label={ws.name} active={ws.id === activeWsId}>
+                <WsTile name={ws.name} size={18} />
+              </RailButton>
+            ))}
+            <RailSep />
+            {tools.map((i) => (
+              <RailButton key={i.key} href={i.href} label={i.label} active={isActive(pathname, i.href)}>
+                <i.icon />
+              </RailButton>
+            ))}
+            <RailSep />
+            {more.map((i) => (
+              <RailButton key={i.key} href={i.href} label={i.label} active={isActive(pathname, i.href)}>
+                <i.icon />
+              </RailButton>
+            ))}
+          </div>
+          <div className="flex shrink-0 flex-col items-center gap-1 pt-2">
+            <RailButton label="Dostosuj pasek" onClick={() => setCustomizeOpen(true)}>
+              <IconSliders />
+            </RailButton>
+            <AvatarMenu
+              user={user}
+              align="start"
+              trigger={
+                <button type="button" aria-label="Menu użytkownika" className="rounded-full outline-none">
+                  <Avatar name={displayName} src={user.avatarUrl} size={28} />
+                </button>
+              }
+            />
+          </div>
+        </nav>
+      ) : (
+        <aside data-ui="sidebar" className="hidden w-60 shrink-0 flex-col border-r border-border bg-canvas md:flex">
+          <div className="min-h-0 flex-1 overflow-y-auto p-2">
+            <Eyebrow className="h-[26px]">Dla Ciebie</Eyebrow>
+            {forYou.map((i) => (
+              <NavRow key={i.key} href={i.href} icon={i.icon} label={i.label} badge={i.badge} active={isActive(pathname, i.href)} />
+            ))}
+            <div className="h-2" />
+            <SavedGroup icon={IconRecent} label="Ostatnie" items={recent} pathname={pathname} />
+            <SavedGroup icon={IconStar} label="Oznaczone gwiazdką" items={starred} pathname={pathname} />
+            <div className="mt-1.5 flex h-[30px] items-end justify-between px-2">
+              <span className="eyebrow">Przestrzenie</span>
+              <Link href="/workspaces?new=1" aria-label="Nowa przestrzeń" className="grid size-5 place-items-center rounded-sm text-n-500 hover:bg-n-100 hover:text-foreground active:bg-n-200">
+                <IconPlus />
+              </Link>
+            </div>
+            <WorkspaceList workspaces={workspaces} pathname={pathname} activeWsId={activeWsId} />
+            {tools.length > 0 && <Eyebrow className="mt-1.5 h-[30px]">Narzędzia</Eyebrow>}
+            {tools.map((i) => (
+              <NavRow key={i.key} href={i.href} icon={i.icon} label={i.label} badge={i.badge} active={isActive(pathname, i.href)} />
+            ))}
+            <Eyebrow className="mt-1.5 h-[30px]">Więcej</Eyebrow>
+            {more.map((i) => (
+              <NavRow key={i.key} href={i.href} icon={i.icon} label={i.label} active={isActive(pathname, i.href)} />
+            ))}
+            <NavRow icon={IconSliders} label="Dostosuj pasek" onClick={() => setCustomizeOpen(true)} />
+          </div>
+          <div className="flex h-[52px] shrink-0 items-center gap-2 border-t border-border px-3">
+            <Avatar name={displayName} src={user.avatarUrl} size={28} />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-medium leading-4 text-foreground">{displayName}</div>
+              <div className="truncate text-2xs leading-[14px] text-muted-foreground">{roleLabel}</div>
+            </div>
+            <AvatarMenu user={user} align="end" trigger={<MoreButton className="size-7" />} />
+          </div>
+        </aside>
       )}
 
-      <aside
-        data-collapsed={collapsed ? "true" : "false"}
-        data-mobile-open={mobileOpen ? "true" : "false"}
-        // Dual-mode: mobile drawer (max-md) vs desktop sticky (md+). Mobile rules MUST use `max-md:` —
-        // otherwise data-[mobile-open=false]:-translate-x-full (specificity 0,2,0) beats md:translate-x-0
-        // (0,1,0) and the sidebar stays hidden on desktop.
-        // v4: 240px expanded (210 ciął "Wszystkie przestrzenie"), 72px collapsed (icon-only).
-        className="group/sidebar flex h-dvh flex-col text-sidebar-foreground transition-[transform,width] duration-200 max-md:fixed max-md:inset-0 max-md:z-40 max-md:w-full max-md:p-0 max-md:data-[mobile-open=false]:-translate-x-full max-md:data-[mobile-open=true]:translate-x-0 md:sticky md:top-0 md:self-start md:p-3 md:pr-2 data-[collapsed=true]:md:w-[72px] data-[collapsed=false]:md:w-[240px]"
-      >
-        {/* Mobile: cały sidebar scrolluje jako jedna kolumna (max-md:overflow-y-auto)
-            żeby user nie był zamknięty w zagnieżdżonym scroll'u listy workspace'ów.
-            Desktop: zewnętrzny overflow-hidden, wewnętrzna sekcja workspace'ów ma
-            własny scroll bo header i footer mają trzymać się na top/bottom. */}
-        {/* F12-K85 perf: usunięty backdrop-blur-[40px] saturate-[1.8] —
-            sidebar jest ZAWSZE widoczny + przy każdym hover/scroll repaint
-            kosztował tysiące ms na slabszych GPU (klient raportuje zamulę).
-            Background z .sidebar-glass utility wystarczy dla v4 vibe'u. */}
-        <div className="sidebar-glass relative flex h-full flex-col md:overflow-hidden max-md:overflow-y-auto md:rounded-[22px] max-md:rounded-none max-md:border-0">
+      {mobileOpen && (
+        <MobileDrawer user={user} displayName={displayName} roleLabel={roleLabel} forYou={forYou} tools={tools} more={more} workspaces={workspaces} pathname={pathname} activeWsId={activeWsId} onClose={onMobileClose} onCustomize={() => setCustomizeOpen(true)} />
+      )}
 
-          {/* ─── HEADER: brand mark + wordmark + collapse/close toggle ─── */}
-          {/* v4: padding 14px wewnątrz, brand mark 28px (gradient square + chevron). */}
-          <div
-            className={`relative flex items-center gap-2.5 border-b border-black/5 dark:border-white/[0.05] px-3.5 py-3.5 max-md:px-5 max-md:py-4 ${
-              collapsed ? "justify-center" : "justify-between"
-            }`}
-          >
-            <Link
-              href="/workspaces"
-              className={`flex min-w-0 items-center gap-2.5 rounded-md transition-opacity hover:opacity-80 ${
-                collapsed ? "" : "flex-1"
-              }`}
-              title="Flovly — strona główna"
-            >
-              <FlovlyMark size={collapsed ? 30 : 28} />
-              {!collapsed && (
-                <FlovlyWordmark size="sm" gradientV={false} className="!text-[18px]" />
-              )}
-            </Link>
-            {!collapsed && (
-              <div className="flex shrink-0 items-center gap-1">
-                {/* Mobile close X — 44px tap target (Apple HIG min); only way to close drawer on mobile besides Esc. */}
-                <button
-                  type="button"
-                  onClick={() => setMobileOpen(false)}
-                  className="grid h-11 w-11 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground md:hidden"
-                  aria-label="Zamknij menu"
-                >
-                  <X size={20} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCollapsed((v) => !v)}
-                  className="hidden h-7 w-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground md:grid"
-                  aria-label="Zwiń panel"
-                >
-                  <ChevronLeft size={14} />
-                </button>
-              </div>
-            )}
-            {/* W trybie collapsed chevron jest poniżej (centered) — inaczej zachodzi na logo. */}
-          </div>
-          {collapsed && (
-            <div className="hidden justify-center border-b border-black/5 px-2 py-2 dark:border-white/[0.05] md:flex">
-              <button
-                type="button"
-                onClick={() => setCollapsed(false)}
-                className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/[0.05]"
-                aria-label="Rozwiń panel"
-              >
-                <ChevronRight size={14} />
-              </button>
-            </div>
-          )}
-
-          {/* ─── SEKCJA "TWOJE" — personal nav items ─── */}
-          {/* F12-K137: header jest toggle'em — zwija sekcję żeby zostawić
-              więcej miejsca na PRZESTRZENIE. W trybie icon-only (collapsed
-              sidebar) sekcja zawsze widoczna (nie ma headera do kliknięcia). */}
-          <div className="border-b border-black/5 px-3 pb-2 pt-3 dark:border-white/[0.05] max-md:px-4 max-md:pt-4">
-            {!collapsed && (
-              <button
-                type="button"
-                onClick={toggleMine}
-                aria-expanded={mineOpen}
-                className="group/mine mb-2 flex w-full items-center justify-between rounded-md px-1.5 py-0.5 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.04]"
-              >
-                <span className="eyebrow max-md:text-[0.78rem] max-md:tracking-[0.12em]">
-                  Twoje
-                </span>
-                <ChevronDown
-                  size={13}
-                  className={`text-muted-foreground/60 transition-transform group-hover/mine:text-muted-foreground ${mineOpen ? "" : "-rotate-90"}`}
-                />
-              </button>
-            )}
-            {(collapsed || mineOpen) && (
-            <nav className="flex flex-col gap-1">
-              <NavItem
-                href="/inbox"
-                icon={<Inbox size={16} />}
-                label="Powiadomienia"
-                pathname={pathname}
-                collapsed={collapsed}
-                badge={unreadNotificationCount > 0 ? unreadNotificationCount : undefined}
-              />
-              <NavItem
-                href="/my-tasks"
-                icon={<Compass size={16} />}
-                label="Zadania dla Ciebie"
-                pathname={pathname}
-                collapsed={collapsed}
-              />
-              <NavItem
-                href="/my/todo"
-                icon={<CheckSquare size={16} />}
-                label="TO DO"
-                pathname={pathname}
-                collapsed={collapsed}
-              />
-              <NavItem
-                href="/my/calendar"
-                icon={<CalendarDays size={16} />}
-                label="Kalendarz"
-                pathname={pathname}
-                collapsed={collapsed}
-              />
-              <NavItem
-                href="/my/notes"
-                icon={<StickyNote size={16} />}
-                label="Notatnik"
-                pathname={pathname}
-                collapsed={collapsed}
-              />
-              <NavItem
-                href="/my/reminders"
-                icon={<Bell size={16} />}
-                label="Przypomnienia"
-                pathname={pathname}
-                collapsed={collapsed}
-              />
-              <NavItem
-                href="/vacations"
-                icon={<Plane size={16} />}
-                label="Urlopy"
-                pathname={pathname}
-                collapsed={collapsed}
-              />
-              {/* F12-K136: Kontakty / Czas pracy / Hasła przeniesione z
-                  per-workspace sublinks do sekcji TWOJE (klient: "nie ma
-                  być do każdego workspace tylko na górze"). Dane pozostają
-                  workspace-scoped — link prowadzi do pierwszego workspace'a
-                  usera (typowy klient ma jeden). */}
-              {workspaces[0] && (
-                <>
-                  <NavItem
-                    href={`/w/${workspaces[0].id}/contacts`}
-                    icon={<Briefcase size={16} />}
-                    label="Kontakty"
-                    pathname={pathname}
-                    collapsed={collapsed}
-                  />
-                  <NavItem
-                    href={`/w/${workspaces[0].id}/time`}
-                    icon={<Clock size={16} />}
-                    label="Czas pracy"
-                    pathname={pathname}
-                    collapsed={collapsed}
-                  />
-                  <NavItem
-                    href={`/w/${workspaces[0].id}/passwords`}
-                    icon={<KeyRound size={16} />}
-                    label="Hasła"
-                    pathname={pathname}
-                    collapsed={collapsed}
-                  />
-                  {/* F12-K140: zarządzanie subskrypcjami firmy. */}
-                  <NavItem
-                    href={`/w/${workspaces[0].id}/subscriptions`}
-                    icon={<CreditCard size={16} />}
-                    label="Subskrypcje"
-                    pathname={pathname}
-                    collapsed={collapsed}
-                  />
-                </>
-              )}
-              <NavItem
-                href="/workspaces"
-                icon={<Layers size={16} />}
-                label="Wszystkie przestrzenie"
-                pathname={pathname}
-                collapsed={collapsed}
-                exact
-              />
-            </nav>
-            )}
-          </div>
-
-          {/* ─── SEKCJA "PRZESTRZENIE" — workspaces list + DnD reorder ─── */}
-          {/* Na mobile DZIELI scroll z resztą sidebar'a; na desktopie nested scroll.
-              F12-K83: Header "Przestrzenie" jest teraz triggerem do WorkspaceSwitcher
-              popover (quick-switch); pełna lista poniżej pozostaje (DnD + boards). */}
-          <div className="px-3 pb-2 pt-3 md:flex-1 md:overflow-y-auto max-md:px-4 max-md:pt-4">
-            {!collapsed && (
-              <div className="mb-2 flex items-center justify-between px-1.5 max-md:mb-3">
-                <WorkspaceSwitcher
-                  workspaces={workspaceItems.map(
-                    (w): WorkspaceSwitcherItem => ({
-                      id: w.id,
-                      name: w.name,
-                      role: w.role,
-                    }),
-                  )}
-                  activeWorkspaceId={activeWorkspaceId}
-                >
-                  <span className="inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05]">
-                    <span className="eyebrow max-md:text-[0.78rem] max-md:tracking-[0.12em]">
-                      Przestrzenie
-                    </span>
-                    <ChevronDown
-                      size={11}
-                      className="text-muted-foreground/60"
-                    />
-                  </span>
-                </WorkspaceSwitcher>
-                <Link
-                  href="/workspaces"
-                  aria-label="Nowa przestrzeń"
-                  className="grid h-5 w-5 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground max-md:h-10 max-md:w-10"
-                >
-                  <Plus size={13} className="max-md:size-[18px]" />
-                </Link>
-              </div>
-            )}
-            <div className="flex flex-col gap-1">
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={onWorkspaceDragEnd}
-              >
-                <SortableContext
-                  items={workspaceItems.map((w) => w.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {workspaceItems.map((ws) => (
-                    <SortableWorkspaceRow
-                      key={ws.id}
-                      workspace={ws}
-                      pathname={pathname}
-                      activeWorkspaceId={activeWorkspaceId}
-                      expanded={expandedIds.has(ws.id)}
-                      onToggle={() => toggleWorkspace(ws.id)}
-                      collapsed={collapsed}
-                    />
-                  ))}
-                </SortableContext>
-              </DndContext>
-              {workspaceItems.length === 0 && !collapsed && (
-                <div className="px-2 py-3 text-[0.82rem] text-muted-foreground">
-                  Brak przestrzeni. Utwórz pierwszą.
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ─── FOOTER: user widget (klik → ProfileDropdown z Panel admina /
-              Ustawienia / Powiadomienia / 2FA / Sesje / Tryb / Wyloguj).
-              4 stare itemy footera (admin/settings/theme/logout) przeniesione do
-              dropdownu — żeby workspace list dostała pełną wysokość. */}
-          <div className="border-t border-black/5 dark:border-white/[0.05] max-md:px-4 max-md:pt-2">
-
-            {/* User profile widget — sub-card z glass tint + border (v4 mock). */}
-            <div className="px-3 pb-3 pt-1 max-md:px-4 max-md:pb-4">
-              <ProfileDropdown
-                user={{
-                  email: user.email,
-                  name: user.name,
-                  avatarUrl: user.avatarUrl,
-                  isSuperAdmin: user.isSuperAdmin,
-                }}
-              >
-                <span
-                  className={`flex items-center gap-2.5 rounded-[13px] border border-white/70 bg-white/55 p-2 transition-colors hover:bg-white/70 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/[0.08] ${
-                    collapsed ? "justify-center" : ""
-                  } max-md:gap-3.5 max-md:p-3`}
-                >
-                  <span
-                    style={{ background: "linear-gradient(140deg, #34BEF8, #7C5CFF)" }}
-                    className="relative grid h-[30px] w-[30px] shrink-0 place-items-center overflow-hidden rounded-[9px] font-display text-[0.72rem] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_4px_12px_-4px_rgba(124,92,255,0.45)] max-md:h-11 max-md:w-11 max-md:rounded-[12px] max-md:text-[0.95rem]"
-                  >
-                    {user.avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={user.avatarUrl} alt="" width={30} height={30} className="h-full w-full object-cover" />
-                    ) : (
-                      initials
-                    )}
-                  </span>
-                  {!collapsed && (
-                    <div className="min-w-0 flex-1 leading-tight">
-                      <div className="truncate text-[0.78rem] font-semibold tracking-[-0.005em] text-foreground max-md:text-[1rem]">
-                        {user.name ?? user.email.split("@")[0]}
-                      </div>
-                      <div className="truncate text-[0.68rem] text-muted-foreground max-md:text-[0.78rem]">
-                        {user.isSuperAdmin ? "Owner" : "Member"}
-                      </div>
-                    </div>
-                  )}
-                </span>
-              </ProfileDropdown>
-            </div>
-          </div>
-        </div>
-      </aside>
+      <CustomizeSidebarDialog open={customizeOpen} onOpenChange={setCustomizeOpen} hidden={itemsPref.hidden} onSave={(hidden) => setItemsPref({ hidden })} />
     </>
   );
 }
 
-function WsSubLink({
-  href,
-  icon,
-  label,
-  active,
-  badge,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  active: boolean;
-  badge?: number;
-}) {
+/* ---------- pieces ---------- */
+
+function Eyebrow({ className, children }: { className?: string; children: ReactNode }) {
+  return <div className={cn("eyebrow flex items-end px-2", className)}>{children}</div>;
+}
+
+function WsTile({ name, size }: { name: string; size: 16 | 18 }) {
   return (
-    <Link
-      href={href}
-      prefetch={false}
-      data-active={active ? "true" : "false"}
-      className="group relative inline-flex items-center gap-2 rounded-md px-2 py-1 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground/80 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground data-[active=true]:bg-white/80 data-[active=true]:shadow-[0_0_0_0.5px_rgba(12,13,18,0.08),inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-white/[0.07] dark:data-[active=true]:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.06)] data-[active=true]:font-semibold data-[active=true]:text-foreground max-md:gap-2.5 max-md:px-3 max-md:py-2.5 max-md:text-[0.86rem] [&>svg]:max-md:size-4"
-    >
-      {icon} {label}
-      {badge !== undefined && badge > 0 && (
-        <span className="ml-auto grid h-4 min-w-[16px] place-items-center rounded-full bg-primary px-1 font-mono text-[0.58rem] font-bold tracking-normal text-primary-foreground">
-          {badge > 99 ? "99+" : badge}
-        </span>
-      )}
-    </Link>
+    <span aria-hidden className={cn("grid shrink-0 place-items-center rounded-sm bg-orange-100 text-[9px] font-bold leading-none text-orange-800", size === 16 ? "size-4" : "size-[18px]")}>
+      {name.trim().charAt(0).toUpperCase()}
+    </span>
   );
 }
 
-function NavItem({
-  href,
-  icon,
-  label,
-  pathname,
-  collapsed,
-  disabled,
-  hint,
-  exact,
-  badge,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  pathname: string;
-  collapsed: boolean;
-  disabled?: boolean;
-  hint?: string;
-  exact?: boolean;
-  badge?: number;
-}) {
-  const active = exact ? pathname === href : pathname.startsWith(href);
+function MoreButton({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
+  // span, not <button>: AvatarMenu wraps the trigger in its own role=button.
+  return (
+    <span aria-label="Więcej" className={cn("grid shrink-0 place-items-center rounded-md text-n-500 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200", className)} {...props}>
+      <IconMore />
+    </span>
+  );
+}
 
-  const content = (
+function NavRow({
+  href,
+  onClick,
+  icon: Icon,
+  iconSize = 16,
+  label,
+  badge,
+  active = false,
+  indent = false,
+  mobile = false,
+  trailing,
+  ariaExpanded,
+}: {
+  href?: string;
+  onClick?: () => void;
+  icon: IconType;
+  iconSize?: 14 | 16;
+  label: string;
+  badge?: ReactNode;
+  active?: boolean;
+  indent?: boolean;
+  mobile?: boolean;
+  trailing?: ReactNode;
+  ariaExpanded?: boolean;
+}) {
+  const cls = cn(
+    "flex w-full items-center rounded-md text-left outline-none",
+    mobile ? "h-11 gap-3 px-2.5 text-base text-foreground" : "h-8 gap-2 px-2 text-sm text-n-700",
+    indent && (mobile ? "pl-[34px]" : "pl-[30px]"),
+    active ? "bg-selected font-medium text-foreground shadow-[inset_2px_0_0_var(--orange-500)]" : "hover:bg-n-100 active:bg-n-200",
+  );
+  const inner = (
     <>
-      <span className="relative shrink-0 text-muted-foreground transition-colors group-hover:text-foreground group-data-[active=true]:text-foreground [&>svg]:max-md:size-[18px]">
-        {icon}
-        {collapsed && badge !== undefined && badge > 0 && (
-          // Fixed width — badge size stable across 1 → 9 → 9+ so icon row doesn't reflow.
-          <span className="absolute -right-2 -top-1.5 grid h-4 w-4 place-items-center rounded-full bg-primary font-mono text-[0.55rem] font-bold text-primary-foreground">
-            {badge > 9 ? "9+" : badge}
-          </span>
-        )}
-      </span>
-      {!collapsed && (
-        <span className="min-w-0 flex-1 truncate tracking-tight">{label}</span>
-      )}
-      {!collapsed && badge !== undefined && badge > 0 && (
-        <span className="grid h-5 min-w-[24px] place-items-center rounded-full bg-primary px-1.5 font-mono text-[0.62rem] font-bold text-primary-foreground">
-          {badge > 99 ? "99+" : badge}
-        </span>
-      )}
-      {!collapsed && hint && badge === undefined && (
-        <span className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground/60">
-          {hint}
-        </span>
-      )}
+      <Icon width={iconSize} height={iconSize} className={cn("shrink-0", active ? "text-orange-700" : "text-n-500")} />
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {badge}
+      {trailing}
     </>
   );
-
-  // v4: gap-2.5, padding 2.5/2 (vs poprzednie 2/1.5), rounded-lg (vs rounded-sm),
-  // font-medium (vs default), text size 0.84rem (vs 0.88rem) — bardziej zwarte.
-  // Collapsed (72px): icon wyśrodkowany w buttonie (justify-center + px-0) —
-  // tak żeby wszystkie nav items miały spójną pozycję ikon w columnie 72px.
-  const cls =
-    `group flex items-center gap-2.5 rounded-lg py-2 text-[0.84rem] font-medium transition-colors data-[active=true]:bg-[linear-gradient(135deg,rgba(124,92,255,0.14),rgba(210,71,181,0.10))] data-[active=true]:shadow-[inset_0_0_0_1px_rgba(124,92,255,0.18),0_1px_2px_rgba(12,13,18,0.04)] data-[active=true]:text-foreground dark:data-[active=true]:bg-[linear-gradient(135deg,rgba(155,107,242,0.28),rgba(225,49,143,0.18))] dark:data-[active=true]:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] dark:data-[active=true]:text-white max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem] ${
-      collapsed ? "justify-center px-0" : "px-2.5"
-    }`;
-
-  if (disabled) {
-    // F12-K104: aria-disabled + role="link" — SR users dostają informację
-    // że link jest niedostępny (cursor-not-allowed sam nie wystarcza).
+  if (href) {
     return (
-      <span
-        data-active={active ? "true" : "false"}
-        role="link"
-        aria-disabled="true"
-        className={`${cls} cursor-not-allowed text-muted-foreground/60`}
-        title={hint ? `Dostępne w ${hint}` : undefined}
-      >
-        {content}
-      </span>
+      <Link href={href} prefetch={false} className={cls} aria-current={active ? "page" : undefined}>
+        {inner}
+      </Link>
     );
   }
-
   return (
-    <Link
-      href={href}
-      data-active={active ? "true" : "false"}
-      className={`${cls} text-sidebar-foreground hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground`}
-    >
-      {content}
-    </Link>
+    <button type="button" onClick={onClick} className={cls} aria-expanded={ariaExpanded}>
+      {inner}
+    </button>
   );
 }
 
-function canManage(role: Role): boolean {
-  return role === "ADMIN";
+function Chevron({ open, className }: { open: boolean; className?: string }) {
+  return <IconChevronRight width={12} height={12} className={cn("shrink-0 text-n-500 transition-transform duration-150", open && "rotate-90", className)} />;
 }
 
-// Matches lib/permissions matrix — ADMIN + MEMBER can create boards (VIEWER cannot).
-function canCreateBoard(role: Role): boolean {
-  return role === "ADMIN" || role === "MEMBER";
-}
-
-// Inline style instead of Tailwind classes — dynamic class arrays aren't picked up by Tailwind v4 JIT.
-const SWATCH_GRADIENTS: ReadonlyArray<readonly [string, string]> = [
-  ["#7C5CFF", "#D247B5"], // brand violet → magenta (v4 primary)
-  ["#34BEF8", "#7C5CFF"], // sky → violet
-  ["#34BEF8", "#10B981"], // sky → emerald
-  ["#F59E0B", "#E1318F"], // amber → magenta
-  ["#A5B4FC", "#6366F1"], // periwinkle → indigo
-  ["#F0ABFC", "#C084FC"], // pink → purple
-];
-
-function swatchIndex(id: string): number {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) {
-    h = (h * 31 + id.charCodeAt(i)) | 0;
-  }
-  return Math.abs(h) % SWATCH_GRADIENTS.length;
-}
-
-// v4: workspace swatch jest większy (20px → matchuje hero mock'i),
-// rounded-lg, z gradient'em + inset highlight + soft shadow.
-function WorkspaceSwatch({ id }: { id: string }) {
-  const [from, to] = SWATCH_GRADIENTS[swatchIndex(id)];
+// Ostatnie / Oznaczone gwiazdką.
+function SavedGroup({ icon, label, items, pathname, mobile = false }: { icon: IconType; label: string; items: SavedItem[]; pathname: string; mobile?: boolean }) {
+  const [open, setOpen] = useState(false);
   return (
-    <span
-      aria-hidden
-      style={{ background: `linear-gradient(140deg, ${from}, ${to})` }}
-      className="block h-5 w-5 shrink-0 rounded-[7px] shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_2px_6px_-2px_rgba(0,0,0,0.25)] max-md:h-[22px] max-md:w-[22px]"
-    />
+    <>
+      <NavRow icon={icon} label={label} mobile={mobile} onClick={() => setOpen((v) => !v)} ariaExpanded={open} trailing={<Chevron open={open} />} />
+      {open &&
+        (items.length === 0 ? (
+          <div className={cn("flex h-8 items-center text-xs text-muted-foreground", mobile ? "pl-[34px]" : "pl-[30px]")}>Brak</div>
+        ) : (
+          items.map((it) => <NavRow key={`${it.type}:${it.id}`} href={it.href} icon={IconBoards} iconSize={14} label={it.label} indent mobile={mobile} active={isActive(pathname, it.href)} />)
+        ))}
+    </>
   );
 }
 
-// Drag handle is hover-only (desktop) / always (mobile); {...listeners} sits on the button so name clicks remain link clicks.
-function SortableWorkspaceRow({
-  workspace: ws,
-  pathname,
-  activeWorkspaceId,
-  expanded,
-  onToggle,
-  collapsed,
-}: {
-  workspace: SidebarWorkspace;
-  pathname: string;
-  activeWorkspaceId: string | null;
-  expanded: boolean;
-  onToggle: () => void;
-  collapsed: boolean;
-}) {
-  // Drag disabled when collapsed — no room for the grip handle next to narrow icons.
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: ws.id, disabled: collapsed });
+function RailSep() {
+  return <span aria-hidden className="my-1.5 h-px w-6 shrink-0 bg-border" />;
+}
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 10 : "auto",
-  } as const;
-
-  const isInWorkspace = ws.id === activeWorkspaceId;
-  // Workspace row highlighted only on workspace overview / sub-links — board pages own the highlight.
-  const onBoardInWs = pathname.startsWith(`/w/${ws.id}/b/`);
-  const isActive = isInWorkspace && !onBoardInWs;
-
+function RailButton({ href, onClick, label, active = false, dot = false, children }: { href?: string; onClick?: () => void; label: string; active?: boolean; dot?: boolean; children: ReactNode }) {
+  const cls = cn(
+    "relative grid size-8 shrink-0 place-items-center rounded-md outline-none",
+    active ? "bg-selected text-orange-700 shadow-[inset_2px_0_0_var(--orange-500)]" : "text-n-600 hover:bg-n-100 hover:text-foreground active:bg-n-200",
+  );
+  const inner = (
+    <>
+      {children}
+      {dot && <span aria-hidden className="absolute top-[3px] right-[3px] size-2 rounded-full border-[1.5px] border-canvas bg-danger" />}
+    </>
+  );
   return (
-    <div ref={setNodeRef} style={style} className="flex flex-col">
-      <div
-        data-active={isActive ? "true" : "false"}
-        className="group relative flex items-center gap-1 rounded-lg transition-colors data-[active=true]:bg-[linear-gradient(135deg,rgba(124,92,255,0.14),rgba(210,71,181,0.10))] data-[active=true]:shadow-[inset_0_0_0_1px_rgba(124,92,255,0.18),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-[linear-gradient(135deg,rgba(155,107,242,0.28),rgba(225,49,143,0.18))] dark:data-[active=true]:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]"
-      >
-        {!collapsed && (
-          <button
-            type="button"
-            {...attributes}
-            {...listeners}
-            aria-label="Przeciągnij przestrzeń"
-            title="Przeciągnij aby zmienić kolejność"
-            // display:none default (not opacity-0 + w-7 — that clipped the workspace name); group-hover:grid on desktop.
-            className="hidden h-7 w-5 shrink-0 cursor-grab place-items-center rounded-md text-muted-foreground/60 transition-colors hover:text-foreground active:cursor-grabbing group-hover:grid max-md:!grid max-md:h-10 max-md:w-10 max-md:text-muted-foreground/50"
-          >
-            <GripVertical size={13} className="max-md:size-[16px]" />
-          </button>
-        )}
-        <Link
-          href={`/w/${ws.id}`}
-          prefetch={false}
-          className={`flex min-w-0 flex-1 items-center gap-2.5 rounded-lg py-2 text-[0.84rem] font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] max-md:gap-3 max-md:rounded-md max-md:px-3 max-md:py-3 max-md:text-[1rem] ${
-            collapsed ? "justify-center px-0" : "px-2"
-          }`}
-        >
-          <WorkspaceSwatch id={ws.id} />
-          {!collapsed && (
-            <span className="min-w-0 flex-1 truncate tracking-tight">
-              {ws.name}
-            </span>
-          )}
+    <Tooltip content={label} side="right">
+      {href ? (
+        <Link href={href} prefetch={false} aria-label={label} aria-current={active ? "page" : undefined} className={cls}>
+          {inner}
         </Link>
-        {!collapsed && canCreateBoard(ws.role) && (
-          // Hover-only on desktop; permanently visible would clip the workspace name.
-          <span className="hidden group-hover:inline-flex max-md:!inline-flex">
-            <CreateBoardDialog
-              workspaceId={ws.id}
-              workspaceEnabledViews={ws.enabledViews}
-            />
-          </span>
-        )}
-        {!collapsed && (
-          <button
-            type="button"
-            onClick={onToggle}
-            className="grid h-7 w-6 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground max-md:h-11 max-md:w-11"
-            aria-label={expanded ? "Zwiń" : "Rozwiń"}
-            aria-expanded={expanded}
-          >
-            <ChevronDown
-              size={13}
-              className={`transition-transform max-md:size-[18px] ${expanded ? "rotate-0" : "-rotate-90"}`}
-            />
-          </button>
-        )}
-      </div>
-
-      {!collapsed && expanded && (
-        <SortableBoardsList
-          workspaceId={ws.id}
-          boards={ws.boards}
-          pathname={pathname}
-          role={ws.role}
-          openSupportCount={ws.openSupportCount}
-        />
+      ) : (
+        <button type="button" onClick={onClick} aria-label={label} className={cls}>
+          {inner}
+        </button>
       )}
-    </div>
+    </Tooltip>
   );
 }
 
-// Per-workspace DndContext — no cross-workspace reorder; matches server action signature.
-function SortableBoardsList({
-  workspaceId,
-  boards: boardsProp,
-  pathname,
-  role,
-  openSupportCount,
-}: {
-  workspaceId: string;
-  boards: { id: string; name: string }[];
-  pathname: string;
-  role: Role;
-  openSupportCount?: number;
-}) {
-  const [boards, setBoards] = useState(boardsProp);
-  useEffect(() => {
-    setBoards(boardsProp);
-  }, [boardsProp]);
+/* ---------- workspaces (dnd-kit) ---------- */
 
-  const sensors = useSensors(
+function useSortSensors() {
+  return useSensors(
+    // 5px threshold — clicks under it pass through to <Link>.
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
+}
 
-  const onDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
+function WorkspaceList({ workspaces, pathname, activeWsId }: { workspaces: SidebarWorkspace[]; pathname: string; activeWsId: string | null }) {
+  // Optimistic order; re-synced when server props change (revalidatePath).
+  const [items, setItems] = useState(workspaces);
+  const [prevWs, setPrevWs] = useState(workspaces);
+  if (prevWs !== workspaces) {
+    setPrevWs(workspaces);
+    setItems(workspaces);
+  }
+  // Active workspace auto-expands on navigation; others toggle manually.
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set(activeWsId ? [activeWsId] : []));
+  const [seenWs, setSeenWs] = useState(activeWsId);
+  if (seenWs !== activeWsId) {
+    setSeenWs(activeWsId);
+    if (activeWsId && !expanded.has(activeWsId)) setExpanded(new Set(expanded).add(activeWsId));
+  }
+  const sensors = useSortSensors();
+  const onDragEnd = ({ active, over }: DragEndEvent) => {
+    markDragEnd();
     if (!over || active.id === over.id) return;
-    setBoards((prev) => {
-      const oldIdx = prev.findIndex((b) => b.id === active.id);
-      const newIdx = prev.findIndex((b) => b.id === over.id);
-      if (oldIdx < 0 || newIdx < 0) return prev;
-      const next = arrayMove(prev, oldIdx, newIdx);
-      const orderedIds = next.map((b) => b.id);
-      startTransition(() => {
-        void reorderBoardsAction(workspaceId, orderedIds);
-      });
-      return next;
-    });
+    const next = arrayMove(items, items.findIndex((w) => w.id === active.id), items.findIndex((w) => w.id === over.id));
+    setItems(next);
+    startTransition(() => void reorderWorkspacesAction(next.map((w) => w.id)));
   };
-
-  // ADMIN + MEMBER only (matches reorderBoardsAction's requireWorkspaceAction("task.update")).
-  const canDragBoards = canCreateBoard(role);
-
+  if (items.length === 0) return <div className="px-2 py-1.5 text-xs text-muted-foreground">Brak przestrzeni</div>;
   return (
-    <div className="mt-1 flex flex-col gap-0.5 pl-7">
-      {boards.length === 0 && (
-        <span className="px-2 py-1 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground/70">
-          brak tablic
-        </span>
-      )}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={onDragEnd}
-      >
-        <SortableContext
-          items={boards.map((b) => b.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {boards.map((b) => (
-            <SortableBoardRow
-              key={b.id}
-              workspaceId={workspaceId}
-              board={b}
-              pathname={pathname}
-              role={role}
-              canDrag={canDragBoards}
-            />
-          ))}
-        </SortableContext>
-      </DndContext>
-      <WsSubLink
-        href={`/w/${workspaceId}/wiki`}
-        icon={<BookOpen size={11} />}
-        label="Wiki"
-        active={pathname.startsWith(`/w/${workspaceId}/wiki`)}
-      />
-      <WsSubLink
-        href={`/w/${workspaceId}/support`}
-        icon={<LifeBuoy size={11} />}
-        label="Support"
-        active={pathname.startsWith(`/w/${workspaceId}/support`)}
-        badge={openSupportCount}
-      />
-      <WsSubLink
-        href={`/w/${workspaceId}/briefs`}
-        icon={<FileText size={11} />}
-        label="Creative Board"
-        active={pathname.startsWith(`/w/${workspaceId}/briefs`)}
-      />
-      <WsSubLink
-        href={`/w/${workspaceId}/calendar`}
-        icon={<CalendarDays size={11} />}
-        label="Kalendarz"
-        active={pathname.startsWith(`/w/${workspaceId}/calendar`)}
-      />
-      {/* F12-K136: Kontakty / Hasła / Czas pracy przeniesione do sekcji
-          TWOJE na górze sidebara — nie duplikujemy per workspace. */}
-      <WsSubLink
-        href={`/w/${workspaceId}/sales`}
-        icon={<LineChart size={11} />}
-        label="Plan sprzedaży"
-        active={pathname.startsWith(`/w/${workspaceId}/sales`)}
-      />
-      {canManage(role) && (
-        <WsSubLink
-          href={`/w/${workspaceId}/settings`}
-          icon={<Settings size={11} />}
-          label="Ustawienia"
-          active={pathname.startsWith(`/w/${workspaceId}/settings`)}
-        />
-      )}
+    <DndContext id="sidebar-workspaces" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <SortableContext items={items.map((w) => w.id)} strategy={verticalListSortingStrategy}>
+        {items.map((ws) => (
+          <WorkspaceRow
+            key={ws.id}
+            ws={ws}
+            pathname={pathname}
+            active={ws.id === activeWsId && !pathname.startsWith(`/w/${ws.id}/b/`)}
+            expanded={expanded.has(ws.id)}
+            onToggle={() =>
+              setExpanded((prev) => {
+                const next = new Set(prev);
+                if (!next.delete(ws.id)) next.add(ws.id);
+                return next;
+              })
+            }
+          />
+        ))}
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+function sortableStyle(transform: Parameters<typeof CSS.Transform.toString>[0], transition: string | undefined, dragging: boolean) {
+  return { transform: CSS.Transform.toString(transform), transition, opacity: dragging ? 0.5 : 1, zIndex: dragging ? 10 : undefined };
+}
+
+function WorkspaceRow({ ws, pathname, active, expanded, onToggle }: { ws: SidebarWorkspace; pathname: string; active: boolean; expanded: boolean; onToggle: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: ws.id });
+  const manage = canManage(ws.role);
+  const create = canCreateBoard(ws.role);
+  return (
+    <div ref={setNodeRef} style={sortableStyle(transform, transition, isDragging)}>
+      <div className={cn("group flex h-8 items-center gap-1.5 rounded-md px-2 text-sm", active ? "bg-selected shadow-[inset_2px_0_0_var(--orange-500)]" : "hover:bg-n-100")}>
+        <button type="button" onClick={onToggle} aria-label={expanded ? "Zwiń tablice" : "Rozwiń tablice"} aria-expanded={expanded} className="-mx-1 grid size-5 shrink-0 place-items-center rounded-sm outline-none hover:bg-n-200">
+          <Chevron open={expanded} />
+        </button>
+        <Link href={`/w/${ws.id}`} prefetch={false} {...attributes} {...listeners} role="link" draggable={false} className="flex min-w-0 flex-1 items-center gap-1.5 self-stretch font-medium text-foreground outline-none">
+          <WsTile name={ws.name} size={16} />
+          <span className="truncate">{ws.name}</span>
+        </Link>
+        {(manage || create) && (
+          <Menu>
+            <MenuTrigger aria-label="Menu przestrzeni" className="grid size-6 shrink-0 place-items-center rounded-sm text-n-500 opacity-0 outline-none group-hover:opacity-100 hover:bg-n-200 hover:text-foreground focus-visible:opacity-100 data-popup-open:opacity-100">
+              <IconMore width={14} height={14} />
+            </MenuTrigger>
+            <MenuContent align="start" side="right">
+              {manage && <MenuItem icon={<IconSettings />} render={<Link href={`/w/${ws.id}/settings`} />}>Ustawienia</MenuItem>}
+              <MenuItem icon={<IconUsers />} render={<Link href={`/w/${ws.id}/members`} />}>Członkowie</MenuItem>
+              {create && <MenuItem icon={<IconPlus />} render={<Link href={`/w/${ws.id}?new=board`} />}>Nowa tablica</MenuItem>}
+            </MenuContent>
+          </Menu>
+        )}
+      </div>
+      {expanded && <BoardList ws={ws} pathname={pathname} />}
     </div>
   );
 }
 
-function SortableBoardRow({
-  workspaceId,
-  board: b,
-  pathname,
-  role,
-  canDrag,
-}: {
-  workspaceId: string;
-  board: { id: string; name: string };
-  pathname: string;
-  role: Role;
-  canDrag: boolean;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: b.id, disabled: !canDrag });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 10 : "auto",
-  } as const;
-
-  const boardActive = pathname.startsWith(`/w/${workspaceId}/b/${b.id}`);
-
+function BoardList({ ws, pathname }: { ws: SidebarWorkspace; pathname: string }) {
+  const [boards, setBoards] = useState(ws.boards);
+  const [prevBoards, setPrevBoards] = useState(ws.boards);
+  if (prevBoards !== ws.boards) {
+    setPrevBoards(ws.boards);
+    setBoards(ws.boards);
+  }
+  const sensors = useSortSensors();
+  const onDragEnd = ({ active, over }: DragEndEvent) => {
+    markDragEnd();
+    if (!over || active.id === over.id) return;
+    const next = arrayMove(boards, boards.findIndex((b) => b.id === active.id), boards.findIndex((b) => b.id === over.id));
+    setBoards(next);
+    startTransition(() => void reorderBoardsAction(ws.id, next.map((b) => b.id)));
+  };
+  if (boards.length === 0) return <div className="flex h-8 items-center pl-[30px] text-xs text-muted-foreground">Brak tablic</div>;
   return (
-    <div
+    <DndContext id={`sidebar-boards-${ws.id}`} sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+      <SortableContext items={boards.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+        {boards.map((b) => (
+          <BoardRow key={b.id} wsId={ws.id} board={b} canDrag={canCreateBoard(ws.role)} active={pathname.startsWith(`/w/${ws.id}/b/${b.id}`)} />
+        ))}
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+function BoardRow({ wsId, board, canDrag, active }: { wsId: string; board: { id: string; name: string }; canDrag: boolean; active: boolean }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: board.id, disabled: !canDrag });
+  return (
+    <Link
       ref={setNodeRef}
-      style={style}
-      data-active={boardActive ? "true" : "false"}
-      className="group relative flex items-center gap-1 rounded-md transition-colors data-[active=true]:bg-white/80 data-[active=true]:shadow-[0_0_0_0.5px_rgba(12,13,18,0.08),inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(12,13,18,0.04)] dark:data-[active=true]:bg-white/[0.07] dark:data-[active=true]:shadow-[inset_0_0_0_0.5px_rgba(255,255,255,0.10),inset_0_1px_0_rgba(255,255,255,0.06)]"
+      style={sortableStyle(transform, transition, isDragging)}
+      href={`/w/${wsId}/b/${board.id}/table`}
+      prefetch={false}
+      {...attributes}
+      {...listeners}
+      role="link"
+      draggable={false}
+     
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "flex h-8 items-center gap-2 rounded-md pr-2 pl-[30px] text-sm outline-none",
+        active ? "bg-selected font-medium text-foreground shadow-[inset_2px_0_0_var(--orange-500)]" : "text-n-700 hover:bg-n-100 active:bg-n-200",
+      )}
     >
-      {canDrag && (
-        <button
-          type="button"
-          {...attributes}
-          {...listeners}
-          aria-label="Przeciągnij tablicę"
-          title="Przeciągnij aby zmienić kolejność"
-          className="hidden h-6 w-6 shrink-0 cursor-grab place-items-center rounded-md text-muted-foreground/60 transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground active:cursor-grabbing group-hover:grid max-md:!grid max-md:h-9 max-md:w-9 max-md:text-muted-foreground/50"
-        >
-          <GripVertical size={12} className="max-md:size-[14px]" />
-        </button>
-      )}
-      <Link
-        href={`/w/${workspaceId}/b/${b.id}/table`}
-        prefetch={false}
-        className={`min-w-0 flex-1 truncate rounded-md px-2 py-1 text-[0.8rem] transition-colors hover:bg-black/5 dark:hover:bg-white/[0.05] hover:text-foreground max-md:px-3 max-md:py-2.5 max-md:text-[0.95rem] ${
-          boardActive
-            ? "font-semibold text-foreground"
-            : "text-muted-foreground"
-        }`}
-      >
-        {b.name}
-      </Link>
-      {canManage(role) && (
-        <span className="hidden group-hover:inline-flex max-md:!inline-flex">
-          <DeleteBoardDialog
-            workspaceId={workspaceId}
-            boardId={b.id}
-            boardName={b.name}
-          />
-        </span>
-      )}
+      <IconBoards width={14} height={14} className={cn("shrink-0", active ? "text-orange-700" : "text-n-500")} />
+      <span className="min-w-0 flex-1 truncate">{board.name}</span>
+    </Link>
+  );
+}
+
+/* ---------- mobile drawer ---------- */
+
+function MobileDrawer({
+  user,
+  displayName,
+  roleLabel,
+  forYou,
+  tools,
+  more,
+  workspaces,
+  pathname,
+  activeWsId,
+  onClose,
+  onCustomize,
+}: {
+  user: ShellUser;
+  displayName: string;
+  roleLabel: string;
+  forYou: NavItem[];
+  tools: NavItem[];
+  more: NavItem[];
+  workspaces: SidebarWorkspace[];
+  pathname: string;
+  activeWsId: string | null;
+  onClose: () => void;
+  onCustomize: () => void;
+}) {
+  const [openWs, setOpenWs] = useState<Set<string>>(() => new Set(activeWsId ? [activeWsId] : []));
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  return (
+    <div className="fixed inset-0 z-(--z-panel) md:hidden">
+      <button type="button" aria-label="Zamknij menu" onClick={onClose} className="absolute inset-0 bg-scrim" />
+      <div data-ui="mobile-drawer" role="dialog" aria-modal="true" aria-label="Menu" className="absolute inset-y-0 left-0 flex w-[300px] flex-col bg-card shadow-e2">
+        <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border pr-2 pl-4">
+          <Wordmark />
+          <span className="flex-1" />
+          <button type="button" onClick={onClose} aria-label="Zamknij menu" className="grid size-11 place-items-center rounded-md text-n-600 outline-none hover:bg-n-100 active:bg-n-200">
+            <IconClose />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+          <Eyebrow className="h-[26px] px-2.5">Dla Ciebie</Eyebrow>
+          {forYou.map((i) => (
+            <NavRow key={i.key} mobile href={i.href} icon={i.icon} label={i.label} badge={i.badge} active={isActive(pathname, i.href)} />
+          ))}
+          <div className="mt-1 flex h-[30px] items-end justify-between px-2.5">
+            <span className="eyebrow">Przestrzenie</span>
+            <Link href="/workspaces?new=1" aria-label="Nowa przestrzeń" className="grid size-6 place-items-center rounded-sm text-n-500 hover:bg-n-100 active:bg-n-200">
+              <IconPlus />
+            </Link>
+          </div>
+          {workspaces.map((ws) => {
+            const open = openWs.has(ws.id);
+            const wsActive = ws.id === activeWsId && !pathname.startsWith(`/w/${ws.id}/b/`);
+            return (
+              <div key={ws.id}>
+                <div className={cn("flex h-11 items-center gap-2.5 rounded-md px-2.5 text-base", wsActive ? "bg-selected shadow-[inset_2px_0_0_var(--orange-500)]" : "hover:bg-n-100")}>
+                  <button
+                    type="button"
+                    aria-label={open ? "Zwiń tablice" : "Rozwiń tablice"}
+                    aria-expanded={open}
+                    onClick={() =>
+                      setOpenWs((prev) => {
+                        const next = new Set(prev);
+                        if (!next.delete(ws.id)) next.add(ws.id);
+                        return next;
+                      })
+                    }
+                    className="-mx-2 grid size-8 shrink-0 place-items-center rounded-sm outline-none"
+                  >
+                    <Chevron open={open} />
+                  </button>
+                  <Link href={`/w/${ws.id}`} prefetch={false} className="flex min-w-0 flex-1 items-center gap-2.5 self-stretch font-medium text-foreground outline-none">
+                    <WsTile name={ws.name} size={18} />
+                    <span className="truncate">{ws.name}</span>
+                  </Link>
+                </div>
+                {open &&
+                  ws.boards.map((b) => (
+                    <NavRow key={b.id} mobile indent href={`/w/${ws.id}/b/${b.id}/table`} icon={IconBoards} iconSize={14} label={b.name} active={pathname.startsWith(`/w/${ws.id}/b/${b.id}`)} />
+                  ))}
+              </div>
+            );
+          })}
+          <div className="h-1" />
+          <NavRow mobile icon={IconSliders} label="Narzędzia" onClick={() => setToolsOpen((v) => !v)} ariaExpanded={toolsOpen} trailing={<Chevron open={toolsOpen} />} />
+          {toolsOpen && tools.map((i) => <NavRow key={i.key} mobile indent href={i.href} icon={i.icon} label={i.label} badge={i.badge} active={isActive(pathname, i.href)} />)}
+          <NavRow mobile icon={IconGrid} label="Więcej" onClick={() => setMoreOpen((v) => !v)} ariaExpanded={moreOpen} trailing={<Chevron open={moreOpen} />} />
+          {moreOpen && (
+            <>
+              {more.map((i) => (
+                <NavRow key={i.key} mobile indent href={i.href} icon={i.icon} label={i.label} active={isActive(pathname, i.href)} />
+              ))}
+              <NavRow mobile indent icon={IconSliders} label="Dostosuj pasek" onClick={onCustomize} />
+            </>
+          )}
+        </div>
+        <div className="flex h-[60px] shrink-0 items-center gap-2.5 border-t border-border px-4">
+          <Avatar name={displayName} src={user.avatarUrl} size={32} />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-base font-medium leading-[18px] text-foreground">{displayName}</div>
+            <div className="truncate text-2xs leading-[14px] text-muted-foreground">{roleLabel}</div>
+          </div>
+          <AvatarMenu user={user} align="end" trigger={<MoreButton className="size-11" />} />
+        </div>
+      </div>
     </div>
   );
 }

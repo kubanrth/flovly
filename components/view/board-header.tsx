@@ -1,16 +1,21 @@
 import type { ReactNode } from "react";
-import {
-  ViewSwitcher,
-  type CustomViewDescriptor,
-  type ViewName,
-} from "@/components/view/view-switcher";
+import { ViewSwitcher, type CustomViewDescriptor, type ViewName } from "@/components/view/view-switcher";
+import { BoardHeaderMenu } from "@/components/view/board-header-menu";
 import { EditableBoardName } from "@/components/board/editable-board-name";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { AvatarStack } from "@/components/ui/avatar";
 
-// Unified board header: title + optional description + ViewSwitcher + right-
-// side actions slot. Typography and spacing are fixed so all 5 views look
-// identical above the fold.
+export interface BoardMember {
+  id: string;
+  name: string;
+  avatarUrl?: string | null;
+}
+
+// Redesign v5 (A2): breadcrumb row (24px) + actions → title 20/600 + avatar
+// stack → underline tabs → optional toolbar. Same above every board view.
 export function BoardHeader({
   workspaceId,
+  workspaceName,
   boardId,
   board,
   active,
@@ -23,8 +28,11 @@ export function BoardHeader({
   actions,
   extra,
   defaultViewIds,
+  members,
+  toolbar,
 }: {
   workspaceId: string;
+  workspaceName?: string;
   boardId: string;
   board: { name: string; description?: string | null };
   active?: ViewName;
@@ -32,43 +40,38 @@ export function BoardHeader({
   enabledViews?: ViewName[];
   customViews?: CustomViewDescriptor[];
   canManageViews?: boolean;
-  // Kontroluje czy h2 to inline-editable button czy plain text.
-  // Domyślnie false — bezpieczny default, parent server component
-  // (BoardHeaderServer) ustawia true gdy `can(role, "board.update")`.
+  // Default false — BoardHeaderServer sets true when `can(role, "board.update")`.
   canEditName?: boolean;
   createViewButton?: ReactNode;
   actions?: ReactNode;
   extra?: ReactNode;
   defaultViewIds?: Partial<Record<ViewName, string>>;
+  members?: BoardMember[];
+  toolbar?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-3">
-      {/* Top row: actions only, justify-end (Share / Import / Create Task
-          do prawej). Wcześniej actions siedziały obok tytułu i przy szerokim
-          ViewSwitcher'ze wypychały się poza viewport. */}
-      {actions && (
-        <div className="flex items-center justify-end gap-2 max-md:flex-wrap">
-          {actions}
-        </div>
-      )}
-      {/* Title + description */}
-      <div className="flex min-w-0 flex-col gap-2">
-        <h2 className="font-display text-[1.2rem] font-bold leading-[1.15] tracking-[-0.02em] md:text-[1.5rem]">
-          <EditableBoardName
-            workspaceId={workspaceId}
-            boardId={boardId}
-            name={board.name}
-            canEdit={!!canEditName}
+    <div data-ui="board-header" className="flex flex-col bg-card">
+      <div className="px-6 pt-3 max-md:px-4">
+        <div className="flex h-6 items-center gap-2 max-md:h-auto max-md:flex-wrap max-md:gap-y-2">
+          <Breadcrumb
+            items={[{ label: workspaceName ?? "Przestrzeń", href: `/w/${workspaceId}` }, { label: board.name }]}
+            className="min-w-0"
           />
-        </h2>
-        {board.description && (
-          <p className="text-[0.85rem] leading-[1.5] text-muted-foreground max-md:line-clamp-2 md:text-[0.9rem] md:leading-[1.55]">
-            {board.description}
-          </p>
-        )}
+          <span className="flex-1" />
+          {actions}
+          <BoardHeaderMenu canEditName={!!canEditName} />
+        </div>
+        <div className="mt-1 flex items-center gap-2.5">
+          {/* [&>button]:mx-0 — EditableTitle's -mx-1 + max-w-full is a cyclic % that clips 8px; -ml-1 keeps the optical align. */}
+          <h2 data-ui="board-name" className="-ml-1 min-w-0 text-lg font-semibold tracking-[-0.2px] [&>button]:mx-0">
+            <EditableBoardName workspaceId={workspaceId} boardId={boardId} name={board.name} canEdit={!!canEditName} />
+          </h2>
+          {members && members.length > 0 && (
+            <AvatarStack people={members.map((m) => ({ name: m.name, src: m.avatarUrl }))} max={4} size={24} className="ml-1" />
+          )}
+        </div>
       </div>
-      {/* ViewSwitcher full-width below the title */}
-      <div className="flex w-full">
+      <div className="mt-0.5">
         <ViewSwitcher
           workspaceId={workspaceId}
           boardId={boardId}
@@ -81,7 +84,8 @@ export function BoardHeader({
           addViewSlot={createViewButton}
         />
       </div>
-      {extra && <div className="w-full">{extra}</div>}
+      {toolbar}
+      {extra && <div className="border-b border-border px-6 py-2 max-md:px-4">{extra}</div>}
     </div>
   );
 }

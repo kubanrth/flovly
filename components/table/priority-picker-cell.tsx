@@ -112,7 +112,7 @@ export function PriorityPickerCell({
       {open && !isMobile && (
         <div
           role="menu"
-          className="popover-glass popover-enter shadow-aura absolute left-0 top-full z-40 mt-1 flex w-[220px] flex-col gap-1 p-[7px]"
+          className="popover-surface popover-enter absolute left-0 top-full z-40 mt-1 flex w-[220px] flex-col gap-1 p-[7px]"
         >
           <span className="eyebrow mb-0.5 block px-1.5 text-[0.66rem]">
             Priorytet
@@ -159,7 +159,7 @@ export function PriorityPickerCell({
       )}
 
       {/* Mobile: bottom sheet zamiast popovera. 5 priorytetów jako duże rows
-          z 44px touch target, drag handle, glass surface. */}
+          z 44px touch target, drag handle, plain surface. */}
       {isMobile && (
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetContent

@@ -17,6 +17,7 @@ export function NewBriefForm({ workspaceId }: { workspaceId: string }) {
   // Reset modal state on close.
   useEffect(() => {
     if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTitle("");
       setTemplateId(BRIEF_TEMPLATES[0].id);
     }
@@ -50,7 +51,7 @@ export function NewBriefForm({ workspaceId }: { workspaceId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-brand-gradient px-4 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px]"
+        className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-primary px-4 font-sans text-[0.9rem] font-semibold text-white transition-[transform,opacity] hover:-translate-y-[1px]"
       >
         <Plus size={14} /> Nowy board
       </button>
@@ -164,7 +165,7 @@ export function NewBriefForm({ workspaceId }: { workspaceId: string }) {
                 type="button"
                 onClick={submit}
                 disabled={!title.trim()}
-                className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.88rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px] disabled:opacity-60"
+                className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-5 font-sans text-[0.88rem] font-semibold text-white transition-[transform,opacity] hover:-translate-y-[1px] disabled:opacity-60"
               >
                 Utwórz board
               </button>

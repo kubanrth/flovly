@@ -59,7 +59,7 @@ export function ContactsMobileList({
               className="flex min-h-[64px] items-center gap-3 rounded-lg px-3 py-2 transition-colors active:bg-accent/40"
             >
               <span
-                className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-brand-gradient font-display text-[0.78rem] font-bold text-white"
+                className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-primary font-display text-[0.78rem] font-bold text-white"
                 aria-hidden
               >
                 {initials || "?"}

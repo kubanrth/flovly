@@ -44,7 +44,7 @@ export function ServerError({
         <button
           type="button"
           onClick={onRetry}
-          className="relative inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-brand-gradient px-5 font-sans text-[0.95rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 md:h-10 md:rounded-lg md:text-[0.9rem]"
+          className="relative inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-primary px-5 font-sans text-[0.95rem] font-semibold text-white transition-opacity hover:opacity-90 md:h-10 md:rounded-lg md:text-[0.9rem]"
         >
           <RotateCcw size={14} /> Spróbuj ponownie
         </button>

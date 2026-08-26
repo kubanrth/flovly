@@ -14,6 +14,8 @@ import {
   ExternalLink,
   AlertCircle,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { IconShare } from "@/components/ui/icons";
 import {
   Dialog,
   DialogContent,
@@ -133,21 +135,17 @@ export function ShareBoardDialog({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-border bg-card px-3 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-      >
-        <Share2 size={13} />
-        <span>Udostępnij</span>
-      </button>
+      <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
+        <IconShare />
+        Udostępnij
+      </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="dialog-glass rounded-2xl border-transparent sm:max-w-[560px]">
+        <DialogContent className="dialog-surface rounded-2xl border-transparent sm:max-w-[560px]">
           <DialogHeader>
             <span className="eyebrow">Public share</span>
             <DialogTitle className="font-display text-[1.45rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">
-              Udostępnij <span className="text-brand-gradient">interesariuszowi</span>
+              Udostępnij <span className="">interesariuszowi</span>
             </DialogTitle>
             <DialogDescription className="text-[0.9rem] leading-[1.55] text-muted-foreground">
               Wygeneruj link, który otworzy klient bez konta. Widok&nbsp;read-only,
@@ -175,7 +173,7 @@ export function ShareBoardDialog({
                 type="button"
                 onClick={handleCreate}
                 disabled={creating}
-                className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-brand-gradient px-5 font-sans text-[0.88rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px] disabled:opacity-60"
+                className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-5 font-sans text-[0.88rem] font-semibold text-white transition-[transform,opacity] hover:-translate-y-[1px] disabled:opacity-60"
               >
                 <Share2 size={14} />
                 {creating ? "Generuję…" : "Wygeneruj link"}

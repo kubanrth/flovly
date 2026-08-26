@@ -54,7 +54,7 @@ export function ProfileForm({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="group relative grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="group relative grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-full bg-primary text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           aria-label="Zmień awatar"
         >
           {previewUrl ? (
@@ -153,7 +153,7 @@ export function ProfileForm({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex h-11 items-center justify-center rounded-lg bg-brand-gradient px-6 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
+          className="inline-flex h-11 items-center justify-center rounded-lg bg-primary px-6 font-sans text-[0.9rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
         >
           {pending ? "Zapisuję…" : "Zapisz zmiany"}
         </button>

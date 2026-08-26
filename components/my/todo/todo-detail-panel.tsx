@@ -158,7 +158,7 @@ export function TodoDetailPanel({
         label="Przypomnienie"
         icon={
           item.reminderAt ? (
-            <Bell size={13} className="text-violet-600 dark:text-violet-400" />
+            <Bell size={13} className="text-violet-600" />
           ) : (
             <BellOff size={13} className="text-violet-500/60" />
           )
@@ -263,9 +263,9 @@ function StepsSection({
   // border jako visual anchor. Spójny color-language cross-view z subtask-
   // pill'em w TaskActivityHints.
   return (
-    <section className="flex flex-col gap-2 rounded-md border border-emerald-500/30 border-l-[3px] border-l-emerald-500 bg-emerald-500/[0.05] p-3 dark:border-emerald-400/30 dark:border-l-emerald-400 dark:bg-emerald-400/[0.06]">
+    <section className="flex flex-col gap-2 rounded-md border border-emerald-500/30 border-l-[3px] border-l-emerald-500 bg-emerald-500/[0.05] p-3 ]">
       <div className="flex items-center justify-between">
-        <span className="inline-flex items-center gap-1.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300">
+        <span className="inline-flex items-center gap-1.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-emerald-700">
           <CheckSquare size={11} />
           Pod-zadania {steps.length > 0 && `· ${done}/${steps.length}`}
         </span>
@@ -511,15 +511,15 @@ function DateRow({
   // - label w tym samym kolorze co tint (mocniejszy color cue)
   const tintClass =
     tint === "sky"
-      ? "border-sky-500/30 bg-sky-500/[0.05] border-l-[3px] border-l-sky-500 dark:border-sky-400/30 dark:bg-sky-400/[0.06] dark:border-l-sky-400"
+      ? "border-sky-500/30 bg-sky-500/[0.05] border-l-[3px] border-l-sky-500  ] "
       : tint === "violet"
-        ? "border-violet-500/30 bg-violet-500/[0.05] border-l-[3px] border-l-violet-500 dark:border-violet-400/30 dark:bg-violet-400/[0.06] dark:border-l-violet-400"
+        ? "border-violet-500/30 bg-violet-500/[0.05] border-l-[3px] border-l-violet-500  ] "
         : "border-border bg-background";
   const labelColor =
     tint === "sky"
-      ? "text-sky-700 dark:text-sky-300"
+      ? "text-sky-700 "
       : tint === "violet"
-        ? "text-violet-700 dark:text-violet-300"
+        ? "text-violet-700 "
         : "text-muted-foreground";
   return (
     <form
@@ -570,8 +570,8 @@ function NotesEditor({ id, initial }: { id: string; initial: string }) {
   };
   // Notatki dostają amber tint + 3px lewy border anchor.
   return (
-    <div className="flex flex-col gap-1.5 rounded-md border border-amber-500/30 border-l-[3px] border-l-amber-500 bg-amber-500/[0.05] p-3 dark:border-amber-400/30 dark:border-l-amber-400 dark:bg-amber-400/[0.06]">
-      <span className="inline-flex items-center gap-1.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-amber-700 dark:text-amber-300">
+    <div className="flex flex-col gap-1.5 rounded-md border border-amber-500/30 border-l-[3px] border-l-amber-500 bg-amber-500/[0.05] p-3 ]">
+      <span className="inline-flex items-center gap-1.5 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-amber-700">
         <StickyNote size={11} />
         Notatki
       </span>

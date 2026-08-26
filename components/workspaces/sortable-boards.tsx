@@ -43,10 +43,10 @@ import { taskPl } from "@/lib/pluralize";
 // Drag-and-drop reorder tablic w workspace overview (design v4).
 // Cały render board sections jest w client component żeby dnd-kit mógł
 // zarządzać kolejnością. Layout 1:1 z Flovly v4 (Hero · Workspace Overview):
-//   - liquid-glass karty: rgba(255,255,255,.6) bg + backdrop-blur, 1px border
+//   - liquid-plain karty: rgba(255,255,255,.6) bg + , 1px border
 //   - 3px top accent strip w kolorze workspace
 //   - init badge 38px z kolorem workspace + brand-tinted shadow
-//   - hover: translateY(-3px), spring easing cubic-bezier(.34,1.56,.64,1)
+//   - hover: translateY(-3px), spring easing ease-out
 //   - view pills: rounded-lg 11px neutral; "+N" pill brand-tinted
 // =============================================================================
 
@@ -68,11 +68,11 @@ const VIEW_META: Record<
 // każda kolejna tablica miała własną tożsamość. Cyklujemy po id-hash żeby
 // kolejność tablic nie wpływała na "który kolor dostała moja tablica".
 const SWATCH_GRADIENTS: { color: string; shadow: string }[] = [
-  { color: "#7A33EC", shadow: "rgba(122,51,236,.45)" }, // brand violet
-  { color: "#34BEF8", shadow: "rgba(52,190,248,.40)" }, // sky accent
+  { color: "#FF5C00", shadow: "rgba(255,92,0,.35)" }, // brand violet
+  { color: "#2F6FE8", shadow: "rgba(52,190,248,.40)" }, // sky accent
   { color: "#10B981", shadow: "rgba(16,185,129,.40)" }, // emerald
   { color: "#F59E0B", shadow: "rgba(245,158,11,.40)" }, // amber
-  { color: "#E1318F", shadow: "rgba(225,49,143,.40)" }, // magenta brand-b
+  { color: "#E04E00", shadow: "rgba(224,78,0,.35)" }, // magenta brand-b
   { color: "#0EA5E9", shadow: "rgba(14,165,233,.40)" }, // info deep
 ];
 
@@ -132,6 +132,7 @@ export function SortableBoardsList({
 }) {
   const [items, setItems] = useState(boards);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setItems(boards);
   }, [boards]);
   const sensors = useSensors(
@@ -157,7 +158,7 @@ export function SortableBoardsList({
 
   if (items.length === 0) {
     return (
-      <div className="overflow-hidden rounded-2xl border border-border bg-card/60 backdrop-blur-xl">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card/60">
         <EmptyState
           icon={LayoutGrid}
           title="Brak tablic"
@@ -168,9 +169,9 @@ export function SortableBoardsList({
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+    <DndContext id="boards-grid" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={items.map((b) => b.id)} strategy={verticalListSortingStrategy}>
-        <ul className="overflow-hidden rounded-2xl border border-border bg-card/60 backdrop-blur-xl">
+        <ul className="overflow-hidden rounded-2xl border border-border bg-card/60">
           {items.map((board) => (
             <SortableBoardRow
               key={board.id}
@@ -264,7 +265,7 @@ function SortableBoardRow({
                   <span
                     key={view}
                     title={meta.label}
-                    className={`inline-flex h-6 shrink-0 items-center gap-1 rounded-lg border border-border bg-background/70 px-1.5 font-mono text-[0.6rem] uppercase tracking-[0.12em] backdrop-blur-sm ${meta.accent}`}
+                    className={`inline-flex h-6 shrink-0 items-center gap-1 rounded-lg border border-border bg-background/70 px-1.5 font-mono text-[0.6rem] uppercase tracking-[0.12em]  ${meta.accent}`}
                   >
                     <Icon size={10} />
                     <span className="max-md:hidden">{meta.label}</span>
@@ -321,6 +322,7 @@ function SortableBoardSection({
   useEffect(() => {
     try {
       const stored = localStorage.getItem(COLLAPSE_KEY(workspaceId, board.id));
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (stored === "0") setCollapsed(false);
     } catch {
       /* storage disabled — stay with default */
@@ -478,7 +480,7 @@ function SortableBoardSection({
                       {task.assignees.slice(0, 3).map((a) => (
                         <span
                           key={a.userId}
-                          className="grid h-6 w-6 place-items-center overflow-hidden rounded-full border-2 border-background bg-brand-gradient font-display text-[0.6rem] font-bold text-white"
+                          className="grid h-6 w-6 place-items-center overflow-hidden rounded-full border-2 border-background bg-primary font-display text-[0.6rem] font-bold text-white"
                           title={a.name ?? a.email}
                         >
                           {a.avatarUrl ? (
@@ -511,7 +513,7 @@ void SortableBoardSection;
 
 // =============================================================================
 // GRID variant (default) — kafelki v4 hero (3-col responsive). 1:1 z Flovly v4
-// "Hero · Workspace Overview". Liquid-glass surfaces, color-coded badges,
+// "Hero · Workspace Overview". Liquid-plain surfaces, color-coded badges,
 // 3px top accent strip, spring hover translateY(-3px).
 // =============================================================================
 
@@ -524,6 +526,7 @@ export function SortableBoardsGrid({
 }) {
   const [items, setItems] = useState(boards);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setItems(boards);
   }, [boards]);
   const sensors = useSensors(
@@ -548,7 +551,7 @@ export function SortableBoardsGrid({
   };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+    <DndContext id="boards-list" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={items.map((b) => b.id)} strategy={verticalListSortingStrategy}>
         {/* F12-K109: min-w-0 na grid container żeby grid sam się nie rozszerza
             ponad parent width (domyślne grid items mają min-width: auto =
@@ -594,15 +597,15 @@ function SortableBoardCard({
       style={style}
       className={`group relative min-w-0 ${isDragging ? "cursor-grabbing" : ""}`}
     >
-      {/* Karta v4: liquid-glass z backdrop-blur, layered shadow, 3px top strip
+      {/* Karta v4: liquid-plain z , layered shadow, 3px top strip
           w kolorze workspace. p-5 (większe niż stare p-4), rounded-2xl (18px).
-          Spring easing na hover [cubic-bezier(.34,1.56,.64,1)] żeby kafelki
+          Spring easing na hover [ease-out] żeby kafelki
           "skakały" z odbiciem — sygnatura v4 motion.
           F12-K109: min-w-0 na grid item (kafelek nie rozszerza się ponad
           dostępną kolumnę grida — bez tego flex/grid liczy intrinsic content
           width = pełna suma pills + tytuł, co wypycha card poza viewport). */}
       <div
-        className="relative flex h-full min-w-0 flex-col gap-3.5 overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-5 pl-12 backdrop-blur-xl shadow-[0_1px_0_rgba(255,255,255,.6)_inset,0_14px_30px_-18px_rgba(76,29,149,.30)] transition-[transform,box-shadow,border-color] duration-300 [transition-timing-function:cubic-bezier(.34,1.56,.64,1)] group-hover:-translate-y-[3px] group-hover:border-primary/30 group-hover:shadow-[0_1px_0_rgba(255,255,255,.7)_inset,0_22px_44px_-18px_rgba(76,29,149,.45),0_30px_70px_-24px_rgba(225,49,143,.20)] max-md:min-h-[200px] md:h-[200px]"
+        className="relative flex h-full min-w-0 flex-col gap-3.5 overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-5 pl-12 shadow-[0_1px_0_rgba(255,255,255,.6)_inset,0_14px_30px_-18px_rgba(76,29,149,.30)] transition-[transform,box-shadow,border-color] duration-300 [transition-timing-function:ease-out] group-hover:-translate-y-[3px] group-hover:border-primary/30 group-hover:shadow-[0_1px_0_rgba(255,255,255,.7)_inset,0_22px_44px_-18px_rgba(76,29,149,.45),0_30px_70px_-24px_rgba(225,49,143,.20)] max-md:min-h-[200px] md:h-[200px]"
       >
         {/* 3px top accent strip — wizualna "kotwica" koloru tablicy (v4 hero) */}
         <span
@@ -654,7 +657,7 @@ function SortableBoardCard({
                 key={view}
                 href={`/w/${workspaceId}/b/${board.id}/${view}`}
                 title={meta.label}
-                className={`inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-border/60 bg-background/70 px-2 font-mono text-[0.62rem] font-medium uppercase tracking-[0.12em] backdrop-blur-sm transition-colors hover:border-primary/40 hover:bg-background ${meta.accent}`}
+                className={`inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-border/60 bg-background/70 px-2 font-mono text-[0.62rem] font-medium uppercase tracking-[0.12em]  transition-colors hover:border-primary/40 hover:bg-background ${meta.accent}`}
               >
                 <Icon size={11} />
                 <span>{meta.label}</span>

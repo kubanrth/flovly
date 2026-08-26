@@ -69,7 +69,7 @@ export function ContactConversation({
       </div>
 
       {!contactEmail && (
-        <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[0.86rem] text-amber-700 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200">
+        <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[0.86rem] text-amber-700">
           Kontakt nie ma adresu email — uzupełnij w karcie, żeby móc pisać.
         </p>
       )}
@@ -116,7 +116,7 @@ function MessageThread({ messages }: { messages: ContactMessageRow[] }) {
               <div
                 className={`flex max-w-[80%] flex-col gap-1 rounded-2xl px-3 py-2 ${
                   isOutbound
-                    ? "bg-brand-gradient text-white"
+                    ? "bg-primary text-white"
                     : "bg-muted/40 text-foreground"
                 }`}
               >
@@ -185,7 +185,7 @@ function Composer({
       sublabel: s.email,
       searchText: `${s.name ?? ""} ${s.email}`,
       leading: (
-        <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.55rem] font-bold text-white">
+        <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.55rem] font-bold text-white">
           {s.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={s.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
@@ -262,7 +262,7 @@ function Composer({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-gradient px-4 font-sans text-[0.88rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 font-sans text-[0.88rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Send size={13} /> {pending ? "Wysyłam…" : "Wyślij"}
         </button>

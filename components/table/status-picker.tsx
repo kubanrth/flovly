@@ -231,7 +231,7 @@ export function StatusPicker({
               maxHeight: coords.maxHeight,
             }}
             // z-[200] === Z.popoverInModal (F12-K104).
-            className="popover-glass popover-enter shadow-aura z-[200] flex flex-col overflow-hidden p-[7px]"
+            className="popover-surface popover-enter z-[200] flex flex-col overflow-hidden p-[7px]"
           >
             <div className="mb-1.5 shrink-0">
               <span className="eyebrow mb-1.5 block px-1.5 text-[0.66rem]">
@@ -288,7 +288,7 @@ export function StatusPicker({
         )}
 
       {/* Mobile: bottom sheet zamiast popovera. Spec v4 linie 153-168:
-          glass surface rounded-t-24, drag handle, height-content, list status. */}
+          plain surface rounded-t-24, drag handle, height-content, list status. */}
       {isMobile && (
         <Sheet
           open={open}
@@ -656,6 +656,7 @@ function ReorderableList({
   // someone else reordered via the manage dialog).
   const [order, setOrder] = useState<StatusOption[]>(options);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOrder(options);
   }, [options]);
 
@@ -698,7 +699,7 @@ function ReorderableList({
           brak statusów
         </li>
       )}
-      <DndContext
+      <DndContext id="status-columns"
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={onDragEnd}

@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
 import { AcceptInviteForm } from "./accept-form";
-import { FlovlySignature } from "@/components/brand/flovly-logo";
+import { Wordmark } from "@/components/brand/mark";
 
-// F12-K81 (v4 design): refactor do glass card centered na bg-aura.
+// F12-K81 (v4 design): refactor do plain card centered na .
 // Layout 1:1 z `flovly v2/Flovly Auth & Workspaces.dc.html` (sekcja INVITE).
 // Zachowany cały Prisma flow + invalidState branching + acceptInviteAction.
 
@@ -58,7 +58,7 @@ export default async function InvitePage({
           ? "expired"
           : null;
 
-  // ── Niepoprawny / wygasły / wykorzystany token — fallback glass card ──
+  // ── Niepoprawny / wygasły / wykorzystany token — fallback plain card ──
   if (invalidState || !invitation) {
     const message = {
       "not-found": "Zaproszenie nie istnieje lub zostało cofnięte.",
@@ -69,10 +69,10 @@ export default async function InvitePage({
     }[invalidState as "not-found" | "workspace-deleted" | "already-used" | "expired"];
 
     return (
-      <div className="relative isolate flex min-h-dvh items-stretch justify-center overflow-hidden bg-aura px-0 py-0 md:items-center md:px-6 md:py-12">
-        <div className="glass-surface relative flex w-full flex-col items-center justify-center px-6 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] text-center max-md:min-h-dvh max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:shadow-none max-md:backdrop-blur-none md:max-w-[420px] md:rounded-2xl md:p-10">
+      <div className="relative isolate flex min-h-dvh items-stretch justify-center overflow-hidden px-0 py-0 md:items-center md:px-6 md:py-12">
+        <div className="surface relative flex w-full flex-col items-center justify-center px-6 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] text-center max-md:min-h-dvh max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:shadow-none max-md: md:max-w-[420px] md:rounded-2xl md:p-10">
           <div className="mb-6 flex justify-center">
-            <FlovlySignature size="md" />
+            <Wordmark size="md" />
           </div>
           <span className="eyebrow text-destructive">Zaproszenie nieprawidłowe</span>
           <h1 className="mt-3 font-display text-[1.6rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">
@@ -97,7 +97,7 @@ export default async function InvitePage({
   const inviterInitials = getInitials(inviterName);
 
   return (
-    <div className="relative isolate flex min-h-dvh items-stretch justify-center overflow-hidden bg-aura px-0 py-0 md:items-center md:px-6 md:py-12">
+    <div className="relative isolate flex min-h-dvh items-stretch justify-center overflow-hidden px-0 py-0 md:items-center md:px-6 md:py-12">
       {/* Niebieski blob u góry-prawej — z referencji v4 (invite ma niebieską aurę) */}
       <div
         aria-hidden
@@ -116,17 +116,17 @@ export default async function InvitePage({
         }}
       />
 
-      {/* Mobile: full-bleed (no card chrome). Desktop: glass card 440px.
+      {/* Mobile: full-bleed (no card chrome). Desktop: plain card 440px.
           Role badge zostaje prominently na górze. CTA stack na dole. */}
-      <main className="glass-surface relative flex w-full flex-col px-6 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] max-md:min-h-dvh max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:shadow-none max-md:backdrop-blur-none md:max-w-[440px] md:rounded-2xl md:p-10">
+      <main className="surface relative flex w-full flex-col px-6 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] max-md:min-h-dvh max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:shadow-none max-md: md:max-w-[440px] md:rounded-2xl md:p-10">
         {/* Top — brand mark + intro */}
         <div className="mb-6 flex flex-col items-center text-center">
-          <FlovlySignature size="md" />
+          <Wordmark size="md" />
           <p className="mt-4 text-[0.92rem] text-muted-foreground">
             Zostałaś/eś zaproszona/y do
           </p>
           <h1 className="mt-1 font-display text-[1.8rem] font-bold leading-[1.1] tracking-[-0.02em] text-foreground">
-            <span className="text-brand-gradient">{invitation.workspace.name}</span>
+            <span className="">{invitation.workspace.name}</span>
           </h1>
         </div>
 
@@ -134,7 +134,7 @@ export default async function InvitePage({
         <div className="mb-7 flex items-center gap-3 rounded-2xl border border-border/60 bg-background/30 p-3.5">
           <div
             aria-hidden
-            className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-brand-gradient font-display text-[0.82rem] font-bold text-white shadow-brand"
+            className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-primary font-display text-[0.82rem] font-bold text-white"
           >
             {inviterInitials}
           </div>

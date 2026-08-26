@@ -101,11 +101,11 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
       <button
         type="submit"
         disabled={pending}
-        // Full-width primary gradient (140deg) z shadow-brand.
+        // Full-width primary gradient (140deg) z .
         // Mobile: 52px tall (większy touch target), mt-auto żeby siadał blisko
         // dolnej krawędzi viewport'u (sticky-bottom feeling).
         // Desktop: h-12 jak w v4 desktop card.
-        className="group relative mt-auto inline-flex h-[52px] w-full items-center justify-center overflow-hidden rounded-xl bg-brand-gradient px-6 text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 md:mt-1 md:h-12"
+        className="group relative mt-auto inline-flex h-[52px] w-full items-center justify-center overflow-hidden rounded-xl bg-primary px-6 text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 md:mt-1 md:h-12"
       >
         <span className="relative z-10 font-sans text-[0.95rem] font-semibold tracking-wide">
           {pending ? "Loguję…" : "Zaloguj się"}

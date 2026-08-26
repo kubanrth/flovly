@@ -181,7 +181,7 @@ export default async function InboxPage() {
           <div className="flex flex-col gap-2">
             <span className="eyebrow">Powiadomienia</span>
             <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
-              Inbox. <span className="text-brand-gradient">{unread.length}</span>{" "}
+              Inbox. <span className="">{unread.length}</span>{" "}
               {unreadPl(unread.length)}.
             </h1>
             <p className="text-[0.9rem] text-muted-foreground">

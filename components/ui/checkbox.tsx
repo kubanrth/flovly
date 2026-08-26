@@ -1,76 +1,63 @@
 "use client";
 
-import { Check, Minus } from "lucide-react";
-import type { ChangeEvent, MouseEvent } from "react";
+import type { ChangeEvent, MouseEventHandler } from "react";
+import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
+import { cn } from "@/lib/utils";
 
-// Tabela używała natywnego <input type="checkbox"> z accent-color,
-// który w dark mode zachowuje się jak Windows-95 (jasne tło, brak hover'u,
-// brak indeterminate). Ten komponent renderuje appearance-none input +
-// overlay z lucide ikonką żeby wyglądało jednakowo w light/dark, support'owało
-// indeterminate i miało porządne hover/focus stany.
-export function Checkbox({
-  checked,
-  indeterminate,
-  onChange,
-  onClick,
-  ariaLabel,
-  size = "md",
-  disabled,
-  className,
-  name,
-  value,
-}: {
-  checked: boolean;
+export function CheckMark({ size = 10, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 10 10" aria-hidden="true" className={className}>
+      <path d="M1.8 5.4l2.2 2.2 4.2-4.8" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+const SIZE = { sm: "size-3.5", md: "size-4", lg: "size-5" } as const;
+const MARK = { sm: 9, md: 10, lg: 12 } as const;
+
+export interface CheckboxProps {
+  checked?: boolean;
   indeterminate?: boolean;
   onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
-  onClick?: (e: MouseEvent<HTMLInputElement>) => void;
+  onCheckedChange?: CheckboxPrimitive.Root.Props["onCheckedChange"];
+  onClick?: MouseEventHandler<HTMLElement>;
   ariaLabel?: string;
-  size?: "sm" | "md";
+  size?: keyof typeof SIZE;
   disabled?: boolean;
   className?: string;
-  // Native form integration. Gdy 'name' jest set, underlying
-  // input wysyła "on" przez FormData (zachowanie natywnego checkboxa) —
-  // formy z action={...} dostają standardowy submit.
   name?: string;
   value?: string;
-}) {
-  const px = size === "sm" ? 14 : 16;
-  const dim =
-    size === "sm" ? "h-[14px] w-[14px]" : "h-[16px] w-[16px]";
+  id?: string;
+}
+
+export function Checkbox({ checked, indeterminate, onChange, onCheckedChange, onClick, ariaLabel, size = "md", disabled, className, name, value, id }: CheckboxProps) {
+  const mixed = !!indeterminate && !checked;
   return (
-    <span
-      className={`relative inline-grid place-items-center align-middle ${dim} ${className ?? ""}`}
-    >
-      <input
-        type="checkbox"
-        name={name}
-        value={value}
-        aria-label={ariaLabel}
-        checked={checked}
-        disabled={disabled}
-        ref={(el) => {
-          if (el) el.indeterminate = !!indeterminate && !checked;
-        }}
-        onChange={onChange}
-        onClick={onClick}
-        className={`peer ${dim} cursor-pointer appearance-none rounded-[4px] border border-border bg-background transition-colors checked:border-primary checked:bg-primary indeterminate:border-primary indeterminate:bg-primary hover:border-primary/70 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-1 focus-visible:ring-offset-background`}
-      />
-      {/* Check zawsze w DOM, widoczność przez peer-checked TRANSITION (nie
-          keyframe): brak popu przy mount'cie tabeli z N zaznaczonymi wierszami,
-          a szybkie klikanie płynnie zawraca animację zamiast ją kolejkować.
-          Easing spójny z toast-in (cubic-bezier(0.22,1,0.36,1), bounce 0). */}
-      <Check
-        size={px - 4}
-        strokeWidth={3.5}
-        className="pointer-events-none absolute scale-50 text-primary-foreground opacity-0 transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] peer-checked:scale-100 peer-checked:opacity-100"
-      />
-      {indeterminate && !checked && (
-        <Minus
-          size={px - 4}
-          strokeWidth={3.5}
-          className="pointer-events-none absolute text-primary-foreground"
-        />
+    <CheckboxPrimitive.Root
+      id={id}
+      checked={checked}
+      indeterminate={mixed}
+      disabled={disabled}
+      name={name}
+      value={value}
+      aria-label={ariaLabel}
+      onClick={onClick}
+      onCheckedChange={(next, details) => {
+        onCheckedChange?.(next, details);
+        // ponytail: legacy onChange(e) dostaje tylko currentTarget/target.checked — tyle czytają call-site'y.
+        onChange?.({ currentTarget: { checked: next }, target: { checked: next } } as unknown as ChangeEvent<HTMLInputElement>);
+      }}
+      className={cn(
+        "inline-flex shrink-0 items-center justify-center rounded-sm border-[1.5px] border-n-400 bg-card align-middle text-white outline-none hover:border-n-500",
+        "data-checked:border-control-on data-checked:bg-control-on data-indeterminate:border-control-on data-indeterminate:bg-control-on",
+        "data-disabled:border-n-200 data-disabled:bg-n-100 data-disabled:text-n-400",
+        SIZE[size],
+        className,
       )}
-    </span>
+    >
+      <CheckboxPrimitive.Indicator className="flex items-center justify-center">
+        {mixed ? <span className="h-0.5 w-2 rounded-[1px] bg-current" /> : <CheckMark size={MARK[size]} />}
+      </CheckboxPrimitive.Indicator>
+    </CheckboxPrimitive.Root>
   );
 }

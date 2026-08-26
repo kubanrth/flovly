@@ -1,40 +1,38 @@
 import { test, expect } from "./fixtures/console-errors";
-
-async function gotoTableView(page: import("@playwright/test").Page) {
-  await page.goto("/workspaces");
-  await page.locator('a[href^="/w/"]').first().click();
-  await page.waitForURL(/\/w\/[^/]+/);
-  await page.locator('a[href*="/b/"]').first().click();
-  await page.waitForURL(/\/b\/[^/]+/);
-  const tableTab = page.getByRole("link", { name: /^tabela$/i }).first();
-  if (await tableTab.isVisible().catch(() => false)) await tableTab.click();
-  await page.waitForURL(/\/table/, { timeout: 10_000 }).catch(() => {});
-}
+import { gotoFirstBoard, openView, waitForTable } from "./helpers";
 
 test.describe("table view", () => {
   test.beforeEach(async ({ page }) => {
-    await gotoTableView(page);
+    await gotoFirstBoard(page);
   });
 
-  test("ID column NOT present (F12-K87 regression)", async ({ page }) => {
-    // The header row should NOT contain a plain 'ID' label.
-    const idHeader = page.locator('th, [role="columnheader"]').filter({ hasText: /^ID$/ });
-    await expect(idHeader).toHaveCount(0);
+  test("ID column shows numeric #ids, never cuids (F12-K87/K89)", async ({ page }) => {
+    // K87 removed the 4-char cuid "ID" column; K89 brought "ID" back as a
+    // numeric displayId (#123). Guard the intent: every ID cell is "#<n>".
+    const headers = page.locator("table thead th");
+    await expect(headers.first()).toBeVisible();
+    const idx = (await headers.allInnerTexts()).findIndex((t) => t.trim().toUpperCase() === "ID");
+    expect(idx).toBeGreaterThan(-1);
+
+    const taskRows = page.locator("table tbody tr").filter({ has: page.locator('a[href*="/t/"]') });
+    await expect(taskRows.first()).toBeVisible();
+    const cells = await taskRows.locator(`td:nth-child(${idx + 1})`).allInnerTexts();
+    expect(cells.length).toBeGreaterThan(0);
+    for (const text of cells) expect(text.trim()).toMatch(/^#\d+$/);
   });
 
   test("column resize persists across view switch (F12-K90)", async ({ page }) => {
-    const header = page.locator('th, [role="columnheader"]').nth(1);
-    if (!(await header.isVisible().catch(() => false))) {
-      test.skip(true, "no headers visible — board may be empty");
-    }
+    const header = page.locator("table thead th").nth(1);
+    await expect(header).toBeVisible();
     const before = (await header.boundingBox())!.width;
 
-    // Find the resize handle (typically aria-label or a small drag handle).
-    const handle = header.locator('[role="separator"], [data-resize-handle]').first();
-    if (!(await handle.isVisible().catch(() => false))) {
-      test.skip(true, "no resize handle found");
-    }
+    const handle = header.getByRole("separator", { name: "Zmień szerokość kolumny" });
     const hBox = (await handle.boundingBox())!;
+    // Widths persist via a debounced (800ms) server action carrying {"widths":…};
+    // switching views before it lands would test the race, not persistence.
+    const saved = page.waitForResponse(
+      (r) => r.request().method() === "POST" && (r.request().postData() ?? "").includes('"widths"'),
+    );
     await page.mouse.move(hBox.x + hBox.width / 2, hBox.y + hBox.height / 2);
     await page.mouse.down();
     await page.mouse.move(hBox.x + 50, hBox.y + hBox.height / 2, { steps: 8 });
@@ -42,24 +40,23 @@ test.describe("table view", () => {
 
     const after = (await header.boundingBox())!.width;
     expect(after).toBeGreaterThan(before + 10);
+    await saved;
 
-    // Switch to Kanban and back.
-    await page.getByRole("link", { name: /^kanban$/i }).first().click();
-    await page.waitForURL(/\/kanban/, { timeout: 10_000 });
-    await page.getByRole("link", { name: /^tabela$/i }).first().click();
-    await page.waitForURL(/\/table/, { timeout: 10_000 });
+    await openView(page, "Tablica");
+    await openView(page, "Lista");
+    await waitForTable(page);
 
-    const headerAgain = page.locator('th, [role="columnheader"]').nth(1);
+    const headerAgain = page.locator("table thead th").nth(1);
+    await expect(headerAgain).toBeVisible();
     const persisted = (await headerAgain.boundingBox())!.width;
     expect(Math.abs(persisted - after)).toBeLessThan(5);
   });
 
   test("bulk select shows selected count", async ({ page }) => {
-    const checkboxes = page.locator('tbody input[type="checkbox"], tbody [role="checkbox"]');
-    const count = await checkboxes.count();
-    if (count < 2) test.skip(true, "need ≥2 rows for bulk-select test");
-    await checkboxes.nth(0).click();
-    await checkboxes.nth(1).click();
-    await expect(page.locator("body")).toContainText(/2.*(zaznacz|selected)/i);
+    const boxes = page.locator('table tbody [role="checkbox"][aria-label^="Zaznacz wiersz"]');
+    await expect(boxes.nth(1)).toBeVisible();
+    await boxes.nth(0).click();
+    await boxes.nth(1).click();
+    await expect(page.locator("body")).toContainText(/2\s*zaznaczone/i);
   });
 });

@@ -68,7 +68,7 @@ export function BackupsClient({
             type="button"
             onClick={runBulk}
             disabled={bulkPending}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-gradient px-3 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 font-sans text-[0.85rem] font-semibold text-white transition-[transform,opacity] hover:-translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <RefreshCw size={13} className={bulkPending ? "animate-spin" : ""} />
             {bulkPending ? "Tworzenie…" : "Backup wszystkich teraz"}
@@ -220,7 +220,7 @@ function BackupsList({
     return (
       <p className="py-4 text-center text-[0.84rem] text-muted-foreground">
         Brak backupów. Pierwszy zostanie utworzony przy najbliższym cron-ie
-        albo po kliknięciu „Backup teraz".
+        albo po kliknięciu „Backup teraz”.
       </p>
     );
   }

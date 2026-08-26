@@ -50,7 +50,7 @@ export function NewCanvasForm({ workspaceId }: { workspaceId: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-brand-gradient px-4 font-sans text-[0.88rem] font-semibold text-white shadow-brand transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
+        className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 font-sans text-[0.88rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
       >
         <Plus size={14} /> {pending ? "Tworzę…" : "Nowa kanwa"}
       </button>

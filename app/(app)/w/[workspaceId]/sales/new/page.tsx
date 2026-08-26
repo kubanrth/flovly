@@ -65,7 +65,7 @@ export default async function NewDealPage({
           <div className="flex flex-col gap-1">
             <span className="eyebrow">Nowy deal</span>
             <h1 className="font-display text-[1.5rem] font-bold leading-[1.1] tracking-[-0.03em] md:text-[2rem]">
-              Dodaj <span className="text-brand-gradient">deal</span>
+              Dodaj <span className="">deal</span>
             </h1>
           </div>
         </div>

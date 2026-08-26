@@ -118,6 +118,7 @@ export function SupportWorkspace({
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Record<string, number>;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setColWidths({ ...DEFAULT_WIDTHS, ...parsed });
       }
     } catch {
@@ -153,7 +154,7 @@ export function SupportWorkspace({
       <div className="flex flex-col gap-3">
         <span className="eyebrow">Wsparcie</span>
         <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
-          <span className="text-brand-gradient">Support</span> — zgłoszenia.
+          <span className="">Support</span> — zgłoszenia.
         </h1>
         <p className="max-w-[60ch] text-[0.95rem] leading-[1.55] text-muted-foreground">
           Zgłoś temat wymagający supportu. Admini przestrzeni przypisują
@@ -190,7 +191,7 @@ export function SupportWorkspace({
         <div className="rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center">
           <p className="font-display text-[1rem] font-semibold">Brak zgłoszeń.</p>
           <p className="mt-1 text-[0.88rem] text-muted-foreground">
-            Wciśnij „Nowe zgłoszenie", żeby dodać pierwszy ticket.
+            Wciśnij „Nowe zgłoszenie”, żeby dodać pierwszy ticket.
           </p>
         </div>
       ) : (
@@ -433,7 +434,7 @@ function PersonChip({
 }) {
   return (
     <span className="flex items-center gap-2 min-w-0">
-      <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.6rem] font-bold text-white">
+      <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.6rem] font-bold text-white">
         {person.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={person.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
@@ -532,24 +533,24 @@ function useDropdown() {
 function StatusSelect({ ticketId, current }: { ticketId: string; current: Status }) {
   const meta = STATUS_META[current];
   const Icon = meta.icon;
-  const dd = useDropdown();
+  const { open, coords, triggerRef, popRef, openPicker, close } = useDropdown();
 
   const pick = (s: Status) => {
     const fd = new FormData();
     fd.set("id", ticketId);
     fd.set("status", s);
     startTransition(() => updateSupportTicketAction(fd));
-    dd.close();
+    close();
   };
 
   return (
     <>
       <button
-        ref={dd.triggerRef}
+        ref={triggerRef}
         type="button"
-        onClick={() => (dd.open ? dd.close() : dd.openPicker(220))}
+        onClick={() => (open ? close() : openPicker(220))}
         aria-haspopup="listbox"
-        aria-expanded={dd.open}
+        aria-expanded={open}
         className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.72rem] font-medium transition-opacity hover:opacity-80"
         style={{ background: `${meta.color}1A`, color: meta.color }}
       >
@@ -557,15 +558,15 @@ function StatusSelect({ ticketId, current }: { ticketId: string; current: Status
         <span>{meta.label}</span>
         <ChevronDown size={11} className="opacity-70" />
       </button>
-      {dd.open && dd.coords && typeof document !== "undefined" &&
+      {open && coords && typeof document !== "undefined" &&
         createPortal(
           <div
-            ref={dd.popRef}
+            ref={popRef}
             style={{
               position: "fixed",
-              top: dd.coords.top,
-              left: dd.coords.left,
-              width: dd.coords.width,
+              top: coords.top,
+              left: coords.left,
+              width: coords.width,
             }}
             className="z-[200] overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
           >
@@ -608,39 +609,39 @@ function StatusSelect({ ticketId, current }: { ticketId: string; current: Status
 
 function PrioritySelect({ ticketId, current }: { ticketId: string; current: Priority }) {
   const meta = PRIORITY_META[current];
-  const dd = useDropdown();
+  const { open, coords, triggerRef, popRef, openPicker, close } = useDropdown();
 
   const pick = (p: Priority) => {
     const fd = new FormData();
     fd.set("id", ticketId);
     fd.set("priority", p);
     startTransition(() => updateSupportTicketAction(fd));
-    dd.close();
+    close();
   };
 
   return (
     <>
       <button
-        ref={dd.triggerRef}
+        ref={triggerRef}
         type="button"
-        onClick={() => (dd.open ? dd.close() : dd.openPicker(180))}
+        onClick={() => (open ? close() : openPicker(180))}
         aria-haspopup="listbox"
-        aria-expanded={dd.open}
+        aria-expanded={open}
         className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.72rem] font-medium transition-opacity hover:opacity-80"
         style={{ background: `${meta.color}1A`, color: meta.color }}
       >
         <span>{meta.label}</span>
         <ChevronDown size={11} className="opacity-70" />
       </button>
-      {dd.open && dd.coords && typeof document !== "undefined" &&
+      {open && coords && typeof document !== "undefined" &&
         createPortal(
           <div
-            ref={dd.popRef}
+            ref={popRef}
             style={{
               position: "fixed",
-              top: dd.coords.top,
-              left: dd.coords.left,
-              width: dd.coords.width,
+              top: coords.top,
+              left: coords.left,
+              width: coords.width,
             }}
             className="z-[200] overflow-hidden rounded-lg border border-border bg-popover p-1 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
           >
@@ -687,7 +688,7 @@ function AssigneeSelect({
   current: SupportTicketRow["assignee"];
   members: SupportMember[];
 }) {
-  const dd = useDropdown();
+  const { open, coords, triggerRef, popRef, openPicker, close } = useDropdown();
   const [query, setQuery] = useState("");
 
   const pick = (userId: string) => {
@@ -695,7 +696,7 @@ function AssigneeSelect({
     fd.set("id", ticketId);
     fd.set("assigneeId", userId);
     startTransition(() => updateSupportTicketAction(fd));
-    dd.close();
+    close();
     setQuery("");
   };
 
@@ -709,11 +710,11 @@ function AssigneeSelect({
   return (
     <>
       <button
-        ref={dd.triggerRef}
+        ref={triggerRef}
         type="button"
-        onClick={() => (dd.open ? dd.close() : dd.openPicker(280))}
+        onClick={() => (open ? close() : openPicker(280))}
         aria-haspopup="listbox"
-        aria-expanded={dd.open}
+        aria-expanded={open}
         className="inline-flex w-full items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left transition-colors hover:border-border hover:bg-accent/40"
       >
         {current ? (
@@ -725,15 +726,15 @@ function AssigneeSelect({
         )}
         <ChevronDown size={11} className="ml-auto shrink-0 text-muted-foreground" />
       </button>
-      {dd.open && dd.coords && typeof document !== "undefined" &&
+      {open && coords && typeof document !== "undefined" &&
         createPortal(
           <div
-            ref={dd.popRef}
+            ref={popRef}
             style={{
               position: "fixed",
-              top: dd.coords.top,
-              left: dd.coords.left,
-              width: dd.coords.width,
+              top: coords.top,
+              left: coords.left,
+              width: coords.width,
             }}
             className="z-[200] flex flex-col overflow-hidden rounded-lg border border-border bg-popover shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
           >
@@ -781,7 +782,7 @@ function AssigneeSelect({
                       data-active={active}
                       className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[0.84rem] transition-colors hover:bg-accent data-[active=true]:bg-primary/10"
                     >
-                      <span className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.6rem] font-bold text-white">
+                      <span className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.6rem] font-bold text-white">
                         {m.avatarUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={m.avatarUrl} alt="" width={28} height={28} className="h-full w-full object-cover" />
@@ -1018,7 +1019,7 @@ function EditTicketDialog({
               type="button"
               onClick={submit}
               disabled={!title.trim() || !description.trim()}
-              className="inline-flex h-9 items-center justify-center rounded-md bg-brand-gradient px-4 font-sans text-[0.86rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px] disabled:opacity-60"
+              className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 font-sans text-[0.86rem] font-semibold text-white transition-[transform,opacity] hover:-translate-y-[1px] disabled:opacity-60"
             >
               Zapisz zmiany
             </button>
@@ -1137,7 +1138,7 @@ function NewTicketForm({ workspaceId }: { workspaceId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 w-fit items-center gap-2 rounded-lg bg-brand-gradient px-4 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px]"
+        className="inline-flex h-10 w-fit items-center gap-2 rounded-lg bg-primary px-4 font-sans text-[0.9rem] font-semibold text-white transition-[transform,opacity] hover:-translate-y-[1px]"
       >
         <Plus size={14} /> Nowe zgłoszenie
       </button>
@@ -1297,7 +1298,7 @@ function NewTicketForm({ workspaceId }: { workspaceId: string }) {
         <button
           type="submit"
           disabled={submitting || !title.trim() || !description.trim()}
-          className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-gradient px-5 font-sans text-[0.9rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px] disabled:opacity-60"
+          className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-5 font-sans text-[0.9rem] font-semibold text-white transition-[transform,opacity] hover:-translate-y-[1px] disabled:opacity-60"
         >
           {submitting ? "Wysyłam…" : "Zgłoś"}
         </button>

@@ -132,7 +132,7 @@ export function UsersRowCheckbox({
 }
 
 // Floating sticky bar at the bottom of the viewport. Renders only when ≥1 row
-// is selected. Uses a glass background to match the design spec's bulk toolbar.
+// is selected. Uses a plain background to match the design spec's bulk toolbar.
 export function UsersBulkBar() {
   const { selected, clear } = useSelection();
   const [pending, setPending] = useState(false);
@@ -173,9 +173,9 @@ export function UsersBulkBar() {
       <div
         role="status"
         aria-live="polite"
-        className="pointer-events-auto flex max-w-[min(720px,100%)] flex-wrap items-center gap-2 rounded-2xl border border-white/14 bg-card/95 px-3 py-2 shadow-[0_18px_40px_-16px_rgba(10,10,40,0.6)] backdrop-blur-xl md:gap-3 md:px-4 md:py-2.5"
+        className="pointer-events-auto flex max-w-[min(720px,100%)] flex-wrap items-center gap-2 rounded-2xl border border-white/14 bg-card/95 px-3 py-2 shadow-[0_18px_40px_-16px_rgba(10,10,40,0.6)] md:gap-3 md:px-4 md:py-2.5"
       >
-        <span className="inline-flex items-center gap-2 rounded-md bg-brand-gradient px-2 py-1 font-mono text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white">
+        <span className="inline-flex items-center gap-2 rounded-md bg-primary px-2 py-1 font-mono text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white">
           {selected.size}{" "}
           <span className="font-sans normal-case tracking-normal">zaznaczono</span>
         </span>

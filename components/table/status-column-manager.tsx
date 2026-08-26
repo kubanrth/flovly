@@ -95,7 +95,7 @@ function ColumnRow({
           <ColorSwatches selected={color} onChange={setColor} />
           <button
             type="submit"
-            className="grid h-8 w-8 place-items-center rounded-md bg-brand-gradient text-white transition-opacity hover:opacity-90"
+            className="grid h-8 w-8 place-items-center rounded-md bg-primary text-white transition-opacity hover:opacity-90"
             aria-label="Zapisz"
           >
             <Check size={14} />
@@ -188,7 +188,7 @@ function AddColumn({ workspaceId, boardId }: { workspaceId: string; boardId: str
       <ColorSwatches selected={color} onChange={setColor} />
       <button
         type="submit"
-        className="grid h-8 w-8 place-items-center rounded-md bg-brand-gradient text-white transition-opacity hover:opacity-90"
+        className="grid h-8 w-8 place-items-center rounded-md bg-primary text-white transition-opacity hover:opacity-90"
         aria-label="Utwórz"
       >
         <Check size={14} />

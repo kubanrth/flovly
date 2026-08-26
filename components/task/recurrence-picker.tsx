@@ -82,7 +82,7 @@ export function RecurrencePicker({
   ];
 
   return (
-    <div className="popover-glass shadow-aura flex flex-col gap-1 p-2">
+    <div className="popover-surface flex flex-col gap-1 p-2">
       <span className="eyebrow flex items-center gap-1.5 px-1 pb-0.5 text-[0.62rem]">
         <Repeat size={11} />
         Powtarzaj
@@ -133,7 +133,7 @@ export function RecurrencePicker({
                 aria-pressed={active}
                 onClick={() => persist({ freq: "weekly", day: idx })}
                 data-active={active}
-                className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[8px] bg-muted/50 font-mono text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-muted active:bg-primary/10 data-[active=true]:bg-brand-gradient data-[active=true]:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[8px] bg-muted/50 font-mono text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-muted active:bg-primary/10 data-[active=true]:bg-primary data-[active=true]:text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {letter}
               </button>

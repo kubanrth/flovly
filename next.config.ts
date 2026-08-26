@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
   // .next/standalone zawiera zminimalizowany server.js + tylko wymagane
   // dependencies — image ~150MB zamiast ~500MB.
   output: "standalone",
+  // Avatars/attachments are served from Supabase Storage (public bucket URLs).
+  images: { remotePatterns: [{ protocol: "https", hostname: "*.supabase.co" }] },
   turbopack: {
     root: path.join(__dirname),
   },

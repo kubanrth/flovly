@@ -54,7 +54,7 @@ export function ContactTaskLinker({
 
   return (
     <div className="flex items-center gap-2">
-      <Link2 size={12} className="shrink-0 text-fuchsia-600 dark:text-fuchsia-400" />
+      <Link2 size={12} className="shrink-0 text-fuchsia-600" />
       <div className="min-w-0 flex-1">
         <SearchableDropdown
           name="link-task"

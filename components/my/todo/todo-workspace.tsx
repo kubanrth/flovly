@@ -316,7 +316,7 @@ export function TodoWorkspace({
         {/* Only render when a list is active — smart views have no canonical target.
             Mobile: sticky bottom z safe-area inset, full-width gradient button + brand-light focus ring. */}
         {activeListId && (
-          <div className="shrink-0 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm md:px-8 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="shrink-0 border-t border-border bg-background/95 px-4 py-3 md:px-8 max-md:sticky max-md:bottom-0 max-md:z-10 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             <QuickAddItem
               listId={activeListId}
               listName={activeListName ?? ""}
@@ -333,7 +333,7 @@ export function TodoWorkspace({
             mobileView !== "detail" ? "max-md:hidden" : ""
           }`}
         >
-          <div className="md:hidden flex items-center gap-1 border-b border-border bg-card/95 px-2 py-2 backdrop-blur-sm">
+          <div className="md:hidden flex items-center gap-1 border-b border-border bg-card/95 px-2 py-2">
             <button
               type="button"
               onClick={() => setSelectedItemId(null)}
@@ -544,10 +544,10 @@ function ItemsList({
   onSelect: (id: string | null) => void;
   showListChip: boolean;
 }) {
-  // v4 single card — rounded-[22px] glass surface, brand-tinted shadow.
+  // v4 single card — rounded-[22px] plain surface, brand-tinted shadow.
   // Items in środku jako rounded-[10px] surfaces z hover bg-white/3.
   return (
-    <div className="rounded-[22px] border border-white/60 bg-card/95 p-2 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] dark:border-white/10 dark:bg-white/[0.03]">
+    <div className="rounded-[22px] border border-white/60 bg-card/95 p-2 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] ]">
       <ul className="flex flex-col gap-1">
         {items.map((item) => (
           <li key={item.id}>
@@ -618,7 +618,7 @@ function ItemRow({
   return (
     <div
       data-selected={selected ? "true" : "false"}
-      className="group flex items-center gap-3 rounded-[10px] border border-transparent px-3 py-2.5 transition-colors hover:bg-white/60 hover:border-white/60 data-[selected=true]:bg-primary/10 data-[selected=true]:border-primary/30 dark:hover:bg-white/[0.04] dark:hover:border-white/[0.08]"
+      className="group flex items-center gap-3 rounded-[10px] border border-transparent px-3 py-2.5 transition-colors hover:bg-white/60 hover:border-white/60 data-[selected=true]:bg-primary/10 data-[selected=true]:border-primary/30 ] ]"
     >
       {/* v4 drag handle — visual cue (drag-reorder funkcja zachowana w istniejącym dnd).
           Mobile: hidden — touch-reorder via long-press jest funkcją dnd-kit, nie potrzebuje
@@ -795,7 +795,7 @@ function QuickAddItem({
   // Mobile: większy input (min-h 44px tap target), gap-2 zamiast gap-3.
   const cls =
     variant === "bottom"
-      ? "flex items-center gap-3 rounded-[10px] border border-white/60 bg-white/70 px-4 py-2.5 transition-[border-color,box-shadow] focus-within:border-primary focus-within:shadow-[0_0_0_4px_rgba(124,92,255,0.15)] dark:border-white/10 dark:bg-white/[0.04] max-md:gap-2 max-md:py-1.5"
+      ? "flex items-center gap-3 rounded-[10px] border border-white/60 bg-white/70 px-4 py-2.5 transition-[border-color,box-shadow] focus-within:border-primary focus-within:shadow-[0_0_0_4px_rgba(124,92,255,0.15)]  ] max-md:gap-2 max-md:py-1.5"
       : variant === "panel"
         ? "flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 transition-colors focus-within:border-primary/60"
         : "flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-3 shadow-[0_1px_2px_rgba(46,19,52,0.08)]";
@@ -835,10 +835,10 @@ function QuickAddItem({
         title="Dodaj (Enter)"
         className={
           variant === "bottom"
-            ? "inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-md bg-brand-gradient text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 max-md:h-11 max-md:w-auto max-md:shrink-0 max-md:px-4 max-md:text-[0.88rem] max-md:font-semibold"
+            ? "inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-md bg-primary text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 max-md:h-11 max-md:w-auto max-md:shrink-0 max-md:px-4 max-md:text-[0.88rem] max-md:font-semibold"
             : variant === "panel"
               ? "grid h-7 w-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-              : "grid h-9 w-9 shrink-0 place-items-center rounded-md bg-brand-gradient text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+              : "grid h-9 w-9 shrink-0 place-items-center rounded-md bg-primary text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         }
       >
         <Plus size={iconSize} />
@@ -865,7 +865,7 @@ function EmptyState({
           Mój dzień jest czysty.
         </p>
         <p className="mt-1 text-[0.88rem] text-muted-foreground">
-          Dodawaj zadania z innych list do „Mój dzień" (ikona słoneczka obok zadania).
+          Dodawaj zadania z innych list do „Mój dzień” (ikona słoneczka obok zadania).
         </p>
       </div>
     );
@@ -1007,7 +1007,7 @@ function AssignedTasksPanel({ tasks }: { tasks: AssignedTaskRef[] }) {
           Twoje przypisane zadania
         </p>
         <p className="text-[0.84rem] text-muted-foreground">
-          Brak zadań przypisanych do Ciebie w workspace'ach. Klik w zadanie tej listy żeby zobaczyć szczegóły.
+          Brak zadań przypisanych do Ciebie w workspace&apos;ach. Klik w zadanie tej listy żeby zobaczyć szczegóły.
         </p>
       </div>
     );

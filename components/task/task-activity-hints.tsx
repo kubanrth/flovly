@@ -45,7 +45,7 @@ export function TaskActivityHints({
           title="Zadanie zawiera opis"
           // Light/dark per-color palette tuned for contrast. Border + tinted
           // bg keeps the badges readable on both card and table row backgrounds.
-          className="inline-flex items-center gap-1 rounded-full border border-violet-500/30 bg-violet-500/15 px-1.5 py-0.5 font-semibold text-violet-700 dark:border-violet-400/40 dark:bg-violet-400/15 dark:text-violet-200"
+          className="inline-flex items-center gap-1 rounded-full border border-violet-500/30 bg-violet-500/15 px-1.5 py-0.5 font-semibold text-violet-700"
         >
           <FileText size={10} aria-hidden /> Opis
         </span>
@@ -58,8 +58,8 @@ export function TaskActivityHints({
           // czytelna obok "Opis" / komentarzy / Powiązane.
           className={
             subtaskComplete
-              ? "inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-1.5 py-0.5 font-semibold text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-400/15 dark:text-emerald-200"
-              : "inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 font-semibold text-amber-700 dark:border-amber-400/40 dark:bg-amber-400/15 dark:text-amber-200"
+              ? "inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-1.5 py-0.5 font-semibold text-emerald-700   "
+              : "inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 font-semibold text-amber-700   "
           }
         >
           <CheckSquare size={10} aria-hidden /> Lista {subtaskDoneCount}/{subtaskCount}
@@ -68,7 +68,7 @@ export function TaskActivityHints({
       {commentCount > 0 && (
         <span
           title={`${commentCount} ${commentLabel(commentCount)}`}
-          className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/15 px-1.5 py-0.5 font-semibold text-sky-700 dark:border-sky-400/40 dark:bg-sky-400/15 dark:text-sky-200"
+          className="inline-flex items-center gap-1 rounded-full border border-sky-500/30 bg-sky-500/15 px-1.5 py-0.5 font-semibold text-sky-700"
         >
           <MessageSquare size={10} aria-hidden /> {commentCount}
         </span>
@@ -80,7 +80,7 @@ export function TaskActivityHints({
               ? "1 powiązane zadanie"
               : `${linkedCount} powiązanych zadań`
           }
-          className="inline-flex items-center gap-1 rounded-full border border-fuchsia-500/30 bg-fuchsia-500/15 px-1.5 py-0.5 font-semibold text-fuchsia-700 dark:border-fuchsia-400/40 dark:bg-fuchsia-400/15 dark:text-fuchsia-200"
+          className="inline-flex items-center gap-1 rounded-full border border-fuchsia-500/30 bg-fuchsia-500/15 px-1.5 py-0.5 font-semibold text-fuchsia-700"
         >
           <Link2 size={10} aria-hidden /> {linkedCount}
         </span>
@@ -92,7 +92,7 @@ export function TaskActivityHints({
               ? "1 załącznik"
               : `${attachmentCount} załączników`
           }
-          className="inline-flex items-center gap-1 rounded-full border border-orange-500/30 bg-orange-500/15 px-1.5 py-0.5 font-semibold text-orange-700 dark:border-orange-400/40 dark:bg-orange-400/15 dark:text-orange-200"
+          className="inline-flex items-center gap-1 rounded-full border border-orange-500/30 bg-orange-500/15 px-1.5 py-0.5 font-semibold text-orange-700"
         >
           <Paperclip size={10} aria-hidden /> {attachmentCount}
         </span>

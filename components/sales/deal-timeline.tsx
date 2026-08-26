@@ -154,7 +154,7 @@ function NoteComposer({
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex h-8 items-center rounded-md bg-brand-gradient px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex h-8 items-center rounded-md bg-primary px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? "Dodaję…" : "Dodaj notatkę"}
         </button>
@@ -184,7 +184,7 @@ function ActivityRow({
         {actor ? (
           <span
             title={actorLabel}
-            className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-brand-gradient font-display text-[0.62rem] font-bold text-white"
+            className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.62rem] font-bold text-white"
           >
             {actor.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element

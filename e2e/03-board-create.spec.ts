@@ -1,38 +1,23 @@
 import { test, expect } from "./fixtures/console-errors";
 
-// Helper: enter the first available workspace.
-async function gotoFirstWorkspace(page: import("@playwright/test").Page) {
-  await page.goto("/workspaces");
-  const card = page.locator('a[href^="/w/"]').first();
-  await card.click();
-  await page.waitForURL(/\/w\/[^/]+/);
-}
-
+// The only "new board" trigger is the CTA on the workspace overview page.
 test.describe("board create", () => {
   test("create board dialog opens and creates with defaults", async ({ page }) => {
-    await gotoFirstWorkspace(page);
+    await page.goto("/workspaces");
+    await page.locator('[data-ui="main"] a[href^="/w/"]').first().click();
+    await page.waitForURL(/\/w\/[^/]+$/);
 
-    const newBoardBtn = page
-      .getByRole("button", { name: /\+ tablica|nowa tablica|new board/i })
-      .first();
-    if (!(await newBoardBtn.isVisible().catch(() => false))) {
-      test.skip(true, "No 'New board' trigger visible");
-    }
-    await newBoardBtn.click();
-
-    const dialog = page.getByRole("dialog");
+    await page.getByRole("button", { name: "Nowa tablica" }).first().click();
+    const dialog = page.getByRole("dialog").filter({ has: page.locator('input[name="name"]') });
     await expect(dialog).toBeVisible();
 
     const boardName = `e2e-board-${Date.now()}`;
-    await dialog.locator('input[name="name"], input[name="title"]').first().fill(boardName);
-    await dialog.getByRole("button", { name: /utwórz|stwórz|dodaj/i }).first().click();
+    await dialog.locator('input[name="name"]').fill(boardName);
+    await dialog.getByRole("button", { name: "Utwórz tablicę" }).click();
 
-    // Should navigate to the new board's table view.
+    // Should navigate to the new board's table view with default status columns.
     await page.waitForURL(/\/w\/[^/]+\/b\/[^/]+\/table/, { timeout: 15_000 });
-    await expect(page).toHaveURL(/\/b\/.*\/table/);
-
-    // Default 4 status columns — assert at least Backlog / To do exist visually.
-    // (We only assert the page rendered; column-count check is brittle.)
+    await expect(page.locator('[data-ui="board-name"]')).toContainText(boardName);
     await expect(page.locator("body")).toContainText(/Do zrobienia|Backlog|W trakcie|Status/i);
   });
 });

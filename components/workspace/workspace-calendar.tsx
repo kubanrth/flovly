@@ -93,7 +93,7 @@ export function WorkspaceCalendar({
         <button
           type="button"
           onClick={() => setShowEventForm((v) => !v)}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-gradient px-3 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px]"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 font-sans text-[0.85rem] font-semibold text-white transition-[transform,opacity] hover:-translate-y-[1px]"
         >
           <Plus size={13} /> {showEventForm ? "Zwiń" : "Nowe wydarzenie"}
         </button>
@@ -154,7 +154,7 @@ function EventDetailDialog({
       onKeyDown={(e) => {
         if (e.key === "Escape") onClose();
       }}
-      className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4"
     >
       <div
         className="relative flex w-[min(520px,100%)] flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-[0_24px_48px_-12px_rgba(10,10,40,0.35)]"
@@ -232,7 +232,7 @@ function EventDetailDialog({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-9 items-center rounded-md bg-brand-gradient px-4 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px]"
+            className="inline-flex h-9 items-center rounded-md bg-primary px-4 font-sans text-[0.85rem] font-semibold text-white transition-[transform,opacity] hover:-translate-y-[1px]"
           >
             Zamknij
           </button>
@@ -264,7 +264,7 @@ function EditEventForm({
       onClick={(e) => {
         if (e.target === e.currentTarget) onCancel();
       }}
-      className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4"
     >
       <form
         action={(fd) =>
@@ -385,7 +385,7 @@ function EditEventForm({
           </button>
           <button
             type="submit"
-            className="inline-flex h-9 items-center rounded-md bg-brand-gradient px-4 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px]"
+            className="inline-flex h-9 items-center rounded-md bg-primary px-4 font-sans text-[0.85rem] font-semibold text-white transition-[transform,opacity] hover:-translate-y-[1px]"
           >
             Zapisz zmiany
           </button>

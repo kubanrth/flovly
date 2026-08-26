@@ -35,7 +35,7 @@ export default async function CreativeBriefDetailPage({
             | null,
           status: brief.status,
           emoji: brief.emoji,
-          headerColor: brief.headerColor ?? "#7C5CFF",
+          headerColor: brief.headerColor ?? "#FF5C00",
           creatorName: brief.creator.name ?? brief.creator.email,
           updatedAt: brief.updatedAt.toISOString(),
         }}

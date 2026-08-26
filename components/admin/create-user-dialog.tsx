@@ -36,13 +36,13 @@ export function CreateUserDialog() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-gradient px-3 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-[transform,opacity] hover:-translate-y-[1px]"
+        className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 font-sans text-[0.85rem] font-semibold text-white transition-[transform,opacity] hover:-translate-y-[1px]"
       >
         <Plus size={14} /> Dodaj użytkownika
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4">
           <div className="relative flex w-[min(440px,100%)] flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-[0_24px_48px_-12px_rgba(10,10,40,0.35)]">
             <button
               type="button"
@@ -151,7 +151,7 @@ export function CreateUserDialog() {
                 <button
                   type="submit"
                   disabled={pending}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-brand-gradient px-3 font-sans text-[0.85rem] font-semibold text-white shadow-brand transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 font-sans text-[0.85rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {pending ? "Tworzenie…" : "Utwórz konto"}
                 </button>

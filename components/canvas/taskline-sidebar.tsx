@@ -49,10 +49,10 @@ export function TaskLineSidebar({
 
   return (
     // v4 TASKLINE spec line 220-225: sidebar 320px po lewej, rounded-[22px]
-    // glass — search input + filtr pills + lista draggable task cards.
+    // plain — search input + filtr pills + lista draggable task cards.
     // Mobile (spec lines 110-126): sidebar staje się top section z horizontal
     // scroll chip strip — canvas dostaje resztę viewportu.
-    <aside className="glass-surface flex w-full shrink-0 flex-col gap-3 overflow-hidden rounded-[22px] shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] md:w-[320px] max-md:max-h-[42dvh]">
+    <aside className="surface flex w-full shrink-0 flex-col gap-3 overflow-hidden rounded-[22px] shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] md:w-[320px] max-md:max-h-[42dvh]">
       {/* Header eyebrow — "Pula zadań" jak w v4 spec */}
       <div className="border-b border-[color-mix(in_oklch,var(--foreground)_8%,transparent)] px-4 pb-3 pt-4">
         <div className="mb-2.5 text-[0.88rem] font-semibold text-foreground">
@@ -112,7 +112,7 @@ export function TaskLineSidebar({
                     : "border-border bg-background text-muted-foreground hover:border-primary/30 hover:text-foreground"
                 }`}
               >
-                <span className="grid h-4 w-4 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient text-[0.5rem] font-bold text-white">
+                <span className="grid h-4 w-4 shrink-0 place-items-center overflow-hidden rounded-full bg-primary text-[0.5rem] font-bold text-white">
                   {m.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -170,7 +170,7 @@ function TaskLineCard({ task }: { task: TaskLineTask }) {
         e.dataTransfer.setData("application/x-flovly-task-id", task.id);
         e.dataTransfer.effectAllowed = "copy";
       }}
-      // v4 spec line 223: rounded-[12px] glass-ish card z border 1px, hover
+      // v4 spec line 223: rounded-[12px] plain-ish card z border 1px, hover
       // ring-primary/40. displayId font-mono brand-light, title 13px, status
       // pill po prawej.
       // Mobile: chip-style — szerokość 220px (snap point dla horizontal scroll),
@@ -204,7 +204,7 @@ function TaskLineCard({ task }: { task: TaskLineTask }) {
       </div>
       {primaryAssignee && (
         <div className="flex items-center gap-1.5 text-[0.66rem] text-muted-foreground">
-          <span className="grid h-4 w-4 shrink-0 place-items-center overflow-hidden rounded-full bg-brand-gradient text-[0.5rem] font-bold text-white">
+          <span className="grid h-4 w-4 shrink-0 place-items-center overflow-hidden rounded-full bg-primary text-[0.5rem] font-bold text-white">
             {primaryAssignee.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img

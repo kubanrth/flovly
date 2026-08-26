@@ -87,10 +87,10 @@ export function TaskLineWorkspace({
         tasks={availableTasks}
         members={members}
       />
-      {/* Canvas po prawej: glass rounded-[22px] z dotted bg (mirror styling
+      {/* Canvas po prawej: plain rounded-[22px] z dotted bg (mirror styling
           z canvas-editor — klient wymaga reuse). */}
       <div
-        className="glass-surface relative min-h-[420px] flex-1 overflow-hidden rounded-[22px] shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)]"
+        className="surface relative min-h-[420px] flex-1 overflow-hidden rounded-[22px] shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)]"
       >
         <TaskLineFlow
           workspaceId={workspaceId}

@@ -20,26 +20,25 @@ test.describe("auth", () => {
     await page.locator('input[name="password"]').fill("wrong-password-zzz");
     await page.locator('button[type="submit"]').click();
     // Actual server message: "Nieprawidłowy email, hasło lub kod 2FA."
-    // (login-form spec says "Niepoprawny email lub hasło" — that string doesn't
-    // exist in actions.ts. Test the real message.)
-    await expect(page.locator('[role="alert"]')).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('[role="alert"]')).toContainText(/Nieprawidłowy|nie powiodło/i);
+    await expect(page.locator('p[role="alert"]')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('p[role="alert"]')).toContainText(/Nieprawidłowy|nie powiodło/i);
   });
 });
 
 test.describe("logout", () => {
+  // Session strategy is JWT (lib/auth.ts) — signing out here only clears this
+  // context's cookie, the shared storageState stays valid for later specs.
   test("logout returns to /secure-access-portal", async ({ page }) => {
     await page.goto("/workspaces");
-    // ProfileDropdown trigger — try common selectors.
-    const dropdown = page.getByRole("button", { name: /profil|menu|avatar/i }).first();
-    if (await dropdown.isVisible().catch(() => false)) {
-      await dropdown.click();
-      const logout = page.getByRole("menuitem", { name: /wyloguj|logout/i });
-      await logout.click();
-      await page.waitForURL(/secure-access-portal/, { timeout: 10_000 });
-      await expect(page).toHaveURL(/secure-access-portal/);
-    } else {
-      test.skip(true, "Profile dropdown trigger not found — selector needs updating");
-    }
+    await page.locator('[data-ui="topbar"]').getByRole("button", { name: "Menu użytkownika" }).click();
+    // signOutAction is a server action answering 303 + x-action-redirect; assert
+    // that step separately so a dropped redirect is distinguishable from a
+    // menu-click miss.
+    const signOut = page.waitForResponse((r) => r.request().method() === "POST" && !!r.request().headers()["next-action"]);
+    await page.locator('[data-ui="avatar-menu"]').getByRole("menuitem", { name: "Wyloguj" }).click();
+    const resp = await signOut;
+    expect(resp.headers()["x-action-redirect"] ?? "").toContain("/secure-access-portal");
+    await page.waitForURL(/secure-access-portal/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/secure-access-portal/);
   });
 });
