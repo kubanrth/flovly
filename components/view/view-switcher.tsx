@@ -57,8 +57,8 @@ export const VIEW_ICON: Record<ViewName, ReactNode> = {
   taskline: <IconTaskline />,
 };
 
-// A2 order. `/overview` = „Opis" (board doc). „Podsumowanie" (B8) has no
-// route yet → disabled tab so the order matches the mockup.
+// A2 order. `/overview` = „Opis" (board doc), `/summary` = „Podsumowanie" (B8) —
+// a read-only dashboard, so neither is a BoardView row.
 const ORDER: ViewName[] = ["table", "kanban", "gantt", "roadmap", "calendar", "whiteboard", "taskline"];
 
 interface TabItem {
@@ -101,13 +101,14 @@ export function ViewSwitcher({
   const pathname = usePathname();
   const base = `/w/${workspaceId}/b/${boardId}`;
   const overviewActive = pathname === `${base}/overview` || !!pathname?.startsWith(`${base}/overview/`);
+  const summaryActive = pathname === `${base}/summary`;
   const views = ORDER.filter((v) => !enabled || enabled.includes(v));
   const total = views.length + 1 + (customViews?.length ?? 0);
 
   const items: TabItem[] = [
-    { key: "summary", label: "Podsumowanie", icon: <IconGrid />, active: false },
+    { key: "summary", label: "Podsumowanie", icon: <IconGrid />, href: `${base}/summary`, active: summaryActive },
     ...views.map((v) => {
-      const isActive = !activeViewId && !overviewActive && v === active;
+      const isActive = !activeViewId && !overviewActive && !summaryActive && v === active;
       const id = defaultViewIds?.[v];
       return {
         key: `v:${v}`,

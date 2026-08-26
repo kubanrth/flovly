@@ -59,7 +59,7 @@ export function BoardHeader({
           />
           <span className="flex-1" />
           {actions}
-          <BoardHeaderMenu canEditName={!!canEditName} />
+          <BoardHeaderMenu boardId={boardId} canEditName={!!canEditName} />
         </div>
         <div className="mt-1 flex items-center gap-2.5">
           {/* [&>button]:mx-0 — EditableTitle's -mx-1 + max-w-full is a cyclic % that clips 8px; -ml-1 keeps the optical align. */}

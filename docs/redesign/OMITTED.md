@@ -49,3 +49,11 @@ Stan po F1 (B4: nagłówek tablicy / tabsy / toolbar / dialog nowego widoku, 202
 - **Wariant modal (⌘K / powiadomienia)** — `command-palette.tsx` i `inbox-hotkey-wrapper.tsx` kierują na `/w/<ws>/t/<id>?mode=modal` (zamiast `…/table?task=<id>`); jedyna zmiana w plikach spoza `components/task/**`.
 - **`components/task/status-hue.ts`** — `hueForColor(hex): ChipHue` (HSL → 12 odcieni chipów). B5 ma zrobić to samo w `components/table/status-hue.ts` → do deduplikacji przez integratora.
 - **Mobile** — sekcje Załączniki / Powiązane / Głosowanie oraz wszystkie wiersze Szczegółów są renderowane (B2-mobile pokazuje tylko wycinek); tab „Czas pracy" zostaje też na mobile.
+
+## F3 — widoki tablicy
+
+- **Tło tablicy (AK120)** — `Board` nie ma kolumny na kolor, a F3 nie zmienia schematu
+  (MAP: „bez zmian schematu"). Wybór z menu ⋯ → Tło zapisuje się w `localStorage`
+  (`flovly:boardBg:<boardId>`), więc działa per urządzenie, nie per tablica dla całego
+  zespołu. Ścieżka wyjścia: kolumna `Board.backgroundColor` + server action —
+  podmienia się dwie funkcje w `components/view/board-header-menu.tsx`.
