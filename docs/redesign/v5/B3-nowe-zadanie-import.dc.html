@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0}
+*{box-sizing:border-box}
+body{background:#E9E7E2;color:#1C1A17;font-family:Inter,system-ui,sans-serif;font-size:13px;line-height:20px;-webkit-font-smoothing:antialiased}
+a{color:#B83F00;text-decoration:none}
+a:hover{color:#8A3000;text-decoration:underline}
+</style>
+</helmet>
+<div data-screen-label="B3 Dialogi — Nowe zadanie · Import CSV/XLSX" style="width:1440px;height:900px;margin:0 auto;background:#FFFFFF;display:flex;flex-direction:column;overflow:hidden;position:relative">
+
+  <div style="display:flex;align-items:center;gap:8px;height:48px;padding:0 12px;background:#FFFFFF;border-bottom:1px solid #E6E3DE;flex:none">
+    <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:6px;color:#66625B"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg></span>
+    <span style="display:inline-flex;align-items:center;gap:8px;padding:0 4px">
+      <svg width="22" height="22" viewBox="0 0 80 80"><clipPath id="b3d"><circle cx="40" cy="40" r="40"></circle></clipPath><g clip-path="url(#b3d)"><circle cx="40" cy="40" r="40" fill="#FF5C00"></circle><rect x="50" y="50" width="48" height="48" transform="rotate(45 50 50)" fill="#14110D"></rect></g></svg>
+      <span style="font-size:15px;font-weight:800;letter-spacing:-0.4px;color:#14110D">NAZWA</span>
+    </span>
+    <span style="flex:1"></span>
+    <span style="display:flex;align-items:center;gap:8px;width:480px;height:32px;padding:0 10px;border:1px solid #D2CEC7;border-radius:4px;background:#FFFFFF">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="#8A857D" stroke-width="1.5"></circle><path d="M10.5 10.5L14 14" stroke="#8A857D" stroke-width="1.5" stroke-linecap="round"></path></svg>
+      <span style="flex:1;font-size:13px;color:#8A857D">Szukaj zadań, tablic, osób…</span>
+      <span style="display:inline-block;padding:0 5px;border:1px solid #E6E3DE;border-bottom-width:2px;border-radius:4px;background:#FAF9F7;font-family:'JetBrains Mono',monospace;font-size:11px;color:#66625B;line-height:18px">⌘K</span>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:6px;background:#B83F00;color:#14110D;font-weight:600;font-size:13px"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>Utwórz<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+    <span style="flex:1"></span>
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:2px;border-radius:6px"><span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#DDE9FC;color:#1D3F8A;font-size:12px;font-weight:600">D</span><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="#66625B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+  </div>
+
+  <div style="flex:1;position:relative;background:#FAF9F7">
+    <div style="position:absolute;inset:0;background:rgba(15,14,12,.4)"></div>
+
+    <div style="position:absolute;left:170px;top:110px;width:480px;background:#FFFFFF;border:1px solid #E6E3DE;border-radius:12px;box-shadow:0 8px 24px rgba(20,17,13,.12),0 2px 6px rgba(20,17,13,.06)">
+      <div style="display:flex;align-items:center;height:52px;padding:0 20px;border-bottom:1px solid #E6E3DE">
+        <span style="font-size:16px;font-weight:600">Nowe zadanie</span>
+        <span style="margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;color:#66625B"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg></span>
+      </div>
+      <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+        <div><div style="font-size:12px;font-weight:500;color:#4A4640;margin-bottom:5px">Tytuł</div><div style="display:flex;align-items:center;height:32px;padding:0 10px;border:1px solid #FF5C00;border-radius:4px;font-size:13px;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #FF5C00">Baner promocji SLOT64 — wersja B</div></div>
+        <div style="display:flex;gap:12px">
+          <div style="flex:1"><div style="font-size:12px;font-weight:500;color:#4A4640;margin-bottom:5px">Tablica</div><div style="display:flex;align-items:center;justify-content:space-between;height:32px;padding:0 10px;border:1px solid #D2CEC7;border-radius:4px;font-size:13px">P&amp;R SLOT64<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="#66625B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div></div>
+          <div style="flex:1"><div style="font-size:12px;font-weight:500;color:#4A4640;margin-bottom:5px">Status</div><div style="display:flex;align-items:center;justify-content:space-between;height:32px;padding:0 10px;border:1px solid #D2CEC7;border-radius:4px"><span style="display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 7px;border-radius:4px;background:#EDEBE7;color:#4A4640;font-size:11px;font-weight:500"><span style="width:5px;height:5px;border-radius:50%;background:#8A857D"></span>Do zrobienia</span><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="#66625B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div></div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <div style="flex:1"><div style="font-size:12px;font-weight:500;color:#4A4640;margin-bottom:5px">Priorytet</div><div style="display:flex;align-items:center;justify-content:space-between;height:32px;padding:0 10px;border:1px solid #D2CEC7;border-radius:4px;font-size:13px"><span style="display:inline-flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M4 6.2h8M4 9.8h8" stroke="#E8A100" stroke-width="1.8" stroke-linecap="round"></path></svg>P2 Średni</span><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="#66625B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div></div>
+          <div style="flex:1"><div style="font-size:12px;font-weight:500;color:#4A4640;margin-bottom:5px">Termin</div><div style="display:flex;align-items:center;justify-content:space-between;height:32px;padding:0 10px;border:1px solid #D2CEC7;border-radius:4px;font-size:13px;color:#8A857D">Wybierz datę<svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5" stroke="#8A857D" stroke-width="1.4"></rect><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3" stroke="#8A857D" stroke-width="1.4" stroke-linecap="round"></path></svg></div></div>
+        </div>
+        <div><div style="font-size:12px;font-weight:500;color:#4A4640;margin-bottom:5px">Przypisani</div><div style="display:flex;align-items:center;gap:6px;height:32px;padding:0 8px;border:1px solid #D2CEC7;border-radius:4px"><span style="display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 4px 0 2px;border-radius:4px;background:#F3F1EE"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#EDE3FA;color:#5A2E8A;font-size:9px;font-weight:600">G</span><span style="font-size:12px">Gabryś</span><svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="#8A857D" stroke-width="1.6" stroke-linecap="round"></path></svg></span><span style="font-size:13px;color:#8A857D">Dodaj osobę…</span></div></div>
+        <div><div style="font-size:12px;font-weight:500;color:#4A4640;margin-bottom:5px">Dodaj do widoku <span style="color:#8A857D;font-weight:400">(opcjonalnie)</span></div><div style="display:flex;align-items:center;justify-content:space-between;height:32px;padding:0 10px;border:1px solid #D2CEC7;border-radius:4px;font-size:13px;color:#8A857D">Domyślny — Lista<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="#66625B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:14px 20px;border-top:1px solid #E6E3DE">
+        <span style="font-size:12px;color:#8A857D">Utwórz i dodaj kolejne <span style="display:inline-block;padding:0 4px;border:1px solid #E6E3DE;border-bottom-width:2px;border-radius:4px;background:#FAF9F7;font-family:'JetBrains Mono',monospace;font-size:10px;color:#66625B">⇧Enter</span></span>
+        <span style="flex:1"></span>
+        <span style="display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:6px;border:1px solid #E6E3DE;color:#1C1A17;font-weight:500;font-size:13px">Anuluj</span>
+        <span style="display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:6px;background:#FF5C00;color:#14110D;font-weight:600;font-size:13px">Utwórz zadanie</span>
+      </div>
+    </div>
+
+    <div style="position:absolute;right:150px;top:80px;width:560px;background:#FFFFFF;border:1px solid #E6E3DE;border-radius:12px;box-shadow:0 8px 24px rgba(20,17,13,.12),0 2px 6px rgba(20,17,13,.06)">
+      <div style="display:flex;align-items:center;height:52px;padding:0 20px;border-bottom:1px solid #E6E3DE">
+        <span style="font-size:16px;font-weight:600">Importuj zadania — CSV / XLSX</span>
+        <span style="margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;color:#66625B"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg></span>
+      </div>
+      <div style="padding:16px 20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#8A857D"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#DDF3E6;color:#14603A;font-size:10px;font-weight:700">✓</span>Plik</span>
+          <span style="width:24px;height:1px;background:#E6E3DE"></span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#8A857D"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#DDF3E6;color:#14603A;font-size:10px;font-weight:700">✓</span>Podgląd</span>
+          <span style="width:24px;height:1px;background:#E6E3DE"></span>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#FF5C00;color:#14110D;font-size:10px;font-weight:700">3</span>Mapowanie kolumn</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;height:36px;border:1px solid #E6E3DE;border-radius:4px;padding:0 10px;margin-bottom:12px">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 2.5h7.5L13 5v8.5H3V2.5z" stroke="#8A857D" stroke-width="1.4" stroke-linejoin="round"></path></svg>
+          <span style="font-size:13px;flex:1">zadania-sklep-legia.xlsx</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A857D">42 wiersze</span>
+          <span style="font-size:12px;font-weight:500;color:#B83F00">Zmień plik</span>
+        </div>
+        <div style="border:1px solid #E6E3DE;border-radius:4px;overflow:hidden;margin-bottom:12px">
+          <div style="display:flex;background:#FAF9F7;border-bottom:1px solid #E6E3DE">
+            <span style="flex:2;padding:6px 10px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#66625B;border-right:1px solid #ECE9E4">Nazwa</span>
+            <span style="flex:1;padding:6px 10px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#66625B;border-right:1px solid #ECE9E4">Stan</span>
+            <span style="flex:1;padding:6px 10px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#66625B">Deadline</span>
+          </div>
+          <div style="display:flex;border-bottom:1px solid #F3F1EE"><span style="flex:2;padding:6px 10px;font-size:12px;border-right:1px solid #F3F1EE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Zdjęcia produktowe — szaliki</span><span style="flex:1;padding:6px 10px;font-size:12px;border-right:1px solid #F3F1EE">w trakcie</span><span style="flex:1;padding:6px 10px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#66625B">2026-09-10</span></div>
+          <div style="display:flex;border-bottom:1px solid #F3F1EE"><span style="flex:2;padding:6px 10px;font-size:12px;border-right:1px solid #F3F1EE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Cennik dostaw kurierskich</span><span style="flex:1;padding:6px 10px;font-size:12px;border-right:1px solid #F3F1EE">nowe</span><span style="flex:1;padding:6px 10px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#66625B">2026-09-18</span></div>
+          <div style="display:flex"><span style="flex:2;padding:6px 10px;font-size:12px;border-right:1px solid #F3F1EE;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Regulamin przedsprzedaży</span><span style="flex:1;padding:6px 10px;font-size:12px;border-right:1px solid #F3F1EE">zrobione</span><span style="flex:1;padding:6px 10px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#66625B">2026-08-30</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:170px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#4A4640">Nazwa</span>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2.5 8h9M8.5 4.5L12 8l-3.5 3.5" stroke="#8A857D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1;display:flex;align-items:center;justify-content:space-between;height:30px;padding:0 10px;border:1px solid #D2CEC7;border-radius:4px;font-size:13px">Tytuł<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="#66625B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:170px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#4A4640">Stan</span>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2.5 8h9M8.5 4.5L12 8l-3.5 3.5" stroke="#8A857D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1;display:flex;align-items:center;justify-content:space-between;height:30px;padding:0 10px;border:1px solid #D2CEC7;border-radius:4px;font-size:13px">Status <span style="font-size:11px;color:#8A857D">(w trakcie → W toku)</span><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="#66625B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:170px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#4A4640">Deadline</span>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2.5 8h9M8.5 4.5L12 8l-3.5 3.5" stroke="#8A857D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1;display:flex;align-items:center;justify-content:space-between;height:30px;padding:0 10px;border:1px solid #D2CEC7;border-radius:4px;font-size:13px">Koniec<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="#66625B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:170px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#8A857D">Kto</span>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2.5 8h9M8.5 4.5L12 8l-3.5 3.5" stroke="#8A857D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span style="flex:1;display:flex;align-items:center;justify-content:space-between;height:30px;padding:0 10px;border:1px dashed #B0ABA3;border-radius:4px;font-size:13px;color:#8A857D">Pomiń kolumnę<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="#66625B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:14px 20px;border-top:1px solid #E6E3DE">
+        <span style="font-size:12px;color:#8A857D">42 zadania trafią do tablicy <strong style="font-weight:600;color:#4A4640">Sklep Legia</strong></span>
+        <span style="flex:1"></span>
+        <span style="display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:6px;border:1px solid #E6E3DE;color:#1C1A17;font-weight:500;font-size:13px">Wstecz</span>
+        <span style="display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:6px;background:#FF5C00;color:#14110D;font-weight:600;font-size:13px">Importuj 42 zadania</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}"></script>
+</body>
+</html>

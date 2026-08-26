@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0}
+*{box-sizing:border-box}
+body{background:#E9E7E2;color:#1C1A17;font-family:Inter,system-ui,sans-serif;font-size:13px;line-height:20px;-webkit-font-smoothing:antialiased}
+a{color:#B83F00;text-decoration:none}
+a:hover{color:#8A3000;text-decoration:underline}
+</style>
+</helmet>
+<div data-screen-label="E7 Plan sprzedaży — pipeline dealów" style="width:1440px;height:900px;margin:0 auto;background:#FFFFFF;display:flex;flex-direction:column;overflow:hidden">
+
+  <div style="display:flex;align-items:center;gap:8px;height:48px;padding:0 12px;background:#FFFFFF;border-bottom:1px solid #E6E3DE;flex:none">
+    <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:6px;color:#66625B"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg></span>
+    <span style="display:inline-flex;align-items:center;gap:8px;padding:0 4px">
+      <svg width="22" height="22" viewBox="0 0 80 80"><clipPath id="e7p"><circle cx="40" cy="40" r="40"></circle></clipPath><g clip-path="url(#e7p)"><circle cx="40" cy="40" r="40" fill="#FF5C00"></circle><rect x="50" y="50" width="48" height="48" transform="rotate(45 50 50)" fill="#14110D"></rect></g></svg>
+      <span style="font-size:15px;font-weight:800;letter-spacing:-0.4px;color:#14110D">NAZWA</span>
+    </span>
+    <span style="flex:1"></span>
+    <span style="display:flex;align-items:center;gap:8px;width:480px;height:32px;padding:0 10px;border:1px solid #D2CEC7;border-radius:4px;background:#FFFFFF">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="#8A857D" stroke-width="1.5"></circle><path d="M10.5 10.5L14 14" stroke="#8A857D" stroke-width="1.5" stroke-linecap="round"></path></svg>
+      <span style="flex:1;font-size:13px;color:#8A857D">Szukaj zadań, tablic, osób…</span>
+      <span style="display:inline-block;padding:0 5px;border:1px solid #E6E3DE;border-bottom-width:2px;border-radius:4px;background:#FAF9F7;font-family:'JetBrains Mono',monospace;font-size:11px;color:#66625B;line-height:18px">⌘K</span>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:6px;background:#FF5C00;color:#14110D;font-weight:600;font-size:13px"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>Utwórz<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+    <span style="flex:1"></span>
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:2px;border-radius:6px"><span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#DDE9FC;color:#1D3F8A;font-size:12px;font-weight:600">D</span><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="#66625B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+  </div>
+
+  <div style="display:flex;flex:1;min-height:0">
+    <div style="width:240px;flex:none;background:#FAF9F7;border-right:1px solid #E6E3DE;padding:8px;overflow-y:auto">
+      <div style="display:flex;align-items:flex-end;height:26px;padding:0 8px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8A857D">Narzędzia</div>
+      <div style="display:flex;align-items:center;gap:8px;height:32px;padding:0 8px;border-radius:6px;color:#4A4640"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5.5" r="2.7" stroke="#8A857D" stroke-width="1.5"></circle><path d="M3 13.5a5 5 0 0 1 10 0" stroke="#8A857D" stroke-width="1.5" stroke-linecap="round"></path></svg><span style="flex:1">Kontakty</span></div>
+      <div style="display:flex;align-items:center;gap:8px;height:32px;padding:0 8px;border-radius:6px;background:#FFF4EE;box-shadow:inset 2px 0 0 #FF5C00;color:#1C1A17;font-weight:500"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 13.5h11M3.5 10.5l3-3 2.5 2 3.5-4.5" stroke="#B83F00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="flex:1">Plan sprzedaży</span></div>
+      <div style="display:flex;align-items:center;gap:8px;height:32px;padding:0 8px;border-radius:6px;color:#4A4640"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="#8A857D" stroke-width="1.5"></circle><path d="M8 5v3l2 1.2" stroke="#8A857D" stroke-width="1.5" stroke-linecap="round"></path></svg><span style="flex:1">Czas pracy</span></div>
+      <div style="display:flex;align-items:center;gap:8px;height:32px;padding:0 8px;border-radius:6px;color:#4A4640"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="8" r="2.5" stroke="#8A857D" stroke-width="1.5"></circle><path d="M7.5 8h6M11 8v2.3M13.5 8v1.7" stroke="#8A857D" stroke-width="1.5" stroke-linecap="round"></path></svg><span style="flex:1">Hasła</span></div>
+      <div style="display:flex;align-items:center;gap:8px;height:32px;padding:0 8px;border-radius:6px;color:#4A4640"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.5" width="12" height="9" rx="1.5" stroke="#8A857D" stroke-width="1.5"></rect><path d="M2 6.5h12" stroke="#8A857D" stroke-width="1.5"></path></svg><span style="flex:1">Subskrypcje</span></div>
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;min-width:0;background:#FFFFFF">
+      <div style="display:flex;align-items:center;gap:10px;padding:16px 32px 0;flex:none">
+        <span style="font-size:24px;line-height:30px;font-weight:600;letter-spacing:-0.3px">Plan sprzedaży</span>
+        <span style="font-size:12px;color:#66625B;margin-top:6px">Q3 2026</span>
+        <span style="flex:1"></span>
+        <span style="display:inline-flex;background:#F3F1EE;border-radius:6px;padding:2px;gap:2px">
+          <span style="display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:4px;font-size:12px;font-weight:500;background:#FFFFFF;color:#1C1A17;border:1px solid #E6E3DE">Pipeline</span>
+          <span style="display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:4px;font-size:12px;font-weight:500;color:#66625B">Prognoza</span>
+        </span>
+        <span style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:6px;background:#FF5C00;color:#14110D;font-weight:600;font-size:13px"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>Nowy deal</span>
+      </div>
+
+      <div style="display:flex;gap:12px;padding:14px 32px;flex:none">
+        <div style="flex:1;background:#FAF9F7;border:1px solid #E6E3DE;border-radius:8px;padding:12px 14px">
+          <div style="font-size:11px;color:#8A857D;margin-bottom:2px">Cel Q3</div>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600">300 tys. zł</span></div>
+          <div style="height:4px;border-radius:2px;background:#F3F1EE;margin-top:6px;overflow:hidden"><span style="display:block;width:62%;height:4px;background:#1E9E5A"></span></div>
+        </div>
+        <div style="flex:1;background:#FAF9F7;border:1px solid #E6E3DE;border-radius:8px;padding:12px 14px">
+          <div style="font-size:11px;color:#8A857D;margin-bottom:2px">Wygrane Q3</div>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600;color:#157A45">186 tys. zł</span><span style="font-size:11px;color:#8A857D">62% celu</span></div>
+        </div>
+        <div style="flex:1;background:#FAF9F7;border:1px solid #E6E3DE;border-radius:8px;padding:12px 14px">
+          <div style="font-size:11px;color:#8A857D;margin-bottom:2px">W pipeline</div>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600">214 tys. zł</span><span style="font-size:11px;color:#8A857D">ważone: 96 tys.</span></div>
+        </div>
+        <div style="flex:1;background:#FAF9F7;border:1px solid #E6E3DE;border-radius:8px;padding:12px 14px">
+          <div style="font-size:11px;color:#8A857D;margin-bottom:2px">Najbliższy krok</div>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font-size:13px;font-weight:600">Oferta dla AMW</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#B7291F">do czw 28 sie</span></div>
+        </div>
+      </div>
+
+      <div style="flex:1;overflow:auto;background:#FAF9F7;min-height:0">
+        <div style="display:flex;gap:12px;padding:4px 32px 20px;align-items:flex-start">
+
+          <div style="width:264px;flex:none">
+            <div style="display:flex;align-items:center;gap:6px;height:32px;padding:0 4px">
+              <span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#66625B">Lead</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A857D">· 2 · 34 tys.</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="background:#FFFFFF;border:1px solid #E6E3DE;border-radius:8px;padding:10px 12px">
+                <div style="font-size:13px;font-weight:500;line-height:18px;margin-bottom:6px">Sklep kibica — Widzew Łódź</div>
+                <div style="display:flex;align-items:center;gap:6px"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#4A4640">24 tys. zł</span><span style="display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:4px;background:#EDEBE7;color:#4A4640;font-size:11px;font-weight:500">10%</span><span style="margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#DDE9FC;color:#1D3F8A;font-size:9px;font-weight:600">D</span></div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #E6E3DE;border-radius:8px;padding:10px 12px">
+                <div style="font-size:13px;font-weight:500;line-height:18px;margin-bottom:6px">Landing — browar rzemieślniczy</div>
+                <div style="display:flex;align-items:center;gap:6px"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#4A4640">10 tys. zł</span><span style="display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:4px;background:#EDEBE7;color:#4A4640;font-size:11px;font-weight:500">10%</span><span style="margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#FBE2EE;color:#8A1F52;font-size:9px;font-weight:600">M</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="width:264px;flex:none">
+            <div style="display:flex;align-items:center;gap:6px;height:32px;padding:0 4px">
+              <span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#66625B">Rozmowy</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A857D">· 1 · 60 tys.</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="background:#FFFFFF;border:1px solid #E6E3DE;border-radius:8px;padding:10px 12px">
+                <div style="font-size:13px;font-weight:500;line-height:18px;margin-bottom:6px">Aplikacja lojalnościowa — sieć siłowni</div>
+                <div style="display:flex;align-items:center;gap:6px"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#4A4640">60 tys. zł</span><span style="display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:4px;background:#DDE9FC;color:#1D3F8A;font-size:11px;font-weight:500">40%</span><span style="margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#DDE9FC;color:#1D3F8A;font-size:9px;font-weight:600">D</span></div>
+                <div style="display:flex;align-items:center;gap:5px;margin-top:6px;padding-top:6px;border-top:1px solid #F3F1EE"><svg width="11" height="11" viewBox="0 0 16 16" fill="none"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5" stroke="#8A857D" stroke-width="1.4"></rect><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3" stroke="#8A857D" stroke-width="1.4" stroke-linecap="round"></path></svg><span style="font-size:11px;color:#66625B">spotkanie 2 wrz, 12:00</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="width:264px;flex:none">
+            <div style="display:flex;align-items:center;gap:6px;height:32px;padding:0 4px">
+              <span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#66625B">Oferta</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A857D">· 2 · 120 tys.</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="background:#FFF4EE;border:1px solid #E6E3DE;border-radius:8px;padding:10px 12px;box-shadow:inset 2px 0 0 #FF5C00">
+                <div style="font-size:13px;font-weight:500;line-height:18px;margin-bottom:6px">Sklep + backoffice — AMW</div>
+                <div style="display:flex;align-items:center;gap:6px"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#4A4640">85 tys. zł</span><span style="display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:4px;background:#FBF0C8;color:#6E4F00;font-size:11px;font-weight:500">60%</span><span style="margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#DDE9FC;color:#1D3F8A;font-size:9px;font-weight:600">D</span></div>
+                <div style="display:flex;align-items:center;gap:5px;margin-top:6px;padding-top:6px;border-top:1px solid #FFE8DB"><svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 2.6l5.8 10.4H2.2L8 2.6z" stroke="#B7291F" stroke-width="1.4" stroke-linejoin="round"></path></svg><span style="font-size:11px;font-weight:500;color:#B7291F">oferta do czw 28 sie</span></div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #E6E3DE;border-radius:8px;padding:10px 12px">
+                <div style="font-size:13px;font-weight:500;line-height:18px;margin-bottom:6px">Kampania SLOT64 — rozszerzenie</div>
+                <div style="display:flex;align-items:center;gap:6px"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#4A4640">35 tys. zł</span><span style="display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:4px;background:#FBF0C8;color:#6E4F00;font-size:11px;font-weight:500">55%</span><span style="margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#EDE3FA;color:#5A2E8A;font-size:9px;font-weight:600">G</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="width:264px;flex:none">
+            <div style="display:flex;align-items:center;gap:6px;height:32px;padding:0 4px">
+              <span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#66625B">Negocjacje</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A857D">· 1 · 48 tys.</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="background:#FFFFFF;border:1px solid #E6E3DE;border-radius:8px;padding:10px 12px">
+                <div style="font-size:13px;font-weight:500;line-height:18px;margin-bottom:6px">Utrzymanie 2027 — Legia</div>
+                <div style="display:flex;align-items:center;gap:6px"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#4A4640">48 tys. zł</span><span style="display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:4px;background:#FFE8DB;color:#8A3000;font-size:11px;font-weight:500">80%</span><span style="margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#DDE9FC;color:#1D3F8A;font-size:9px;font-weight:600">D</span></div>
+                <div style="display:flex;align-items:center;gap:5px;margin-top:6px;padding-top:6px;border-top:1px solid #F3F1EE"><svg width="11" height="11" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5.5" r="2.4" stroke="#8A857D" stroke-width="1.3"></circle><path d="M3.5 13a4.5 4.5 0 0 1 9 0" stroke="#8A857D" stroke-width="1.3" stroke-linecap="round"></path></svg><span style="font-size:11px;color:#66625B">kontakt: T. Wierzbicki</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="width:264px;flex:none">
+            <div style="display:flex;align-items:center;gap:6px;height:32px;padding:0 4px">
+              <span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#14603A">Wygrane Q3</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A857D">· 3 · 186 tys.</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="background:#FFFFFF;border:1px solid #E6E3DE;border-radius:8px;padding:10px 12px;opacity:.85">
+                <div style="font-size:13px;font-weight:500;line-height:18px;margin-bottom:6px">P&amp;R Kickback — faza 2</div>
+                <div style="display:flex;align-items:center;gap:6px"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#4A4640">96 tys. zł</span><span style="display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 6px;border-radius:4px;background:#DDF3E6;color:#14603A;font-size:11px;font-weight:500"><span style="width:5px;height:5px;border-radius:50%;background:#1E9E5A"></span>Wygrany</span></div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #E6E3DE;border-radius:8px;padding:10px 12px;opacity:.85">
+                <div style="font-size:13px;font-weight:500;line-height:18px;margin-bottom:6px">SLOT64 — kampania jesień</div>
+                <div style="display:flex;align-items:center;gap:6px"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#4A4640">62 tys. zł</span><span style="display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 6px;border-radius:4px;background:#DDF3E6;color:#14603A;font-size:11px;font-weight:500"><span style="width:5px;height:5px;border-radius:50%;background:#1E9E5A"></span>Wygrany</span></div>
+              </div>
+              <div style="background:#FFFFFF;border:1px solid #E6E3DE;border-radius:8px;padding:10px 12px;opacity:.85">
+                <div style="font-size:13px;font-weight:500;line-height:18px;margin-bottom:6px">Import katalogu — Sklep Legia</div>
+                <div style="display:flex;align-items:center;gap:6px"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#4A4640">28 tys. zł</span><span style="display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 6px;border-radius:4px;background:#DDF3E6;color:#14603A;font-size:11px;font-weight:500"><span style="width:5px;height:5px;border-radius:50%;background:#1E9E5A"></span>Wygrany</span></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;height:32px;padding:0 32px;border-top:1px solid #E6E3DE;flex:none;background:#FAF9F7">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#66625B">9 dealów · pipeline 214 tys. zł · % = szansa wygranej</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}"></script>
+</body>
+</html>

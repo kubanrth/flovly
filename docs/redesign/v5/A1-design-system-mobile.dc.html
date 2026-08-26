@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0}
+*{box-sizing:border-box}
+body{background:#FAF9F7;color:#1C1A17;font-family:Inter,system-ui,sans-serif;font-size:13px;line-height:20px;-webkit-font-smoothing:antialiased}
+a{color:#B83F00;text-decoration:none}
+a:hover{color:#8A3000;text-decoration:underline}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+</style>
+</helmet>
+<div data-screen-label="A1 Design system — mobile" style="width:390px;margin:0 auto;padding:16px 16px 40px;display:flex;flex-direction:column;gap:12px">
+
+  <div style="display:flex;align-items:center;gap:10px;padding:4px 0 8px">
+    <svg width="24" height="24" viewBox="0 0 80 80"><clipPath id="lgm"><circle cx="40" cy="40" r="40"></circle></clipPath><g clip-path="url(#lgm)"><circle cx="40" cy="40" r="40" fill="#FF5C00"></circle><rect x="50" y="50" width="48" height="48" transform="rotate(45 50 50)" fill="#14110D"></rect></g></svg>
+    <span style="font-size:17px;font-weight:800;letter-spacing:-0.4px;color:#14110D">NAZWA</span>
+    <span style="font-size:12px;color:#66625B;margin-left:auto">A1 · mobile 390</span>
+  </div>
+
+  <section style="background:#FFFFFF;border:1px solid #E6E3DE;border-radius:8px;padding:16px">
+    <div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8A857D;margin-bottom:10px">Paleta</div>
+    <div style="display:flex;gap:3px;margin-bottom:4px">
+      <div style="flex:1;height:28px;background:#FFF4EE;border:1px solid #F3F1EE"></div><div style="flex:1;height:28px;background:#FFE8DB"></div><div style="flex:1;height:28px;background:#FFCFB3"></div><div style="flex:1;height:28px;background:#FFAE80"></div><div style="flex:1;height:28px;background:#FF8640"></div><div style="flex:1;height:28px;background:#FF5C00;outline:2px solid #14110D;outline-offset:-2px"></div><div style="flex:1;height:28px;background:#E04E00"></div><div style="flex:1;height:28px;background:#B83F00"></div><div style="flex:1;height:28px;background:#8A3000"></div><div style="flex:1;height:28px;background:#5C2000"></div><div style="flex:1;height:28px;background:#331200"></div>
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#8A857D;margin-bottom:10px">pomarańcz 50→950 · 500=#FF5C00</div>
+    <div style="display:flex;gap:3px;margin-bottom:4px">
+      <div style="flex:1;height:28px;background:#FFFFFF;border:1px solid #E6E3DE"></div><div style="flex:1;height:28px;background:#FAF9F7;border:1px solid #F3F1EE"></div><div style="flex:1;height:28px;background:#F3F1EE"></div><div style="flex:1;height:28px;background:#E6E3DE"></div><div style="flex:1;height:28px;background:#D2CEC7"></div><div style="flex:1;height:28px;background:#B0ABA3"></div><div style="flex:1;height:28px;background:#8A857D"></div><div style="flex:1;height:28px;background:#66625B"></div><div style="flex:1;height:28px;background:#4A4640"></div><div style="flex:1;height:28px;background:#1C1A17"></div><div style="flex:1;height:28px;background:#0F0E0C"></div>
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#8A857D;margin-bottom:10px">neutrale ciepłe 0→950</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px"><span style="width:12px;height:12px;border-radius:3px;background:#1E9E5A"></span>sukces</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px"><span style="width:12px;height:12px;border-radius:3px;background:#E8A100"></span>ostrzeżenie</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px"><span style="width:12px;height:12px;border-radius:3px;background:#D6382C"></span>błąd</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px"><span style="width:12px;height:12px;border-radius:3px;background:#2F6FE8"></span>info</span>
+    </div>
+  </section>
+
+  <section style="background:#FFFFFF;border:1px solid #E6E3DE;border-radius:8px;padding:16px">
+    <div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8A857D;margin-bottom:10px">Typografia</div>
+    <div style="font-size:24px;line-height:30px;font-weight:600;letter-spacing:-0.3px">Nagłówek 24</div>
+    <div style="font-size:20px;line-height:26px;font-weight:600;letter-spacing:-0.2px;margin-top:6px">Tytuł zadania 20</div>
+    <div style="font-size:16px;line-height:22px;font-weight:600;margin-top:6px">Sekcja 16</div>
+    <div style="font-size:13px;margin-top:6px">Body 13/20 — tabele, formularze, treść. <a href="#m">Link</a>.</div>
+    <div style="font-size:12px;color:#66625B;margin-top:4px">Drugorzędny 12 — metadane.</div>
+    <div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8A857D;margin-top:6px">Eyebrow 11</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#4A4640;margin-top:6px">#250 · 14:32 · ⌘K</div>
+  </section>
+
+  <section style="background:#FFFFFF;border:1px solid #E6E3DE;border-radius:8px;padding:16px">
+    <div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8A857D;margin-bottom:10px">Przyciski — mobile lg 36+</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span style="display:inline-flex;align-items:center;justify-content:center;height:44px;border-radius:6px;background:#FF5C00;color:#14110D;font-weight:600;font-size:14px">Utwórz zadanie</span>
+      <span style="display:inline-flex;align-items:center;justify-content:center;height:44px;border-radius:6px;background:#FFFFFF;border:1px solid #E6E3DE;color:#1C1A17;font-weight:500;font-size:14px">Udostępnij</span>
+      <div style="display:flex;gap:8px">
+        <span style="flex:1;display:inline-flex;align-items:center;justify-content:center;height:36px;border-radius:6px;color:#4A4640;font-weight:500;font-size:13px;background:#F3F1EE">Ghost</span>
+        <span style="flex:1;display:inline-flex;align-items:center;justify-content:center;height:36px;border-radius:6px;background:#D6382C;color:#FFFFFF;font-weight:600;font-size:13px">Usuń</span>
+        <span style="flex:1;display:inline-flex;align-items:center;justify-content:center;height:36px;border-radius:6px;background:#F3F1EE;color:#B0ABA3;font-weight:600;font-size:13px">Disabled</span>
+      </div>
+      <span style="display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:6px;background:#FF5C00;color:#14110D;font-weight:600;font-size:14px;opacity:.85"><span style="width:13px;height:13px;border:2px solid rgba(20,17,13,.3);border-top-color:#14110D;border-radius:50%;animation:spin .7s linear infinite"></span>Zapisywanie</span>
+    </div>
+    <div style="font-size:11px;color:#8A857D;margin-top:8px">Cel dotyku ≥ 44px. Pełna szerokość dla akcji głównych.</div>
+  </section>
+
+  <section style="background:#FFFFFF;border:1px solid #E6E3DE;border-radius:8px;padding:16px">
+    <div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8A857D;margin-bottom:10px">Formularz</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;height:44px;padding:0 12px;border:1px solid #D2CEC7;border-radius:4px;background:#FFFFFF;color:#8A857D;font-size:14px">Nazwa zadania…</div>
+      <div style="display:flex;align-items:center;height:44px;padding:0 12px;border:1px solid #FF5C00;border-radius:4px;background:#FFFFFF;color:#1C1A17;font-size:14px;box-shadow:0 0 0 2px #FFFFFF,0 0 0 4px #FF5C00">Moduł kompresji zdjęć</div>
+      <div><div style="display:flex;align-items:center;height:44px;padding:0 12px;border:1px solid #D6382C;border-radius:4px;background:#FFFFFF;color:#1C1A17;font-size:14px">daniel@nazwa</div><div style="font-size:12px;color:#B7291F;margin-top:4px">Podaj poprawny adres e-mail.</div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;height:44px;padding:0 12px;border:1px solid #D2CEC7;border-radius:4px;background:#FFFFFF;font-size:14px"><span>P2 Średni</span><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="#66625B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+    </div>
+  </section>
+
+  <section style="background:#FFFFFF;border:1px solid #E6E3DE;border-radius:8px;padding:16px">
+    <div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8A857D;margin-bottom:10px">Wybory · Statusy · Priorytety</div>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
+      <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;background:#1C1A17"><svg width="12" height="12" viewBox="0 0 10 10"><path d="M1.8 5.4l2.2 2.2 4.2-4.8" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+      <span style="width:20px;height:20px;border-radius:4px;border:1.5px solid #B0ABA3"></span>
+      <span style="width:20px;height:20px;border-radius:50%;border:6px solid #1C1A17"></span>
+      <span style="display:inline-flex;align-items:center;justify-content:flex-end;width:40px;height:24px;border-radius:12px;background:#1C1A17;padding:3px"><span style="width:18px;height:18px;border-radius:50%;background:#FFFFFF"></span></span>
+      <span style="display:inline-flex;align-items:center;width:40px;height:24px;border-radius:12px;background:#D2CEC7;padding:3px"><span style="width:18px;height:18px;border-radius:50%;background:#FFFFFF"></span></span>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+      <span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:4px;background:#EDEBE7;color:#4A4640;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#8A857D"></span>Do zrobienia</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:4px;background:#DDE9FC;color:#1D3F8A;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#2F6FE8"></span>W toku</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:4px;background:#FBF0C8;color:#6E4F00;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#E8A100"></span>Do poprawy</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:4px;background:#DDF3E6;color:#14603A;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#1E9E5A"></span>Gotowe</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <span style="display:inline-flex;align-items:center;gap:5px"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 7.2l4-4 4 4" stroke="#D6382C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path><path d="M4 12.2l4-4 4 4" stroke="#D6382C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="font-size:12px">P0</span></span>
+      <span style="display:inline-flex;align-items:center;gap:5px"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 10l4-4 4 4" stroke="#E04E00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="font-size:12px">P1</span></span>
+      <span style="display:inline-flex;align-items:center;gap:5px"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6.2h8M4 9.8h8" stroke="#E8A100" stroke-width="1.8" stroke-linecap="round"></path></svg><span style="font-size:12px">P2</span></span>
+      <span style="display:inline-flex;align-items:center;gap:5px"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="#8A857D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="font-size:12px">P3</span></span>
+      <span style="display:inline-flex;margin-left:auto">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#DDE9FC;color:#1D3F8A;font-size:12px;font-weight:600;border:2px solid #FFFFFF">D</span>
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#DDF3E6;color:#14603A;font-size:12px;font-weight:600;border:2px solid #FFFFFF;margin-left:-8px">K</span>
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#F3F1EE;color:#66625B;font-size:11px;font-weight:600;border:2px solid #FFFFFF;margin-left:-8px">+2</span>
+      </span>
+    </div>
+  </section>
+
+  <section style="background:#FFFFFF;border:1px solid #E6E3DE;border-radius:8px;padding:16px">
+    <div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8A857D;margin-bottom:10px">Tabsy — przewijane poziomo</div>
+    <div style="display:flex;gap:2px;border-bottom:1px solid #E6E3DE;overflow:hidden;white-space:nowrap">
+      <span style="display:inline-flex;align-items:center;height:44px;padding:0 12px;font-size:13px;font-weight:500;color:#1C1A17;box-shadow:inset 0 -2px 0 #FF5C00;flex:none">Lista</span>
+      <span style="display:inline-flex;align-items:center;height:44px;padding:0 12px;font-size:13px;font-weight:500;color:#66625B;flex:none">Tablica</span>
+      <span style="display:inline-flex;align-items:center;height:44px;padding:0 12px;font-size:13px;font-weight:500;color:#66625B;flex:none">Oś czasu</span>
+      <span style="display:inline-flex;align-items:center;height:44px;padding:0 12px;font-size:13px;font-weight:500;color:#66625B;flex:none">Kalendarz</span>
+      <span style="display:inline-flex;align-items:center;height:44px;padding:0 12px;font-size:13px;font-weight:500;color:#66625B;flex:none;opacity:.5">Roadm…</span>
+    </div>
+    <div style="display:inline-flex;background:#F3F1EE;border-radius:6px;padding:2px;gap:2px;margin-top:12px">
+      <span style="display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:4px;font-size:12px;font-weight:500;background:#FFFFFF;color:#1C1A17;border:1px solid #E6E3DE">Tygodnie</span>
+      <span style="display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:4px;font-size:12px;font-weight:500;color:#66625B">Miesiące</span>
+      <span style="display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:4px;font-size:12px;font-weight:500;color:#66625B">Kwartały</span>
+    </div>
+  </section>
+
+  <section style="background:#FFFFFF;border:1px solid #E6E3DE;border-radius:8px;padding:16px">
+    <div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8A857D;margin-bottom:10px">Wiersz listy — karta mobilna 44+</div>
+    <div style="border:1px solid #E6E3DE;border-radius:8px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:10px;min-height:44px;padding:10px 12px;border-bottom:1px solid #F3F1EE">
+        <span style="width:16px;height:16px;border-radius:4px;border:1.5px solid #B0ABA3;flex:none"></span>
+        <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Nie działa opcja „załóż konto" przy wysyłce</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A857D">#250</span><span style="display:inline-flex;align-items:center;gap:5px;height:18px;padding:0 6px;border-radius:4px;background:#DDE9FC;color:#1D3F8A;font-size:11px;font-weight:500"><span style="width:5px;height:5px;border-radius:50%;background:#2F6FE8"></span>W toku</span><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 7.2l4-4 4 4" stroke="#D6382C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path><path d="M4 12.2l4-4 4 4" stroke="#D6382C" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div></div>
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#DDE9FC;color:#1D3F8A;font-size:11px;font-weight:600;flex:none">D</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;min-height:44px;padding:10px 12px;background:#FFF4EE;box-shadow:inset 2px 0 0 #FF5C00">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;background:#1C1A17;flex:none"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.8 5.4l2.2 2.2 4.2-4.8" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+        <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Moduł kompresji zdjęć</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8A857D">#243</span><span style="display:inline-flex;align-items:center;gap:5px;height:18px;padding:0 6px;border-radius:4px;background:#DDF3E6;color:#14603A;font-size:11px;font-weight:500"><span style="width:5px;height:5px;border-radius:50%;background:#1E9E5A"></span>Gotowe</span></div></div>
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#DDF3E6;color:#14603A;font-size:11px;font-weight:600;flex:none">K</span>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#8A857D;margin-top:8px">Drugi wiersz: zaznaczony — tło #FFF4EE + pasek 2px.</div>
+  </section>
+
+  <section style="background:#FFFFFF;border:1px solid #E6E3DE;border-radius:8px;padding:16px">
+    <div style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8A857D;margin-bottom:10px">Toast · Empty · Skeleton</div>
+    <div style="display:flex;align-items:flex-start;gap:10px;border:1px solid #E6E3DE;border-radius:8px;background:#FFFFFF;box-shadow:0 8px 24px rgba(20,17,13,.12),0 2px 6px rgba(20,17,13,.06);padding:12px;margin-bottom:12px">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-top:2px"><circle cx="8" cy="8" r="6.5" stroke="#1E9E5A" stroke-width="1.5"></circle><path d="M5.4 8.2l1.8 1.8 3.4-4" stroke="#1E9E5A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      <div style="flex:1"><div style="font-size:13px;font-weight:600">Zapisano zmiany</div><div style="font-size:12px;color:#66625B"><span style="font-family:'JetBrains Mono',monospace;font-size:11px">#250</span> zaktualizowane</div></div>
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="#8A857D" stroke-width="1.5" stroke-linecap="round"></path></svg>
+    </div>
+    <div style="border:1px dashed #D2CEC7;border-radius:8px;padding:16px;display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:12px">
+      <span style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:#F3F1EE;margin-bottom:8px"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="#8A857D" stroke-width="1.5"></circle><path d="M10.5 10.5L14 14" stroke="#8A857D" stroke-width="1.5" stroke-linecap="round"></path></svg></span>
+      <div style="font-size:14px;font-weight:600">Brak wyników</div>
+      <div style="font-size:12px;color:#66625B">Żadne zadanie nie pasuje do filtrów.</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:50%;background:#F3F1EE;animation:pulse 1.4s ease-in-out infinite"></span><span style="height:10px;border-radius:5px;background:#F3F1EE;flex:1;animation:pulse 1.4s ease-in-out infinite"></span><span style="height:10px;width:52px;border-radius:5px;background:#F3F1EE;animation:pulse 1.4s ease-in-out infinite"></span></div>
+  </section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844}}"></script>
+</body>
+</html>
