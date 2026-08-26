@@ -38,3 +38,13 @@
   po nazwie kolumny.
 - `e2e/reset-fixtures.ts` — reset `configJson` widoków TABLE + parkowanie zadań
   w kubełkach `/my-tasks`; wołany w `auth.setup.ts` i w `beforeAll` speców 05/06/13.
+
+### Ujednolicenie reguły „ukończone" (F3)
+Reguła żyła w czterech kopiach, dwie z nich różniły się semantycznie. Teraz jedno źródło:
+`components/board/done-status.ts` (+ self-check). Zasada: jeśli tablica ma kolumnę o nazwie
+brzmiącej jak „gotowe", liczy się tylko ona; dopiero przy jej braku liczy się ostatnia kolumna
+wg `order`. Poprzednio ostatnia kolumna liczyła się ZAWSZE, więc na tablicach z kolumnami
+dopisanymi po „Done" (np. `Done:3, FAZA-2030:4`) zadania z ostatniej kolumny były raportowane
+jako ukończone. Podpięte: `/my-tasks`, licznik w pasku bocznym, Podsumowanie tablicy, Roadmapa.
+`components/profile/dashboard-tiles.tsx` celowo zostaje przy swoim luźnym dopasowaniu —
+to inny kontekst (kafle profilu w wielu przestrzeniach).

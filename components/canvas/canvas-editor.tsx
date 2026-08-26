@@ -138,6 +138,7 @@ export interface EditorInitialNode {
   // F12-K73 TASK_REF-only.
   taskId?: string | null;
   taskTitle?: string | null;
+  displayId?: number | null;
   statusName?: string | null;
   statusColor?: string | null;
   flowMark?: "start" | "end" | null;
@@ -285,6 +286,7 @@ function toRFNode(n: EditorInitialNode, workspaceId: string): RFNode {
       // flowMark do ring/badge logiki.
       taskId: n.taskId ?? null,
       taskTitle: n.taskTitle ?? null,
+      displayId: n.displayId ?? null,
       statusName: n.statusName ?? null,
       statusColor: n.statusColor ?? null,
       flowMark: n.flowMark ?? null,
@@ -715,6 +717,7 @@ function CanvasEditorInner({
           workspaceId,
           taskId: task.id,
           taskTitle: task.title,
+          displayId: task.displayId,
           statusName: task.statusName,
           statusColor: task.statusColor,
           flowMark: null,

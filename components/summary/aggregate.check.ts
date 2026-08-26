@@ -12,12 +12,14 @@ const task = (over: Partial<SummaryTask>): SummaryTask => ({
   id: "t", displayId: 0, statusColumnId: null, stopAt: null, assigneeIds: [], ...over,
 });
 
-// Done detection: name wins over position, so a column appended after „Gotowe”
-// does not steal the „done” meaning (F12-K91 rule from my-tasks).
+// Done detection: a named done column wins outright, so a column appended after
+// „Gotowe” neither steals the meaning nor counts as done itself. Positional
+// fallback only applies to boards with no named done column — see
+// components/board/done-status.check.ts.
 const appended = [...statuses, { id: "s5", name: "FAZA-2030", colorHex: "#8A857D", order: 4 }];
 const isDone = makeIsDone(appended);
 assert.equal(isDone("s4"), true);
-assert.equal(isDone("s5"), true, "last column still counts as done (positional fallback)");
+assert.equal(isDone("s5"), false, "a trailing non-done column must not count as done");
 assert.equal(isDone("s2"), false);
 assert.equal(isDone(null), false);
 assert.equal(isDone("nope"), false);

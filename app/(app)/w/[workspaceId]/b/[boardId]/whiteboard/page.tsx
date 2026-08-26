@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { CanvasEditorLazy } from "@/components/canvas/canvas-editor-lazy";
+import { CanvasPresenceStack } from "@/components/canvas/canvas-presence";
 import { BoardShell } from "@/components/view/board-shell";
 import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
@@ -81,12 +82,38 @@ export default async function BoardWhiteboardPage({
   const canCreateTask = can(ctx.role, "task.create");
   const enabledViews = parseEnabledViews(board.workspace.enabledViews);
 
-  const boardTasks = await db.task.findMany({
-    where: { boardId, deletedAt: null },
-    orderBy: { updatedAt: "desc" },
-    take: 300,
-    select: { id: true, title: true },
-  });
+  const [boardTasks, me] = await Promise.all([
+    db.task.findMany({
+      where: { boardId, deletedAt: null },
+      orderBy: { updatedAt: "desc" },
+      take: 300,
+      select: {
+        id: true,
+        title: true,
+        displayId: true,
+        statusColumn: { select: { name: true, colorHex: true } },
+      },
+    }),
+    db.user.findUnique({
+      where: { id: ctx.userId },
+      select: { name: true, email: true, avatarUrl: true },
+    }),
+  ]);
+
+  // Meta do wstawiania kart zadania (#ID) na kanwę + rehydratacja tytułu i
+  // statusu węzłów TASK_REF, których snapshot mógł się zestarzeć.
+  const taskMetaById = new Map(
+    boardTasks.map((t) => [
+      t.id,
+      {
+        id: t.id,
+        title: t.title,
+        displayId: t.displayId,
+        statusName: t.statusColumn?.name ?? null,
+        statusColor: t.statusColumn?.colorHex ?? null,
+      },
+    ]),
+  );
 
   const linksByNode = new Map<string, { taskId: string; title: string }[]>();
   for (const n of canvas.nodes) {
@@ -104,11 +131,19 @@ export default async function BoardWhiteboardPage({
         board={{ name: board.name, description: board.description }}
         active="whiteboard"
         enabledViews={enabledViews}
+        actions={
+          <CanvasPresenceStack
+            canvasId={canvas.id}
+            me={{ name: me?.name ?? me?.email ?? "Ja", avatarUrl: me?.avatarUrl }}
+          />
+        }
         extra={<BoardLinksServer workspaceId={workspaceId} boardId={board.id} />}
       />
 
       <ViewTransition>
-      <div className="h-[calc(100dvh-18rem)] min-h-[520px] overflow-hidden rounded-xl border border-border bg-card">
+      {/* B9: kanwa idzie od krawędzi do krawędzi — BoardShell dokłada
+          24/16px paddingu widoku, więc go tu odejmujemy. */}
+      <div className="-mx-6 -my-4 h-[calc(100dvh-13rem)] min-h-[420px] overflow-hidden border-t border-border max-md:-mx-4">
         <CanvasEditorLazy
           workspaceId={workspaceId}
           canvasId={canvas.id}
@@ -119,8 +154,17 @@ export default async function BoardWhiteboardPage({
                 ? (n.dataJson as {
                     reactions?: unknown;
                     locked?: unknown;
+                    imagePath?: unknown;
+                    textColorHex?: unknown;
+                    taskId?: unknown;
+                    taskTitle?: unknown;
+                    statusName?: unknown;
+                    statusColor?: unknown;
+                    flowMark?: unknown;
                   })
                 : {};
+            const taskId = typeof meta.taskId === "string" ? meta.taskId : null;
+            const fresh = taskId ? taskMetaById.get(taskId) : undefined;
             const reactions =
               meta.reactions && typeof meta.reactions === "object"
                 ? (Object.fromEntries(
@@ -142,6 +186,24 @@ export default async function BoardWhiteboardPage({
               reactions:
                 reactions && Object.keys(reactions).length > 0 ? reactions : undefined,
               locked: meta.locked === true ? true : undefined,
+              imagePath: typeof meta.imagePath === "string" ? meta.imagePath : null,
+              textColorHex:
+                typeof meta.textColorHex === "string" ? meta.textColorHex : null,
+              taskId,
+              taskTitle:
+                fresh?.title ??
+                (typeof meta.taskTitle === "string" ? meta.taskTitle : null),
+              displayId: fresh?.displayId ?? null,
+              statusName:
+                fresh?.statusName ??
+                (typeof meta.statusName === "string" ? meta.statusName : null),
+              statusColor:
+                fresh?.statusColor ??
+                (typeof meta.statusColor === "string" ? meta.statusColor : null),
+              flowMark:
+                meta.flowMark === "start" || meta.flowMark === "end"
+                  ? meta.flowMark
+                  : null,
             };
           })}
           initialEdges={canvas.edges.map((e) => ({
@@ -173,7 +235,8 @@ export default async function BoardWhiteboardPage({
           })}
           canEdit={canEdit}
           canCreateTask={canCreateTask}
-          workspaceTasks={boardTasks}
+          workspaceTasks={boardTasks.map((t) => ({ id: t.id, title: t.title }))}
+          boardTasks={taskMetaById}
           defaultBoardId={board.id}
         />
       </div>

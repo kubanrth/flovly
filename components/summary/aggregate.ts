@@ -1,3 +1,4 @@
+import { makeIsDone } from "@/components/board/done-status";
 // Pure aggregation for Podsumowanie (B8). Everything here is derived from
 // data the schema already has (Task, StatusColumn, Milestone, membership) —
 // no budget, no WIP limits, no completion timestamps.
@@ -77,27 +78,12 @@ export interface Summary {
   milestones: MilestoneRow[];
 }
 
-// Same rule as `app/(app)/my-tasks/page.tsx` (F12-K91): name first, because
-// boards where a column was appended AFTER „Done” break the position-only
-// heuristic; otherwise the last column of the board counts as done.
-const DONE_NAME = /^(done|zrobione|gotowe|uko(ń|n)czone|zako(ń|n)czone)$/i;
 const PROGRESS_NAME = /^(w toku|w trakcie|in progress|doing|realizacja)$/i;
 
 const NO_STATUS = "_empty";
 
-/** `statusColumnId → is the task finished`. Statuses are sorted defensively. */
-export function makeIsDone(statuses: SummaryStatus[]): (statusColumnId: string | null) => boolean {
-  const sorted = [...statuses].sort((a, b) => a.order - b.order);
-  const byId = new Map(sorted.map((s) => [s.id, s]));
-  const last = sorted[sorted.length - 1] ?? null;
-  return (statusColumnId) => {
-    if (!statusColumnId) return false;
-    const sc = byId.get(statusColumnId);
-    if (!sc) return false;
-    if (DONE_NAME.test(sc.name.trim())) return true;
-    return last ? sc.order === last.order : false;
-  };
-}
+/** `statusColumnId → is the task finished`. Shared rule, see `components/board/done-status.ts`. */
+export { makeIsDone };
 
 /**
  * „W toku” = tasks sitting in a column named like work-in-progress. Boards

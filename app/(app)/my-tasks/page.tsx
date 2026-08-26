@@ -1,4 +1,5 @@
 import type { Prisma } from "@/lib/generated/prisma/client";
+import { makeIsDone } from "@/components/board/done-status";
 import { CheckSquare, Filter } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -208,15 +209,8 @@ export default async function MyTasksPage({
   // Name check first: boards where someone appended a column AFTER "Done"
   // (Done:3, FAZA-2030:4, test:5) broke the position-only heuristic and pushed
   // finished tasks back into "Zaległe".
-  const DONE_NAME = /^(done|zrobione|gotowe|uko(ń|n)czone|zako(ń|n)czone)$/i;
-  const isTaskDone = (a: (typeof assignments)[number]): boolean => {
-    const sc = a.task.statusColumn;
-    if (!sc) return false;
-    if (DONE_NAME.test(sc.name.trim())) return true;
-    const columns = a.task.board.statusColumns;
-    if (columns.length === 0) return false;
-    return sc.order === columns[columns.length - 1].order;
-  };
+  const isTaskDone = (a: (typeof assignments)[number]): boolean =>
+    makeIsDone(a.task.board.statusColumns)(a.task.statusColumn?.id ?? null);
 
   const active = assignments.filter((a) => a.task.workspace && !isTaskDone(a));
 

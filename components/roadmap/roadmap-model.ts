@@ -1,3 +1,4 @@
+import { doneColumnIds } from "@/components/board/done-status";
 // Roadmapa (B6) — pure derivations: month axis, bar geometry, progress,
 // marker size/hue, connector arcs, milestone ordering, description round-trip.
 // No React, no DOM. Self-check: `npx tsx components/roadmap/roadmap-model.check.ts`.
@@ -98,17 +99,8 @@ export function spanX(
  * terminal Kanban column).
  * ponytail: swap for a real `StatusColumn.isDone` if one ever lands.
  */
-const DONE_NAME =
-  /^(done|gotowe|gotowy|gotów|zrobione|zakończone|ukończone|closed|zamknięte|complete|completed)$/i;
-
-export function doneStatusIds(
-  columns: { id: string; name: string; order: number }[],
-): Set<string> {
-  const named = columns.filter((c) => DONE_NAME.test(c.name.trim()));
-  if (named.length > 0) return new Set(named.map((c) => c.id));
-  const last = [...columns].sort((a, b) => a.order - b.order).at(-1);
-  return new Set(last ? [last.id] : []);
-}
+// Shared rule — see components/board/done-status.ts.
+export const doneStatusIds = doneColumnIds;
 
 export interface Progress {
   done: number;

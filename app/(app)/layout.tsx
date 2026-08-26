@@ -12,6 +12,7 @@ import type { CommandPaletteData } from "@/components/search/command-palette";
 import { OnboardingTour } from "@/components/onboarding/onboarding-tour";
 import { RouteTracker } from "@/components/layout/route-tracker";
 import { RouteFrame } from "@/components/layout/route-frame";
+import { makeIsDone } from "@/components/board/done-status";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -53,20 +54,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         take: 5,
         include: { creator: { select: { id: true, name: true, email: true } } },
       }),
-      // Sidebar badge "Zadania dla Ciebie": assigned tasks not in the last status column
-      // of their board (K91 heuristic — schema has no isDone flag; mirrors /my-tasks).
+      // Sidebar badge "Zadania dla Ciebie": assigned tasks that are not done.
+      // Same rule as /my-tasks and the board summary — see components/board/done-status.ts.
       db.task
         .findMany({
           where: { assignees: { some: { userId } }, deletedAt: null, board: { deletedAt: null, workspace: { deletedAt: null } } },
-          select: { statusColumn: { select: { order: true } }, board: { select: { statusColumns: { select: { order: true } } } } },
+          select: {
+            statusColumnId: true,
+            board: { select: { statusColumns: { select: { id: true, name: true, order: true } } } },
+          },
         })
-        .then((rows) =>
-          rows.filter((r) => {
-            if (!r.statusColumn) return true;
-            const max = Math.max(-1, ...r.board.statusColumns.map((c) => c.order));
-            return r.statusColumn.order !== max;
-          }).length,
-        ),
+        .then((rows) => rows.filter((r) => !makeIsDone(r.board.statusColumns)(r.statusColumnId)).length),
       // Top 5 for Cmd+K (K85).
       db.task.findMany({
         where: { assignees: { some: { userId } }, deletedAt: null, board: { deletedAt: null, workspace: { deletedAt: null } } },

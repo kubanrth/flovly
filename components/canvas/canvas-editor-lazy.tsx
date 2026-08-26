@@ -33,12 +33,10 @@ export function CanvasEditorLazy(props: CanvasEditorProps) {
 
 function CanvasLoadingSkeleton() {
   return (
-    <div className="grid h-full w-full place-items-center bg-muted/30">
+    <div className="grid h-full w-full place-items-center bg-canvas">
       <div className="flex flex-col items-center gap-3">
-        <span className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
-        <span className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">
-          Ładuję edytor…
-        </span>
+        <span className="h-6 w-6 animate-spin rounded-full border-2 border-n-200 border-t-orange-500 motion-reduce:animate-none" />
+        <span className="text-xs text-muted-foreground">Ładuję edytor…</span>
       </div>
     </div>
   );
