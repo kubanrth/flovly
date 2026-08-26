@@ -2,35 +2,40 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, ShieldOff, Copy, Check } from "lucide-react";
 import {
   beginTotpEnrollmentAction,
   completeTotpEnrollmentAction,
   disableTotpAction,
 } from "@/app/(app)/profile/totp-actions";
+import { Button } from "@/components/ui/button";
+import { IconCheck, IconCopy, IconShield, IconShieldCheck } from "@/components/ui/icons";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+// Sekret TOTP i kody zapasowe żyją wyłącznie w stanie klienta na czas
+// rejestracji — nie trafiają do SSR i nie są przechowywane po odświeżeniu.
+
+const CODE_INPUT = "h-11 w-[180px] text-center font-mono text-md tracking-[0.25em] md:h-8 md:w-[140px] md:text-sm";
 
 export function TwoFactorSection({ enabled }: { enabled: boolean }) {
   return (
-    <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-6">
+    <section className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <span className="eyebrow">Uwierzytelnianie dwuskładnikowe</span>
-          <h2 className="font-display text-[1.15rem] font-semibold tracking-[-0.01em]">
+        <div className="flex min-w-0 flex-col gap-1">
+          <h3 className="text-md font-semibold">
             {enabled ? "2FA jest włączone" : "2FA wyłączone"}
-          </h2>
-          <p className="max-w-[50ch] text-[0.88rem] text-muted-foreground">
+          </h3>
+          <p className="text-xs text-fg-2">
             {enabled
-              ? "Przy logowaniu będzie potrzebny 6-cyfrowy kod z Twojej aplikacji (Google Authenticator, 1Password, Bitwarden itp.). Możesz użyć kodu zapasowego jeśli zgubisz telefon."
+              ? "Przy logowaniu potrzebny będzie 6-cyfrowy kod z aplikacji (Google Authenticator, 1Password, Bitwarden). Kod zapasowy zadziała, gdy zgubisz telefon."
               : "Dodaj drugą warstwę — kod z aplikacji przy każdym logowaniu. Potrzebujesz aplikacji TOTP na telefonie."}
           </p>
         </div>
         <span
-          className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${
-            enabled ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-          }`}
           aria-hidden
+          className={`grid size-8 shrink-0 place-items-center rounded-full ${enabled ? "bg-chip-green-bg text-success-text" : "bg-n-100 text-n-500"}`}
         >
-          {enabled ? <ShieldCheck size={16} /> : <ShieldOff size={16} />}
+          {enabled ? <IconShieldCheck width={15} height={15} /> : <IconShield width={15} height={15} />}
         </span>
       </div>
 
@@ -39,7 +44,7 @@ export function TwoFactorSection({ enabled }: { enabled: boolean }) {
   );
 }
 
-// ── Enrollment ──────────────────────────────────────────────────────
+// ── Rejestracja ─────────────────────────────────────────────────────
 type EnrollStep =
   | { kind: "idle" }
   | { kind: "setup"; base32: string; otpauthUrl: string; qrDataUrl: string | null }
@@ -60,8 +65,6 @@ function EnrollFlow() {
         setError(res.error);
         return;
       }
-      // Render the QR via Google Charts-free approach: use the browser's
-      // dynamic import of qrcode which stays under 20KB gzipped.
       let qrDataUrl: string | null = null;
       try {
         const qrcode = await import("qrcode");
@@ -73,11 +76,10 @@ function EnrollFlow() {
     });
   };
 
-  const verify = () => {
-    if (step.kind !== "setup") return;
+  const complete = (value: string) => {
     setError(null);
     startTransition(async () => {
-      const res = await completeTotpEnrollmentAction({ token });
+      const res = await completeTotpEnrollmentAction({ token: value });
       if (!res.ok) {
         setError(res.error);
         return;
@@ -90,28 +92,21 @@ function EnrollFlow() {
     return (
       <div className="flex flex-col gap-2">
         {error && <ErrorLine message={error} />}
-        <button
-          type="button"
-          onClick={begin}
-          disabled={pending}
-          className="inline-flex h-10 w-fit items-center justify-center rounded-lg bg-primary px-5 font-sans text-[0.9rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
-        >
+        <Button type="button" onClick={begin} loading={pending} disabled={pending} className="w-fit">
           {pending ? "Generuję…" : "Włącz 2FA"}
-        </button>
+        </Button>
       </div>
     );
   }
 
   if (step.kind === "setup") {
     return (
-      <div className="flex flex-col gap-4 rounded-lg border border-border bg-background p-4">
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-canvas p-3.5">
+        <div className="flex flex-col gap-1">
           <span className="eyebrow">Krok 1</span>
-          <p className="text-[0.88rem]">
-            Zeskanuj kod QR w aplikacji uwierzytelniającej lub wpisz sekret ręcznie.
-          </p>
+          <p className="text-xs">Zeskanuj kod QR w aplikacji uwierzytelniającej lub wpisz sekret ręcznie.</p>
         </div>
-        <div className="flex flex-wrap items-start gap-4">
+        <div className="flex flex-wrap items-start gap-3.5">
           {step.qrDataUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -119,59 +114,43 @@ function EnrollFlow() {
               alt="Kod QR do 2FA"
               width={220}
               height={220}
-              className="shrink-0 rounded-md border border-border bg-white p-2"
+              className="shrink-0 rounded-md border border-border bg-card p-2"
             />
           ) : (
-            <code className="max-w-full overflow-x-auto rounded-md border border-border bg-muted p-2 font-mono text-[0.72rem]">
+            <code className="max-w-full overflow-x-auto rounded-sm border border-border bg-n-100 p-2 font-mono text-2xs">
               {step.otpauthUrl}
             </code>
           )}
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             <span className="eyebrow">Sekret</span>
             <SecretDisplay secret={step.base32} />
-            <p className="text-[0.78rem] text-muted-foreground">
-              Po zeskanowaniu wpisz bieżący 6-cyfrowy kod:
-            </p>
+            <p className="text-2xs text-fg-2">Po zeskanowaniu wpisz bieżący 6-cyfrowy kod:</p>
             <div className="flex flex-wrap items-center gap-2">
-              <input
+              <Input
                 value={token}
                 onChange={(e) => {
                   const next = e.target.value.replace(/\D+/g, "").slice(0, 6);
                   setToken(next);
-                  // Mobile UX v4: po wpisaniu 6 cyfr — auto-submit.
-                  if (next.length === 6 && !pending) {
-                    startTransition(async () => {
-                      const res = await completeTotpEnrollmentAction({ token: next });
-                      if (!res.ok) {
-                        setError(res.error);
-                        return;
-                      }
-                      setStep({ kind: "done", recoveryCodes: res.recoveryCodes });
-                    });
-                  }
+                  // Po wpisaniu 6 cyfr — auto-submit (UX mobilny).
+                  if (next.length === 6 && !pending) complete(next);
                 }}
-                // Mobile v4 spec: natywna numeric keypad + one-time-code autofill
-                // (iOS przyciąga kod z SMS / authenticator app autofill).
                 inputMode="numeric"
                 pattern="[0-9]*"
                 autoComplete="one-time-code"
                 maxLength={6}
-                placeholder="123 456"
+                placeholder="123456"
                 aria-label="6-cyfrowy kod"
-                // Mobile: h-[52px] + text-[22px] mono center (zgodnie z v4 mobile
-                // 2FA cells: 52px tall, 22px font, monospace, center). Desktop
-                // zostaje przy oryginalnej wadze (h-10), ale font już mono large.
-                className="h-[52px] w-[180px] rounded-md border border-border bg-background px-3 text-center font-mono text-[22px] tracking-[0.25em] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:h-10 md:w-[140px] md:text-[1.1rem] md:tracking-[0.2em]"
+                className={CODE_INPUT}
               />
-              <button
+              <Button
                 type="button"
-                onClick={verify}
+                onClick={() => complete(token)}
+                loading={pending}
                 disabled={pending || token.length !== 6}
-                // Mobile: 52px tall touch target. Desktop: h-10 jak było.
-                className="inline-flex h-[52px] items-center justify-center rounded-lg bg-primary px-5 font-sans text-[0.88rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] disabled:opacity-60 md:h-10 md:px-4"
+                className="h-11 md:h-8"
               >
                 {pending ? "Sprawdzam…" : "Potwierdź"}
-              </button>
+              </Button>
             </div>
             {error && <ErrorLine message={error} />}
           </div>
@@ -182,46 +161,39 @@ function EnrollFlow() {
 
   // step.kind === "done"
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-primary/40 bg-primary/5 p-4">
-      <span className="eyebrow text-primary">2FA włączone</span>
-      <p className="text-[0.88rem]">
-        <strong>Zapisz te kody w bezpiecznym miejscu.</strong> Każdy z nich
-        zadziała jednorazowo jeśli zgubisz dostęp do aplikacji. Nie pokażemy
-        ich ponownie.
+    <div className="flex flex-col gap-2.5 rounded-lg border border-success bg-chip-green-bg p-3.5">
+      <span className="eyebrow text-success-text">2FA włączone</span>
+      <p className="text-xs">
+        <strong>Zapisz te kody w bezpiecznym miejscu.</strong> Każdy zadziała jednorazowo, gdy
+        stracisz dostęp do aplikacji. Nie pokażemy ich ponownie.
       </p>
       <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {step.recoveryCodes.map((c) => (
-          <li
-            key={c}
-            className="rounded-md border border-border bg-background px-3 py-2 text-center font-mono text-[0.88rem] tracking-[0.08em]"
-          >
+          <li key={c} className="rounded-sm border border-border bg-card px-2.5 py-1.5 text-center font-mono text-xs tracking-[0.08em]">
             {c}
           </li>
         ))}
       </ul>
-      <button
-        type="button"
-        onClick={() => {
-          navigator.clipboard
-            ?.writeText(step.recoveryCodes.join("\n"))
-            .catch(() => {});
-        }}
-        className="inline-flex h-9 w-fit items-center gap-1.5 rounded-md border border-border bg-background px-3 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <Copy size={12} /> Skopiuj wszystkie
-      </button>
-      <button
-        type="button"
-        onClick={() => router.refresh()}
-        className="inline-flex h-9 w-fit items-center justify-center rounded-md border border-border px-4 font-sans text-[0.85rem] text-muted-foreground transition-colors hover:text-foreground"
-      >
-        Gotowe
-      </button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            navigator.clipboard?.writeText(step.recoveryCodes.join("\n")).catch(() => {});
+          }}
+        >
+          <IconCopy width={12} height={12} /> Skopiuj wszystkie
+        </Button>
+        <Button type="button" size="sm" onClick={() => router.refresh()}>
+          Gotowe
+        </Button>
+      </div>
     </div>
   );
 }
 
-// ── Disable ─────────────────────────────────────────────────────────
+// ── Wyłączenie ──────────────────────────────────────────────────────
 function DisableFlow() {
   const router = useRouter();
   const [password, setPassword] = useState("");
@@ -232,13 +204,15 @@ function DisableFlow() {
 
   if (!confirming) {
     return (
-      <button
+      <Button
         type="button"
+        variant="secondary"
+        size="sm"
         onClick={() => setConfirming(true)}
-        className="inline-flex h-9 w-fit items-center gap-1.5 rounded-md border border-destructive/40 bg-destructive/5 px-3 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-destructive transition-colors hover:bg-destructive/10"
+        className="w-fit text-danger-text"
       >
-        <ShieldOff size={12} /> Wyłącz 2FA
-      </button>
+        <IconShield width={12} height={12} /> Wyłącz 2FA
+      </Button>
     );
   }
 
@@ -258,58 +232,55 @@ function DisableFlow() {
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-      <p className="text-[0.88rem]">
-        Podaj obecne hasło i bieżący kod z aplikacji, żeby wyłączyć 2FA.
-      </p>
-      <label className="flex flex-col gap-1">
-        <span className="eyebrow">Hasło</span>
-        <input
+    <div className="flex flex-col gap-2.5 rounded-lg border border-danger bg-chip-red-bg p-3.5">
+      <p className="text-xs">Podaj obecne hasło i bieżący kod z aplikacji, żeby wyłączyć 2FA.</p>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="totp-off-password">Hasło</Label>
+        <Input
+          id="totp-off-password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
-          // Mobile: h-[52px] + text-[16px] (no iOS zoom). Desktop: h-9.
-          className="h-[52px] rounded-md border border-border bg-background px-3 text-[16px] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:h-9 md:text-[0.95rem]"
+          className="h-11 md:h-8"
         />
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="eyebrow">Kod 2FA</span>
-        <input
-          type="text"
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="totp-off-token">Kod 2FA</Label>
+        <Input
+          id="totp-off-token"
           value={token}
           onChange={(e) => setToken(e.target.value.replace(/\D+/g, "").slice(0, 6))}
-          // Mobile v4: numeric keypad + one-time-code autofill.
           inputMode="numeric"
           pattern="[0-9]*"
           autoComplete="one-time-code"
           maxLength={6}
-          // Mobile: 52px touch target + text-[16px] (no iOS zoom). Desktop: h-9.
-          className="h-[52px] w-[180px] rounded-md border border-border bg-background px-3 font-mono text-[16px] tracking-[0.2em] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:h-9 md:w-[140px] md:text-[0.95rem]"
+          className={CODE_INPUT}
         />
-      </label>
+      </div>
       {error && <ErrorLine message={error} />}
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="button"
+          variant="danger"
           onClick={submit}
+          loading={pending}
           disabled={pending || !password || token.length !== 6}
-          className="inline-flex h-9 items-center justify-center rounded-md bg-destructive px-4 font-sans text-[0.85rem] font-semibold text-destructive-foreground transition-opacity disabled:opacity-60"
         >
           {pending ? "Wyłączam…" : "Wyłącz 2FA"}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="secondary"
           onClick={() => {
             setConfirming(false);
             setPassword("");
             setToken("");
             setError(null);
           }}
-          className="inline-flex h-9 items-center justify-center rounded-md border border-border px-3 font-sans text-[0.82rem] text-muted-foreground hover:text-foreground"
         >
           Anuluj
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -319,7 +290,7 @@ function SecretDisplay({ secret }: { secret: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="flex items-center gap-2">
-      <code className="truncate rounded-md border border-border bg-muted px-2 py-1 font-mono text-[0.78rem] tracking-[0.1em]">
+      <code className="truncate rounded-sm border border-border bg-n-100 px-2 py-1 font-mono text-2xs tracking-[0.1em]">
         {secret}
       </code>
       <button
@@ -335,14 +306,9 @@ function SecretDisplay({ secret }: { secret: string }) {
             })
             .catch(() => {});
         }}
-        className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className="grid size-7 shrink-0 place-items-center rounded-md text-n-500 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
       >
-        <span
-          key={copied ? "check" : "copy"}
-          className="inline-flex motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-50 motion-safe:duration-200"
-        >
-          {copied ? <Check size={13} /> : <Copy size={13} />}
-        </span>
+        {copied ? <IconCheck width={13} height={13} /> : <IconCopy width={13} height={13} />}
       </button>
     </div>
   );
@@ -350,7 +316,7 @@ function SecretDisplay({ secret }: { secret: string }) {
 
 function ErrorLine({ message }: { message: string }) {
   return (
-    <p className="font-mono text-[0.68rem] uppercase tracking-[0.12em] text-destructive">
+    <p role="alert" className="text-xs text-danger-text">
       {message}
     </p>
   );

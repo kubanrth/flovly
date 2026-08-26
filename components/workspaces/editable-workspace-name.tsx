@@ -2,6 +2,7 @@
 
 import { renameWorkspaceAction } from "@/app/(app)/workspaces/actions";
 import { EditableTitle } from "@/components/ui/editable-title";
+import { cn } from "@/lib/utils";
 
 // Cienki client wrapper łączący generic EditableTitle z
 // workspace-specific server action. Trzyma sygnaturę FormData w jednym
@@ -21,7 +22,9 @@ export function EditableWorkspaceName({
     <EditableTitle
       value={name}
       canEdit={canEdit}
-      className={className}
+      // 32px — wysokość kontrolek z A1; bez tego przycisk ma losową
+      // wysokość linii nagłówka.
+      className={cn("h-8", className)}
       maxLength={80}
       ariaLabel="Edytuj nazwę przestrzeni"
       onCommit={async (next) => {

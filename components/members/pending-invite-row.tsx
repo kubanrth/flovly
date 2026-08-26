@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Copy, Check } from "lucide-react";
 import { cancelInviteAction } from "@/app/(app)/w/[workspaceId]/members/actions";
+import { Button } from "@/components/ui/button";
+import { IconCheck, IconCopy } from "@/components/ui/icons";
 
 export function PendingInviteRow({
   workspaceId,
@@ -48,45 +49,25 @@ export function PendingInviteRow({
   }
 
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-border py-3 last:border-b-0">
+    <div className="flex min-h-11 items-center justify-between gap-3 border-b border-n-100 bg-card px-3.5 py-1.5 last:border-b-0 max-md:flex-wrap">
       <div className="flex min-w-0 flex-col">
-        <span className="truncate text-[0.95rem] font-display leading-tight tracking-[-0.01em]">
-          {email}
-        </span>
-        <span className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">
+        <span className="truncate text-sm font-medium">{email}</span>
+        <span className="truncate text-2xs text-fg-3">
           {role.toLowerCase()}
-          {boardName && (
-            <>
-              {" "}· tablica{" "}
-              <span className="text-primary">{boardName}</span>
-            </>
-          )}{" "}
-          · wygasa za {daysLeft} dni
+          {boardName && <> · tablica {boardName}</>} · wygasa za {daysLeft} dni
         </span>
       </div>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={copyUrl}
-          className="inline-flex h-8 items-center gap-1.5 rounded-sm border border-border px-3 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
-        >
-          <span
-            key={copied ? "check" : "copy"}
-            className="inline-flex motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-50 motion-safe:duration-200"
-          >
-            {copied ? <Check size={12} /> : <Copy size={12} />}
-          </span>
-          {copied ? "skopiowano" : "kopiuj link"}
-        </button>
+      <div className="flex shrink-0 items-center gap-1.5">
+        <Button type="button" variant="secondary" size="sm" onClick={copyUrl}>
+          {copied ? <IconCheck width={12} height={12} /> : <IconCopy width={12} height={12} />}
+          {copied ? "Skopiowano" : "Kopiuj link"}
+        </Button>
         <form action={cancelInviteAction}>
           <input type="hidden" name="workspaceId" value={workspaceId} />
           <input type="hidden" name="invitationId" value={invitationId} />
-          <button
-            type="submit"
-            className="font-mono text-[0.68rem] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-destructive"
-          >
-            anuluj
-          </button>
+          <Button type="submit" variant="ghost" size="sm" className="text-danger-text">
+            Anuluj
+          </Button>
         </form>
       </div>
     </div>

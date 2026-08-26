@@ -1,67 +1,38 @@
-import { AppShell } from "@/components/layout/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// My Tasks skeleton — hero (eyebrow + headline + sub) + filters bar +
-// grouped task rows. Mirror HotkeyTaskList structure (overdue → today → later).
+// Szkielet D2: nagłówek + segmented, dwie grupy w kontenerach 8px, stopka.
 export default function MyTasksLoading() {
   return (
-    <AppShell>
-      <div className="flex flex-col gap-10">
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-3 w-28" />
-          <Skeleton className="h-9 w-2/3 max-w-md md:h-12" />
-          <Skeleton className="h-4 w-1/2 max-w-sm" />
-        </div>
-
-        {/* Filters bar */}
-        <div className="flex flex-wrap items-center gap-2">
-          <Skeleton className="h-9 w-64 rounded-lg" />
-          <Skeleton className="h-9 w-32 rounded-lg" />
-          <Skeleton className="h-9 w-24 rounded-lg" />
-        </div>
-
-        <div className="relative overflow-hidden rounded-[22px] border border-white/60 bg-white/55 shadow-[0_30px_70px_-30px_rgba(122,51,236,0.4)] ]">
-          <div className="flex flex-col gap-2 px-4 py-4 md:px-5 md:py-5">
-            {/* Section 1: Po terminie */}
-            <section>
-              <div className="flex items-center gap-2.5 px-2 py-2">
-                <Skeleton className="h-4 w-[3px] rounded-[2px]" />
-                <Skeleton className="h-3.5 w-24" />
-                <Skeleton className="h-4 w-6 rounded-full" />
+    <div className="flex h-[calc(100dvh-48px)] min-h-0 flex-1 flex-col bg-background">
+      <header className="flex flex-none items-center gap-2.5 px-4 pt-4 md:px-8">
+        <Skeleton className="h-7 w-56" />
+        <Skeleton className="h-4 w-40" />
+        <span className="flex-1" />
+        <Skeleton className="h-7 w-[260px] rounded-md" />
+      </header>
+      <div className="min-h-0 flex-1 px-4 pb-6 pt-3 md:px-8">
+        <div className="max-w-[960px]">
+          {[2, 3].map((count, gi) => (
+            <section key={gi} className="mb-3.5">
+              <div className="flex h-8 items-center gap-2">
+                <Skeleton className="h-3 w-28" />
               </div>
-              <ul className="flex flex-col gap-1.5">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <TaskRowSkeleton key={i} />
+              <div className="overflow-hidden rounded-lg border border-border">
+                {Array.from({ length: count }).map((_, i) => (
+                  <div key={i} className="flex h-11 items-center gap-2.5 border-b border-n-100 px-3 last:border-b-0">
+                    <Skeleton className="size-3.5 rounded-sm" />
+                    <Skeleton className="h-3 w-8" />
+                    <Skeleton className="h-3.5 flex-1" />
+                    <Skeleton className="h-5 w-24 rounded-sm" />
+                    <Skeleton className="h-3 w-14" />
+                  </div>
                 ))}
-              </ul>
-            </section>
-            {/* Section 2: Dzisiaj */}
-            <section className="mt-3">
-              <div className="flex items-center gap-2.5 px-2 py-2">
-                <Skeleton className="h-4 w-[3px] rounded-[2px]" />
-                <Skeleton className="h-3.5 w-20" />
-                <Skeleton className="h-4 w-6 rounded-full" />
               </div>
-              <ul className="flex flex-col gap-1.5">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <TaskRowSkeleton key={i} />
-                ))}
-              </ul>
             </section>
-          </div>
+          ))}
         </div>
       </div>
-    </AppShell>
-  );
-}
-
-function TaskRowSkeleton() {
-  return (
-    <li className="flex items-center gap-3 rounded-[13px] border border-white/60 bg-white/70 px-3.5 py-3 ] ]">
-      <Skeleton className="h-3 w-10" />
-      <Skeleton className="h-4 flex-1" />
-      <Skeleton className="h-6 w-20 rounded-full" />
-      <Skeleton className="h-3 w-12" />
-    </li>
+      <div className="h-8 flex-none border-t border-border bg-canvas" />
+    </div>
   );
 }

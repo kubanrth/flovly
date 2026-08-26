@@ -82,3 +82,22 @@ to inny kontekst (kafle profilu w wielu przestrzeniach).
   „usuń + dopnij”; gdy dopięcie zawiodło (np. karta wskazywała skasowane zadanie), węzeł
   już nie istniał i karta znikała bez komunikatu. Teraz „dopnij + usuń”, z komunikatem
   przy każdym niepowodzeniu.
+
+## F4 — przestrzeń + osobiste (AK130–AK145)
+
+- **C1 Przestrzeń** przepisana: kafel-litera, meta, tabsy, karty tablic z paskiem postępu
+  i „N po terminie", kafel „Nowa tablica", ostatnia aktywność, stopka.
+- **D1 Powiadomienia**, **D2 Zadania dla Ciebie**, **D3 TO DO**, **D4 Kalendarz osobisty**
+  (widok tygodnia z kolumną godzin i linią „teraz"), **E4 Urlopy** — wszystkie wg makiet.
+- **D5**: przemalowane `/my/reminders`, `/profile`, `/workspaces`, `/w/<ws>/settings`,
+  `/w/<ws>/members`, `/w/<ws>/calendar`.
+
+### Naprawione przy okazji
+- **Checkbox miał 16px obszaru klikalnego** — poniżej minimum WCAG 2.5.8 (24px). Prymityw dostał
+  niewidoczny obszar 24px przez pseudoelement, więc ekrany nie muszą już podmieniać go na
+  natywny input, żeby przejść audyt wysokości kontrolek.
+- **Padding `RouteFrame` obchodzony ręcznie w dziewięciu plikach** ujemnymi marginesami
+  zsynchronizowanymi z jego wartościami — jedna zmiana paddingu i wszystkie pękają. Trasy
+  pełnoekranowe dopisane do `FULL_BLEED`, marginesy usunięte.
+- `#FFF9F5` (kolumna „dzisiaj" z makiet D4/E2) dodany jako token `--today`.
+- Usunięte 7 osieroconych komponentów (6 w `components/workspaces/`, `profile-dropdown.tsx`).

@@ -2,7 +2,7 @@
 
 import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Bell, X } from "lucide-react";
+import { IconBell, IconClose } from "@/components/ui/icons";
 import { dismissReminderAction } from "@/app/(app)/my/reminders/actions";
 import { useUserRealtime } from "@/hooks/use-user-realtime";
 
@@ -126,27 +126,15 @@ function ReminderBubble({
   onDismiss: () => void;
 }) {
   return (
-    <div className="pointer-events-auto flex items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)]">
-      <span
-        className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary"
-        aria-hidden
-      >
-        <Bell size={14} />
+    <div className="toast-card pointer-events-auto flex items-start gap-2.5 rounded-lg border border-border bg-card p-3 shadow-e2">
+      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-orange-100 text-orange-800" aria-hidden>
+        <IconBell width={14} height={14} />
       </span>
 
-      <Link
-        href="/my/reminders"
-        className="flex min-w-0 flex-1 flex-col gap-0.5"
-      >
-        <span className="truncate font-display text-[0.95rem] font-semibold leading-tight tracking-[-0.01em]">
-          {reminder.title}
-        </span>
-        {reminder.body && (
-          <span className="truncate text-[0.82rem] text-muted-foreground">
-            {reminder.body}
-          </span>
-        )}
-        <span className="mt-0.5 font-mono text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground">
+      <Link href="/my/reminders" className="flex min-w-0 flex-1 flex-col gap-0.5 no-underline outline-none">
+        <span className="truncate text-sm font-semibold text-foreground">{reminder.title}</span>
+        {reminder.body && <span className="truncate text-xs text-fg-2">{reminder.body}</span>}
+        <span className="mt-0.5 text-2xs text-fg-3">
           {reminder.isSelfAuthored ? "Ty sobie" : `od ${reminder.creatorName}`}
         </span>
       </Link>
@@ -165,9 +153,9 @@ function ReminderBubble({
           type="submit"
           aria-label="Schowaj"
           title="Schowaj (zostaje na liście)"
-          className="grid h-6 w-6 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="grid size-7 shrink-0 place-items-center rounded-md text-n-500 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
         >
-          <X size={12} />
+          <IconClose width={12} height={12} />
         </button>
       </form>
     </div>

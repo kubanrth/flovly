@@ -10,9 +10,15 @@ import {
 import { workspacePl } from "@/lib/pluralize";
 import { AppShell } from "@/components/layout/app-shell";
 
-export default async function WorkspacesPage() {
+export default async function WorkspacesPage({
+  searchParams,
+}: {
+  // `?new=1` — wejście z menu „Utwórz" w top barze (SHELL-API).
+  searchParams: Promise<{ new?: string }>;
+}) {
   const session = await auth();
   const user = session!.user;
+  const { new: openNew } = await searchParams;
 
   // Honour user-set drag-and-drop order; fall back to createdAt for fresh rows.
   const memberships = await db.workspaceMembership.findMany({
@@ -41,34 +47,21 @@ export default async function WorkspacesPage() {
 
   return (
     <AppShell>
-      <div className="mb-10 flex flex-col gap-3">
-        <span className="eyebrow">Twoje przestrzenie</span>
-        <h1 className="font-display text-[2.4rem] font-bold leading-[1.05] tracking-[-0.03em]">
-          Cześć, {user.name?.split(" ")[0] ?? "kolego"}.
-        </h1>
-        <p className="max-w-[52ch] text-[0.98rem] leading-[1.6] text-muted-foreground">
-          Masz {memberships.length} {workspacePl(memberships.length)}. Wybierz
-          jedną, żeby kontynuować, albo utwórz nową. Złap za uchwyt po lewej i
-          przeciągnij żeby zmienić kolejność.
-        </p>
-      </div>
+      <div className="flex flex-col gap-4">
+        <header className="flex items-center gap-2.5">
+          <h1 className="text-xl font-semibold tracking-[-0.3px]">Przestrzenie</h1>
+          <span className="mt-1.5 text-xs text-fg-2">
+            {memberships.length} {workspacePl(memberships.length)}
+          </span>
+          <span className="flex-1" />
+          <CreateWorkspaceDialog defaultOpen={openNew === "1"} />
+        </header>
 
-      <WorkspacesLayoutToggle
-        grid={
-          <div className="flex flex-col gap-5">
-            <SortableWorkspacesGrid rows={rows} />
-            <CreateWorkspaceDialog />
-          </div>
-        }
-        list={
-          <div className="flex flex-col gap-4">
-            <SortableWorkspacesList rows={rows} />
-            <div className="grid max-w-md">
-              <CreateWorkspaceDialog />
-            </div>
-          </div>
-        }
-      />
+        <WorkspacesLayoutToggle
+          grid={<SortableWorkspacesGrid rows={rows} />}
+          list={<SortableWorkspacesList rows={rows} />}
+        />
+      </div>
     </AppShell>
   );
 }

@@ -37,18 +37,15 @@ export default async function WorkspaceCalendarPage({
   if (!workspace) return null;
 
   return (
-    <div className="flex flex-col gap-4 p-6">
-      <div className="flex flex-col gap-1">
-        <span className="eyebrow">{workspace.name}</span>
-        <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
-          <span className="">Kalendarz</span> projektu.
-        </h1>
-        <p className="max-w-[60ch] text-[0.95rem] leading-[1.55] text-muted-foreground">
-          Wszystkie zadania workspace&apos;u + niestandardowe wydarzenia
-          (spotkania, deadliny, off-task work). Każdy członek może
-          tworzyć wydarzenia.
-        </p>
-      </div>
+    <div className="flex flex-col gap-4">
+      <header className="flex items-center gap-2.5">
+        <h1 className="text-xl font-semibold tracking-[-0.3px]">Kalendarz przestrzeni</h1>
+        <span className="mt-1.5 truncate text-xs text-fg-2">{workspace.name}</span>
+      </header>
+      <p className="max-w-[80ch] text-xs text-fg-2">
+        Wszystkie zadania przestrzeni plus własne wydarzenia (spotkania, terminy, praca poza
+        zadaniami). Wydarzenia może tworzyć każdy członek.
+      </p>
 
       <WorkspaceCalendar
         workspaceId={workspaceId}

@@ -2,8 +2,8 @@
 // `@/` alias that lib/db.ts needs). Makes the seed data deterministic so specs
 // stay order- and time-independent:
 //   1. clears persisted view config (filters/groupBy/widths) on the seed board,
-//   2. parks 4 admin-assigned tasks in the my-tasks buckets (overdue / today /
-//      upcoming / no due date), all in a non-done status column,
+//   2. parks 4 admin-assigned tasks in the my-tasks buckets (po terminie / ten
+//      tydzień / później / bez terminu), all in a non-done status column,
 //   3. enables every board view on the demo workspace,
 //   4. soft-deletes boards and tasks left behind by earlier runs.
 // A bare tsx subprocess doesn't get Next.js's .env loading.
@@ -40,9 +40,9 @@ void (async () => {
   const open = board.statusColumns[0]!.id;
   const now = Date.now();
   const stops: (Date | null)[] = [
-    new Date(now - 2 * DAY), // Zaległe
-    new Date(now + 60_000), // Na dziś (never goes stale mid-run)
-    new Date(now + 5 * DAY), // Nadchodzące
+    new Date(now - 2 * DAY), // Po terminie
+    new Date(now + 60_000), // Ten tydzień (never goes stale mid-run)
+    new Date(now + 5 * DAY), // Ten tydzień / Później (zależnie od dnia tygodnia)
     null, // Bez terminu
   ];
   // Reuse existing tasks instead of creating fixtures — keeps the board clean

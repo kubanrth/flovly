@@ -25,7 +25,10 @@ export default async function WorkspaceLayout({
 
   return (
     <>
-      <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden">{children}</div>
+      {/* Board views keep the horizontal clip (wide tables/timelines); the
+          overview page must not have it — it cancels the RouteFrame padding
+          with negative margins to go full-bleed (header/tabs/footer strips). */}
+      <div className="flex min-w-0 flex-1 flex-col [&:has([data-ui=board-header])]:overflow-x-hidden">{children}</div>
       {modal}
       <CzesiekFab workspaceId={workspace.id} />
     </>

@@ -1,17 +1,10 @@
 import type { Prisma } from "@/lib/generated/prisma/client";
-import { makeIsDone } from "@/components/board/done-status";
-import { CheckSquare, Filter } from "lucide-react";
+import { doneColumnIds, makeIsDone } from "@/components/board/done-status";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { taskPl } from "@/lib/pluralize";
-import { FiltersBar, type SortMode } from "@/components/my-tasks/filters-bar";
-import { AppShell } from "@/components/layout/app-shell";
-import {
-  HotkeyTaskList,
-  type TaskListRow,
-  type TaskListSection,
-} from "@/components/my-tasks/hotkey-task-list";
-import { EmptyState } from "@/components/ui/empty-state";
+import type { TaskPriorityValue } from "@/lib/task-priority";
+import type { MyTaskRow, SortMode } from "@/components/my-tasks/grouping";
+import { MyTasksView, type BoardOption } from "@/components/my-tasks/my-tasks-view";
 
 interface MyTasksSearchParams {
   search?: string;
@@ -73,8 +66,8 @@ async function loadAssignments(
       task: {
         include: {
           workspace: { select: { id: true, name: true, slug: true } },
-          // statusColumns needed so the inline StatusPicker in the row can change task status.
-          // F12-K91: `order` dorzucone żeby wykryć "Done" (= last status column per board).
+          // statusColumns: „ukończone” wg wspólnej reguły (done-status.ts) —
+          // stąd też kolumna, w którą ☐ przenosi zadanie.
           board: {
             select: {
               id: true,
@@ -86,7 +79,6 @@ async function loadAssignments(
             },
           },
           statusColumn: { select: { id: true, name: true, colorHex: true, order: true } },
-          tags: { include: { tag: true } },
           // For "already-assigned" highlight in the assign-hotkey popup.
           assignees: { select: { userId: true } },
         },
@@ -94,8 +86,6 @@ async function loadAssignments(
     },
   });
 }
-
-type Assignment = Awaited<ReturnType<typeof loadAssignments>>[number];
 
 export default async function MyTasksPage({
   searchParams,
@@ -129,7 +119,6 @@ export default async function MyTasksPage({
       select: { id: true, name: true, email: true },
     });
   }
-  const viewingSelf = !viewedUser;
   const userId = viewedUser?.id ?? currentUserId;
 
   const filters = {
@@ -143,7 +132,7 @@ export default async function MyTasksPage({
 
   const [assignments, boardOptions, userWorkspaces] = await Promise.all([
     loadAssignments(userId, filters),
-    // Dedupe boards for the filter pills; same alive-only filter as loadAssignments.
+    // Dedupe boards for the filter list; same alive-only filter as loadAssignments.
     db.taskAssignee.findMany({
       where: {
         userId,
@@ -187,7 +176,7 @@ export default async function MyTasksPage({
     (a.name ?? a.email).localeCompare(b.name ?? b.email),
   );
 
-  const boardMap = new Map<string, { id: string; name: string; workspaceName: string }>();
+  const boardMap = new Map<string, BoardOption>();
   for (const a of boardOptions) {
     if (!boardMap.has(a.task.boardId)) {
       boardMap.set(a.task.boardId, {
@@ -201,147 +190,37 @@ export default async function MyTasksPage({
     a.workspaceName.localeCompare(b.workspaceName) || a.name.localeCompare(b.name),
   );
 
-  // F12-K91: pomiń tasks oznaczone jako Done. Heurystyka: task.statusColumn.order
-  // == MAX(board.statusColumns.order) → ostatnia kolumna per board to "Done"
-  // (konwencja: Do zrobienia → W trakcie → Testy → Done). Schema nie ma flagi
-  // isDone — bez tej heurystyki "zakończone" trafiały do "Zaległe" (gdy stopAt
-  // w przeszłości), co klient wprost zgłosił jako bug.
-  // Name check first: boards where someone appended a column AFTER "Done"
-  // (Done:3, FAZA-2030:4, test:5) broke the position-only heuristic and pushed
-  // finished tasks back into "Zaległe".
-  const isTaskDone = (a: (typeof assignments)[number]): boolean =>
-    makeIsDone(a.task.board.statusColumns)(a.task.statusColumn?.id ?? null);
-
-  const active = assignments.filter((a) => a.task.workspace && !isTaskDone(a));
-
-  // Bucket only on default sort with no filters; custom sort = flat list.
-  const showBuckets = filters.sort === "updatedDesc" && filters.search === "" && filters.boardIds.length === 0;
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const todayEnd = todayStart + 24 * 60 * 60 * 1000;
-
-  const buckets: Record<"overdue" | "today" | "upcoming" | "nodate", Assignment[]> = {
-    overdue: [],
-    today: [],
-    upcoming: [],
-    nodate: [],
-  };
-  for (const a of active) {
-    const d = a.task.stopAt?.getTime();
-    if (!d) buckets.nodate.push(a);
-    else if (d < todayStart) buckets.overdue.push(a);
-    else if (d < todayEnd) buckets.today.push(a);
-    else buckets.upcoming.push(a);
-  }
-
-  const totalCount = active.length;
-
-  const toRow = (a: Assignment): TaskListRow => ({
-    id: a.task.id,
-    title: a.task.title,
-    workspaceId: a.task.workspace.id,
-    // boardId + boardStatusColumns feed the inline StatusPicker; statusColumnId is selection.
-    boardId: a.task.board.id,
-    statusColumnId: a.task.statusColumn?.id ?? null,
-    boardStatusColumns: a.task.board.statusColumns.map((s) => ({
-      id: s.id,
-      name: s.name,
-      colorHex: s.colorHex,
-    })),
-    workspaceName: a.task.workspace.name,
-    boardName: a.task.board.name,
-    status: a.task.statusColumn
-      ? { name: a.task.statusColumn.name, colorHex: a.task.statusColumn.colorHex }
-      : null,
-    tags: a.task.tags.map((t) => ({
-      id: t.tag.id,
-      name: t.tag.name,
-      colorHex: t.tag.colorHex,
-    })),
-    stopAt: a.task.stopAt ? a.task.stopAt.toISOString() : null,
-    assigneeIds: a.task.assignees.map((x) => x.userId),
-  });
-
-  const sections: TaskListSection[] = showBuckets
-    ? [
-        { key: "overdue", label: "Zaległe", accent: "destructive", rows: buckets.overdue.map(toRow) },
-        { key: "today", label: "Na dziś", accent: "primary", rows: buckets.today.map(toRow) },
-        { key: "upcoming", label: "Nadchodzące", accent: "muted", rows: buckets.upcoming.map(toRow) },
-        { key: "nodate", label: "Bez terminu", accent: "muted", rows: buckets.nodate.map(toRow) },
-      ]
-    : [{ key: "flat", label: "Wszystkie", accent: "none", rows: active.map(toRow) }];
+  // „Ukończone” = wspólna reguła z components/board/done-status.ts (nazwa kolumny,
+  // a dopiero potem ostatnia kolumna) — bez niej zamknięte zadania lądowały
+  // w „Po terminie”. Ta sama funkcja daje kolumnę docelową dla ☐ w wierszu.
+  const rows: MyTaskRow[] = assignments
+    .filter((a) => a.task.workspace && !makeIsDone(a.task.board.statusColumns)(a.task.statusColumn?.id ?? null))
+    .map((a) => {
+      const done = [...doneColumnIds(a.task.board.statusColumns)];
+      return {
+        id: a.task.id,
+        displayId: a.task.displayId,
+        title: a.task.title,
+        workspaceId: a.task.workspace.id,
+        boardId: a.task.board.id,
+        boardName: a.task.board.name,
+        statusName: a.task.statusColumn?.name ?? null,
+        statusColorHex: a.task.statusColumn?.colorHex ?? null,
+        priority: a.task.priority as TaskPriorityValue,
+        stopAt: a.task.stopAt ? a.task.stopAt.toISOString() : null,
+        doneColumnId: done[0] ?? null,
+        assigneeIds: a.task.assignees.map((x) => x.userId),
+      };
+    });
 
   return (
-    <AppShell>
-      <div className="flex flex-col gap-8">
-        <div className="flex flex-col gap-2">
-          {viewingSelf ? (
-            <>
-              <span className="eyebrow">Zadania dla Ciebie</span>
-              <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
-                Twoja lista. <span className="">{totalCount}</span>{" "}
-                {taskPl(totalCount)}.
-              </h1>
-              <p className="max-w-[60ch] text-[0.95rem] leading-[1.55] text-muted-foreground">
-                Wszystko, gdzie Ty jesteś assignee. Najedź na zadanie i wciśnij{" "}
-                <kbd className="rounded-sm border border-border bg-muted px-1 text-[0.7rem]">M</kbd>{" "}
-                aby przypisać osobę.
-              </p>
-            </>
-          ) : (
-            <>
-              <a
-                href="/profile"
-                className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                ← wróć do dashboardu
-              </a>
-              <span className="eyebrow">Zadania pracownika</span>
-              <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
-                <span className="">
-                  {viewedUser?.name ?? viewedUser?.email}
-                </span>
-                . <span className="text-foreground">{totalCount}</span>{" "}
-                {taskPl(totalCount)}.
-              </h1>
-              <p className="max-w-[60ch] text-[0.95rem] leading-[1.55] text-muted-foreground">
-                Lista zadań przypisanych do tej osoby ze wspólnych workspace&apos;ów.
-                Widzisz to bo masz z nią dzielony workspace.
-              </p>
-            </>
-          )}
-        </div>
-
-        <FiltersBar
-          boards={boards}
-          initialSearch={filters.search}
-          initialBoardIds={filters.boardIds}
-          initialSort={filters.sort}
-        />
-
-        <HotkeyTaskList
-          members={allMembers}
-          sections={sections}
-          emptyState={
-            <div className="rounded-xl border border-dashed border-border">
-              {filters.search || filters.boardIds.length > 0 ? (
-                <EmptyState
-                  icon={Filter}
-                  title="Nic nie pasuje do filtrów"
-                  description="Spróbuj wyczyścić filtry albo zmienić wyszukiwane słowo."
-                  tone="muted"
-                />
-              ) : (
-                <EmptyState
-                  icon={CheckSquare}
-                  title="Nikt Cię nie przypisał"
-                  description="Jak ktoś przypisze Cię do zadania, pojawi się tutaj."
-                />
-              )}
-            </div>
-          }
-        />
-      </div>
-    </AppShell>
+    <MyTasksView
+      rows={rows}
+      boards={boards}
+      members={allMembers}
+      nowIso={new Date().toISOString()}
+      filters={filters}
+      viewedUserName={viewedUser ? (viewedUser.name ?? viewedUser.email) : null}
+    />
   );
 }

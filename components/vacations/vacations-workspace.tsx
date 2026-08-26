@@ -1,7 +1,9 @@
 "use client";
 
-import { useActionState, startTransition, useState } from "react";
-import { Check, Plane, ShieldCheck, X } from "lucide-react";
+// E4 „Urlopy” — kafle limitu/akceptacji/nieobecnych, grafik zespołu,
+// wnioski do akceptacji i historia. Logika dat: ./leave.ts.
+
+import { useState, type ReactNode } from "react";
 import {
   approveVacationRequestAction,
   cancelVacationRequestAction,
@@ -9,27 +11,37 @@ import {
   rejectVacationRequestAction,
   type VacationFormState,
 } from "@/app/(app)/vacations/actions";
-import {
-  CalendarMonthGrid,
-  type CalendarEvent,
-} from "@/components/my/calendar/month-grid";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Chip, type ChipHue } from "@/components/ui/chip";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { IconPlus, IconWarning } from "@/components/ui/icons";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { plPlural } from "@/lib/pluralize";
+import { cn } from "@/lib/utils";
+import { coversDay, monthSpan, overlaps, workingDays } from "./leave";
 
-export interface ColleagueUpcoming {
+export interface TeamMember {
   id: string;
-  name: string | null;
-  email: string;
+  name: string;
   avatarUrl: string | null;
-  upcoming: {
-    id: string;
-    startDate: string;
-    endDate: string;
-    status: string;
-  }[];
 }
 
-export interface MyVacationRequest {
+export interface LeaveRequest {
   id: string;
+  requesterId: string;
+  requesterName: string;
+  requesterAvatarUrl: string | null;
   startDate: string;
   endDate: string;
   reason: string | null;
@@ -38,422 +50,423 @@ export interface MyVacationRequest {
   decidedAt: string | null;
 }
 
-export interface PendingForAdminItem {
-  id: string;
-  startDate: string;
-  endDate: string;
-  reason: string | null;
-  requester: {
-    id: string;
-    name: string | null;
-    email: string;
-    avatarUrl: string | null;
-  };
+export interface VacationWorkspaceProps {
+  currentUserId: string;
+  isSuperAdmin: boolean;
+  /** Server „today” (YYYY-MM-DD) — keeps SSR and the client on the same day. */
+  today: string;
+  /** Displayed month of the team schedule. */
+  year: number;
+  /** 0-based, like `Date#getMonth`. */
+  month: number;
+  limit: number;
+  used: number;
+  team: TeamMember[];
+  /** pending + approved leave of the team — schedule, absences, conflicts. */
+  active: LeaveRequest[];
+  /** Awaiting a decision: every request for a super-admin, own ones otherwise. */
+  pending: LeaveRequest[];
+  history: LeaveRequest[];
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("pl-PL", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+const MONTHS_GEN = ["stycznia", "lutego", "marca", "kwietnia", "maja", "czerwca", "lipca", "sierpnia", "września", "października", "listopada", "grudnia"];
+const MONTHS_NOM = ["styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec", "lipiec", "sierpień", "wrzesień", "październik", "listopad", "grudzień"];
+
+const requestPl = (n: number) => plPlural(n, "wniosek", "wnioski", "wniosków");
+const dayPl = (n: number) => plPlural(n, "dzień roboczy", "dni robocze", "dni roboczych");
+const waitPl = (n: number) => plPlural(n, "czeka", "czekają", "czeka");
+const approvedPl = (n: number) => plPlural(n, "zatwierdzony", "zatwierdzone", "zatwierdzonych");
+
+function dateParts(iso: string) {
+  const d = new Date(iso);
+  return { day: d.getUTCDate(), month: d.getUTCMonth() };
 }
 
-function statusBadge(status: string): { label: string; cls: string } {
-  switch (status) {
-    case "pending":
-      return {
-        label: "Oczekuje",
-        cls: "border-amber-500/40 bg-amber-500/10 text-amber-600 ",
-      };
-    case "approved":
-      return {
-        label: "Zatwierdzony",
-        cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 ",
-      };
-    case "rejected":
-      return {
-        label: "Odrzucony",
-        cls: "border-destructive/40 bg-destructive/10 text-destructive",
-      };
-    case "cancelled":
-      return {
-        label: "Anulowany",
-        cls: "border-border bg-muted/40 text-muted-foreground",
-      };
-    default:
-      return { label: status, cls: "border-border bg-muted/40 text-muted-foreground" };
-  }
+/** „22–26 września” / „1 września – 3 października” / „10 września”. */
+function rangeLabel(startIso: string, endIso: string): string {
+  const a = dateParts(startIso);
+  const b = dateParts(endIso);
+  if (a.month !== b.month) return `${a.day} ${MONTHS_GEN[a.month]} – ${b.day} ${MONTHS_GEN[b.month]}`;
+  if (a.day === b.day) return `${a.day} ${MONTHS_GEN[a.month]}`;
+  return `${a.day}–${b.day} ${MONTHS_GEN[a.month]}`;
+}
+
+function shortDate(iso: string): string {
+  const { day, month } = dateParts(iso);
+  return `${day} ${MONTHS_GEN[month].slice(0, 3)}`;
+}
+
+const STATUS: Record<string, { label: string; hue: ChipHue }> = {
+  pending: { label: "Czeka", hue: "yellow" },
+  approved: { label: "Zatwierdzony", hue: "green" },
+  rejected: { label: "Odrzucony", hue: "red" },
+  cancelled: { label: "Anulowany", hue: "gray" },
+};
+
+function SectionHeading({ children }: { children: ReactNode }) {
+  return (
+    <div className="mb-2 flex items-center gap-2">
+      <span className="eyebrow">{children}</span>
+      <span className="h-px flex-1 bg-border" />
+    </div>
+  );
+}
+
+function Tile({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex-1 rounded-lg border border-border bg-canvas px-3.5 py-3">
+      <div className="mb-0.5 text-2xs text-fg-3">{label}</div>
+      {children}
+    </div>
+  );
 }
 
 export function VacationWorkspace({
   currentUserId,
-  currentUserName,
   isSuperAdmin,
-  calendarEvents,
-  colleagues,
-  myRequests,
-  pendingForAdmin,
-}: {
-  currentUserId: string;
-  currentUserName: string;
-  isSuperAdmin: boolean;
-  // Vacation feed for the calendar block (own pending+approved + teammate approved).
-  calendarEvents: CalendarEvent[];
-  colleagues: ColleagueUpcoming[];
-  myRequests: MyVacationRequest[];
-  pendingForAdmin: PendingForAdminItem[];
-}) {
+  today,
+  year,
+  month,
+  limit,
+  used,
+  team,
+  active,
+  pending,
+  history,
+}: VacationWorkspaceProps) {
+  const remaining = Math.max(0, limit - used);
+  const absentToday = active.filter((r) => r.status === "approved" && coversDay(r, today));
+  const approvedCount = active.filter((r) => r.status === "approved").length;
+
   return (
-    <main className="flex-1 px-4 py-6 md:px-14 md:py-14">
-      <div className="mx-auto flex max-w-6xl flex-col gap-10">
-        <div className="flex flex-col gap-2">
-          <span className="eyebrow inline-flex items-center gap-1.5">
-            <Plane size={11} /> Urlopy
-          </span>
-          <h1 className="font-display text-[1.6rem] font-bold leading-[1.1] tracking-[-0.03em] md:text-[2rem]">
-            Cześć,{" "}
-            <span className="">{currentUserName.split(" ")[0]}</span>.
-          </h1>
-          <p className="text-[0.92rem] leading-[1.55] text-muted-foreground">
-            Składaj wnioski, sprawdź kto z zespołu ma zaplanowany urlop.
-            Wniosek leci do administratora; widoczny dla Ciebie i zespołu po
-            zatwierdzeniu.
-          </p>
-        </div>
-
-        <NewRequestForm />
-
-        {isSuperAdmin && pendingForAdmin.length > 0 && (
-          <AdminQueue items={pendingForAdmin} />
-        )}
-
-        <section className="flex flex-col gap-3">
-          <div className="flex items-baseline justify-between gap-3">
-            <div className="flex flex-col gap-1">
-              <span className="eyebrow">Kalendarz</span>
-              <h2 className="font-display text-[1.2rem] font-bold leading-[1.15] tracking-[-0.02em]">
-                Kto i kiedy
-              </h2>
-            </div>
-          </div>
-          <CalendarMonthGrid events={calendarEvents} />
-        </section>
-
-        <ColleaguesList colleagues={colleagues} currentUserId={currentUserId} />
-
-        <MyRequestsList items={myRequests} />
-      </div>
-    </main>
-  );
-}
-
-function NewRequestForm() {
-  const [state, formAction, pending] = useActionState<VacationFormState, FormData>(
-    createVacationRequestAction,
-    null,
-  );
-  return (
-    <section className="rounded-xl border border-border bg-card p-4 md:p-6">
-      <form
-        action={(fd) => startTransition(() => formAction(fd))}
-        className="flex flex-col gap-4"
-      >
-        <div className="flex flex-col gap-1">
-          <span className="eyebrow">Nowy wniosek</span>
-          <h2 className="font-display text-[1.2rem] font-bold leading-[1.15] tracking-[-0.02em]">
-            Złóż wniosek o urlop
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="flex flex-col gap-2">
-            <span className="eyebrow">Od *</span>
-            <DateTimePicker
-              name="startDate"
-              defaultValue={null}
-              dateOnly
-              placeholder="Wybierz datę startu"
-              label="Data startu urlopu"
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <span className="eyebrow">Do *</span>
-            <DateTimePicker
-              name="endDate"
-              defaultValue={null}
-              dateOnly
-              placeholder="Wybierz datę końca"
-              label="Data końca urlopu"
-            />
-          </div>
-          <label className="flex flex-col gap-2 md:col-span-1">
-            <span className="eyebrow">Powód (opcjonalnie)</span>
-            <input
-              name="reason"
-              type="text"
-              maxLength={500}
-              placeholder="np. wakacje rodzinne"
-              className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
-            />
-          </label>
-        </div>
-
-        {state && !state.ok && (
-          <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-[0.86rem] text-destructive">
-            {state.error}
-          </p>
-        )}
-        {state?.ok && (
-          <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[0.86rem] text-emerald-700">
-            {state.message}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={pending}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 font-sans text-[0.95rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <Plane size={15} /> Złóż wniosek o urlop
-        </button>
-      </form>
-    </section>
-  );
-}
-
-function AdminQueue({ items }: { items: PendingForAdminItem[] }) {
-  return (
-    <section className="flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4 md:p-6">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="eyebrow inline-flex items-center gap-1.5 text-primary">
-          <ShieldCheck size={11} /> Wnioski oczekujące
+    <div
+      data-ui="vacations"
+      className="flex h-[calc(100dvh-var(--topbar))] flex-col bg-card"
+    >
+      <div className="flex shrink-0 items-center gap-2.5 px-8 pt-4 max-md:px-4">
+        <h1 className="text-xl font-semibold tracking-[-0.3px]">Urlopy</h1>
+        <span className="mt-1.5 text-xs text-fg-2">
+          {MONTHS_NOM[month]} {year}
         </span>
-        <span className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
-          {items.length}
-        </span>
+        <span className="flex-1" />
+        <NewRequestDialog />
       </div>
-      <ul className="flex flex-col gap-2">
-        {items.map((it) => (
-          <li
-            key={it.id}
-            className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card px-3 py-2"
-          >
-            <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.6rem] font-bold text-white">
-              {it.requester.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={it.requester.avatarUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                (it.requester.name ?? it.requester.email).slice(0, 2).toUpperCase()
-              )}
+
+      <div className="flex shrink-0 gap-3 px-8 py-3.5 max-md:flex-col max-md:px-4">
+        <Tile label={`Twój limit ${year}`}>
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-mono text-lg font-semibold">{remaining} dni</span>
+            <span className="text-2xs text-fg-3">z {limit} pozostało</span>
+          </div>
+          <div className="mt-1.5 h-1 overflow-hidden rounded-[2px] bg-n-100">
+            <span
+              className="block h-1 bg-control-on"
+              style={{ width: `${limit > 0 ? Math.min(100, (used / limit) * 100) : 0}%` }}
+            />
+          </div>
+        </Tile>
+        <Tile label="Do akceptacji">
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-mono text-lg font-semibold text-orange-800">{pending.length}</span>
+            <span className="text-2xs text-fg-3">
+              {requestPl(pending.length)} {waitPl(pending.length)}{" "}
+              {isSuperAdmin ? "na Ciebie" : "na decyzję"}
             </span>
-            <div className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate font-display text-[0.9rem] font-semibold">
-                {it.requester.name ?? it.requester.email}
-              </span>
-              <span className="truncate font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground">
-                {formatDate(it.startDate)} → {formatDate(it.endDate)}
-                {it.reason ? ` · ${it.reason}` : ""}
-              </span>
-            </div>
-            <div className="flex shrink-0 items-center gap-1.5">
-              <form
-                action={(fd) =>
-                  startTransition(() => approveVacationRequestAction(fd))
-                }
-                className="m-0"
-              >
-                <input type="hidden" name="id" value={it.id} />
-                <button
-                  type="submit"
-                  title="Zatwierdź wniosek"
-                  className="inline-flex h-8 items-center gap-1 rounded-md bg-emerald-500 px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-90"
-                >
-                  <Check size={12} /> Zatwierdź
-                </button>
-              </form>
-              <form
-                action={(fd) =>
-                  startTransition(() => rejectVacationRequestAction(fd))
-                }
-                className="m-0"
-              >
-                <input type="hidden" name="id" value={it.id} />
-                <button
-                  type="submit"
-                  title="Odrzuć wniosek"
-                  className="inline-flex h-8 items-center gap-1 rounded-md border border-border bg-card px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
-                >
-                  <X size={12} /> Odrzuć
-                </button>
-              </form>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function ColleaguesList({
-  colleagues,
-  currentUserId,
-}: {
-  colleagues: ColleagueUpcoming[];
-  currentUserId: string;
-}) {
-  const [showAll, setShowAll] = useState(false);
-  const onLeave = colleagues.filter((c) => c.upcoming.length > 0);
-  const idle = colleagues.filter((c) => c.upcoming.length === 0);
-  const visible = showAll ? colleagues : onLeave;
-
-  return (
-    <section className="flex flex-col gap-3">
-      <div className="flex items-baseline justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <span className="eyebrow">Zespół</span>
-          <h2 className="font-display text-[1.2rem] font-bold leading-[1.15] tracking-[-0.02em]">
-            Kto ma zaplanowany urlop (90 dni)
-          </h2>
-        </div>
-        <button
-          type="button"
-          onClick={() => setShowAll((v) => !v)}
-          className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          {showAll ? `Tylko z urlopem (${onLeave.length})` : `Pokaż wszystkich (${colleagues.length})`}
-        </button>
+          </div>
+        </Tile>
+        <Tile label="Nieobecni dziś">
+          {absentToday.length === 0 ? (
+            <div className="mt-0.5 text-sm text-fg-2">nikt — pełny skład</div>
+          ) : (
+            <ul className="mt-0.5 flex flex-wrap items-center gap-1.5">
+              {absentToday.map((r) => (
+                <li key={r.id} className="flex items-center gap-1.5">
+                  <Avatar name={r.requesterName} src={r.requesterAvatarUrl} size={20} />
+                  <span className="text-xs">{r.requesterName}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Tile>
       </div>
 
-      {visible.length === 0 ? (
-        <p className="rounded-md border border-dashed border-border bg-card px-4 py-6 text-center text-[0.86rem] text-muted-foreground">
-          Nikt z zespołu nie ma zaplanowanego urlopu w najbliższych 90 dniach.
-        </p>
-      ) : (
-        <ul className="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
-          {visible.map((c) => (
-            <li
-              key={c.id}
-              className="flex items-center gap-3 border-b border-border px-3 py-2.5 last:border-b-0"
-            >
-              <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.62rem] font-bold text-white">
-                {c.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.avatarUrl} alt="" width={36} height={36} className="h-full w-full object-cover" />
-                ) : (
-                  (c.name ?? c.email).slice(0, 2).toUpperCase()
-                )}
-              </span>
-              <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate font-display text-[0.92rem] font-semibold tracking-[-0.01em]">
-                  {c.name ?? c.email}
-                  {c.id === currentUserId && (
-                    <span className="ml-2 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
-                      to Ty
+      <TeamSchedule team={team} active={active} year={year} month={month} />
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-8 pt-2 pb-5 max-md:px-4">
+        <SectionHeading>Wnioski do akceptacji</SectionHeading>
+        {pending.length === 0 ? (
+          <p className="mb-3 rounded-lg border border-dashed border-input-border px-3.5 py-4 text-center text-xs text-fg-2">
+            Brak wniosków czekających na decyzję.
+          </p>
+        ) : (
+          <ul className="mb-3 overflow-hidden rounded-lg border border-border">
+            {pending.map((r) => (
+              <PendingRow
+                key={r.id}
+                request={r}
+                conflict={active.find((o) => o.id !== r.id && o.requesterId !== r.requesterId && overlaps(o, r)) ?? null}
+                canDecide={isSuperAdmin}
+                isMine={r.requesterId === currentUserId}
+              />
+            ))}
+          </ul>
+        )}
+
+        <SectionHeading>Historia</SectionHeading>
+        {history.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-input-border px-3.5 py-4 text-center text-xs text-fg-2">
+            Brak rozpatrzonych wniosków.
+          </p>
+        ) : (
+          <ul className="overflow-hidden rounded-lg border border-border">
+            {history.map((r) => {
+              const status = STATUS[r.status] ?? STATUS.pending!;
+              return (
+                <li
+                  key={r.id}
+                  className="flex h-10 items-center gap-3 border-b border-n-100 px-3.5 last:border-b-0 max-md:h-auto max-md:flex-wrap max-md:py-2"
+                >
+                  <Avatar name={r.requesterName} src={r.requesterAvatarUrl} size={24} />
+                  <span className="min-w-0 flex-1 truncate text-xs">
+                    {r.requesterName} · {rangeLabel(r.startDate, r.endDate)} · {workingDays(r)} {dayPl(workingDays(r))}
+                  </span>
+                  <Chip hue={status.hue} dot size="sm">{status.label}</Chip>
+                  {r.decidedByName && r.decidedAt && (
+                    <span className="font-mono text-[10px] text-fg-3">
+                      akcept.: {r.decidedByName} · {shortDate(r.decidedAt)}
                     </span>
                   )}
-                </span>
-                {c.upcoming.length === 0 ? (
-                  <span className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground/70">
-                    brak zaplanowanego urlopu
-                  </span>
-                ) : (
-                  <ul className="mt-1 flex flex-wrap gap-1.5">
-                    {c.upcoming.map((u) => {
-                      const badge = statusBadge(u.status);
-                      return (
-                        <li key={u.id}>
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.12em] ${badge.cls}`}
-                          >
-                            {formatDate(u.startDate)} → {formatDate(u.endDate)}
-                            <span className="opacity-70">· {badge.label}</span>
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
 
-      {!showAll && idle.length > 0 && (
-        <p className="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground/70">
-          {idle.length} osób bez zaplanowanego urlopu (ukryte)
-        </p>
-      )}
-    </section>
+      <div className="flex h-8 shrink-0 items-center border-t border-border bg-canvas px-8 max-md:px-4">
+        <span className="truncate font-mono text-2xs text-fg-2">
+          {pending.length} {requestPl(pending.length)} {waitPl(pending.length)} · {approvedCount}{" "}
+          {approvedPl(approvedCount)} · limit zespołu OK
+        </span>
+      </div>
+    </div>
   );
 }
 
-function MyRequestsList({ items }: { items: MyVacationRequest[] }) {
-  if (items.length === 0) {
-    return null;
-  }
+// ── Grafik zespołu ──────────────────────────────────────────────────────────
+
+function TeamSchedule({
+  team,
+  active,
+  year,
+  month,
+}: {
+  team: TeamMember[];
+  active: LeaveRequest[];
+  year: number;
+  month: number;
+}) {
+  const days = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const buckets = [
+    { label: "1–7", days: 7 },
+    { label: "8–14", days: 7 },
+    { label: "15–21", days: 7 },
+    { label: `22–${days}`, days: days - 21 },
+  ];
+  const rows = team
+    .map((m) => ({
+      member: m,
+      spans: active
+        .filter((r) => r.requesterId === m.id)
+        .map((r) => ({ request: r, span: monthSpan(r, year, month) }))
+        .flatMap((x) => (x.span ? [{ request: x.request, ...x.span }] : [])),
+    }))
+    // Osoby z urlopem w tym miesiącu idą pierwsze; grafik ma stałą wysokość,
+    // więc bierzemy maks. 8 wierszy — reszta jest w „Historii" i we wnioskach.
+    .sort((a, b) => b.spans.length - a.spans.length);
+  const visible = rows.slice(0, 8);
+  const hidden = rows.length - visible.length;
+
   return (
-    <section className="flex flex-col gap-3">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="eyebrow">Moje wnioski</span>
-        <span className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
-          {items.length}
-        </span>
-      </div>
-      <ul className="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
-        {items.map((it) => {
-          const badge = statusBadge(it.status);
-          return (
-            <li
-              key={it.id}
-              className="flex flex-wrap items-center gap-3 border-b border-border px-3 py-2.5 last:border-b-0"
+    <div className="shrink-0 px-8 pb-2 max-md:px-4">
+      <SectionHeading>Grafik zespołu — {MONTHS_NOM[month]}</SectionHeading>
+      <div className="overflow-hidden rounded-sm border border-border">
+        <div className="flex h-7 border-b border-border bg-table-header">
+          <span className="eyebrow flex w-[140px] shrink-0 items-center border-r border-table-grid px-3 text-fg-2">
+            Osoba
+          </span>
+          {buckets.map((b) => (
+            <span
+              key={b.label}
+              style={{ flexGrow: b.days }}
+              className="flex basis-0 items-center justify-center border-r border-table-grid font-mono text-[10px] text-fg-2 last:border-r-0"
             >
-              <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate font-display text-[0.9rem] font-semibold tracking-[-0.01em]">
-                  {formatDate(it.startDate)} → {formatDate(it.endDate)}
-                </span>
-                {it.reason && (
-                  <span className="truncate text-[0.82rem] text-muted-foreground">
-                    {it.reason}
-                  </span>
-                )}
-                {it.decidedByName && it.decidedAt && (
-                  <span className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground/70">
-                    Decyzja: {it.decidedByName} · {formatDate(it.decidedAt)}
-                  </span>
-                )}
-              </div>
-              <span
-                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[0.6rem] uppercase tracking-[0.14em] ${badge.cls}`}
-              >
-                {badge.label}
+              {b.label}
+            </span>
+          ))}
+        </div>
+        {visible.length === 0 ? (
+          <p className="px-3 py-3 text-xs text-fg-2">Brak osób w Twoich przestrzeniach.</p>
+        ) : (
+          visible.map(({ member, spans }) => (
+            <div key={member.id} className="flex h-9 border-b border-table-grid last:border-b-0">
+              <span className="flex w-[140px] shrink-0 items-center gap-2 border-r border-table-grid px-3">
+                <Avatar name={member.name} src={member.avatarUrl} size={22} />
+                <span className="truncate text-xs font-medium">{member.name}</span>
               </span>
-              {it.status === "pending" && (
-                <form
-                  action={(fd) =>
-                    startTransition(() => cancelVacationRequestAction(fd))
-                  }
-                  className="m-0"
-                >
-                  <input type="hidden" name="id" value={it.id} />
-                  <button
-                    type="submit"
-                    title="Anuluj wniosek"
-                    className="inline-flex h-7 items-center rounded-md border border-border bg-card px-2.5 font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
+              <span className="relative flex-1">
+                {[7, 14, 21].map((d) => (
+                  <span key={d} className="absolute inset-y-0 w-px bg-table-grid" style={{ left: `${(d / days) * 100}%` }} />
+                ))}
+                {spans.map((s) => (
+                  <span
+                    key={s.request.id}
+                    title={`${s.request.requesterName}: ${rangeLabel(s.request.startDate, s.request.endDate)}`}
+                    className={cn(
+                      "absolute top-2 flex h-5 items-center justify-center overflow-hidden rounded-sm border px-1 text-[10px] font-medium whitespace-nowrap",
+                      s.request.status === "approved"
+                        ? "border-success bg-chip-green-bg text-chip-green-fg"
+                        : "border-warning bg-chip-yellow-bg text-chip-yellow-fg",
+                    )}
+                    data-leave-status={s.request.status}
+                    style={{
+                      left: `${((s.startDay - 1) / days) * 100}%`,
+                      width: `${((s.endDay - s.startDay + 1) / days) * 100}%`,
+                    }}
                   >
-                    Anuluj
-                  </button>
-                </form>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </section>
+                    {s.startDay === s.endDay ? s.startDay : `${s.startDay}–${s.endDay}`}
+                    {" · "}
+                    {s.request.status === "approved" ? "zatw." : "czeka"}
+                  </span>
+                ))}
+              </span>
+            </div>
+          ))
+        )}
+      </div>
+      {hidden > 0 && (
+        <p className="mt-1 text-2xs text-fg-3">+{hidden} {hidden === 1 ? "osoba" : "osób"} bez urlopu w tym miesiącu</p>
+      )}
+    </div>
+  );
+}
+
+// ── Wniosek czekający na decyzję ────────────────────────────────────────────
+
+function PendingRow({
+  request,
+  conflict,
+  canDecide,
+  isMine,
+}: {
+  request: LeaveRequest;
+  conflict: LeaveRequest | null;
+  canDecide: boolean;
+  isMine: boolean;
+}) {
+  const days = workingDays(request);
+  return (
+    <li className="flex min-h-[52px] items-center gap-3 border-b border-n-100 bg-card px-3.5 py-2 last:border-b-0 max-md:flex-wrap">
+      <Avatar name={request.requesterName} src={request.requesterAvatarUrl} size={28} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-medium">{request.requesterName} — wniosek urlopowy</span>
+        <span className="block truncate text-xs text-fg-2">
+          {rangeLabel(request.startDate, request.endDate)} · {days} {dayPl(days)}
+          {request.reason ? ` · „${request.reason}”` : ""}
+          {conflict ? ` · konflikt: ${conflict.requesterName}, ${rangeLabel(conflict.startDate, conflict.endDate)}` : ""}
+        </span>
+      </span>
+      <Chip hue="yellow" dot size="md" className="shrink-0">Czeka</Chip>
+      {conflict && (
+        <Chip hue="red" size="md" className="shrink-0">
+          <IconWarning width={10} height={10} />
+          Konflikt
+        </Chip>
+      )}
+      {canDecide && (
+        <>
+          <form action={approveVacationRequestAction}>
+            <input type="hidden" name="id" value={request.id} />
+            <Button type="submit" size="sm">Zatwierdź</Button>
+          </form>
+          <form action={rejectVacationRequestAction}>
+            <input type="hidden" name="id" value={request.id} />
+            <Button type="submit" variant="secondary" size="sm" className="text-danger-text">Odrzuć</Button>
+          </form>
+        </>
+      )}
+      {isMine && (
+        <form action={cancelVacationRequestAction}>
+          <input type="hidden" name="id" value={request.id} />
+          <Button type="submit" variant="ghost" size="sm">Anuluj</Button>
+        </form>
+      )}
+    </li>
+  );
+}
+
+// ── Złóż wniosek ────────────────────────────────────────────────────────────
+
+function NewRequestDialog() {
+  const [open, setOpen] = useState(false);
+  const [state, setState] = useState<VacationFormState>(null);
+  const [pending, setPending] = useState(false);
+
+  async function submit(formData: FormData) {
+    setPending(true);
+    const result = await createVacationRequestAction(null, formData);
+    setPending(false);
+    setState(result);
+    if (result?.ok) setOpen(false);
+  }
+
+  return (
+    <>
+      <Button type="button" onClick={() => setOpen(true)}>
+        <IconPlus />
+        Złóż wniosek
+      </Button>
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (next) setState(null);
+        }}
+      >
+        <DialogContent size="md">
+        <form action={submit} className="flex min-h-0 flex-col">
+          <DialogHeader>
+            <DialogTitle>Złóż wniosek o urlop</DialogTitle>
+            <DialogDescription>Wniosek trafia do akceptacji administratora.</DialogDescription>
+          </DialogHeader>
+          <DialogBody className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-3 max-md:grid-cols-1">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-n-700">Od</span>
+                <DateTimePicker name="startDate" defaultValue={null} dateOnly placeholder="Wybierz datę startu" label="Data startu urlopu" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs font-medium text-n-700">Do</span>
+                <DateTimePicker name="endDate" defaultValue={null} dateOnly placeholder="Wybierz datę końca" label="Data końca urlopu" />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="vacation-reason">Powód (opcjonalnie)</Label>
+              <Input id="vacation-reason" name="reason" maxLength={500} placeholder="np. wyjazd rodzinny" />
+            </div>
+            {state && !state.ok && (
+              <p role="alert" className="rounded-md border border-danger bg-chip-red-bg px-3 py-2 text-xs text-danger-text">
+                {state.error}
+              </p>
+            )}
+          </DialogBody>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Anuluj</Button>
+            <Button type="submit" loading={pending} disabled={pending}>Wyślij wniosek</Button>
+          </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

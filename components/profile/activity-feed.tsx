@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, FileText, KanbanSquare, Layers, MessageCircle, Paperclip, UserPlus } from "lucide-react";
+import { IconBoards, IconComment, IconAttachment, IconFile, IconRecent, IconRoadmap, IconUsers } from "@/components/ui/icons";
 
 // F12-K98: account activity feed na /profile. Render entries z AuditLog
 // filtrowane po actorId === currentUser. Polymorphic — różne objectType
@@ -41,26 +41,27 @@ function actionLabel(action: string): string {
 }
 
 function actionIcon(objectType: string, action: string) {
-  if (action.includes("comment")) return <MessageCircle size={14} />;
-  if (action.includes("attachment")) return <Paperclip size={14} />;
-  if (action.includes("member")) return <UserPlus size={14} />;
+  const size = { width: 13, height: 13 };
+  if (action.includes("comment")) return <IconComment {...size} />;
+  if (action.includes("attachment")) return <IconAttachment {...size} />;
+  if (action.includes("member")) return <IconUsers {...size} />;
   switch (objectType.toLowerCase()) {
     case "task":
-      return <FileText size={14} />;
+      return <IconFile {...size} />;
     case "board":
-      return <KanbanSquare size={14} />;
+      return <IconBoards {...size} />;
     case "milestone":
-      return <Layers size={14} />;
+      return <IconRoadmap {...size} />;
     default:
-      return <Activity size={14} />;
+      return <IconRecent {...size} />;
   }
 }
 
 function actionAccent(action: string): string {
-  if (action.endsWith(".create")) return "text-emerald-500";
-  if (action.endsWith(".delete")) return "text-rose-500";
-  if (action.endsWith(".update")) return "text-amber-500";
-  return "text-primary";
+  if (action.endsWith(".create")) return "text-success-text";
+  if (action.endsWith(".delete")) return "text-danger-text";
+  if (action.endsWith(".update")) return "text-warning-text";
+  return "text-n-500";
 }
 
 // Object link — gdy mamy Task lub Board, kierujemy na konkretny widok.
@@ -93,7 +94,7 @@ function relTime(date: Date): string {
 export function ActivityFeed({ entries }: { entries: ActivityFeedEntry[] }) {
   if (entries.length === 0) {
     return (
-      <p className="text-[0.86rem] text-muted-foreground/80">
+      <p className="rounded-lg border border-dashed border-input-border px-3.5 py-4 text-center text-xs text-fg-2">
         Brak aktywności do wyświetlenia.
       </p>
     );
@@ -109,7 +110,7 @@ export function ActivityFeed({ entries }: { entries: ActivityFeedEntry[] }) {
             {/* Vertical timeline rail + dot anchor */}
             <div className="relative flex w-5 shrink-0 flex-col items-center">
               <span
-                className={`relative z-10 grid h-5 w-5 place-items-center rounded-full bg-card ring-2 ring-background ${actionAccent(entry.action)}`}
+                className={`relative z-10 grid size-5 place-items-center rounded-full bg-card ring-2 ring-background ${actionAccent(entry.action)}`}
               >
                 {actionIcon(entry.objectType, entry.action)}
               </span>
@@ -121,30 +122,26 @@ export function ActivityFeed({ entries }: { entries: ActivityFeedEntry[] }) {
               )}
             </div>
 
-            <div className="flex flex-1 flex-col gap-0.5 pb-4">
+            <div className="flex flex-1 flex-col gap-0.5 pb-3">
               <div className="flex flex-wrap items-baseline gap-1.5">
-                <span className="text-[0.86rem] font-medium text-foreground">
+                <span className="text-sm font-medium text-foreground">
                   {actionLabel(entry.action)}
                 </span>
                 {href ? (
                   <Link
                     href={href}
-                    className="font-mono text-[0.72rem] text-primary/80 transition-colors hover:text-primary"
+                    className="rounded-[2px] font-mono text-xs text-link no-underline outline-none hover:text-orange-800 hover:underline"
                   >
                     #{entry.objectId.slice(-6).toUpperCase()}
                   </Link>
                 ) : (
-                  <span className="font-mono text-[0.72rem] text-muted-foreground/60">
+                  <span className="font-mono text-xs text-fg-3">
                     #{entry.objectId.slice(-6).toUpperCase()}
                   </span>
                 )}
-                <span className="font-mono text-[0.66rem] uppercase tracking-[0.12em] text-muted-foreground">
-                  · {entry.workspaceName}
-                </span>
+                <span className="text-2xs text-fg-3">· {entry.workspaceName}</span>
               </div>
-              <span className="font-mono text-[0.68rem] text-muted-foreground/70">
-                {relTime(entry.createdAt)}
-              </span>
+              <span className="font-mono text-2xs text-fg-3">{relTime(entry.createdAt)}</span>
             </div>
           </li>
         );

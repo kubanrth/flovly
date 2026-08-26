@@ -48,7 +48,12 @@ export function Checkbox({ checked, indeterminate, onChange, onCheckedChange, on
         onChange?.({ currentTarget: { checked: next }, target: { checked: next } } as unknown as ChangeEvent<HTMLInputElement>);
       }}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-sm border-[1.5px] border-n-400 bg-card align-middle text-white outline-none hover:border-n-500",
+        // The visible box stays 14–20px, but the pseudo-element pushes the hit
+        // area out to at least 24px (WCAG 2.5.8 target size). Without it the
+        // control was a 16px tap target and screens had to swap in native
+        // inputs to pass their button-height audit.
+        "relative inline-flex shrink-0 items-center justify-center rounded-sm border-[1.5px] border-n-400 bg-card align-middle text-white outline-none hover:border-n-500",
+        "before:absolute before:left-1/2 before:top-1/2 before:size-6 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']",
         "data-checked:border-control-on data-checked:bg-control-on data-indeterminate:border-control-on data-indeterminate:bg-control-on",
         "data-disabled:border-n-200 data-disabled:bg-n-100 data-disabled:text-n-400",
         SIZE[size],

@@ -1,11 +1,14 @@
 "use client";
 
 import { useActionState, startTransition, useState, useEffect } from "react";
-import { Copy, Check } from "lucide-react";
-import {
-  inviteMemberAction,
-  type InviteState,
-} from "@/app/(app)/w/[workspaceId]/members/actions";
+import { inviteMemberAction, type InviteState } from "@/app/(app)/w/[workspaceId]/members/actions";
+import { Button } from "@/components/ui/button";
+import { IconCheck, IconCopy } from "@/components/ui/icons";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Segmented } from "@/components/ui/segmented";
+
+const SELECT = "h-8 rounded-sm border border-input-border bg-card px-2 text-sm outline-none hover:border-input-border-hover focus-visible:border-orange-500";
 
 export interface InviteFormBoard {
   id: string;
@@ -19,29 +22,21 @@ export function InviteForm({
 }: {
   workspaceId: string;
   // When boards is non-empty the form shows a scope toggle:
-  // "Cały workspace" vs "Konkretna tablica" (with a select). Empty array
+  // "Cała przestrzeń" vs "Konkretna tablica" (with a select). Empty array
   // hides the toggle entirely (back to legacy workspace-only invite).
   boards?: InviteFormBoard[];
   // Pre-select a board on mount + force scope = board (used from the
   // per-board members tab).
   defaultBoardId?: string;
 }) {
-  const [state, formAction, pending] = useActionState<InviteState, FormData>(
-    inviteMemberAction,
-    null,
-  );
-  const [scope, setScope] = useState<"workspace" | "board">(
-    defaultBoardId ? "board" : "workspace",
-  );
-  const [boardId, setBoardId] = useState<string>(
-    defaultBoardId ?? boards?.[0]?.id ?? "",
-  );
+  const [state, formAction, pending] = useActionState<InviteState, FormData>(inviteMemberAction, null);
+  const [scope, setScope] = useState<"workspace" | "board">(defaultBoardId ? "board" : "workspace");
+  const [boardId, setBoardId] = useState<string>(defaultBoardId ?? boards?.[0]?.id ?? "");
   const [copied, setCopied] = useState(false);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const fieldErrors = !state?.ok ? state?.fieldErrors : undefined;
   const showScopeToggle = (boards?.length ?? 0) > 0 && !defaultBoardId;
 
-  // Update inviteUrl when state changes
   useEffect(() => {
     if (state?.ok) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -69,54 +64,40 @@ export function InviteForm({
   return (
     <form
       action={(fd) => {
-        setInviteUrl(null); // Clear previous invite URL
+        setInviteUrl(null); // wyczyść poprzedni link
         startTransition(() => formAction(fd));
       }}
-      className="flex flex-col gap-5 rounded-xl border border-border bg-card p-6 shadow-[0_1px_2px_rgba(46,19,52,0.08)]"
+      className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4"
     >
       <input type="hidden" name="workspaceId" value={workspaceId} />
-      {/* Empty boardId = workspace scope; set value = board scope. The
-          server action distinguishes by presence. */}
-      <input
-        type="hidden"
-        name="boardId"
-        value={defaultBoardId ?? (scope === "board" ? boardId : "")}
-      />
+      {/* Pusty boardId = zakres przestrzeni; ustawiony = zakres tablicy.
+          Server action rozróżnia po obecności wartości. */}
+      <input type="hidden" name="boardId" value={defaultBoardId ?? (scope === "board" ? boardId : "")} />
 
-      <div className="flex flex-col gap-1.5">
-        <span className="eyebrow">Nowe zaproszenie</span>
-        <h3 className="font-display text-[1.2rem] font-bold leading-[1.2] tracking-[-0.02em]">
-          {defaultBoardId
-            ? "Zaproś osobę do tej tablicy"
-            : "Zaproś osobę do przestrzeni"}
-        </h3>
-      </div>
+      <h3 className="text-md font-semibold">
+        {defaultBoardId ? "Zaproś osobę do tej tablicy" : "Zaproś osobę do przestrzeni"}
+      </h3>
 
       {showScopeToggle && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           <span className="eyebrow">Zakres</span>
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setScope("workspace")}
-              data-active={scope === "workspace"}
-              className="inline-flex h-9 items-center rounded-md border border-border bg-background px-3 font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground data-[active=true]:border-primary data-[active=true]:bg-primary/10 data-[active=true]:text-primary"
-            >
-              Cały workspace
-            </button>
-            <button
-              type="button"
-              onClick={() => setScope("board")}
-              data-active={scope === "board"}
-              className="inline-flex h-9 items-center rounded-md border border-border bg-background px-3 font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground data-[active=true]:border-primary data-[active=true]:bg-primary/10 data-[active=true]:text-primary"
-            >
-              Konkretna tablica
-            </button>
+            <Segmented
+              size="lg"
+              aria-label="Zakres zaproszenia"
+              value={scope}
+              onChange={setScope}
+              options={[
+                { value: "workspace", label: "Cała przestrzeń" },
+                { value: "board", label: "Konkretna tablica" },
+              ]}
+            />
             {scope === "board" && (
               <select
+                aria-label="Tablica"
                 value={boardId}
                 onChange={(e) => setBoardId(e.target.value)}
-                className="h-9 appearance-none rounded-md border border-border bg-background px-3 font-mono text-[0.82rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+                className={SELECT}
               >
                 {(boards ?? []).map((b) => (
                   <option key={b.id} value={b.id}>
@@ -126,97 +107,67 @@ export function InviteForm({
               </select>
             )}
           </div>
-          <p className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
+          <p className="text-2xs text-fg-3">
             {scope === "workspace"
-              ? "Osoba dostanie dostęp do całego workspace'a — wszystkich publicznych tablic."
+              ? "Osoba dostanie dostęp do całej przestrzeni — wszystkich publicznych tablic."
               : "Osoba dostanie dostęp tylko do wybranej tablicy (nawet jeśli prywatna)."}
           </p>
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-[1fr_140px_auto]">
-        <label className="flex flex-col gap-1.5">
-          <span className="eyebrow">Email</span>
-          <input
+      <div className="grid gap-3 md:grid-cols-[1fr_160px_auto] md:items-end">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="invite-email">Email</Label>
+          <Input
+            id="invite-email"
             name="email"
             type="email"
             required
             placeholder="np. anna@firma.pl"
-            aria-invalid={!!fieldErrors?.email}
-            className="h-10 border-b border-border bg-transparent pb-1 text-[0.95rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
+            error={fieldErrors?.email}
           />
-          {fieldErrors?.email && (
-            <span className="font-mono text-[0.66rem] text-destructive">
-              {fieldErrors.email}
-            </span>
-          )}
-        </label>
-
-        <label className="flex flex-col gap-1.5">
-          <span className="eyebrow">Rola</span>
-          <select
-            name="role"
-            defaultValue="MEMBER"
-            className="h-10 appearance-none border-b border-border bg-transparent pb-1 font-mono text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            <option value="ADMIN">ADMIN</option>
-            <option value="MEMBER">MEMBER</option>
-            <option value="VIEWER">VIEWER</option>
-          </select>
-        </label>
-
-        <div className="flex items-end">
-          <button
-            type="submit"
-            disabled={pending}
-            className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-5 font-sans text-[0.88rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
-          >
-            {pending ? "Wysyłam…" : "Wyślij zaproszenie"}
-          </button>
         </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="invite-role">Rola</Label>
+          <select id="invite-role" name="role" defaultValue="MEMBER" className={SELECT}>
+            <option value="ADMIN">Admin</option>
+            <option value="MEMBER">Członek</option>
+            <option value="VIEWER">Podgląd</option>
+          </select>
+        </div>
+
+        <Button type="submit" loading={pending} disabled={pending}>
+          {pending ? "Wysyłam…" : "Wyślij zaproszenie"}
+        </Button>
       </div>
 
       {!state?.ok && state?.error && (
-        <p className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-destructive">
+        <p role="alert" className="rounded-md border border-danger bg-chip-red-bg px-3 py-2 text-xs text-danger-text">
           {state.error}
         </p>
       )}
 
       {inviteUrl && (
-        <div className="flex flex-col gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
-          <div className="flex items-center gap-2">
-            <span className="eyebrow text-primary">
+        <div className="flex flex-col gap-2 rounded-lg border border-border bg-canvas p-3.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="eyebrow">
               Zaproszenie {state?.ok && state.emailed ? "wysłane" : "utworzone"}
             </span>
             {state?.ok && !state.emailed && (
-              <span className="font-mono text-[0.64rem] uppercase tracking-[0.14em] text-muted-foreground">
-                (email nie skonfigurowany — skopiuj link ręcznie)
-              </span>
+              <span className="text-2xs text-fg-3">(email nieskonfigurowany — skopiuj link ręcznie)</span>
             )}
           </div>
-          <div className="flex items-center gap-3">
-            <code className="min-w-0 flex-1 truncate rounded-md bg-muted px-3 py-2 font-mono text-[0.82rem]">
+          <div className="flex items-center gap-2">
+            <code className="min-w-0 flex-1 truncate rounded-sm border border-border bg-card px-2.5 py-1.5 font-mono text-xs">
               {inviteUrl}
             </code>
-            <button
-              type="button"
-              onClick={copyUrl}
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-border px-3 font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
-            >
-              {/* key = remount na zmianę stanu → animowany swap ikonki
-                  (fade + zoom, recepta na contextual icon transitions) */}
-              <span
-                key={copied ? "check" : "copy"}
-                className="inline-flex motion-safe:animate-in motion-safe:fade-in motion-safe:zoom-in-50 motion-safe:duration-200"
-              >
-                {copied ? <Check size={13} /> : <Copy size={13} />}
-              </span>
+            <Button type="button" variant="secondary" size="sm" onClick={copyUrl}>
+              {copied ? <IconCheck width={12} height={12} /> : <IconCopy width={12} height={12} />}
               {copied ? "Skopiowano" : "Kopiuj"}
-            </button>
+            </Button>
           </div>
-          <p className="font-mono text-[0.64rem] uppercase tracking-[0.14em] text-muted-foreground">
-            Link ważny 14 dni.
-          </p>
+          <p className="text-2xs text-fg-3">Link ważny 14 dni.</p>
         </div>
       )}
     </form>

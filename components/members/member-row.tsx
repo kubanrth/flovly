@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import type { Role } from "@/lib/generated/prisma/enums";
-import {
-  changeRoleAction,
-  removeMemberAction,
-} from "@/app/(app)/w/[workspaceId]/members/actions";
+import { changeRoleAction, removeMemberAction } from "@/app/(app)/w/[workspaceId]/members/actions";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
 
 export function MemberRow({
   workspaceId,
@@ -31,91 +31,62 @@ export function MemberRow({
   canRemove: boolean;
 }) {
   const [confirm, setConfirm] = useState(false);
-
-  const initials = (name ?? email).slice(0, 2).toUpperCase();
+  const display = name ?? email.split("@")[0] ?? email;
 
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-border py-3 last:border-b-0">
-      <div className="flex min-w-0 items-center gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.78rem] font-bold text-white">
-          {avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt="" width={36} height={36} className="h-full w-full object-cover" />
-          ) : (
-            initials
-          )}
-        </span>
+    <div className="flex min-h-11 items-center justify-between gap-3 border-b border-n-100 bg-card px-3.5 py-1.5 last:border-b-0 max-md:flex-wrap">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <Avatar name={display} src={avatarUrl} size={28} />
         <div className="min-w-0">
-          <div className="truncate font-display text-[0.98rem] font-semibold leading-tight tracking-[-0.01em]">
-            {name ?? email.split("@")[0]}
-            {isSelf && (
-              <span className="ml-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                ty
-              </span>
-            )}
-            {isOwner && (
-              <span className="ml-2 rounded-sm bg-primary/10 px-1.5 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-primary">
-                właściciel
-              </span>
-            )}
+          <div className="flex items-center gap-1.5">
+            <span className="truncate text-sm font-medium">{display}</span>
+            {isSelf && <span className="text-2xs text-fg-3">ty</span>}
+            {isOwner && <Chip hue="orange" size="sm">właściciel</Chip>}
           </div>
-          <div className="truncate font-mono text-[0.72rem] text-muted-foreground">
-            {email}
-          </div>
+          <div className="truncate font-mono text-2xs text-fg-3">{email}</div>
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-3">
+      <div className="flex shrink-0 items-center gap-2">
         {canManage && !isOwner ? (
           <form action={changeRoleAction}>
             <input type="hidden" name="workspaceId" value={workspaceId} />
             <input type="hidden" name="membershipId" value={membershipId} />
             <select
               name="role"
+              aria-label={`Rola: ${display}`}
               defaultValue={role}
               onChange={(e) => (e.currentTarget.form as HTMLFormElement).requestSubmit()}
-              className="h-8 border border-border bg-transparent px-2 font-mono text-[0.72rem] uppercase tracking-[0.12em] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="h-8 rounded-sm border border-input-border bg-card px-2 text-xs outline-none hover:border-input-border-hover focus-visible:border-orange-500"
             >
-              <option value="ADMIN">ADMIN</option>
-              <option value="MEMBER">MEMBER</option>
-              <option value="VIEWER">VIEWER</option>
+              <option value="ADMIN">Admin</option>
+              <option value="MEMBER">Członek</option>
+              <option value="VIEWER">Podgląd</option>
             </select>
           </form>
         ) : (
-          <span className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground">
-            {role.toLowerCase()}
-          </span>
+          <span className="text-2xs text-fg-3">{role.toLowerCase()}</span>
         )}
 
-        {canRemove && !isOwner && !isSelf && (
-          confirm ? (
-            <form action={removeMemberAction} className="flex items-center gap-2">
+        {canRemove &&
+          !isOwner &&
+          !isSelf &&
+          (confirm ? (
+            <form action={removeMemberAction} className="flex items-center gap-1.5">
               <input type="hidden" name="workspaceId" value={workspaceId} />
               <input type="hidden" name="membershipId" value={membershipId} />
-              <button
-                type="submit"
-                className="h-8 bg-destructive px-3 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-white transition-opacity hover:opacity-90"
-              >
-                potwierdź
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirm(false)}
-                className="font-mono text-[0.68rem] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                anuluj
-              </button>
+              <Button type="submit" variant="danger" size="sm">
+                Potwierdź
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setConfirm(false)}>
+                Anuluj
+              </Button>
             </form>
           ) : (
-            <button
-              type="button"
-              onClick={() => setConfirm(true)}
-              className="font-mono text-[0.68rem] uppercase tracking-[0.12em] text-muted-foreground transition-colors hover:text-destructive"
-            >
-              usuń
-            </button>
-          )
-        )}
+            <Button type="button" variant="ghost" size="sm" onClick={() => setConfirm(true)} className="text-danger-text">
+              Usuń
+            </Button>
+          ))}
       </div>
     </div>
   );

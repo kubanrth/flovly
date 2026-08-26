@@ -1,51 +1,43 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import Image from "next/image";
-import { PencilRuler, Search } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
-import { CreateTaskButton } from "@/components/task/create-task-button";
-import { AppShell } from "@/components/layout/app-shell";
+import { parseEnabledViews } from "@/lib/board-views";
+import { activityPhrase } from "@/components/summary/aggregate";
+import { Button } from "@/components/ui/button";
+import { IconContacts } from "@/components/ui/icons";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
-import {
-  computeBoardEnabledViews,
-  parseEnabledViews,
-} from "@/lib/board-views";
-import {
-  SortableBoardsGrid,
-  SortableBoardsList,
-  type BoardSectionData,
-} from "@/components/workspaces/sortable-boards";
-import { BoardsLayoutToggle } from "@/components/workspaces/boards-layout-toggle";
-import { CreateBoardDialog } from "@/components/workspaces/create-board-dialog";
+import { BoardsGrid } from "@/components/workspace/boards-grid";
+import { NewBoardButton } from "@/components/workspace/new-board-button";
+import { WorkspaceActivity, type WorkspaceActivityEntry } from "@/components/workspace/workspace-activity";
+import type { BoardCardData } from "@/components/workspace/board-card";
+import { activityStamp, boardStats, overviewFooter, workspaceMeta } from "@/components/workspace/overview-model";
 
+// C1 „Przestrzeń”: header (letter tile, name, meta, avatars, actions) + tabs +
+// boards grid + workspace activity + footer counters.
 export default async function WorkspaceOverviewPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ workspaceId: string }>;
+  searchParams: Promise<{ new?: string }>;
 }) {
   const { workspaceId } = await params;
+  const { new: newParam } = await searchParams;
   const ctx = await requireWorkspaceMembership(workspaceId);
 
-  // Workspace name + memberships (with user avatars) for the v4 hero band.
-  // We cap the membership query at 6 so the avatar stack covers 5 + "+N" chip;
-  // the count() below gives the true total for the overflow label.
-  const [workspace, memberCount, memberships, boards] = await Promise.all([
-    db.workspace.findUnique({
-      where: { id: workspaceId },
-      select: { id: true, enabledViews: true, name: true, slug: true, description: true },
+  const [workspace, memberships, boards, audit] = await Promise.all([
+    db.workspace.findFirst({
+      where: { id: workspaceId, deletedAt: null },
+      select: { id: true, name: true, slug: true, description: true, createdAt: true, enabledViews: true },
     }),
-    db.workspaceMembership.count({ where: { workspaceId } }),
     db.workspaceMembership.findMany({
       where: { workspaceId },
       orderBy: { joinedAt: "asc" },
-      take: 6,
-      include: {
-        user: { select: { id: true, name: true, email: true, avatarUrl: true } },
-      },
+      select: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
     }),
-    // ADMIN sees all; MEMBER/VIEWER sees PUBLIC + explicit memberships.
+    // ADMIN sees all; MEMBER/VIEWER sees PUBLIC + explicit membership.
     db.board.findMany({
       where:
         ctx.role === "ADMIN"
@@ -53,273 +45,142 @@ export default async function WorkspaceOverviewPage({
           : {
               workspaceId,
               deletedAt: null,
-              OR: [
-                { visibility: "PUBLIC" },
-                { memberships: { some: { userId: ctx.userId } } },
-              ],
+              OR: [{ visibility: "PUBLIC" }, { memberships: { some: { userId: ctx.userId } } }],
             },
-      // Honour user-set drag-and-drop order; fall back to createdAt.
+      // Honour drag-and-drop order; fall back to createdAt.
       orderBy: [{ order: "asc" }, { createdAt: "asc" }],
-      include: {
-        statusColumns: { orderBy: { order: "asc" } },
-        views: { select: { type: true, name: true } },
-        _count: { select: { tasks: { where: { deletedAt: null } } } },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        statusColumns: { orderBy: { order: "asc" }, select: { id: true, name: true, order: true } },
         tasks: {
           where: { deletedAt: null },
-          orderBy: [{ statusColumn: { order: "asc" } }, { rowOrder: "asc" }],
-          take: 20,
-          include: {
-            assignees: {
-              include: {
-                user: { select: { id: true, name: true, email: true, avatarUrl: true } },
-              },
-            },
-            tags: { include: { tag: true } },
-            statusColumn: true,
+          select: {
+            statusColumnId: true,
+            stopAt: true,
+            assignees: { select: { userId: true } },
           },
         },
       },
     }),
+    db.auditLog.findMany({
+      where: { workspaceId },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+      select: {
+        id: true,
+        objectType: true,
+        objectId: true,
+        action: true,
+        createdAt: true,
+        actor: { select: { name: true, email: true, avatarUrl: true } },
+      },
+    }),
   ]);
+  if (!workspace) notFound();
 
-  const canCreateTask = can(ctx.role, "task.create");
-  const firstBoard = boards[0];
-  const workspaceEnabled = parseEnabledViews(workspace?.enabledViews);
-
-  const boardSections: BoardSectionData[] = boards.map((board) => {
-    const boardDefaultTypes = board.views
-      .filter((v) => v.name === null)
-      .map((v) => v.type);
+  const now = new Date();
+  const memberById = new Map(
+    memberships.map((m) => [m.user.id, { name: m.user.name ?? m.user.email, avatarUrl: m.user.avatarUrl }]),
+  );
+  const dayMonth = new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "short" });
+  const cards: BoardCardData[] = boards.map((board) => {
+    // Card avatars = people assigned to this board's tasks, in first-seen order.
+    const people = new Map<string, { name: string; avatarUrl: string | null }>();
+    for (const task of board.tasks) {
+      for (const { userId } of task.assignees) {
+        const member = memberById.get(userId);
+        if (member && !people.has(userId)) people.set(userId, member);
+      }
+    }
+    const stats = boardStats(
+      board.tasks.map((t) => ({ statusColumnId: t.statusColumnId, stopAt: t.stopAt?.toISOString() ?? null })),
+      board.statusColumns,
+      now,
+    );
     return {
       id: board.id,
       name: board.name,
-      taskCount: board._count.tasks,
-      enabledViews: computeBoardEnabledViews(workspaceEnabled, boardDefaultTypes),
-      tasks: board.tasks.map((task) => ({
-        id: task.id,
-        title: task.title,
-        stopAt: task.stopAt ? task.stopAt.toISOString() : null,
-        statusName: task.statusColumn?.name ?? null,
-        statusColor: task.statusColumn?.colorHex ?? null,
-        assignees: task.assignees.map((a) => ({
-          userId: a.userId,
-          name: a.user.name,
-          email: a.user.email,
-          avatarUrl: a.user.avatarUrl,
-        })),
-        tags: task.tags.map(({ tag }) => ({
-          id: tag.id,
-          name: tag.name,
-          colorHex: tag.colorHex,
-        })),
-      })),
+      description: board.description,
+      stats,
+      people: [...people.values()],
+      dueLabel: stats.nextDue ? `termin ${dayMonth.format(new Date(stats.nextDue))}` : null,
     };
   });
 
-  // Avatar stack: first 5 members; overflow is total - 5 (clamp 0).
-  const avatarMembers = memberships.slice(0, 5).map((m) => ({
-    id: m.user.id,
-    name: m.user.name,
-    email: m.user.email,
-    avatarUrl: m.user.avatarUrl,
-  }));
-  const overflow = Math.max(0, memberCount - avatarMembers.length);
+  const totalTasks = cards.reduce((sum, c) => sum + c.stats.total, 0);
+  const openTasks = cards.reduce((sum, c) => sum + c.stats.open, 0);
+
+  // Activity targets: only objects this member can see (visible boards + their tasks).
+  const boardById = new Map(boards.map((b) => [b.id, b]));
+  const auditTaskIds = audit.filter((a) => a.objectType === "Task").map((a) => a.objectId);
+  const auditTasks =
+    auditTaskIds.length > 0
+      ? await db.task.findMany({
+          where: { id: { in: auditTaskIds }, deletedAt: null, boardId: { in: boards.map((b) => b.id) } },
+          select: { id: true, title: true },
+        })
+      : [];
+  const taskById = new Map(auditTasks.map((t) => [t.id, t]));
+  const activity: WorkspaceActivityEntry[] = audit.map((e) => {
+    const task = taskById.get(e.objectId);
+    const board = boardById.get(e.objectId);
+    return {
+      id: e.id,
+      actorName: e.actor?.name ?? e.actor?.email ?? "System",
+      actorAvatarUrl: e.actor?.avatarUrl ?? null,
+      phrase: activityPhrase(e.action),
+      target:
+        task ? { label: task.title, href: `/w/${workspaceId}/t/${task.id}` }
+        : board ? { label: board.name, href: `/w/${workspaceId}/b/${board.id}/table` }
+        : null,
+      time: activityStamp(e.createdAt, now),
+    };
+  });
 
   const canCreateBoard = can(ctx.role, "board.create");
-  // CreateBoardDialog expects the uppercase Prisma view types — map down
-  // from the lowercase ViewName[] set, drop the ones the dialog can't seed.
-  const DIALOG_VIEWS = ["TABLE", "KANBAN", "ROADMAP", "GANTT", "WHITEBOARD"] as const;
-  const dialogEnabledViews = workspaceEnabled
-    .map((v) => v.toUpperCase())
-    .filter((v): v is (typeof DIALOG_VIEWS)[number] =>
-      (DIALOG_VIEWS as readonly string[]).includes(v),
-    );
+  const enabledViews = parseEnabledViews(workspace.enabledViews).map((v) => v.toUpperCase());
 
-  if (!workspace) notFound();
   return (
-    <AppShell>
-      <div className="flex flex-col gap-6 md:gap-10">
-        <WorkspaceHeader workspace={workspace} canEditSettings={can(ctx.role, "workspace.updateSettings")} />
-        <WorkspaceHero
-          workspaceId={workspaceId}
-          workspaceName={workspace?.name ?? "Workspace"}
-          members={avatarMembers}
-          overflow={overflow}
-          memberCount={memberCount}
-          canCreateBoard={canCreateBoard}
-          enabledViews={dialogEnabledViews}
-        >
-          {/* Secondary actions stay on the right of the hero — whiteboard link
-              + (optional) quick "+ Zadanie" once a board exists. */}
-          <Link
-            href={`/w/${workspaceId}/canvases`}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/60 bg-white/55 px-3 font-sans text-[0.82rem] font-medium text-foreground/80 transition-colors hover:bg-white/75 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
-            <PencilRuler size={14} /> Whiteboard
-          </Link>
-          {firstBoard && canCreateTask && (
-            <CreateTaskButton workspaceId={workspaceId} boardId={firstBoard.id} />
-          )}
-        </WorkspaceHero>
-
-        <BoardsLayoutToggle
-          grid={<SortableBoardsGrid workspaceId={workspaceId} boards={boardSections} />}
-          list={<SortableBoardsList workspaceId={workspaceId} boards={boardSections} />}
-        />
-      </div>
-    </AppShell>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// F12-K81 (v4 brand polish): workspace hero band.
-// Glass card rounded-[22px] z animated fl-drift radial aura blobs, eyebrow
-// mono "Workspace", workspace name 17px display bold, avatar stack (5 + +N),
-// plain search bar + "+ Tablica" gradient CTA pill po prawej.
-// Layout 1:1 z Flovly Brand & Hero spec (sekcja 05 — Workspace Overview).
-// ─────────────────────────────────────────────────────────────────────────
-function WorkspaceHero({
-  workspaceId,
-  workspaceName,
-  members,
-  overflow,
-  memberCount,
-  canCreateBoard,
-  enabledViews,
-  children,
-}: {
-  workspaceId: string;
-  workspaceName: string;
-  members: Array<{
-    id: string;
-    name: string | null;
-    email: string;
-    avatarUrl: string | null;
-  }>;
-  overflow: number;
-  memberCount: number;
-  canCreateBoard: boolean;
-  enabledViews: Array<"TABLE" | "KANBAN" | "ROADMAP" | "GANTT" | "WHITEBOARD">;
-  children?: React.ReactNode;
-}) {
-  return (
-    <section
-      aria-label="Workspace overview"
-      // F12-K107: mobile bez plain card wrapper + blobs (klient raportował
-      // że hero wygląda mały vs pełnoekranowe board cards = visual mismatch).
-      // Mobile = inline (border-b only). Desktop md+ = plain card z aurą.
-      className="relative md:overflow-hidden md:rounded-[22px] md:border md:border-white/60 md:bg-white/70 md:px-6 md:py-5 md:shadow-[0_18px_40px_-24px_rgba(76,29,149,0.26)] md: md:] max-md:border-b max-md:border-border max-md:pb-4"
-    >
-      {/* F12-K85 perf: blobs są STATIC. F12-K107: tylko desktop (md+). */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-32 -left-24 hidden h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,rgba(122,51,236,0.28),transparent_65%)] blur-3xl md:block"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -bottom-28 -right-16 hidden h-[380px] w-[380px] rounded-full bg-[radial-gradient(circle,rgba(225,49,143,0.22),transparent_65%)] blur-3xl md:block"
+    <div className="flex h-[calc(100dvh-var(--topbar))] flex-col bg-card">
+      <WorkspaceHeader
+        bleed
+        workspace={{ id: workspace.id, name: workspace.name, slug: workspace.slug, description: workspace.description }}
+        canEditSettings={can(ctx.role, "workspace.updateSettings")}
+        meta={workspaceMeta(boards.length, memberships.length, workspace.createdAt)}
+        members={memberships.map((m) => ({
+          id: m.user.id,
+          name: m.user.name ?? m.user.email,
+          avatarUrl: m.user.avatarUrl,
+        }))}
+        actions={
+          <>
+            <Button variant="secondary" render={<Link href={`/w/${workspaceId}/members`} />}>
+              <IconContacts />
+              Zaproś
+            </Button>
+            {canCreateBoard && <NewBoardButton workspaceId={workspaceId} enabledViews={enabledViews} />}
+          </>
+        }
       />
 
-      {/* F12-K108: usunięty duplikat workspace name (layout.tsx już ma h1
-          "Projekty AI"). Mobile = tylko toolbar (search + avatars + CTAs).
-          Desktop md+ = avatars + toolbar (avatars są tylko tutaj, nie w
-          layout.tsx). */}
-      <div className="relative flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-5">
-        {/* Left cluster — TYLKO desktop md+ (avatars stack) */}
-        <div
-          className="hidden items-center md:flex"
-          aria-label={`${memberCount} członków workspace`}
-        >
-          {members.map((m, idx) => (
-            <MemberAvatar
-              key={m.id}
-              name={m.name || m.email}
-              avatarUrl={m.avatarUrl}
-              style={{
-                marginLeft: idx === 0 ? 0 : -8,
-                zIndex: members.length - idx,
-              }}
-            />
-          ))}
-          {overflow > 0 && (
-            <span
-              className="grid h-7 w-7 place-items-center rounded-full border-2 border-white bg-brand-50 font-mono text-[0.62rem] font-semibold text-brand-700 ]"
-              style={{ marginLeft: members.length > 0 ? -8 : 0, zIndex: 0 }}
-            >
-              +{overflow}
-            </span>
-          )}
+      <div className="min-h-0 flex-1 overflow-y-auto bg-canvas px-8 py-5 max-md:px-4">
+        <div className="mb-5">
+          <BoardsGrid
+            workspaceId={workspaceId}
+            boards={cards}
+            canCreate={canCreateBoard}
+            enabledViews={enabledViews}
+            autoOpenCreate={newParam === "board"}
+          />
         </div>
-
-        {/* F12-K109: mobile = search FULL WIDTH osobny rząd, CTAs w drugim
-            rzędzie (basis-full na search wymusza wrap). Wcześniej search +
-            Whiteboard + Nowe zadanie w 1 rzędzie pchały się i search był
-            squeezed do "Szul". */}
-        <div className="flex flex-wrap items-center gap-2 max-md:w-full">
-          <label
-            htmlFor="ws-hero-search"
-            className="flex h-9 items-center gap-2 rounded-lg border border-white/70 bg-white/65 px-3 font-sans text-[0.82rem] text-muted-foreground transition-colors focus-within:border-primary/40 focus-within:bg-white/85 max-md:basis-full ]"
-          >
-            <Search size={14} className="shrink-0" aria-hidden="true" />
-            <input
-              id="ws-hero-search"
-              type="search"
-              placeholder="Szukaj zadań…"
-              className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground/70 md:w-[200px] md:flex-initial"
-            />
-          </label>
-
-          {children}
-
-          {canCreateBoard && (
-            <CreateBoardDialog
-              workspaceId={workspaceId}
-              variant="cta"
-              label="Tablica"
-              workspaceEnabledViews={enabledViews}
-            />
-          )}
-        </div>
+        <WorkspaceActivity entries={activity} />
       </div>
-    </section>
-  );
-}
 
-// Member avatar — image with fallback to initials chip in brand gradient.
-// 28×28 with white ring (matches v4 spec line 237-239 avatar stack).
-function MemberAvatar({
-  name,
-  avatarUrl,
-  style,
-}: {
-  name: string;
-  avatarUrl: string | null;
-  style?: React.CSSProperties;
-}) {
-  const initials = name
-    .split(/\s+/)
-    .map((part) => part[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-  return (
-    <span
-      className="relative inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-primary text-[0.62rem] font-bold uppercase text-white shadow-sm ]"
-      style={style}
-      title={name}
-    >
-      {avatarUrl ? (
-        <Image
-          src={avatarUrl}
-          alt={name}
-          width={28}
-          height={28}
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        initials || "?"
-      )}
-    </span>
+      <footer className="flex h-8 shrink-0 items-center border-t border-border bg-canvas px-8 font-mono text-2xs text-muted-foreground max-md:px-4">
+        {overviewFooter(boards.length, totalTasks, openTasks)}
+      </footer>
+    </div>
   );
 }

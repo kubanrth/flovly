@@ -125,3 +125,58 @@ Stan po F1 (B4: nagłówek tablicy / tabsy / toolbar / dialog nowego widoku, 202
 - **Pula zadań** Linii zadań to teraz panel spod ⋯, nie stały sidebar (makieta B10 go nie ma).
 - **Przeniesienie karty między etapami** to `removeFromFlowAction` + `appendTaskToFlowAction` —
   akcji „przenieś" nie ma, a faza nie dokłada server actions. Karta ląduje na końcu etapu.
+
+## F4 — D1 Powiadomienia
+
+- **Przycisk „Odpowiedz” na karcie powiadomienia** — makieta D1 pokazuje szybką odpowiedź
+  z poziomu skrzynki; backend jej nie ma (`createCommentAction` wymaga kontekstu zadania,
+  a `Notification.payload` nie niesie wątku). Wypisane wprost w MAP D7 („szybka odpowiedź
+  z powiadomienia”). Zostaje sam „Otwórz zadanie”, który otwiera modal 960 z kompozytorem.
+- **Typ powiadomienia „Termin … minął”** i „Wszystkie podzadania ukończone” z makiety —
+  nikt takich rekordów nie tworzy (`Notification.type` to dziś `comment.mention`,
+  `task.assigned`, `task.created`, `task.status.changed`, `poll.created`, `support.*`).
+  Zamiast osobnej karty: każde powiadomienie o zadaniu z minionym terminem pokazuje
+  czerwoną etykietę „termin: …”, a „Przesuń termin” jest przy każdym zadaniu z terminem.
+- **„Przesuń termin”** to menu z presetami (Jutro / Za 3 dni / Za tydzień) liczonymi od
+  bieżącego `stopAt` — woła istniejące `patchTaskAction`. Pełny picker daty wymagałby
+  zagnieżdżenia popovera w popoverze.
+- **Ikona ⚙ w nagłówku** jest triggerem menu (Usuń przeczytane / Ustawienia powiadomień →
+  `/profile`); nie ma osobnego ekranu ustawień powiadomień.
+- **Wyciszanie wzmianki `@Nick` w cytacie** — snippet zapisany jest jako czysty tekst,
+  więc cytat nie podświetla wzmianki tak jak makieta.
+- **Zakładka jest stanem lokalnym** (bez `?tab=` w URL) — nic tego nie utrwala i AK134
+  tego nie wymaga.
+
+## F4 — przestrzeń + osobiste
+
+### D2 Zadania dla Ciebie / D3 TO DO
+- **Filtry `/my-tasks` schowane w popoverze** — makieta D2 nie ma paska filtrów, ale wyszukiwarka,
+  filtr tablic i sortowanie nie mogą zniknąć; parametry URL bez zmian.
+- **Drzewo list/folderów TO DO w popoverze** przy tytule (makieta D3 nie ma lewej kolumny),
+  panel szczegółów jako prawy sheet 420px.
+- **Ikona „przenieś" przesuwa termin na jutro** — nie ma akcji przenoszącej `TodoItem` między
+  listami, a faza nie dokłada server actions.
+- **„Ukończone dziś" liczy się po `updatedAt`** — schemat nie ma `completedAt`.
+- Nazwy kubełków `/my-tasks` zmienione na zgodne z makietą (Po terminie / Ten tydzień / Później);
+  `e2e/10-my-tasks.spec.ts` zaktualizowany w tej samej zmianie.
+
+### D4 Kalendarz osobisty
+- **Sekcja „Widoczne w kalendarzu" jest w kolumnie strony, nie w globalnym pasku bocznym** —
+  makieta wkłada ją do paska nawigacji, co wymagałoby kontekstowych sekcji w shellu.
+- **Fioletowe pigułki „spotkania" pominięte** — nie ma encji spotkania przypiętej do osoby
+  (`WorkspaceEvent` jest w zakresie przestrzeni i renderuje się na kalendarzu przestrzeni).
+- Godziny spoza 08:00–20:00 przyklejają się do pierwszego/ostatniego wiersza; etykieta pigułki
+  zawsze pokazuje prawdziwą godzinę.
+
+### D1 Powiadomienia
+- Kubełki „Dzisiaj"/„Wczoraj" liczone w stałej strefie `Europe/Warsaw` (`INBOX_TZ`), żeby SSR
+  w kontenerze na UTC nie rozjeżdżał się z hydracją.
+
+### E4 Urlopy / D5 przemalowanie
+- **Limit urlopu to stała `ANNUAL_LEAVE_DAYS = 26`** — nie ma kolumny z wymiarem per osoba.
+- **Grafik zespołu pokazuje bieżący miesiąc i maksimum 8 osób** (reszta jako „+N osób"), żeby
+  duży zespół nie wypychał stopki poza ekran.
+- **`/w/<id>/settings` nie ma edytora `enabledViews`** — `updateWorkspaceAction` nigdy tego pola
+  nie przyjmowała (stan zastany, nie regresja).
+- **`/profile` nie ma sekcji „Sesje"**, więc kotwica `#sessions` w menu awatara nie prowadzi nigdzie.
+- Wybór odbiorcy przypomnienia to natywny `<select>` zamiast popovera z awatarami i wyszukiwarką.

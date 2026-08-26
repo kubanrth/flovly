@@ -7,7 +7,10 @@
 
 import { startTransition, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Globe2, Trash2, UserPlus } from "lucide-react";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { IconLock, IconEye, IconTrash, IconUsers } from "@/components/ui/icons";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   addBoardMemberAction,
   changeBoardRoleAction,
@@ -16,6 +19,8 @@ import {
 } from "@/app/(app)/w/[workspaceId]/members/actions";
 import { InviteForm } from "@/components/members/invite-form";
 import type { Role, Visibility } from "@/lib/generated/prisma/enums";
+
+const SELECT = "h-8 rounded-sm border border-input-border bg-card px-2 text-sm outline-none hover:border-input-border-hover focus-visible:border-orange-500";
 
 export interface BoardSummary {
   id: string;
@@ -55,12 +60,10 @@ export function BoardMembersSection({
   const router = useRouter();
   if (!selected) {
     return (
-      <div className="rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center">
-        <p className="font-display text-[1.05rem] font-semibold">Brak tablic</p>
-        <p className="mt-1 text-[0.88rem] text-muted-foreground">
-          Utwórz pierwszą tablicę, żeby móc zarządzać jej członkami.
-        </p>
-      </div>
+      <EmptyState
+        title="Brak tablic"
+        description="Utwórz pierwszą tablicę, żeby móc zarządzać jej członkami."
+      />
     );
   }
 
@@ -85,14 +88,15 @@ export function BoardMembersSection({
   const addable = workspaceMembers.filter((m) => !onBoardUserIds.has(m.userId));
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-3">
       {/* Board picker */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="eyebrow shrink-0">Tablica</span>
         <select
+          aria-label="Tablica"
           value={selected.id}
           onChange={(e) => selectBoard(e.target.value)}
-          className="h-9 appearance-none rounded-md border border-border bg-background px-3 font-display text-[0.9rem] font-semibold outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+          className={SELECT}
         >
           {boards.map((b) => (
             <option key={b.id} value={b.id}>
@@ -101,10 +105,10 @@ export function BoardMembersSection({
           ))}
         </select>
         <span className="ml-auto" />
-        <button
+        <Button
           type="button"
+          variant="secondary"
           onClick={flipVisibility}
-          className="group/v inline-flex h-9 items-center gap-2 rounded-md border border-border bg-card px-3 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
           title={
             selected.visibility === "PUBLIC"
               ? "Kliknij, żeby zmienić na prywatną"
@@ -113,30 +117,30 @@ export function BoardMembersSection({
         >
           {selected.visibility === "PUBLIC" ? (
             <>
-              <Globe2 size={12} className="text-primary" />
+              <IconEye width={13} height={13} />
               Publiczna
             </>
           ) : (
             <>
-              <Lock size={12} className="text-primary" />
+              <IconLock width={13} height={13} />
               Prywatna
             </>
           )}
-        </button>
+        </Button>
       </div>
 
-      <p className="text-[0.88rem] leading-[1.55] text-muted-foreground">
+      <p className="text-xs text-fg-2">
         {selected.visibility === "PUBLIC" ? (
           <>
-            <strong className="text-foreground">Publiczna</strong> — widzą wszyscy
-            członkowie workspace&apos;a. Lista poniżej dotyczy tylko explicit
-            uprawnień (np. specjalne role na tej tablicy).
+            <strong className="font-medium text-foreground">Publiczna</strong> — widzą wszyscy
+            członkowie przestrzeni. Lista poniżej dotyczy tylko wyraźnych uprawnień (np. innej
+            roli na tej tablicy).
           </>
         ) : (
           <>
-            <strong className="text-foreground">Prywatna</strong> — widzą tylko
-            członkowie z poniższej listy plus admini workspace&apos;a. Reszta
-            workspace&apos;a NIE widzi tej tablicy w sidebarze.
+            <strong className="font-medium text-foreground">Prywatna</strong> — widzą tylko
+            osoby z poniższej listy plus admini przestrzeni. Reszta nie widzi tej tablicy
+            w pasku bocznym.
           </>
         )}
       </p>
@@ -154,18 +158,16 @@ export function BoardMembersSection({
       )}
 
       {/* Member list */}
-      <section className="flex flex-col gap-3">
-        <h3 className="font-display text-[1.2rem] leading-[1.15] tracking-[-0.02em]">
-          Członkowie tablicy ({members.length})
-        </h3>
+      <section className="flex flex-col gap-2">
+        <span className="eyebrow">Członkowie tablicy ({members.length})</span>
         {members.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border bg-muted/20 p-6 text-center text-[0.88rem] text-muted-foreground">
+          <p className="rounded-lg border border-dashed border-input-border px-3.5 py-4 text-center text-xs text-fg-2">
             {selected.visibility === "PUBLIC"
-              ? "Brak indywidualnych członków — cały workspace ma dostęp."
+              ? "Brak indywidualnych członków — cała przestrzeń ma dostęp."
               : "Brak członków. Dodaj kogoś przez formularz powyżej."}
-          </div>
+          </p>
         ) : (
-          <div className="flex flex-col border-t border-border">
+          <div className="overflow-hidden rounded-lg border border-border">
             {members.map((m) => (
               <BoardMemberRow
                 key={m.id}
@@ -211,16 +213,17 @@ function AddExistingMember({
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4">
+    <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4">
       <div className="flex items-center gap-2">
-        <UserPlus size={14} className="text-muted-foreground" />
-        <span className="eyebrow">Dodaj istniejącego członka workspace&apos;a</span>
+        <IconUsers width={14} height={14} className="text-n-500" />
+        <span className="eyebrow">Dodaj istniejącego członka przestrzeni</span>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <select
+          aria-label="Osoba"
           value={userId}
           onChange={(e) => setUserId(e.target.value)}
-          className="h-9 min-w-[220px] flex-1 appearance-none rounded-md border border-border bg-background px-3 text-[0.88rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+          className={`${SELECT} min-w-[220px] flex-1`}
         >
           {candidates.map((c) => (
             <option key={c.userId} value={c.userId}>
@@ -229,21 +232,18 @@ function AddExistingMember({
           ))}
         </select>
         <select
+          aria-label="Rola"
           value={role}
           onChange={(e) => setRole(e.target.value as Role)}
-          className="h-9 appearance-none rounded-md border border-border bg-background px-3 font-mono text-[0.82rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+          className={SELECT}
         >
-          <option value="ADMIN">ADMIN</option>
-          <option value="MEMBER">MEMBER</option>
-          <option value="VIEWER">VIEWER</option>
+          <option value="ADMIN">Admin</option>
+          <option value="MEMBER">Członek</option>
+          <option value="VIEWER">Podgląd</option>
         </select>
-        <button
-          type="button"
-          onClick={submit}
-          className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90"
-        >
+        <Button type="button" onClick={submit}>
           Dodaj
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -286,43 +286,34 @@ function BoardMemberRow({
     });
   };
   return (
-    <div className="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
-      <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.78rem] font-bold text-white">
-        {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="" width={36} height={36} className="h-full w-full object-cover" />
-        ) : (
-          (name ?? email).slice(0, 2).toUpperCase()
-        )}
-      </span>
+    <div className="flex min-h-11 items-center gap-2.5 border-b border-n-100 bg-card px-3.5 py-1.5 last:border-b-0">
+      <Avatar name={name ?? email} src={avatarUrl} size={28} />
       <div className="min-w-0 flex-1">
-        <div className="truncate font-display text-[0.95rem] leading-tight tracking-[-0.01em]">
-          {name ?? email}
-        </div>
-        {name && (
-          <div className="truncate font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">
-            {email}
-          </div>
-        )}
+        <div className="truncate text-sm font-medium">{name ?? email}</div>
+        {name && <div className="truncate font-mono text-2xs text-fg-3">{email}</div>}
       </div>
       <select
+        aria-label={`Rola: ${name ?? email}`}
         value={role}
         onChange={(e) => changeRole(e.target.value as Role)}
-        className="h-8 appearance-none rounded-md border border-border bg-background px-2 font-mono text-[0.74rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+        className={SELECT}
       >
-        <option value="ADMIN">ADMIN</option>
-        <option value="MEMBER">MEMBER</option>
-        <option value="VIEWER">VIEWER</option>
+        <option value="ADMIN">Admin</option>
+        <option value="MEMBER">Członek</option>
+        <option value="VIEWER">Podgląd</option>
       </select>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="md"
+        iconOnly
         onClick={remove}
         aria-label="Usuń z tablicy"
         title="Usuń z tablicy"
-        className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+        className="hover:text-danger-text"
       >
-        <Trash2 size={14} />
-      </button>
+        <IconTrash width={14} height={14} />
+      </Button>
     </div>
   );
 }

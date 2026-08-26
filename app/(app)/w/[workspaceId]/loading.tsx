@@ -1,54 +1,31 @@
-import { AppShell } from "@/components/layout/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Workspace overview skeleton — mirror page.tsx structure: hero bar
-// (eyebrow + headline + meta) + boards grid (3-col cards). Skeleton
-// pulse handled by <Skeleton/> primitive (animate-pulse + bg-muted).
+// Mirrors page.tsx (C1): header + tabs, 3-column board cards, footer strip.
 export default function WorkspaceLoading() {
   return (
-    <AppShell>
-      <div className="flex flex-col gap-10">
-        {/* Hero bar */}
-        <div className="flex flex-col gap-3">
-          <Skeleton className="h-3 w-28" />
-          <Skeleton className="h-9 w-3/4 max-w-md md:h-12" />
-          <Skeleton className="h-4 w-1/2 max-w-sm" />
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <Skeleton className="h-9 w-36 rounded-lg" />
-            <Skeleton className="h-9 w-28 rounded-lg" />
+    <div className="flex h-[calc(100dvh-var(--topbar))] flex-col bg-card">
+      <div className="flex-none border-b border-border pt-4">
+        <div className="flex items-center gap-3 px-8 max-md:px-4">
+          <Skeleton className="size-10 rounded-lg" />
+          <div className="flex flex-col gap-1.5">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-3 w-64" />
           </div>
         </div>
-
-        {/* Boards grid placeholder — match SortableBoardsGrid: 1/2/3 cols, ~200px h. */}
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <BoardCardSkeleton key={i} />
+        <div className="flex h-10 items-center gap-4 px-8 max-md:px-4">
+          <Skeleton className="h-3 w-14" />
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+      </div>
+      <div className="min-h-0 flex-1 bg-canvas px-8 py-5 max-md:px-4">
+        <div className="grid grid-cols-3 gap-3 max-lg:grid-cols-2 max-md:grid-cols-1">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-[150px] rounded-lg" />
           ))}
         </div>
       </div>
-    </AppShell>
-  );
-}
-
-function BoardCardSkeleton() {
-  return (
-    <div className="relative flex h-[200px] flex-col gap-3.5 overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-5 pl-12">
-      {/* 3px top accent strip */}
-      <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-muted" />
-      <div className="flex items-start gap-3">
-        <Skeleton className="h-[38px] w-[38px] rounded-xl" />
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <Skeleton className="h-3 w-16" />
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-2.5 w-1/2" />
-        </div>
-        <Skeleton className="h-6 w-8 rounded-lg" />
-      </div>
-      <div className="-mx-1 mt-auto flex flex-wrap items-center gap-1.5 px-1 pb-0.5">
-        <Skeleton className="h-7 w-16 rounded-lg" />
-        <Skeleton className="h-7 w-20 rounded-lg" />
-        <Skeleton className="h-7 w-16 rounded-lg" />
-      </div>
+      <div className="h-8 shrink-0 border-t border-border bg-canvas" />
     </div>
   );
 }

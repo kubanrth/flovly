@@ -1,11 +1,24 @@
 "use client";
 
 import { useActionState, useId, useRef, useState, startTransition } from "react";
-import { Eye, EyeOff } from "lucide-react";
-import {
-  changePasswordAction,
-  type ChangePasswordState,
-} from "@/app/(app)/profile/password-actions";
+import { changePasswordAction, type ChangePasswordState } from "@/app/(app)/profile/password-actions";
+import { Button } from "@/components/ui/button";
+import { IconEye, IconEyeOff } from "@/components/ui/icons";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+function RevealButton({ shown, onToggle }: { shown: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={shown ? "Ukryj hasło" : "Pokaż hasło"}
+      className="absolute top-0.5 right-1 grid size-7 place-items-center rounded-sm text-n-500 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
+    >
+      {shown ? <IconEyeOff width={14} height={14} /> : <IconEye width={14} height={14} />}
+    </button>
+  );
+}
 
 export function ChangePasswordSection() {
   const formRef = useRef<HTMLFormElement>(null);
@@ -31,51 +44,35 @@ export function ChangePasswordSection() {
     <form
       ref={formRef}
       action={(fd) => startTransition(() => formAction(fd))}
-      className="flex flex-col gap-6 border-t border-border pt-8"
+      className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4"
     >
-      <div className="flex flex-col gap-2">
-        <span className="eyebrow">Bezpieczeństwo</span>
-        <h2 className="font-display text-[1.4rem] leading-[1.15] tracking-[-0.02em]">
-          Zmień hasło
-        </h2>
-        <p className="text-[0.92rem] leading-[1.55] text-muted-foreground">
-          Wymagamy aktualnego hasła — żeby ktoś z otwartą sesją nie podmienił Ci
-          dostępu.
+      <div className="flex flex-col gap-1">
+        <h3 className="text-md font-semibold">Zmień hasło</h3>
+        <p className="text-xs text-fg-2">
+          Wymagamy aktualnego hasła — żeby ktoś z otwartą sesją nie podmienił Ci dostępu.
         </p>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor={currentId} className="eyebrow">Aktualne hasło</label>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={currentId}>Aktualne hasło</Label>
         <div className="relative">
-          <input
+          <Input
             id={currentId}
             name="currentPassword"
             type={showCurrent ? "text" : "password"}
             required
             autoComplete="current-password"
-            aria-invalid={!!fieldErrors?.currentPassword}
-            className="h-10 w-full rounded-md border border-border bg-background px-3 pr-10 text-[0.92rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
+            error={fieldErrors?.currentPassword}
+            className="pr-9"
           />
-          <button
-            type="button"
-            onClick={() => setShowCurrent((v) => !v)}
-            aria-label={showCurrent ? "Ukryj hasło" : "Pokaż hasło"}
-            className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-sm text-muted-foreground hover:text-foreground"
-          >
-            {showCurrent ? <EyeOff size={14} /> : <Eye size={14} />}
-          </button>
+          <RevealButton shown={showCurrent} onToggle={() => setShowCurrent((v) => !v)} />
         </div>
-        {fieldErrors?.currentPassword && (
-          <span className="font-mono text-[0.68rem] text-destructive">
-            {fieldErrors.currentPassword}
-          </span>
-        )}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor={newId} className="eyebrow">Nowe hasło (min 8 znaków)</label>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={newId}>Nowe hasło (min. 8 znaków)</Label>
         <div className="relative">
-          <input
+          <Input
             id={newId}
             name="newPassword"
             type={showNew ? "text" : "password"}
@@ -83,45 +80,27 @@ export function ChangePasswordSection() {
             minLength={8}
             maxLength={200}
             autoComplete="new-password"
-            aria-invalid={!!fieldErrors?.newPassword}
-            className="h-10 w-full rounded-md border border-border bg-background px-3 pr-10 text-[0.92rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
+            error={fieldErrors?.newPassword}
+            className="pr-9"
           />
-          <button
-            type="button"
-            onClick={() => setShowNew((v) => !v)}
-            aria-label={showNew ? "Ukryj hasło" : "Pokaż hasło"}
-            className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-sm text-muted-foreground hover:text-foreground"
-          >
-            {showNew ? <EyeOff size={14} /> : <Eye size={14} />}
-          </button>
+          <RevealButton shown={showNew} onToggle={() => setShowNew((v) => !v)} />
         </div>
-        {fieldErrors?.newPassword && (
-          <span className="font-mono text-[0.68rem] text-destructive">
-            {fieldErrors.newPassword}
-          </span>
-        )}
       </div>
 
       {formError && (
-        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-[0.88rem] text-destructive">
+        <p role="alert" className="rounded-md border border-danger bg-chip-red-bg px-3 py-2 text-xs text-danger-text">
           {formError}
-        </div>
+        </p>
       )}
       {success && (
-        <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[0.88rem] text-emerald-700">
+        <p className="rounded-md border border-success bg-chip-green-bg px-3 py-2 text-xs text-success-text">
           {success}
-        </div>
+        </p>
       )}
 
-      <div>
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex h-10 items-center rounded-md bg-primary px-4 font-sans text-[0.92rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {pending ? "Zmienianie…" : "Zmień hasło"}
-        </button>
-      </div>
+      <Button type="submit" loading={pending} disabled={pending} className="w-fit">
+        {pending ? "Zmienianie…" : "Zmień hasło"}
+      </Button>
     </form>
   );
 }

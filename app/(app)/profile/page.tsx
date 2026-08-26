@@ -242,100 +242,82 @@ export default async function ProfilePage() {
   }
 
   return (
-    <main className="flex-1 px-4 py-6 md:px-14 md:py-14">
-      <div className="mx-auto flex max-w-6xl flex-col gap-10">
-        {/* Dashboard */}
-        <div className="flex flex-col gap-4">
+    <div data-ui="profile" className="flex min-w-0 flex-col gap-6">
+      <header className="flex items-center gap-2.5">
+        <h1 className="text-xl font-semibold tracking-[-0.3px]">Profil</h1>
+        <span className="mt-1.5 truncate text-xs text-fg-2">{user.name ?? user.email}</span>
+      </header>
+
+      <section className="flex flex-col gap-4">
+        <DashboardTiles summary={summary} />
+
+        {statusBreakdown.length > 0 && (
           <div className="flex flex-col gap-2">
-            <span className="eyebrow">Dashboard</span>
-            <h1 className="font-display text-[1.6rem] font-bold leading-[1.1] tracking-[-0.03em] md:text-[2rem]">
-              Cześć,{" "}
-              <span className="">
-                {user.name ?? user.email.split("@")[0]}
-              </span>
-              .
-            </h1>
-            <p className="text-[0.92rem] leading-[1.55] text-muted-foreground">
-              Twoja praca w pigułce. Statusy są agregowane między wszystkimi
-              tablicami w workspace&apos;ach.
-            </p>
+            <span className="eyebrow">Twoje zadania w statusach</span>
+            <StatusBreakdown items={statusBreakdown} />
           </div>
+        )}
 
-          <DashboardTiles summary={summary} />
+        {/* F12-K98: account activity feed — przywrócone na user feedback
+            "uciekł widok tego konta ze szczegółami aktywności". */}
+        <div id="aktywnosc" className="flex scroll-mt-16 flex-col gap-2 pt-2">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="eyebrow">Twoja aktywność</span>
+            {myActivity.length > 0 && (
+              <span className="font-mono text-2xs text-fg-3">Ostatnie {myActivity.length}</span>
+            )}
+          </div>
+          <ActivityFeed entries={myActivity} />
+        </div>
 
-          {statusBreakdown.length > 0 && (
-            <div className="flex flex-col gap-3">
-              <span className="eyebrow">Twoje zadania w statusach</span>
-              <StatusBreakdown items={statusBreakdown} />
-            </div>
-          )}
-
-          {/* F12-K98: account activity feed — przywrócone na user feedback
-              "uciekł widok tego konta ze szczegółami aktywności". */}
-          <div id="aktywnosc" className="flex flex-col gap-3 pt-4 scroll-mt-24">
+        {isManager && (
+          <div className="flex flex-col gap-2 pt-2">
             <div className="flex items-baseline justify-between gap-3">
-              <span className="eyebrow">Twoja aktywność</span>
-              {myActivity.length > 0 && (
-                <span className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
-                  Ostatnie {myActivity.length}
-                </span>
-              )}
+              <span className="eyebrow">Zespół</span>
+              <span className="font-mono text-2xs text-fg-3">
+                {teamRows.length} {teamRows.length === 1 ? "osoba" : "osób"}
+              </span>
             </div>
-            <ActivityFeed entries={myActivity} />
+            <TeamTasksTable rows={teamRows} />
           </div>
+        )}
+      </section>
 
-          {isManager && (
-            <div className="flex flex-col gap-3 pt-4">
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="eyebrow text-primary">Zespół</span>
-                <span className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
-                  {teamRows.length}{" "}
-                  {teamRows.length === 1 ? "osoba" : "osób"}
-                </span>
-              </div>
-              <TeamTasksTable rows={teamRows} />
-            </div>
-          )}
+      {/* Ustawienia konta — pod dashboardem, tak jak dotąd. */}
+      <section className="flex flex-col gap-4 border-t border-border pt-6">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-lg font-semibold">Ustawienia konta</h2>
+          <p className="text-xs text-fg-2">
+            Te informacje widzą inni członkowie w Twoich przestrzeniach roboczych.
+          </p>
         </div>
 
-        {/* Settings — kept below the dashboard so it's still discoverable
-            without dominating the page anymore. */}
-        <div className="flex flex-col gap-8 border-t border-border pt-8">
-          <div className="flex flex-col gap-2">
-            <span className="eyebrow">Ustawienia konta</span>
-            <h2 className="font-display text-[1.4rem] font-bold leading-[1.15] tracking-[-0.02em]">
-              Twój profil
-            </h2>
-            <p className="text-[0.92rem] leading-[1.55] text-muted-foreground">
-              Te informacje widzą inni członkowie w twoich przestrzeniach roboczych.
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <ProfileForm
+            initialName={user.name ?? ""}
+            initialTimezone={user.timezone}
+            initialAvatarUrl={user.avatarUrl}
+            email={user.email}
+          />
+
+          <div className="flex flex-col gap-4">
+            <div id="2fa" className="scroll-mt-16">
+              <TwoFactorSection enabled={!!user.totpEnabledAt} />
+            </div>
+            <ChangePasswordSection />
+          </div>
+        </div>
+
+        {user.isSuperAdmin && (
+          <div className="rounded-lg border border-border bg-canvas p-4">
+            <span className="eyebrow">Super admin</span>
+            <p className="mt-1 text-xs text-fg-2">
+              Masz dostęp do panelu administracyjnego — globalne tagi, flagi modułów i dziennik
+              audytu systemu.
             </p>
           </div>
-
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <ProfileForm
-              initialName={user.name ?? ""}
-              initialTimezone={user.timezone}
-              initialAvatarUrl={user.avatarUrl}
-              email={user.email}
-            />
-
-            <div className="flex flex-col gap-8">
-              <TwoFactorSection enabled={!!user.totpEnabledAt} />
-              <ChangePasswordSection />
-            </div>
-          </div>
-
-          {user.isSuperAdmin && (
-            <div className="border-t border-border pt-6">
-              <span className="eyebrow text-primary">Super Admin</span>
-              <p className="mt-2 text-[0.88rem] leading-[1.55] text-muted-foreground">
-                Masz dostęp do panelu administracyjnego (F7). Zarządzanie
-                globalnymi tagami, flagami modułów oraz audit log’iem systemu.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-    </main>
+        )}
+      </section>
+    </div>
   );
 }

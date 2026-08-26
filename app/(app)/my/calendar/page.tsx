@@ -1,12 +1,8 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import {
-  CalendarMonthGrid,
-  type CalendarEvent,
-} from "@/components/my/calendar/month-grid";
-import { CalendarWorkspaceFilter } from "@/components/my/calendar/workspace-filter";
-import { AppShell } from "@/components/layout/app-shell";
+import type { CalendarEvent } from "@/components/my/calendar/month-grid";
+import { MyCalendarWorkspace } from "@/components/my/calendar/calendar-workspace";
 
 export default async function MyCalendarPage({
   searchParams,
@@ -60,17 +56,42 @@ export default async function MyCalendarPage({
   const events: CalendarEvent[] = assignments.map((a) => ({
     id: a.task.id,
     title: a.task.title,
+    displayId: a.task.displayId,
     workspaceId: a.task.workspace.id,
     workspaceName: a.task.workspace.name,
     boardName: a.task.board.name,
-    statusColor: a.task.statusColumn?.colorHex ?? null,
+    // D4: kolor bierze się ze źródła (termin = niebieski), nie ze statusu.
+    statusColor: null,
     startAt: a.task.startAt ? a.task.startAt.toISOString() : null,
     stopAt: a.task.stopAt ? a.task.stopAt.toISOString() : null,
+    kind: "task",
   }));
+
+  // Przypomnienia osobiste, których jestem odbiorcą (te ukryte z listy
+  // /my/reminders nie wracają tylnymi drzwiami w kalendarzu).
+  const reminders = await db.personalReminder.findMany({
+    where: { recipientId: userId, recipientHiddenAt: null },
+    select: { id: true, title: true, dueAt: true },
+    orderBy: { dueAt: "asc" },
+  });
+
+  for (const r of reminders) {
+    events.push({
+      id: `reminder:${r.id}`,
+      entityId: r.id,
+      title: r.title,
+      workspaceId: "reminder",
+      workspaceName: "Przypomnienia",
+      boardName: "Przypomnienie",
+      statusColor: null,
+      startAt: null,
+      stopAt: r.dueAt.toISOString(),
+      kind: "reminder",
+    });
+  }
 
   // Vacations — user's own (approved + pending so they see what they
   // requested) + teammates' APPROVED only (don't leak pending plans).
-  // Color hint distinguishes own (sky) vs teammate (slate) at a glance.
   const workspaceIds = memberships.map((m) => m.workspaceId);
   const teammateIds = (
     await db.workspaceMembership.findMany({
@@ -97,11 +118,11 @@ export default async function MyCalendarPage({
     const who = v.requester.name ?? v.requester.email;
     events.push({
       id: `vacation:${v.id}`,
-      title: isMine ? "Twój urlop" : `${who}`,
+      title: isMine ? "Twój urlop" : `Urlop: ${who}`,
       workspaceId: "vacation",
       workspaceName: "Urlopy",
       boardName: isMine ? "Twój" : who,
-      statusColor: isMine ? "#0EA5E9" : "#64748B",
+      statusColor: null,
       startAt: v.startDate.toISOString(),
       stopAt: v.endDate.toISOString(),
       kind: "vacation",
@@ -110,26 +131,12 @@ export default async function MyCalendarPage({
   }
 
   return (
-    <AppShell>
-      <div className="mb-6 flex flex-col gap-2">
-        <span className="eyebrow">Twój kalendarz</span>
-        <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
-          Co masz <span className="">na osi</span>.
-        </h1>
-        <p className="max-w-[60ch] text-[0.95rem] leading-[1.55] text-muted-foreground">
-          Wszystkie zadania, w których jesteś assignee, na siatce miesiąca.
-          Klik = otwarcie karty zadania.
-        </p>
-      </div>
-
-      <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
-        <CalendarWorkspaceFilter
-          workspaces={availableWorkspaces}
-          selected={selectedWorkspace}
-        />
-      </div>
-
-      <CalendarMonthGrid events={events} />
-    </AppShell>
+    <div className="flex h-[calc(100dvh-var(--topbar))] min-h-0 flex-col bg-card">
+      <MyCalendarWorkspace
+        events={events}
+        workspaces={availableWorkspaces}
+        selectedWorkspace={selectedWorkspace}
+      />
+    </div>
   );
 }

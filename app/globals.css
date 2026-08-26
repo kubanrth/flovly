@@ -17,6 +17,8 @@
   --chip-pink-bg:#FBE2EE;--chip-pink-fg:#8A1F52;--chip-brown-bg:#EFE4DA;--chip-brown-fg:#5C3A1E;--chip-black-bg:#1C1A17;--chip-black-fg:#FFFFFF;
 
   --bg:#FFFFFF;--canvas:#FAF9F7;--fg:#1C1A17;--fg-2:#66625B;--fg-3:#8A857D;--link:#B83F00;
+  /* „dzisiaj" jako tło kolumny/wiersza (makiety D4, E2) — jaśniejsze od --selected. */
+  --today:#FFF9F5;
   --input-border:#D2CEC7;--input-border-hover:#B0ABA3;
   --selected-bg:#FFF4EE;--selected-bar:2px solid #FF5C00;--row-hover:#F3F1EE;
   --status-todo-bg:#EDEBE7;--status-todo-fg:#4A4640;--status-todo-dot:#8A857D;
@@ -61,7 +63,7 @@
   --color-paper:var(--paper);--color-canvas:var(--canvas);--color-ink:var(--ink);
   /* Secondary/tertiary text. UI-API.md documents text-fg-2/text-fg-3, but without
      these mappings Tailwind emitted nothing and the text fell back to --fg. */
-  --color-fg:var(--fg);--color-fg-2:var(--fg-2);--color-fg-3:var(--fg-3);
+  --color-fg:var(--fg);--color-fg-2:var(--fg-2);--color-fg-3:var(--fg-3);--color-today:var(--today);
   --color-card:var(--card);--color-card-foreground:var(--card-foreground);
   --color-popover:var(--popover);--color-popover-foreground:var(--popover-foreground);
   --color-primary:var(--primary);--color-primary-foreground:var(--primary-foreground);

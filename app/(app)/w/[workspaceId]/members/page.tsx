@@ -78,22 +78,15 @@ export default async function MembersPage({
     : [];
 
   return (
-    <div className="flex flex-col gap-6 md:gap-10">
+    <div className="flex flex-col gap-4">
       <WorkspaceHeader workspace={workspace} canEditSettings={can(ctx.role, "workspace.updateSettings")} />
-      <div className="flex flex-col gap-2">
-        <span className="eyebrow">Członkowie</span>
-        <h2 className="font-display text-[1.4rem] leading-[1.1] tracking-[-0.02em] md:text-[1.8rem]">
-          Kto pracuje w tej przestrzeni
-        </h2>
-        <p className="text-[0.88rem] leading-[1.5] text-muted-foreground md:text-[0.92rem] md:leading-[1.55]">
-          Admini mogą zapraszać do całego workspace&apos;a albo do konkretnej
-          tablicy. Tablica może być publiczna (wszyscy widzą) lub prywatna
-          (tylko wyraźnie dodani).
-        </p>
-      </div>
+      <p className="max-w-[80ch] text-xs text-fg-2">
+        Admini mogą zapraszać do całej przestrzeni albo do konkretnej tablicy. Tablica może być
+        publiczna (widzą wszyscy) lub prywatna (tylko wyraźnie dodani).
+      </p>
 
       {canManageBoardMembers && (
-        <nav className="-mx-4 flex items-center gap-1 overflow-x-auto border-b border-border px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:overflow-visible md:px-0">
+        <nav className="flex items-center gap-0.5 overflow-x-auto border-b border-border [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <TabLink href={`/w/${workspaceId}/members`} active={activeTab === "workspace"}>
             Workspace
           </TabLink>
@@ -107,7 +100,7 @@ export default async function MembersPage({
       )}
 
       {activeTab === "workspace" && (
-        <>
+        <div className="flex flex-col gap-4">
           {canInvite && (
             <InviteForm
               workspaceId={workspace.id}
@@ -115,13 +108,9 @@ export default async function MembersPage({
             />
           )}
 
-          <section className="flex flex-col gap-3">
-            <div className="flex items-baseline justify-between">
-              <h3 className="font-display text-[1.2rem] leading-[1.15] tracking-[-0.02em]">
-                Członkowie ({memberships.length})
-              </h3>
-            </div>
-            <div className="flex flex-col border-t border-border">
+          <section className="flex flex-col gap-2">
+            <span className="eyebrow">Członkowie ({memberships.length})</span>
+            <div className="overflow-hidden rounded-lg border border-border">
               {memberships.map((m) => (
                 <MemberRow
                   key={m.id}
@@ -141,13 +130,9 @@ export default async function MembersPage({
           </section>
 
           {invitations.length > 0 && (
-            <section className="flex flex-col gap-3">
-              <div className="flex items-baseline justify-between">
-                <h3 className="font-display text-[1.2rem] leading-[1.15] tracking-[-0.02em]">
-                  Oczekujące zaproszenia ({invitations.length})
-                </h3>
-              </div>
-              <div className="flex flex-col border-t border-border">
+            <section className="flex flex-col gap-2">
+              <span className="eyebrow">Oczekujące zaproszenia ({invitations.length})</span>
+              <div className="overflow-hidden rounded-lg border border-border">
                 {invitations.map((inv) => (
                   <PendingInviteRow
                     key={inv.id}
@@ -163,7 +148,7 @@ export default async function MembersPage({
               </div>
             </section>
           )}
-        </>
+        </div>
       )}
 
       {activeTab === "boards" && canManageBoardMembers && (
@@ -204,7 +189,7 @@ function TabLink({
     <Link
       href={href}
       data-active={active}
-      className="-mb-px inline-flex h-10 items-center border-b-2 border-transparent px-3 font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground data-[active=true]:border-primary data-[active=true]:text-foreground"
+      className="inline-flex h-10 items-center rounded-sm px-2.5 text-sm font-medium text-muted-foreground no-underline outline-none hover:text-foreground data-[active=true]:text-foreground data-[active=true]:shadow-[inset_0_-2px_0_var(--orange-500)]"
     >
       {children}
     </Link>

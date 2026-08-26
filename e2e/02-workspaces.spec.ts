@@ -15,8 +15,8 @@ test.describe("workspaces list", () => {
   });
 
   test("create workspace dialog opens and validates", async ({ page }) => {
-    await page.getByRole("button", { name: /utwórz workspace/i }).click();
-    const dialog = page.getByRole("dialog").filter({ hasText: "Jak nazwiemy tę przestrzeń?" });
+    await page.locator('[data-ui="main"]').getByRole("button", { name: /nowa przestrzeń/i }).click();
+    const dialog = page.getByRole("dialog").filter({ hasText: "Nowa przestrzeń robocza" });
     await expect(dialog).toBeVisible();
     // Submit empty → name is required, dialog must stay open and no navigation.
     await dialog.getByRole("button", { name: "Utwórz przestrzeń" }).click();

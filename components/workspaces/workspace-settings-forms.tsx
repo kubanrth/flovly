@@ -6,6 +6,9 @@ import {
   updateWorkspaceAction,
   type WorkspaceFormState,
 } from "@/app/(app)/workspaces/actions";
+import { Button } from "@/components/ui/button";
+import { Input, Textarea } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export function UpdateWorkspaceForm({
   workspaceId,
@@ -16,6 +19,8 @@ export function UpdateWorkspaceForm({
   initialName: string;
   initialDescription: string | null;
 }) {
+  const nameId = useId();
+  const descId = useId();
   const [state, formAction, pending] = useActionState<WorkspaceFormState, FormData>(
     updateWorkspaceAction,
     null,
@@ -27,39 +32,31 @@ export function UpdateWorkspaceForm({
   return (
     <form
       action={(fd) => startTransition(() => formAction(fd))}
-      className="flex flex-col gap-6"
+      className="flex max-w-[560px] flex-col gap-3 rounded-lg border border-border bg-card p-4"
     >
       <input type="hidden" name="id" value={workspaceId} />
 
-      <TextInput
-        label="Nazwa"
-        name="name"
-        defaultValue={initialName}
-        required
-        maxLength={60}
-        error={fieldErrors?.name}
-      />
-      <TextArea
-        label="Opis"
-        name="description"
-        defaultValue={initialDescription ?? ""}
-        maxLength={280}
-        error={fieldErrors?.description}
-      />
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={nameId}>Nazwa</Label>
+        <Input id={nameId} name="name" defaultValue={initialName} required maxLength={60} error={fieldErrors?.name} />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={descId}>Opis</Label>
+        <Textarea
+          id={descId}
+          name="description"
+          rows={3}
+          defaultValue={initialDescription ?? ""}
+          maxLength={280}
+          error={fieldErrors?.description}
+        />
+      </div>
 
-      <div className="flex items-center gap-4">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-5 font-sans text-[0.9rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
-        >
+      <div className="flex items-center gap-3">
+        <Button type="submit" loading={pending} disabled={pending}>
           {pending ? "Zapisuję…" : "Zapisz zmiany"}
-        </button>
-        {flash && (
-          <span className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-primary">
-            {flash}
-          </span>
-        )}
+        </Button>
+        {flash && <span className="text-xs text-success-text">{flash}</span>}
       </div>
     </form>
   );
@@ -84,19 +81,14 @@ export function DeleteWorkspaceForm({
 
   if (!expanded) {
     return (
-      <div className="flex flex-col gap-3">
-        <p className="text-[0.92rem] leading-[1.55] text-muted-foreground">
-          Usunięcie przestrzeni jest <span className="text-foreground">nieodwracalne</span>.
-          Wszystkie tablice, zadania, komentarze i załączniki zostaną oznaczone jako
-          usunięte.
+      <div className="flex max-w-[560px] flex-col gap-2.5">
+        <p className="text-xs text-fg-2">
+          Usunięcie przestrzeni jest <span className="font-medium text-foreground">nieodwracalne</span>.
+          Wszystkie tablice, zadania, komentarze i załączniki zostaną oznaczone jako usunięte.
         </p>
-        <button
-          type="button"
-          onClick={() => setExpanded(true)}
-          className="self-start rounded-lg border border-destructive/40 px-4 py-2 font-mono text-[0.72rem] uppercase tracking-[0.14em] font-semibold text-destructive transition-colors hover:bg-destructive/5 focus-visible:bg-destructive/5 focus-visible:outline-none"
-        >
+        <Button type="button" variant="secondary" onClick={() => setExpanded(true)} className="w-fit text-danger-text">
           Usuń przestrzeń
-        </button>
+        </Button>
       </div>
     );
   }
@@ -104,119 +96,37 @@ export function DeleteWorkspaceForm({
   return (
     <form
       action={(fd) => startTransition(() => formAction(fd))}
-      className="flex flex-col gap-4 rounded-lg border border-destructive/40 p-5"
+      className="flex max-w-[560px] flex-col gap-3 rounded-lg border border-danger bg-chip-red-bg p-4"
     >
       <input type="hidden" name="id" value={workspaceId} />
-      <p className="text-[0.92rem] leading-[1.55]">
-        Aby potwierdzić, wpisz dokładną nazwę:{" "}
-        <span className="font-mono text-foreground">{workspaceName}</span>
+      <p className="text-xs">
+        Aby potwierdzić, wpisz dokładną nazwę: <span className="font-mono font-medium">{workspaceName}</span>
       </p>
-      <div className="flex flex-col gap-2">
-        <label htmlFor={confirmId} className="eyebrow">Potwierdzenie</label>
-        <input
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={confirmId}>Potwierdzenie</Label>
+        <Input
           id={confirmId}
           name="confirmName"
-          type="text"
           required
           autoComplete="off"
           autoFocus
-          className="h-12 border-b border-border bg-transparent pb-1 font-mono text-[16px] outline-none focus-visible:border-destructive focus-visible:ring-2 focus-visible:ring-destructive/40 md:h-10 md:text-[0.95rem]"
+          className="font-mono"
+          error={fieldError}
         />
-        {fieldError && (
-          <span className="font-mono text-[0.68rem] text-destructive">{fieldError}</span>
-        )}
       </div>
       {formError && (
-        <p className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-destructive">
+        <p role="alert" className="text-xs text-danger-text">
           {formError}
         </p>
       )}
-      <div className="flex items-center gap-4">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex h-10 items-center justify-center rounded-lg bg-destructive px-5 font-sans text-[0.9rem] font-semibold text-white transition-[transform,opacity] duration-200 hover:-translate-y-[1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destructive disabled:opacity-60"
-        >
+      <div className="flex items-center gap-2">
+        <Button type="submit" variant="danger" loading={pending} disabled={pending}>
           {pending ? "Usuwam…" : "Tak, usuń nieodwracalnie"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setExpanded(false)}
-          className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-        >
+        </Button>
+        <Button type="button" variant="secondary" onClick={() => setExpanded(false)}>
           Anuluj
-        </button>
+        </Button>
       </div>
     </form>
-  );
-}
-
-function TextInput({
-  label,
-  name,
-  defaultValue,
-  required,
-  maxLength,
-  error,
-}: {
-  label: string;
-  name: string;
-  defaultValue?: string;
-  required?: boolean;
-  maxLength?: number;
-  error?: string;
-}) {
-  const inputId = useId();
-  return (
-    <div className="flex flex-col gap-2">
-      <label htmlFor={inputId} className="eyebrow">{label}</label>
-      <input
-        id={inputId}
-        name={name}
-        type="text"
-        defaultValue={defaultValue}
-        required={required}
-        maxLength={maxLength}
-        aria-invalid={!!error}
-        // Mobile v4: 48px tap target + 16px text prevents iOS auto-zoom.
-        className="h-12 border-b border-border bg-transparent pb-1 text-[16px] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive md:h-10 md:text-[1rem]"
-      />
-      {error && (
-        <span className="font-mono text-[0.68rem] text-destructive">{error}</span>
-      )}
-    </div>
-  );
-}
-
-function TextArea({
-  label,
-  name,
-  defaultValue,
-  maxLength,
-  error,
-}: {
-  label: string;
-  name: string;
-  defaultValue?: string;
-  maxLength?: number;
-  error?: string;
-}) {
-  const inputId = useId();
-  return (
-    <div className="flex flex-col gap-2">
-      <label htmlFor={inputId} className="eyebrow">{label}</label>
-      <textarea
-        id={inputId}
-        name={name}
-        rows={3}
-        defaultValue={defaultValue}
-        maxLength={maxLength}
-        aria-invalid={!!error}
-        className="min-h-[3.5rem] resize-none border-b border-border bg-transparent pb-1 text-[16px] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive md:min-h-[3rem] md:text-[1rem]"
-      />
-      {error && (
-        <span className="font-mono text-[0.68rem] text-destructive">{error}</span>
-      )}
-    </div>
   );
 }

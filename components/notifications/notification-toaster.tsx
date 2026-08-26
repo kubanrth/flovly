@@ -12,16 +12,18 @@
 //     blokować ekranu na zawsze.
 //   - Hover na karcie wstrzymuje auto-dismiss (UX standard).
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import Link from "next/link";
 import {
-  AtSign,
-  Bell,
-  CheckCircle2,
-  UserPlus,
-  Vote,
-  X,
-} from "lucide-react";
+  IconBell,
+  IconCheckCircle,
+  IconComment,
+  IconClose,
+  IconSupport,
+  IconTasks,
+  type IconProps,
+} from "@/components/ui/icons";
+import { cn } from "@/lib/utils";
 import { useUserRealtime } from "@/hooks/use-user-realtime";
 import {
   getNotificationForToastAction,
@@ -148,8 +150,7 @@ export function NotificationToaster({ userId }: { userId: string }) {
       aria-label="Powiadomienia"
       aria-live="polite"
       aria-atomic="false"
-      // z-[80] === Z.toast (F12-K104) — pod modal/backdrop ale nad fab/sticky.
-      className="pointer-events-none fixed right-4 top-4 z-[80] flex w-[360px] flex-col gap-2 max-md:top-16"
+      className="pointer-events-none fixed top-4 right-4 z-(--z-toast) flex w-[300px] flex-col gap-2 max-md:top-16"
     >
       {items.map((t) => (
         <ToastCard
@@ -180,8 +181,7 @@ function ToastCard({
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }) {
-  const Icon = ICON_FOR[item.iconKind] ?? Bell;
-  const colorClass = colorFor(item.iconKind);
+  const Icon = ICON_FOR[item.iconKind] ?? IconBell;
 
   return (
     <div
@@ -193,31 +193,20 @@ function ToastCard({
         // bezpieczne usunięcie. Enter-animacja nie ma ustawionego leaving.
         if (item.leaving) onRemove();
       }}
-      className="toast-card pointer-events-auto flex items-start gap-3 rounded-2xl border border-border bg-card p-3 shadow-[0_18px_40px_-16px_rgba(76,29,149,0.32),0_10px_26px_-10px_rgba(124,92,255,0.20)]"
+      className="toast-card surface pointer-events-auto flex items-start gap-2.5 p-3 shadow-e2"
     >
-      <span
-        className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${colorClass}`}
-        aria-hidden
-      >
-        <Icon size={14} />
+      <span className={cn("grid size-7 shrink-0 place-items-center rounded-md", HUE_FOR[item.iconKind])} aria-hidden>
+        <Icon width={14} height={14} />
       </span>
 
       <Link
         href={item.href}
         onClick={onDismiss}
-        className="flex min-w-0 flex-1 flex-col gap-0.5"
+        className="flex min-w-0 flex-1 flex-col rounded-sm outline-none"
       >
-        <span className="truncate font-display text-[0.92rem] font-semibold leading-tight tracking-[-0.01em]">
-          {item.title}
-        </span>
-        {item.body && (
-          <span className="truncate text-[0.82rem] text-muted-foreground">
-            {item.body}
-          </span>
-        )}
-        <span className="mt-0.5 font-mono text-[0.58rem] uppercase tracking-[0.14em] text-primary">
-          klik = otwórz
-        </span>
+        <span className="truncate text-sm font-semibold leading-5">{item.title}</span>
+        {item.body && <span className="truncate text-xs text-muted-foreground">{item.body}</span>}
+        <span className="mt-0.5 font-mono text-[10px] text-orange-700">klik = otwórz</span>
       </Link>
 
       <button
@@ -225,9 +214,9 @@ function ToastCard({
         onClick={onDismiss}
         aria-label="Zamknij"
         title="Zamknij"
-        className="grid h-6 w-6 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className="grid size-6 shrink-0 place-items-center rounded-sm text-n-500 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
       >
-        <X size={12} />
+        <IconClose width={13} height={13} />
       </button>
     </div>
   );
@@ -235,25 +224,18 @@ function ToastCard({
 
 // Static lookup — a function returning a component reads as "creating a
 // component during render" to the React Compiler lint.
-const ICON_FOR: Record<ToastNotificationPayload["iconKind"], typeof Bell> = {
-  mention: AtSign,
-  poll: Vote,
-  assigned: UserPlus,
-  support: CheckCircle2,
-  default: Bell,
+const ICON_FOR: Record<ToastNotificationPayload["iconKind"], (p: IconProps) => ReactElement> = {
+  mention: IconComment,
+  poll: IconTasks,
+  assigned: IconCheckCircle,
+  support: IconSupport,
+  default: IconBell,
 };
 
-function colorFor(kind: ToastNotificationPayload["iconKind"]): string {
-  switch (kind) {
-    case "mention":
-      return "bg-primary/10 text-primary";
-    case "poll":
-      return "bg-amber-500/10 text-amber-500";
-    case "assigned":
-      return "bg-emerald-500/10 text-emerald-500";
-    case "support":
-      return "bg-blue-500/10 text-blue-500";
-    default:
-      return "bg-muted text-muted-foreground";
-  }
-}
+const HUE_FOR: Record<ToastNotificationPayload["iconKind"], string> = {
+  mention: "bg-chip-orange-bg text-chip-orange-fg",
+  poll: "bg-chip-purple-bg text-chip-purple-fg",
+  assigned: "bg-chip-green-bg text-chip-green-fg",
+  support: "bg-chip-blue-bg text-chip-blue-fg",
+  default: "bg-chip-gray-bg text-chip-gray-fg",
+};

@@ -6,11 +6,17 @@ import { AppShell } from "@/components/layout/app-shell";
 
 // Personal reminders sent OR received. Separate from task reminders (which
 // run through the email cron); these surface as in-app popups.
-export default async function MyRemindersPage() {
+export default async function MyRemindersPage({
+  searchParams,
+}: {
+  // `?new=1` — wejście z menu „Utwórz" w top barze (SHELL-API).
+  searchParams: Promise<{ new?: string }>;
+}) {
   const session = await auth();
   if (!session?.user) redirect("/secure-access-portal");
   const userId = session.user.id;
 
+  const { new: openNew } = await searchParams;
   const now = new Date();
   const [sent, received, members, oldCount, oldReceivedCount] = await Promise.all([
     db.personalReminder.findMany({
@@ -73,6 +79,7 @@ export default async function MyRemindersPage() {
   return (
     <AppShell>
       <RemindersWorkspace
+        defaultOpen={openNew === "1"}
         currentUserId={userId}
         oldCount={oldCount}
         oldReceivedCount={oldReceivedCount}

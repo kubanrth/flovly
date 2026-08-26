@@ -369,10 +369,13 @@ function Chevron({ open, className }: { open: boolean; className?: string }) {
 
 // Ostatnie / Oznaczone gwiazdką.
 function SavedGroup({ icon, label, items, pathname, mobile = false }: { icon: IconType; label: string; items: SavedItem[]; pathname: string; mobile?: boolean }) {
-  const [open, setOpen] = useState(false);
+  // Collapsed while empty (as in A2), open as soon as there is something to
+  // show — until the user says otherwise.
+  const [override, setOverride] = useState<boolean | null>(null);
+  const open = override ?? items.length > 0;
   return (
     <>
-      <NavRow icon={icon} label={label} mobile={mobile} onClick={() => setOpen((v) => !v)} ariaExpanded={open} trailing={<Chevron open={open} />} />
+      <NavRow icon={icon} label={label} mobile={mobile} onClick={() => setOverride(!open)} ariaExpanded={open} trailing={<Chevron open={open} />} />
       {open &&
         (items.length === 0 ? (
           <div className={cn("flex h-8 items-center text-xs text-muted-foreground", mobile ? "pl-[34px]" : "pl-[30px]")}>Brak</div>

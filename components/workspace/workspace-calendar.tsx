@@ -12,7 +12,6 @@ import {
   type CalendarEvent,
 } from "@/components/my/calendar/month-grid";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
-import { Checkbox } from "@/components/ui/checkbox";
 
 export interface WorkspaceCalendarTask {
   id: string;
@@ -335,10 +334,12 @@ function EditEventForm({
         </div>
 
         <label className="flex items-center gap-2 text-[0.86rem]">
-          <Checkbox
-            ariaLabel="Cały dzień"
+          <input
+            type="checkbox"
+            aria-label="Cały dzień"
             checked={allDay}
             onChange={(e) => setAllDay(e.currentTarget.checked)}
+            className="size-4 shrink-0 accent-[var(--control-on)]"
           />
           <span>Cały dzień (ignoruje godziny)</span>
         </label>
@@ -474,11 +475,13 @@ function NewEventForm({
           />
         </div>
         <label className="flex items-center gap-2 self-end pb-2 text-[0.84rem] text-muted-foreground">
-          <Checkbox
+          <input
+            type="checkbox"
             name="allDay"
             checked={allDay}
-            ariaLabel="Cały dzień"
+            aria-label="Cały dzień"
             onChange={(e) => setAllDay(e.target.checked)}
+            className="size-4 shrink-0 accent-[var(--control-on)]"
           />
           cały dzień
         </label>
@@ -500,20 +503,25 @@ function NewEventForm({
             type="button"
             onClick={() => setColor(c)}
             aria-label={`Kolor ${c}`}
-            className="h-5 w-5 rounded-full ring-1 ring-foreground/10 transition-transform hover:scale-110"
-            style={{
-              background: c,
-              outline: color === c ? "2px solid var(--foreground)" : "none",
-              outlineOffset: color === c ? 2 : 0,
-            }}
-          />
+            className="grid h-7 w-7 place-items-center rounded-md outline-none hover:bg-n-100 active:bg-n-200"
+          >
+            <span
+              aria-hidden
+              className="block size-4 rounded-full ring-1 ring-foreground/10"
+              style={{
+                background: c,
+                outline: color === c ? "2px solid var(--foreground)" : "none",
+                outlineOffset: color === c ? 2 : 0,
+              }}
+            />
+          </button>
         ))}
       </div>
       <div className="flex items-center justify-end gap-2">
         <button
           type="button"
           onClick={onDone}
-          className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground"
+          className="inline-flex h-8 items-center rounded-md px-3 text-sm font-medium text-n-700 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
         >
           Anuluj
         </button>
@@ -568,7 +576,7 @@ function EventRow({
       <button
         type="button"
         onClick={onOpen}
-        className="flex min-w-0 flex-1 flex-col items-start text-left"
+        className="flex h-9 min-w-0 flex-1 flex-col items-start justify-center rounded-md text-left outline-none"
       >
         <span className="truncate font-display text-[0.92rem] font-semibold leading-tight tracking-[-0.01em] transition-colors group-hover:text-primary">
           {event.title}
