@@ -349,14 +349,14 @@ export const ShapeNode = memo(function ShapeNode({
               href={`/w/${d.workspaceId}/t/${c.taskId}`}
               onClick={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
-              className="inline-flex max-w-[160px] items-center gap-1 truncate rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground shadow-sm transition-colors hover:border-primary/60 hover:text-foreground nodrag"
+              className="nodrag inline-flex max-w-[160px] items-center gap-1 truncate rounded-sm border border-border bg-card px-1.5 py-0.5 text-2xs font-medium text-fg-2 shadow-sm transition-colors duration-150 ease-out hover:bg-n-50 hover:text-foreground focus-visible:shadow-[var(--focus)] focus-visible:outline-none"
               title={c.title}
             >
               # {c.title}
             </a>
           ))}
           {chips.length > 3 && (
-            <span className="inline-flex items-center rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground">
+            <span className="inline-flex items-center rounded-sm border border-border bg-card px-1.5 py-0.5 text-2xs font-medium text-fg-2">
               +{chips.length - 3}
             </span>
           )}
@@ -374,7 +374,7 @@ export const ShapeNode = memo(function ShapeNode({
             .map(([emoji, count]) => (
               <span
                 key={emoji}
-                className="inline-flex items-center gap-0.5 rounded-full border border-border bg-background px-1.5 py-0.5 text-[0.66rem] font-medium shadow-sm"
+                className="inline-flex items-center gap-0.5 rounded-sm border border-border bg-card px-1.5 py-0.5 text-2xs font-medium shadow-sm"
               >
                 <span>{emoji}</span>
                 {count > 1 && <span className="text-muted-foreground">{count}</span>}
@@ -387,7 +387,7 @@ export const ShapeNode = memo(function ShapeNode({
         <span
           aria-label="Zablokowany"
           title="Zablokowany"
-          className="pointer-events-none absolute -top-2 -right-2 grid h-5 w-5 place-items-center rounded-full bg-muted-foreground/90 text-background shadow"
+          className="pointer-events-none absolute -right-2 -top-2 grid h-5 w-5 place-items-center rounded-full bg-n-600 text-n-0 shadow-sm"
         >
           <Lock size={9} />
         </span>
@@ -835,9 +835,9 @@ function ImageShape({
           borderRadius: 8,
           overflow: "hidden",
           boxShadow: selected
-            ? "0 0 0 2px color-mix(in oklch, var(--primary) 40%, transparent), 0 8px 20px -10px rgba(10,10,40,0.2)"
-            : "0 1px 2px rgba(10,10,40,0.05), 0 8px 20px -10px rgba(10,10,40,0.15)",
-          background: imagePath ? "transparent" : "var(--muted)",
+            ? "0 0 0 2px var(--orange-500), var(--shadow-e1)"
+            : "var(--shadow-e1)",
+          background: imagePath ? "transparent" : "var(--n-100)",
         }}
         className="grid place-items-center"
       >

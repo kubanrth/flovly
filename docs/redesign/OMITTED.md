@@ -113,3 +113,15 @@ Stan po F1 (B4: nagłówek tablicy / tabsy / toolbar / dialog nowego widoku, 202
 - **Zadania z samym terminem** — przeciągnięcie przesuwa całe zadanie; przy braku `startAt`
   patchowany jest sam `stopAt` (nie wymyślamy daty startu).
 - **Filtry Status/Osoba w kalendarzu są lokalne**, nie lądują w `BoardView.configJson` (D16).
+
+### B9 Whiteboard / B10 Linia zadań
+- **Toolbar ma 2 pozycje więcej niż makieta** — „Zapisz" (zapis jest jawny, bez autozapisu,
+  więc bez przycisku nic nie przetrwałoby reloadu) i „⋯" (karta zadania, obraz, szablony,
+  eksport PNG, minimapa — narzędzia, których makieta nie pokazuje).
+- **AK112 mówi o 8 narzędziach, makieta rysuje 7 pigułek** — dołożony „Romb" (istniejące
+  narzędzie silnika), czyli jedno pole 32px różnicy względem PNG.
+- **Kropki siatki nie panują z widokiem** — AK112 wymaga CSS-owego `backgroundImage`
+  zamiast `<Background/>` React Flow, więc siatka jest statyczna względem kontenera.
+- **Pula zadań** Linii zadań to teraz panel spod ⋯, nie stały sidebar (makieta B10 go nie ma).
+- **Przeniesienie karty między etapami** to `removeFromFlowAction` + `appendTaskToFlowAction` —
+  akcji „przenieś" nie ma, a faza nie dokłada server actions. Karta ląduje na końcu etapu.

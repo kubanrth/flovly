@@ -8,14 +8,12 @@ import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
 import { BoardLinksServer } from "@/components/board/board-links-server";
 import { parseEnabledViews } from "@/lib/board-views";
-import {
-  TaskLineWorkspace,
-  type TaskLineTask,
-} from "@/components/canvas/taskline-workspace";
+import { TaskLineBoard } from "@/components/canvas/taskline-board";
 import type {
-  TaskLineFlowItem,
-  TaskLineRowMeta,
-} from "@/components/canvas/taskline-flow";
+  TaskLineCard,
+  TaskLineStage,
+  TaskLineTask,
+} from "@/components/canvas/taskline-stages";
 
 // F12-K73 v3: Task Line jako multi-line linear flow.
 async function ensureTaskLineCanvas(
@@ -171,10 +169,10 @@ export default async function BoardTaskLinePage({
     avatarUrl: m.user.avatarUrl,
   }));
 
-  // Build initial items dla TaskLineFlow z TASK_REF nodes.
+  // Karty etapów budowane z węzłów TASK_REF.
   const tasksById = new Map(taskLineTasks.map((t) => [t.id, t]));
   const firstRowId = rowsAfter[0]?.id ?? null;
-  const initialItems: TaskLineFlowItem[] = nodesAfter
+  const initialCards: TaskLineCard[] = nodesAfter
     .map((n) => {
       const meta =
         n.dataJson && typeof n.dataJson === "object" && !Array.isArray(n.dataJson)
@@ -207,11 +205,11 @@ export default async function BoardTaskLinePage({
             : null,
         x: n.x,
         lineId,
-      } satisfies TaskLineFlowItem;
+      } satisfies TaskLineCard;
     })
-    .filter((x): x is TaskLineFlowItem => x !== null);
+    .filter((x): x is TaskLineCard => x !== null);
 
-  const initialRows: TaskLineRowMeta[] = rowsAfter.map((r) => ({
+  const initialStages: TaskLineStage[] = rowsAfter.map((r) => ({
     id: r.id,
     name: r.name,
     order: r.order,
@@ -229,15 +227,19 @@ export default async function BoardTaskLinePage({
       />
 
       <ViewTransition>
-        <TaskLineWorkspace
-          workspaceId={workspaceId}
-          canvasId={canvas.id}
-          canEdit={canEdit}
-          tasks={taskLineTasks}
-          members={members}
-          initialItems={initialItems}
-          initialRows={initialRows}
-        />
+        {/* B10: widok od krawędzi do krawędzi — BoardShell dokłada padding
+            widoku, więc go tu odejmujemy. */}
+        <div className="relative -mx-6 -my-4 h-[calc(100dvh-13rem)] min-h-[420px] overflow-hidden border-t border-border max-md:-mx-4">
+          <TaskLineBoard
+            workspaceId={workspaceId}
+            canvasId={canvas.id}
+            canEdit={canEdit}
+            tasks={taskLineTasks}
+            members={members}
+            initialCards={initialCards}
+            initialStages={initialStages}
+          />
+        </div>
       </ViewTransition>
     </BoardShell>
   );

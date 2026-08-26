@@ -1790,9 +1790,9 @@ function CanvasEditorInner({
           </span>
         </span>
         {canEdit && (
-          <span className="rounded-md border border-border bg-card p-0.5 shadow-sm">
+          <div className="rounded-md border border-border bg-card p-0.5 shadow-sm">
             <TimerWidget />
-          </span>
+          </div>
         )}
       </div>
 
@@ -2152,7 +2152,7 @@ function TaskLinksPanel({
       )}
 
       {error && (
-        <span className="rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1 font-mono text-[0.64rem] uppercase tracking-[0.12em] text-destructive">
+        <span className="rounded-md border border-danger/40 bg-chip-red-bg px-2 py-1 text-2xs font-medium text-danger-text">
           {error}
         </span>
       )}
@@ -2449,7 +2449,7 @@ function ContextMenu({
       ref={ref}
       // zIndex 200 === Z.popoverInModal (F12-K104) — ContextMenu nad selected node.
       style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 200 }}
-      className="w-52 rounded-lg border border-border bg-popover p-1 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]"
+      className="w-52 rounded-lg border border-border bg-popover p-1 shadow-e2"
     >
       {hasSelection && (
         <>
@@ -2626,7 +2626,7 @@ function TimerWidget() {
       </button>
       {open && (
         // z-[200] === Z.popoverInModal (F12-K104) — TimerPopover, musi być nad modale.
-        <div className="absolute right-0 top-[calc(100%+4px)] z-[200] w-44 rounded-lg border border-border bg-popover p-2 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]">
+        <div className="absolute bottom-[calc(100%+4px)] left-0 z-[200] w-44 rounded-lg border border-border bg-popover p-2 shadow-e2">
           <div className="mb-2 grid place-items-center font-mono text-[1.25rem] tabular-nums text-foreground">
             {mm}:{ss}
           </div>
@@ -2962,7 +2962,7 @@ function TextColorPicker({
               // zIndex 200 === Z.popoverInModal (F12-K104) — TextColorPicker.
               zIndex: 200,
             }}
-            className="flex flex-col gap-1.5 rounded-lg border border-border bg-popover p-2 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)]"
+            className="flex flex-col gap-1.5 rounded-lg border border-border bg-popover p-2 shadow-e2"
           >
             <div className="flex flex-wrap gap-1.5">
               {TEXT_PALETTE.map((c) => (
@@ -3142,7 +3142,7 @@ function FontSizePicker({
               // zIndex 200 === Z.popoverInModal (F12-K104) — FontSizePicker.
               zIndex: 200,
             }}
-            className="flex flex-col gap-2 rounded-lg border border-border bg-popover p-2 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)]"
+            className="flex flex-col gap-2 rounded-lg border border-border bg-popover p-2 shadow-e2"
           >
           <div className="flex items-center gap-1">
             <button
@@ -3282,7 +3282,7 @@ function MobileCanvasToolbar({
 
   return (
     <>
-      <div className="pointer-events-auto absolute left-2 top-1/2 z-20 flex max-h-[calc(100dvh-48px)] -translate-y-1/2 flex-col gap-1 overflow-y-auto rounded-2xl border border-white/10 bg-neutral-900/95 p-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:hidden">
+      <div className="pointer-events-auto absolute left-2 top-1/2 z-20 flex max-h-[calc(100dvh-48px)] -translate-y-1/2 flex-col gap-1 overflow-y-auto rounded-2xl border border-n-700 bg-n-900 p-1.5 shadow-e2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:hidden">
         {/* MODE */}
         <MobileToolButton
           active={toolMode === "select"}
@@ -3311,7 +3311,7 @@ function MobileCanvasToolbar({
             <SquareIcon size={15} />
           </MobileToolButton>
           {shapesOpen && (
-            <div className="absolute left-[calc(100%+8px)] top-0 flex gap-1 rounded-xl border border-white/10 bg-neutral-900/95 p-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)]">
+            <div className="absolute left-[calc(100%+8px)] top-0 flex gap-1 rounded-xl border border-n-700 bg-n-900 p-1.5 shadow-e2">
               <MobileToolButton
                 onClick={() => {
                   addShape("RECTANGLE");
@@ -3374,7 +3374,7 @@ function MobileCanvasToolbar({
             <LayoutTemplate size={15} />
           </MobileToolButton>
           {templatesOpen && (
-            <div className="absolute left-[calc(100%+8px)] top-0 flex max-h-[60dvh] w-[200px] flex-col gap-1 overflow-y-auto rounded-xl border border-white/10 bg-neutral-900/95 p-2 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)]">
+            <div className="absolute left-[calc(100%+8px)] top-0 flex max-h-[60dvh] w-[200px] flex-col gap-1 overflow-y-auto rounded-xl border border-n-700 bg-n-900 p-2 shadow-e2">
               {TEMPLATES.map((t) => (
                 <button
                   key={t.key}
@@ -3429,7 +3429,7 @@ function MobileCanvasToolbar({
           ekranu nad fullscreen button'em. Mirror desktop'owej pen options
           row, ale w kompaktowej formie horizontal. */}
       {toolMode === "pen" && (
-        <div className="pointer-events-auto absolute bottom-3 left-1/2 z-20 flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border border-white/10 bg-neutral-900/95 px-2 py-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:hidden">
+        <div className="pointer-events-auto absolute bottom-3 left-1/2 z-20 flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border border-n-700 bg-n-900 px-2 py-1.5 shadow-e2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:hidden">
           {PEN_COLORS.map((c) => (
             <button
               key={c}
