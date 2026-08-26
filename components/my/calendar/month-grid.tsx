@@ -176,7 +176,9 @@ export function CalendarMonthGrid({
                 <button
                   type="button"
                   onClick={() => setExpandedDay({ date, events: dayEvents })}
-                  className="self-start rounded-sm text-2xs font-medium text-orange-700 outline-none hover:text-orange-800 hover:underline active:text-orange-900 focus-visible:shadow-[var(--focus)]"
+                  // h-7, not the 16px line box it used to be: below the WCAG 2.5.8
+                  // minimum target size, and day cells have room for it.
+                  className="flex h-7 items-center self-start rounded-sm text-2xs font-medium text-orange-700 outline-none hover:text-orange-800 hover:underline active:text-orange-900 focus-visible:shadow-[var(--focus)]"
                 >
                   +{overflow} więcej
                 </button>

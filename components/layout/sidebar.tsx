@@ -247,6 +247,9 @@ export function Sidebar({ user, workspaces, unreadNotificationCount, myTasksCoun
             {forYou.map((i) => (
               <NavRow key={i.key} href={i.href} icon={i.icon} label={i.label} badge={i.badge} active={isActive(pathname, i.href)} />
             ))}
+            {/* Route-owned section (D4 puts „Widoczne w kalendarzu" here). Empty
+                on every other route, so it costs nothing to leave mounted. */}
+            <div data-ui="sidebar-slot" />
             <div className="h-2" />
             <SavedGroup icon={IconRecent} label="Ostatnie" items={recent} pathname={pathname} />
             <SavedGroup icon={IconStar} label="Oznaczone gwiazdką" items={starred} pathname={pathname} />
@@ -485,7 +488,7 @@ function WorkspaceRow({ ws, pathname, active, expanded, onToggle }: { ws: Sideba
   return (
     <div ref={setNodeRef} style={sortableStyle(transform, transition, isDragging)}>
       <div className={cn("group flex h-8 items-center gap-1.5 rounded-md px-2 text-sm", active ? "bg-selected shadow-[inset_2px_0_0_var(--orange-500)]" : "hover:bg-n-100")}>
-        <button type="button" onClick={onToggle} aria-label={expanded ? "Zwiń tablice" : "Rozwiń tablice"} aria-expanded={expanded} className="-mx-1 grid size-5 shrink-0 place-items-center rounded-sm outline-none hover:bg-n-200">
+        <button type="button" onClick={onToggle} aria-label={expanded ? "Zwiń tablice" : "Rozwiń tablice"} aria-expanded={expanded} className="-mx-1 grid size-7 shrink-0 place-items-center rounded-sm outline-none hover:bg-n-200">
           <Chevron open={expanded} />
         </button>
         <Link href={`/w/${ws.id}`} prefetch={false} {...attributes} {...listeners} role="link" draggable={false} className="flex min-w-0 flex-1 items-center gap-1.5 self-stretch font-medium text-foreground outline-none">
@@ -494,7 +497,7 @@ function WorkspaceRow({ ws, pathname, active, expanded, onToggle }: { ws: Sideba
         </Link>
         {(manage || create) && (
           <Menu>
-            <MenuTrigger aria-label="Menu przestrzeni" className="grid size-6 shrink-0 place-items-center rounded-sm text-n-500 opacity-0 outline-none group-hover:opacity-100 hover:bg-n-200 hover:text-foreground focus-visible:opacity-100 data-popup-open:opacity-100">
+            <MenuTrigger aria-label="Menu przestrzeni" className="grid size-7 shrink-0 place-items-center rounded-sm text-n-500 opacity-0 outline-none group-hover:opacity-100 hover:bg-n-200 hover:text-foreground focus-visible:opacity-100 data-popup-open:opacity-100">
               <IconMore width={14} height={14} />
             </MenuTrigger>
             <MenuContent align="start" side="right">

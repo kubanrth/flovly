@@ -5,6 +5,7 @@
 // siatka godzinowa (Dzień/Tydzień) albo istniejąca siatka miesiąca.
 
 import { useMemo, useState, useSyncExternalStore } from "react";
+import { SidebarSlot } from "@/components/layout/sidebar-slot";
 import { useUiPref } from "@/hooks/use-ui-pref";
 import { plPlural } from "@/lib/pluralize";
 import { cn } from "@/lib/utils";
@@ -118,10 +119,10 @@ export function MyCalendarWorkspace({
 
   return (
     <div data-ui="calendar-view" className="flex min-h-0 flex-1">
-      <aside
-        data-ui="calendar-sidebar"
-        className="w-60 flex-none overflow-y-auto border-r border-border bg-canvas p-2 max-md:hidden"
-      >
+      {/* Rendered into the app sidebar (D4 puts these filters in the nav, not
+          in a second column beside it). */}
+      <SidebarSlot>
+        <div data-ui="calendar-sidebar">
         <div className="eyebrow flex h-[30px] items-end px-2">Widoczne w kalendarzu</div>
         {SOURCES.map((source) => {
           const on = !off.includes(source.id);
@@ -145,10 +146,11 @@ export function MyCalendarWorkspace({
         })}
 
         <div className="eyebrow mt-1.5 flex h-[30px] items-end px-2">Przestrzeń</div>
-        <div className="px-2 pt-1">
-          <CalendarWorkspaceFilter workspaces={workspaces} selected={selectedWorkspace} />
+          <div className="px-2 pt-1">
+            <CalendarWorkspaceFilter workspaces={workspaces} selected={selectedWorkspace} />
+          </div>
         </div>
-      </aside>
+      </SidebarSlot>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-card">
         <div className="flex flex-none items-center gap-2 border-b border-border px-8 pb-2.5 pt-3.5 max-md:px-4">

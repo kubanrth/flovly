@@ -34,7 +34,10 @@ export async function gotoFirstBoard(page: Page) {
   await nav.getByRole("button", { name: "Rozwiń tablice" }).first().click();
   await nav.locator('a[href*="/b/"]').first().click();
   await page.waitForURL(/\/b\/[^/]+\/table/);
-  await expect(page.locator('[data-ui="board-tabs"]')).toBeVisible();
+  // Same budget as waitForTable below: the board header streams in with the
+  // page, and under full-suite load the default 5 s expect timeout is the only
+  // thing that fails here.
+  await expect(page.locator('[data-ui="board-tabs"]')).toBeVisible({ timeout: 15_000 });
   await waitForTable(page);
 }
 
@@ -64,18 +67,24 @@ export function taskDrawer(page: Page) {
 // From the list view: click the first task link → intercepting-route side panel.
 export async function openFirstTask(page: Page) {
   const link = page.locator('[data-ui="list-row"] a[href*="/t/"], table tbody tr a[href*="/t/"]').first();
-  await expect(link).toBeVisible({ timeout: 15_000 });
-  await link.click();
-  // Rows keep streaming in after the header renders; a click that lands while
-  // the list re-renders is swallowed, so retry once before failing.
-  try {
-    await page.waitForURL(/\/t\//, { timeout: 5_000 });
-  } catch {
-    await link.click();
-    await page.waitForURL(/\/t\//, { timeout: 10_000 });
-  }
   const drawer = taskDrawer(page);
-  // Panel streams the task RSC payload — slow on `next dev` under full-suite load.
+
+  // Two ways the first click can be lost while the list is still streaming:
+  // it lands mid-reconcile and never navigates, or it navigates but the
+  // intercepting slot never mounts. Go back and click again for either.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await expect(link).toBeVisible({ timeout: 15_000 });
+    await link.click();
+    try {
+      await page.waitForURL(/\/t\//, { timeout: 5_000 });
+      await expect(drawer).toBeVisible({ timeout: 8_000 });
+      break;
+    } catch (err) {
+      if (attempt === 2) throw err;
+      if (/\/t\//.test(page.url())) await page.goBack({ waitUntil: "domcontentloaded" });
+      await waitForTable(page);
+    }
+  }
   await expect(drawer).toBeVisible({ timeout: 15_000 });
   await expect(drawer.getByLabel("Tytuł zadania")).toBeVisible({ timeout: 15_000 });
   return drawer;

@@ -127,7 +127,7 @@ function EmptyState({ onPick }: { onPick: (q: string) => void }) {
             key={q}
             type="button"
             onClick={() => onPick(q)}
-            className="rounded-lg border border-border bg-card px-3 py-2 text-left text-[0.8rem] leading-tight text-foreground transition-[border-color,background-color] hover:border-primary/40 hover:bg-primary/5"
+            className="min-h-9 rounded-lg border border-border bg-card px-3 py-2 text-left text-xs leading-tight text-foreground transition-[border-color,background-color] duration-150 ease-out hover:border-orange-300 hover:bg-orange-50"
           >
             {q}
           </button>

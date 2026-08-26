@@ -29,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { plPlural } from "@/lib/pluralize";
 import { cn } from "@/lib/utils";
-import { coversDay, monthSpan, overlaps, workingDays } from "./leave";
+import { coversDay, monthSpan, overlaps, toUtcDateOnly, workingDays } from "./leave";
 
 export interface TeamMember {
   id: string;
@@ -414,6 +414,10 @@ function NewRequestDialog() {
 
   async function submit(formData: FormData) {
     setPending(true);
+    for (const field of ["startDate", "endDate"]) {
+      const v = formData.get(field);
+      if (typeof v === "string" && v) formData.set(field, toUtcDateOnly(v));
+    }
     const result = await createVacationRequestAction(null, formData);
     setPending(false);
     setState(result);

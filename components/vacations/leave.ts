@@ -70,3 +70,14 @@ export function coversDay(range: DateRange, iso: string): boolean {
   const d = dayIndex(iso);
   return dayIndex(range.startDate) <= d && d <= dayIndex(range.endDate);
 }
+
+// The date picker writes local midnight, so in UTC+2 „28 sierpnia” arrives as
+// 2026-08-27T22:00Z. Everything downstream reads UTC calendar fields, which
+// shifted every leave a day earlier and could silently turn a Monday into a
+// zero-working-day Sunday. Re-stamp the picked calendar day as UTC midnight
+// before it leaves the browser.
+export function toUtcDateOnly(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString();
+}

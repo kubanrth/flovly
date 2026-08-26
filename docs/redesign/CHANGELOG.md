@@ -101,3 +101,26 @@ to inny kontekst (kafle profilu w wielu przestrzeniach).
   pełnoekranowe dopisane do `FULL_BLEED`, marginesy usunięte.
 - `#FFF9F5` (kolumna „dzisiaj" z makiet D4/E2) dodany jako token `--today`.
 - Usunięte 7 osieroconych komponentów (6 w `components/workspaces/`, `profile-dropdown.tsx`).
+
+### F4 — poprawki po krytykach
+- **Wszystkie daty urlopów były przesunięte o dzień.** Picker zapisuje lokalną północ
+  (`28 sierpnia` w UTC+2 = `2026-08-27T22:00Z`), a moduł urlopów czyta pola UTC. Skutkiem
+  był nie tylko zły napis: `31 sierpnia` stawało się `30 sierpnia`, czyli niedzielą, i wniosek
+  po cichu miał **0 dni roboczych**. Data z pickera jest teraz przestemplowana na północ UTC
+  tego samego dnia kalendarzowego (`toUtcDateOnly`, self-check w czterech strefach).
+- **AK142** — podniesione strefy trafienia poniżej minimum WCAG 2.5.8: rozwijanie tablic
+  w pasku bocznym i menu przestrzeni (20/24 → 28px), „+N więcej" w kalendarzu (16 → 28px),
+  podpowiedzi Aterona (34 → 36px). Prymityw checkboxa dostał 24px strefę przy zachowanym
+  widocznym kwadracie 14–20px.
+- **AK141** — filtry „Widoczne w kalendarzu" przeniesione z osobnej kolumny do paska
+  nawigacji, zgodnie z makietą, przez `components/layout/sidebar-slot.tsx` (portal do
+  `[data-ui=sidebar-slot]`), bez uczenia shellu o trasach.
+
+### Stabilizacja e2e
+Suite degradował się z przebiegu na przebieg (50/50 → 46/50 → 48/50, za każdym razem inny test).
+Przyczyną nie była losowość, tylko narastające dane: spec importu CSV dokładał 3 zadania na
+przebieg (27 sztuk z dziewięciu), a fixture parkował kubełki `/my-tasks` na „najbardziej
+zajętej" tablicy — czyli 400-wierszowej pozostałości po krytyku, której testy nigdy nie
+oglądają. Fixture wybiera teraz najstarszą niepustą tablicę i sprząta zadania importu;
+`openFirstTask` ponawia klik także wtedy, gdy URL się zmienił, a panel nie wstał.
+Dwa kolejne pełne przebiegi: 50/50.

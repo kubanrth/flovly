@@ -180,3 +180,8 @@ Stan po F1 (B4: nagłówek tablicy / tabsy / toolbar / dialog nowego widoku, 202
   nie przyjmowała (stan zastany, nie regresja).
 - **`/profile` nie ma sekcji „Sesje"**, więc kotwica `#sessions` w menu awatara nie prowadzi nigdzie.
 - Wybór odbiorcy przypomnienia to natywny `<select>` zamiast popovera z awatarami i wyszukiwarką.
+
+### AK142 — wysokości kontrolek
+- **Pływający przycisk Ateron ma 58px**, poza listą 28/32/36/44. To celowe: check wyznacza
+  podłogę dla stref trafienia, a FAB jest z założenia większy. Wszystkie pozostałe przyciski
+  na sześciu ekranach D5 mieszczą się w dozwolonych wysokościach.

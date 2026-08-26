@@ -1,6 +1,6 @@
 // Self-check for the pure Urlopy helpers: `npx tsx components/vacations/leave.check.ts`
 import assert from "node:assert/strict";
-import { ANNUAL_LEAVE_DAYS, coversDay, monthSpan, overlaps, remainingDays, usedDays, workingDays } from "./leave";
+import { ANNUAL_LEAVE_DAYS, coversDay, monthSpan, overlaps, remainingDays, usedDays, workingDays , toUtcDateOnly } from "./leave";
 
 const r = (startDate: string, endDate: string) => ({ startDate, endDate });
 
@@ -45,5 +45,17 @@ assert.equal(monthSpan(r("2026-10-01", "2026-10-05"), 2026, 8), null);
 assert.equal(coversDay(r("2026-09-22", "2026-09-26"), "2026-09-22"), true);
 assert.equal(coversDay(r("2026-09-22", "2026-09-26"), "2026-09-26"), true);
 assert.equal(coversDay(r("2026-09-22", "2026-09-26"), "2026-09-27"), false);
+
+// The picker hands us local midnight; the same calendar day must come back as
+// UTC midnight regardless of the machine's offset (this file also runs under
+// TZ=Europe/Warsaw in CI).
+{
+  const picked = new Date(2026, 7, 28, 0, 0, 0, 0).toISOString();
+  assert.equal(toUtcDateOnly(picked), "2026-08-28T00:00:00.000Z");
+  // Contract: the input is local midnight from the picker, so build it locally.
+  assert.equal(toUtcDateOnly(new Date(2026, 7, 31).toISOString()), "2026-08-31T00:00:00.000Z");
+  assert.equal(toUtcDateOnly(new Date(2026, 0, 1).toISOString()), "2026-01-01T00:00:00.000Z");
+  assert.equal(toUtcDateOnly("nonsense"), "nonsense");
+}
 
 console.log("leave.check.ts OK");

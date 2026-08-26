@@ -17,6 +17,7 @@ void (async () => {
     where: { workspace: { slug: "demo" } },
     select: {
       id: true,
+      createdAt: true,
       statusColumns: { select: { id: true, order: true }, orderBy: { order: "asc" } },
       _count: { select: { tasks: { where: { deletedAt: null } } } },
     },
@@ -27,10 +28,13 @@ void (async () => {
   });
 
   const admin = await db.user.findUnique({ where: { email: "admin@danielos.local" }, select: { id: true } });
-  // The seed board (most tasks) — e2e also creates empty boards.
+  // The oldest board that actually has tasks and status columns — i.e. the
+  // seeded one, which is also the board `gotoFirstBoard` lands on. Picking "the
+  // most tasks" used to win a 400-row board a critic left behind, and picking
+  // by name alone hits one of the empty "Sprint 1" duplicates.
   const board = boards
-    .filter((b) => b.statusColumns.length > 1)
-    .sort((a, b) => b._count.tasks - a._count.tasks)[0];
+    .filter((b) => b.statusColumns.length > 1 && b._count.tasks > 0)
+    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
   if (!admin || !board) {
     console.log(`reset ${reset.count} view(s); no board with status columns — skipped my-tasks fixture`);
     await db.$disconnect();
@@ -89,6 +93,7 @@ void (async () => {
         { title: { startsWith: "probe-" } },
         { title: { startsWith: "konflikt-" } },
         { title: { startsWith: "autosave-" } },
+        { title: { startsWith: "Import e2e" } },
         { title: "AK54" },
       ],
     },
