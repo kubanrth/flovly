@@ -2799,8 +2799,7 @@ function CanvasZoomControls({
 
   return (
     <div
-      // right-20 clears the fixed Ateron FAB, which otherwise covered the „−" button.
-      className="absolute bottom-4 right-20 z-[5] flex items-center gap-0.5 rounded-lg border border-border bg-card p-1 shadow-sm"
+      className="absolute bottom-4 right-4 z-[5] flex items-center gap-0.5 rounded-lg border border-border bg-card p-1 shadow-sm"
       data-canvas-controls=""
     >
       <ControlButton label="Powiększ" onClick={() => rf.zoomIn()}>

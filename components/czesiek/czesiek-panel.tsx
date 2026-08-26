@@ -211,7 +211,7 @@ export function CzesiekPanel({
         // mobile browser chrome i adresbar) gwarantuje true fullscreen na
         // iOS Safari. Na desktop wysokość liczona z inset-0 (top:0+bottom:0).
         // rounded-none na mobile (bez border-radius na fullscreen overlay).
-        className="fixed inset-0 z-50 flex translate-x-full flex-col border-l border-border bg-background opacity-0 transition-[transform,opacity] duration-300 ease-out data-[open=true]:translate-x-0 data-[open=true]:opacity-100 max-md:h-dvh max-md:rounded-none md:left-auto md:w-[720px] md:shadow-[0_18px_40px_-16px_rgba(76,29,149,0.36),0_30px_70px_-24px_rgba(124,92,255,0.24)]"
+        className="fixed inset-0 z-50 flex translate-x-full flex-col border-l border-border bg-background opacity-0 transition-[transform,opacity] duration-300 ease-out data-[open=true]:translate-x-0 data-[open=true]:opacity-100 max-md:h-dvh max-md:rounded-none md:left-auto md:w-[480px] md:shadow-e2"
         style={{ pointerEvents: open ? "auto" : "none" }}
       >
         {/* Header — F12-K81 v4 brand polish:
@@ -234,7 +234,7 @@ export function CzesiekPanel({
             </button>
             <span
               aria-hidden="true"
-              className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-xl bg-primary text-[0.82rem] font-bold leading-none text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_6px_16px_-5px_rgba(122,51,236,0.65)]"
+              className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-xs font-bold leading-none text-white"
             >
               At
             </span>

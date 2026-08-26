@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 // Those used to cancel this padding with negative margins hand-synced to the
 // values below — one padding change away from breaking.
 const FULL_BLEED =
-  /^(\/w\/[^/]+\/(b|c|t)\/|\/w\/[^/]+$|\/inbox$|\/my-tasks$|\/my\/todo$|\/my\/calendar$|\/vacations$)/;
+  /^(\/w\/[^/]+\/(b|c|t)\/|\/w\/[^/]+$|\/inbox$|\/my-tasks$|\/my\/(todo|calendar|notes)$|\/vacations$|\/w\/[^/]+\/(contacts|time|subscriptions|passwords|sales|briefs|support|wiki|canvases)(\/|$))/;
 
 export function RouteFrame({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

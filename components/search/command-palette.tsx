@@ -13,6 +13,7 @@
 //    nie tworzy własnych portali.
 
 import { useRouter } from "next/navigation";
+import { ATERON_OPEN_EVENT } from "@/components/czesiek/czesiek-fab";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Command } from "cmdk";
 import {
@@ -130,9 +131,10 @@ export function CommandPalette({ data }: { data: CommandPaletteData }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, data.workspaces, data.boards, navigate]);
 
+  const closePalette = useCallback(() => setOpenAndReset(false), [setOpenAndReset]);
   const sections = useMemo(
-    () => buildSections(data, navigate),
-    [data, navigate],
+    () => buildSections(data, navigate, closePalette),
+    [data, navigate, closePalette],
   );
 
   return (
@@ -241,6 +243,7 @@ export function CommandPalette({ data }: { data: CommandPaletteData }) {
 function buildSections(
   d: CommandPaletteData,
   navigate: (href: string) => void,
+  closePalette: () => void,
 ): Section[] {
   const out: Section[] = [];
 
@@ -304,6 +307,18 @@ function buildSections(
           const ws = d.workspaces[0];
           if (ws) navigate(`/w/${ws.id}`);
           else navigate("/workspaces");
+        },
+      },
+      {
+        key: "ateron",
+        icon: <Sparkles size={14} />,
+        label: "Zapytaj AI",
+        hint: "Ateron",
+        searchValue: "ai ateron asystent zapytaj czesiek",
+        onSelect: () => {
+          closePalette();
+          // The panel lives under the workspace layout and listens for this.
+          window.dispatchEvent(new Event(ATERON_OPEN_EVENT));
         },
       },
       {
