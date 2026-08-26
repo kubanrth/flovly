@@ -1,331 +1,170 @@
 "use client";
 
-import { startTransition, useEffect, useRef, useState } from "react";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+// „Kolumny” popover body: drag to reorder, eye to hide, gear/trash for custom
+// columns, „+ Dodaj kolumnę”. Persistence is the caller's (list-state).
+
+import { startTransition, useState } from "react";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  Columns,
-  Eye,
-  EyeOff,
-  GripVertical,
-  RotateCcw,
-  Settings2,
-  Trash2,
-} from "lucide-react";
-import {
-  configureColumnAction,
-  deleteTableColumnAction,
-  saveTableColumnPrefsAction,
-} from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
-import {
-  FIELD_TYPE_META,
-  type FieldOptions,
-  type FieldType,
-} from "@/lib/table-fields";
+import { GripVertical, Settings2 } from "lucide-react";
+import { configureColumnAction, deleteTableColumnAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
+import { FIELD_TYPE_META, type FieldOptions, type FieldType } from "@/lib/table-fields";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { IconEye, IconEyeOff, IconPlus, IconTrash, IconUndo } from "@/components/ui/icons";
 import { FieldOptionsEditor, FieldTypePicker } from "@/components/table/field-config";
+import { AddColumnForm } from "@/components/table/add-column-form";
+import { BuiltinColumnIcon, FieldTypeIcon } from "@/components/table/field-icons";
 
 export interface ColumnDef {
   id: string;
   label: string;
-  // Status column is always visible — we hide the toggle but keep it
-  // draggable so users can position it first/last/middle.
-  required?: boolean;
-  // Custom columns are user-editable (rename + delete).
+  // Frozen (☐/#ID/Tytuł) — always visible, not draggable.
+  frozen?: boolean;
   custom?: boolean;
-  // Only set for custom columns — used by gear-icon popover to change type/options.
   fieldType?: FieldType;
   fieldOptions?: FieldOptions | null;
 }
 
-export function ColumnSettings({
+export function ColumnSettingsPanel({
   workspaceId,
   boardId,
   columns,
   columnOrder,
   hidden,
-  onLocalChange,
+  canManage,
+  onChange,
 }: {
   workspaceId: string;
   boardId: string;
   columns: ColumnDef[];
   columnOrder: string[];
   hidden: string[];
-  onLocalChange: (next: { order: string[]; hidden: string[] }) => void;
+  canManage: boolean;
+  onChange: (next: { order: string[]; hidden: string[] }) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDocClick = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
+  const [adding, setAdding] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
-
-  const commit = (next: { order: string[]; hidden: string[] }) => {
-    onLocalChange(next);
-    const fd = new FormData();
-    fd.set("workspaceId", workspaceId);
-    fd.set("boardId", boardId);
-    fd.set(
-      "config",
-      JSON.stringify({ columnOrder: next.order, hidden: next.hidden }),
-    );
-    startTransition(() => {
-      saveTableColumnPrefsAction(fd);
-    });
-  };
-
-  const handleDragEnd = (e: DragEndEvent) => {
-    const { active, over } = e;
-    if (!over || active.id === over.id) return;
-    const oldIdx = columnOrder.indexOf(String(active.id));
-    const newIdx = columnOrder.indexOf(String(over.id));
-    if (oldIdx === -1 || newIdx === -1) return;
-    const next = [...columnOrder];
-    next.splice(oldIdx, 1);
-    next.splice(newIdx, 0, String(active.id));
-    commit({ order: next, hidden });
-  };
-
-  const toggleHidden = (id: string) => {
-    const nextHidden = hidden.includes(id)
-      ? hidden.filter((h) => h !== id)
-      : [...hidden, id];
-    commit({ order: columnOrder, hidden: nextHidden });
-  };
-
-  const reset = () => {
-    commit({
-      order: columns.map((c) => c.id),
-      hidden: [],
-    });
-  };
-
-  const orderedColumns = [
-    ...columnOrder
-      .map((id) => columns.find((c) => c.id === id))
-      .filter((c): c is ColumnDef => Boolean(c)),
+  const ordered = [
+    ...columnOrder.map((id) => columns.find((c) => c.id === id)).filter((c): c is ColumnDef => Boolean(c)),
     ...columns.filter((c) => !columnOrder.includes(c.id)),
   ];
+  const ids = ordered.map((c) => c.id);
+  const onDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
+    if (from < 0 || to < 0 || ordered[to]?.frozen) return;
+    onChange({ order: arrayMove(ids, from, to), hidden });
+  };
 
   return (
-    <div ref={rootRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-label="Ustawienia kolumn tabeli"
-        className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
-      >
-        <Columns size={12} />
-        <span>Kolumny</span>
-        {hidden.length > 0 && (
-          <span className="grid h-4 min-w-[16px] place-items-center rounded-full bg-primary px-1 text-[0.58rem] text-primary-foreground">
-            {hidden.length}
-          </span>
-        )}
-      </button>
-
-      {open && (
-        // Bump z-30 → z-50; sticky <thead> creates own stacking
-        // context at z-30, popover was rendered behind the column headers.
-        <div className="absolute right-0 top-[calc(100%+6px)] z-50 w-80 rounded-xl border border-border bg-popover p-3 shadow-[0_12px_32px_-12px_rgba(10,10,40,0.25)]">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="eyebrow">Kolumny tabeli</span>
-            <button
-              type="button"
-              onClick={reset}
-              className="inline-flex items-center gap-1 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-              title="Przywróć domyślne"
-            >
-              <RotateCcw size={10} /> reset
-            </button>
-          </div>
-          <p className="mb-3 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground/80">
-            przeciągnij aby zmienić kolejność · klik oka by ukryć · ⚙ aby zmienić typ
-            <br />
-            nową kolumnę dodaj klikając „+” na końcu nagłówków tabeli
-          </p>
-
-          <DndContext id="column-settings"
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={orderedColumns.map((c) => c.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <ul className="flex flex-col gap-1">
-                {orderedColumns.map((c) => (
-                  <SortableRow
-                    key={c.id}
-                    column={c}
-                    hidden={hidden.includes(c.id)}
-                    onToggle={() => toggleHidden(c.id)}
-                  />
-                ))}
-              </ul>
-            </SortableContext>
-          </DndContext>
+    <div className="w-[300px]" data-ui="columns-panel">
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="text-xs font-semibold">Kolumny</span>
+        <Button variant="ghost" size="sm" onClick={() => onChange({ order: columns.map((c) => c.id), hidden: [] })}>
+          <IconUndo />
+          Domyślne
+        </Button>
+      </div>
+      <DndContext id="column-settings" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+          <ul className="flex max-h-[50vh] flex-col overflow-y-auto">
+            {ordered.map((c) => (
+              <SortableRow
+                key={c.id}
+                column={c}
+                hidden={hidden.includes(c.id)}
+                canManage={canManage}
+                onToggle={() => onChange({ order: ids, hidden: hidden.includes(c.id) ? hidden.filter((h) => h !== c.id) : [...hidden, c.id] })}
+              />
+            ))}
+          </ul>
+        </SortableContext>
+      </DndContext>
+      {canManage && (
+        <div className="mt-1.5 border-t border-n-100 pt-2">
+          {adding ? (
+            <AddColumnForm workspaceId={workspaceId} boardId={boardId} onDone={() => setAdding(false)} />
+          ) : (
+            <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setAdding(true)}>
+              <IconPlus />
+              Dodaj kolumnę
+            </Button>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function SortableRow({
-  column,
-  hidden,
-  onToggle,
-}: {
-  column: ColumnDef;
-  hidden: boolean;
-  onToggle: () => void;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: column.id });
-
+function SortableRow({ column, hidden, canManage, onToggle }: { column: ColumnDef; hidden: boolean; canManage: boolean; onToggle: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: column.id, disabled: column.frozen });
   return (
     <li
       ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.55 : 1,
-      }}
-      className="flex items-center gap-2 rounded-md border border-transparent bg-background px-2 py-1.5 text-[0.88rem] hover:border-border"
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.55 : 1 }}
+      className="group flex h-8 items-center gap-1.5 rounded-md px-1 text-sm hover:bg-n-100"
     >
       <button
         type="button"
         {...attributes}
         {...listeners}
+        disabled={column.frozen}
         aria-label="Przeciągnij aby przesunąć"
-        className="grid h-6 w-5 shrink-0 cursor-grab place-items-center rounded-sm text-muted-foreground transition-colors hover:text-foreground active:cursor-grabbing"
+        className="inline-flex size-6 shrink-0 cursor-grab items-center justify-center rounded-sm text-n-400 outline-none hover:text-foreground active:cursor-grabbing disabled:invisible"
       >
-        <GripVertical size={12} />
+        <GripVertical size={12} strokeWidth={1.5} />
       </button>
-
-      <span className={`flex-1 truncate transition-colors ${hidden ? "text-muted-foreground/60" : ""}`}>
-        {column.label}
-        {column.custom && column.fieldType && (
-          <span className="ml-1.5 font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground/60">
-            {FIELD_TYPE_META[column.fieldType].label}
-          </span>
-        )}
+      <span className="inline-flex size-4 shrink-0 items-center justify-center text-n-500">
+        {column.fieldType ? <FieldTypeIcon type={column.fieldType} size={12} /> : <BuiltinColumnIcon id={column.id} size={12} />}
       </span>
-
-      {column.custom && column.fieldType && (
-        <ConfigureColumnButton
-          columnId={column.id.replace(/^custom:/, "")}
-          name={column.label}
-          fieldType={column.fieldType}
-          fieldOptions={column.fieldOptions ?? {}}
-        />
+      <span className={cn("min-w-0 flex-1 truncate", hidden && "text-n-400")}>{column.label}</span>
+      {column.custom && column.fieldType && <span className="shrink-0 text-2xs text-n-500">{FIELD_TYPE_META[column.fieldType].label}</span>}
+      {column.custom && column.fieldType && canManage && (
+        <ConfigureColumnButton columnId={column.id.replace(/^custom:/, "")} name={column.label} fieldType={column.fieldType} fieldOptions={column.fieldOptions ?? {}} />
       )}
-
-      {column.custom && (
-        <form
-          action={(fd) => startTransition(() => deleteTableColumnAction(fd))}
-          className="m-0"
+      {column.custom && canManage && (
+        <Button
+          variant="ghost"
+          size="sm"
+          iconOnly
+          aria-label="Usuń kolumnę"
+          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+          onClick={() => {
+            if (!confirm(`Usunąć kolumnę „${column.label}”?`)) return;
+            const fd = new FormData();
+            fd.set("id", column.id.replace(/^custom:/, ""));
+            startTransition(() => deleteTableColumnAction(fd));
+          }}
         >
-          <input type="hidden" name="id" value={column.id.replace(/^custom:/, "")} />
-          <button
-            type="submit"
-            aria-label="Usuń kolumnę"
-            title="Usuń kolumnę"
-            className="grid h-6 w-6 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-          >
-            <Trash2 size={12} />
-          </button>
-        </form>
+          <IconTrash />
+        </Button>
       )}
-
-      {column.required ? (
-        <span className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-muted-foreground/60">
-          wymagane
-        </span>
+      {column.frozen ? (
+        <span className="pr-1.5 text-2xs text-n-400">zamrożona</span>
       ) : (
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-label={hidden ? "Pokaż kolumnę" : "Ukryj kolumnę"}
-          className="grid h-6 w-6 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          {hidden ? <EyeOff size={12} /> : <Eye size={12} />}
-        </button>
+        <Button variant="ghost" size="sm" iconOnly aria-label={hidden ? "Pokaż kolumnę" : "Ukryj kolumnę"} onClick={onToggle} className={cn(hidden && "text-n-400")}>
+          {hidden ? <IconEyeOff /> : <IconEye />}
+        </Button>
       )}
     </li>
   );
 }
 
-// Per-column gear popover. Exposes name + type + type-specific options;
-// fires `configureColumnAction` on save. Closing without saving rolls
-// back local state.
-function ConfigureColumnButton({
-  columnId,
-  name,
-  fieldType,
-  fieldOptions,
-}: {
-  columnId: string;
-  name: string;
-  fieldType: FieldType;
-  fieldOptions: FieldOptions;
-}) {
+// Per-column gear popover: name + type + type-specific options → configureColumnAction.
+export function ConfigureColumnButton({ columnId, name, fieldType, fieldOptions }: { columnId: string; name: string; fieldType: FieldType; fieldOptions: FieldOptions }) {
   const [open, setOpen] = useState(false);
   const [draftName, setDraftName] = useState(name);
   const [draftType, setDraftType] = useState<FieldType>(fieldType);
   const [draftOptions, setDraftOptions] = useState<FieldOptions>(fieldOptions);
-  const popRef = useRef<HTMLDivElement>(null);
-
-  const openPopover = () => {
-    // Reset drafts to current persisted values on each open so the user
-    // never sees leftover edits from a prior cancelled session.
-    setDraftName(name);
-    setDraftType(fieldType);
-    setDraftOptions(fieldOptions);
-    setOpen(true);
-  };
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
-
   const save = () => {
     const fd = new FormData();
     fd.set("id", columnId);
@@ -337,66 +176,38 @@ function ConfigureColumnButton({
       setOpen(false);
     });
   };
-
   return (
-    <div className="relative" ref={popRef}>
-      <button
-        type="button"
-        onClick={() => (open ? setOpen(false) : openPopover())}
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        if (o) {
+          setDraftName(name);
+          setDraftType(fieldType);
+          setDraftOptions(fieldOptions);
+        }
+        setOpen(o);
+      }}
+    >
+      <PopoverTrigger
         aria-label="Konfiguruj kolumnę"
         title="Typ + opcje"
-        className="grid h-6 w-6 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-n-200 hover:text-foreground data-popup-open:bg-n-200"
       >
-        <Settings2 size={12} />
-      </button>
-      {open && (
-        <>
-          <button
-            type="button"
-            aria-label="Zamknij"
-            onClick={() => setOpen(false)}
-            className="fixed inset-0 z-40 cursor-default"
-          />
-          <div className="absolute right-0 top-[calc(100%+4px)] z-50 w-80 rounded-xl border border-border bg-popover p-3 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]">
-            <p className="eyebrow mb-2">Konfiguracja kolumny</p>
-            <input
-              value={draftName}
-              onChange={(e) => setDraftName(e.target.value)}
-              maxLength={80}
-              className="mb-3 w-full rounded-md border border-border bg-background px-2 py-1.5 text-[0.86rem] outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
-              placeholder="Nazwa kolumny"
-            />
-            <p className="mb-1.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground/80">
-              Typ
-            </p>
-            <FieldTypePicker value={draftType} onChange={setDraftType} />
-            <div className="mt-3 space-y-2">
-              <FieldOptionsEditor
-                type={draftType}
-                value={draftOptions}
-                onChange={setDraftOptions}
-              />
-            </div>
-            <div className="mt-3 flex items-center justify-end gap-2 border-t border-border pt-2">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Anuluj
-              </button>
-              <button
-                type="button"
-                onClick={save}
-                className="inline-flex h-7 items-center rounded-md bg-primary px-3 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90"
-              >
-                Zapisz
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
+        <Settings2 size={13} strokeWidth={1.5} />
+      </PopoverTrigger>
+      <PopoverContent align="end" className="flex w-[320px] flex-col gap-2.5 p-3">
+        <p className="text-xs font-semibold">Konfiguracja kolumny</p>
+        <Input size="sm" value={draftName} onChange={(e) => setDraftName(e.target.value)} maxLength={80} placeholder="Nazwa kolumny" aria-label="Nazwa kolumny" />
+        <span className="eyebrow">Typ</span>
+        <div className="max-h-[220px] overflow-y-auto">
+          <FieldTypePicker value={draftType} onChange={setDraftType} showComputed />
+        </div>
+        <FieldOptionsEditor type={draftType} value={draftOptions} onChange={setDraftOptions} />
+        <div className="flex items-center justify-end gap-2 border-t border-n-100 pt-2.5">
+          <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>Anuluj</Button>
+          <Button size="sm" onClick={save}>Zapisz</Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
-

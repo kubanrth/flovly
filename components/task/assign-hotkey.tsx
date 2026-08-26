@@ -33,6 +33,7 @@ export function useAssignHotkey({
   members: AssignMember[];
   workspaceId: string;
 }) {
+  void workspaceId; // kept in the public hook API (callers pass it); the menu no longer needs it
   const [hovered, setHovered] = useState<{
     taskId: string;
     assignedIds: Set<string>;
@@ -91,7 +92,6 @@ export function useAssignHotkey({
 
   const menu = openAt ? (
     <AssignMenu
-      workspaceId={workspaceId}
       members={members}
       at={openAt}
       onClose={close}
@@ -105,12 +105,10 @@ function AssignMenu({
   members,
   at,
   onClose,
-  workspaceId: _workspaceId,
 }: {
   members: AssignMember[];
   at: { x: number; y: number; taskId: string; assignedIds: Set<string> };
   onClose: () => void;
-  workspaceId: string;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");

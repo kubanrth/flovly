@@ -1,178 +1,57 @@
 "use client";
 
-import { startTransition, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { ArrowRight, ChevronRight, FolderTree, Search } from "lucide-react";
+import { startTransition, useState } from "react";
 import { moveTaskToBoardAction } from "@/app/(app)/w/[workspaceId]/t/actions";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { InputGroup } from "@/components/ui/input";
+import { IconChevronRight, IconMove, IconSearch } from "@/components/ui/icons";
 
-export interface MoveTargetBoard {
-  id: string;
-  name: string;
-  workspaceName: string;
-}
+export interface MoveTargetBoard { id: string; name: string; workspaceName: string }
 
-// Małe menu w nagłówku karty zadania — pokazuje listę docelowych tablic w tym
-// samym workspace (excluding current board). Klik na tablicę odpala server
-// action; po revalidate task ląduje na górze nowej listy. Status map'ujemy
-// po nazwie kolumny w action — UI nie pyta usera bo to dodatkowy klik dla
-// rzadkiego edge case'a (brak matcha = status = null, user może zmienić).
-//
-// Popover portalled do document.body żeby nie był ucięty przez `overflow-y-auto`
-// na TaskModalShellu; z-[200] === Z.popoverInModal (F12-K104) — nad drawer
-// popup (z-[110]) i nad mobile hamburger (z-[90]).
-export function MoveTaskMenu({
-  taskId,
-  currentBoardId,
-  availableBoards,
-}: {
-  taskId: string;
-  currentBoardId: string;
-  availableBoards: MoveTargetBoard[];
-}) {
+// „Przenieś" — pick a target board in the workspace; status is matched by column name
+// server-side (or cleared). After revalidate the task lands on top of the new board.
+export function MoveTaskMenu({ taskId, currentBoardId, availableBoards, iconOnly }: { taskId: string; currentBoardId: string; availableBoards: MoveTargetBoard[]; iconOnly?: boolean }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [coords, setCoords] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const popRef = useRef<HTMLDivElement>(null);
-
-  // Position popover beneath trigger via fixed coords (right-aligned to match
-  // poprzedni `right-0` look).
-  useEffect(() => {
-    if (!open) return;
-    const recompute = () => {
-      const r = triggerRef.current?.getBoundingClientRect();
-      if (!r) return;
-      if (r.bottom < 0 || r.top > window.innerHeight) {
-        setOpen(false);
-        return;
-      }
-      const POP_WIDTH = 300;
-      const left = Math.min(
-        Math.max(8, r.right - POP_WIDTH),
-        window.innerWidth - POP_WIDTH - 8,
-      );
-      setCoords({
-        top: r.bottom + 8,
-        left,
-      });
-    };
-    recompute();
-    const onScroll = () => recompute();
-    window.addEventListener("scroll", onScroll, true);
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll, true);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (triggerRef.current?.contains(t)) return;
-      if (popRef.current?.contains(t)) return;
-      setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
   const q = query.trim().toLowerCase();
-  const candidates = availableBoards
-    .filter((b) => b.id !== currentBoardId)
-    .filter((b) => (q ? b.name.toLowerCase().includes(q) : true))
-    .slice(0, 50);
+  const candidates = availableBoards.filter((b) => b.id !== currentBoardId).filter((b) => (q ? b.name.toLowerCase().includes(q) : true)).slice(0, 50);
 
   const submit = (targetBoardId: string) => {
     const fd = new FormData();
     fd.set("taskId", taskId);
     fd.set("targetBoardId", targetBoardId);
-    startTransition(() => {
-      void moveTaskToBoardAction(fd).then(() => {
-        setOpen(false);
-        setQuery("");
-      });
-    });
+    startTransition(async () => { await moveTaskToBoardAction(fd); setOpen(false); setQuery(""); });
   };
 
   return (
-    <>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        title="Przenieś zadanie do innej tablicy"
-        className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 font-sans text-[0.78rem] font-semibold text-violet-700 transition-colors hover:border-violet-500/50 hover:bg-violet-500/15 active:scale-[0.97] motion-reduce:active:scale-100"
-      >
-        <FolderTree size={12} /> Przenieś
-      </button>
-      {open && coords && typeof document !== "undefined" &&
-        createPortal(
-          <div
-            ref={popRef}
-            style={{
-              position: "fixed",
-              top: coords.top,
-              left: coords.left,
-              width: 300,
-            }}
-            className="z-[200] overflow-hidden rounded-lg border border-border bg-popover shadow-[0_16px_40px_-16px_rgba(10,10,40,0.35)]"
-          >
-            <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-              <Search size={11} className="text-muted-foreground" />
-              <input
-                autoFocus
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="szukaj tablicy…"
-                className="h-7 flex-1 bg-transparent text-[0.86rem] outline-none placeholder:text-muted-foreground/60"
-              />
-            </div>
-            {candidates.length === 0 ? (
-              <p className="px-3 py-4 text-center text-[0.82rem] text-muted-foreground">
-                {q ? "Brak dopasowań." : "Brak innych tablic w workspace."}
-              </p>
-            ) : (
-              <ul className="flex max-h-[300px] flex-col overflow-y-auto py-1">
-                {candidates.map((b) => (
-                  <li key={b.id}>
-                    <button
-                      type="button"
-                      onClick={() => submit(b.id)}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-accent/60"
-                    >
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate text-[0.88rem] font-medium">
-                          {b.name}
-                        </span>
-                        <span className="truncate font-mono text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground">
-                          {b.workspaceName}
-                        </span>
-                      </div>
-                      <ChevronRight size={12} className="shrink-0 text-muted-foreground" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p className="border-t border-border px-3 py-2 font-mono text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground/70">
-              <ArrowRight size={9} className="inline -mt-0.5 mr-1" />
-              Status zostanie dopasowany po nazwie albo wyczyszczony.
-            </p>
-          </div>,
-          document.body,
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger render={<Button variant={iconOnly ? "ghost" : "secondary"} size="sm" iconOnly={iconOnly} aria-label="Przenieś" title="Przenieś zadanie do innej tablicy" />}>
+        <IconMove />{!iconOnly && "Przenieś"}
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-[300px] p-0">
+        <div className="border-b border-border p-2">
+          <InputGroup leading={<IconSearch />} size="sm" autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Szukaj tablicy…" aria-label="Szukaj tablicy" />
+        </div>
+        {candidates.length === 0 ? (
+          <p className="px-3 py-4 text-center text-xs text-n-500">{q ? "Brak dopasowań." : "Brak innych tablic w przestrzeni."}</p>
+        ) : (
+          <ul className="flex max-h-[300px] flex-col overflow-y-auto p-1">
+            {candidates.map((b) => (
+              <li key={b.id}>
+                <button type="button" onClick={() => submit(b.id)} className="flex h-9 w-full items-center gap-2 rounded-md px-2 text-left outline-none hover:bg-n-100">
+                  <span className="flex min-w-0 flex-1 flex-col leading-tight">
+                    <span className="truncate text-sm font-medium">{b.name}</span>
+                    <span className="truncate text-2xs text-n-500">{b.workspaceName}</span>
+                  </span>
+                  <IconChevronRight width={12} height={12} className="text-n-500" />
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
-    </>
+        <p className="border-t border-border px-3 py-2 text-2xs text-n-500">Status zostanie dopasowany po nazwie albo wyczyszczony.</p>
+      </PopoverContent>
+    </Popover>
   );
 }

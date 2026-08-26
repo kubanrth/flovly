@@ -16,7 +16,8 @@ function inField(t: EventTarget | null) {
 export function useHotkeys({ onShortcuts, onCreateTask }: { onShortcuts: () => void; onCreateTask: () => void }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey || inField(e.target) || document.querySelector('[role="dialog"]')) return;
+      // :not([data-open="false"]) — the Ateron panel stays mounted as role=dialog while closed.
+      if (e.metaKey || e.ctrlKey || e.altKey || inField(e.target) || document.querySelector('[role="dialog"]:not([data-open="false"])')) return;
       if (e.key === "?") onShortcuts();
       else if (e.key === "/") openCommandPalette();
       else if (e.key === "c" || e.key === "C") onCreateTask();

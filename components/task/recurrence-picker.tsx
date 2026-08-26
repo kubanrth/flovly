@@ -1,178 +1,79 @@
 "use client";
 
-// Recurrence rule picker for task detail. Klient zażądał
-// "zadanie wchodzi każdego dnia miesiąca". Rule shape:
-//   - daily: every day
-//   - weekly: every week on `day` (0..6, Sun..Sat)
-//   - monthly: every month on `day` (1..31, clamped to month length)
-//
-// On change, pushes the rule via setTaskRecurrenceAction. Server cron
-// `/api/cron/spawn-recurring` runs daily at 00:05 UTC and creates
-// instances of templates that match today's rule.
-//
-// Visual: v4 RRULE builder — radio rows + day picker (weekly) /
-// numeric input (monthly) + live RRULE preview pod spodem.
+// Recurrence rule picker (klient: "zadanie wchodzi każdego dnia miesiąca").
+// Rule shape: daily | weekly (`day` 0..6 Sun..Sat) | monthly (`day` 1..31).
+// Cron `/api/cron/spawn-recurring` (00:05 UTC) spawns instances of templates.
 
 import { startTransition, useState } from "react";
-import { Repeat } from "lucide-react";
 import { setTaskRecurrenceAction } from "@/app/(app)/w/[workspaceId]/t/recurrence-actions";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
-type Rule = { freq: "daily" | "weekly" | "monthly"; day?: number };
+export type RecurrenceRule = { freq: "daily" | "weekly" | "monthly"; day?: number };
+type Freq = "none" | RecurrenceRule["freq"];
 
 const WEEKDAYS = ["Niedz.", "Pon.", "Wt.", "Śr.", "Czw.", "Pt.", "Sob."];
-// Skróty 1-literowe dla day-pickera weekly (v4 spec: P W Ś C P S N).
 const WEEKDAY_LETTERS = ["N", "P", "W", "Ś", "C", "P", "S"];
-// Mapowanie indexu (0=Sun..6=Sat) → RRULE BYDAY token.
-const RRULE_DAY = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+const FREQ_OPTS: { value: Freq; label: string }[] = [
+  { value: "none", label: "Brak" }, { value: "daily", label: "Codziennie" }, { value: "weekly", label: "Co tydzień" }, { value: "monthly", label: "Co miesiąc" },
+];
 
-type Freq = "none" | "daily" | "weekly" | "monthly";
+export function summarizeRule(rule: RecurrenceRule | null): string {
+  if (!rule) return "Brak";
+  if (rule.freq === "daily") return "Codziennie";
+  if (rule.freq === "weekly") return `Co tydzień, ${WEEKDAYS[rule.day ?? 1]}`;
+  return `Co miesiąc, ${rule.day ?? 1}. dnia`;
+}
 
-export function RecurrencePicker({
-  taskId,
-  rule,
-  disabled,
-}: {
-  taskId: string;
-  rule: Rule | null;
-  disabled: boolean;
-}) {
-  const [draft, setDraft] = useState<Rule | null>(rule);
-
-  const persist = (next: Rule | null) => {
+// Inline radio list (lives inside the „Cykliczność" popover in the details column).
+export function RecurrencePicker({ taskId, rule, disabled }: { taskId: string; rule: RecurrenceRule | null; disabled: boolean }) {
+  const [draft, setDraft] = useState<RecurrenceRule | null>(rule);
+  const persist = (next: RecurrenceRule | null) => {
     setDraft(next);
     const fd = new FormData();
     fd.set("taskId", taskId);
     fd.set("rule", next ? JSON.stringify(next) : "");
     startTransition(() => setTaskRecurrenceAction(fd));
   };
-
-  const currentFreq: Freq = draft?.freq ?? "none";
-
-  const summary = draft
-    ? draft.freq === "daily"
-      ? "Codziennie"
-      : draft.freq === "weekly"
-        ? `Co tydzień, ${WEEKDAYS[draft.day ?? 1]}`
-        : `Co miesiąc, ${draft.day ?? 1}. dnia`
-    : "Brak";
-
-  // Live RRULE preview — czysto kosmetyczne, server używa naszego JSON shape'u.
-  const rrule = !draft
-    ? "RRULE:FREQ=NONE"
-    : draft.freq === "daily"
-      ? "RRULE:FREQ=DAILY"
-      : draft.freq === "weekly"
-        ? `RRULE:FREQ=WEEKLY;BYDAY=${RRULE_DAY[draft.day ?? 1]}`
-        : `RRULE:FREQ=MONTHLY;BYMONTHDAY=${draft.day ?? 1}`;
-
-  const pickFreq = (v: Freq) => {
-    if (v === "none") return persist(null);
-    if (v === "daily") return persist({ freq: "daily" });
-    if (v === "weekly")
-      return persist({ freq: "weekly", day: draft?.day ?? 1 });
-    if (v === "monthly")
-      return persist({ freq: "monthly", day: draft?.day ?? 1 });
-  };
-
-  const FREQ_OPTS: { value: Freq; label: string }[] = [
-    { value: "none", label: "Brak" },
-    { value: "daily", label: "Codziennie" },
-    { value: "weekly", label: "Co tydzień" },
-    { value: "monthly", label: "Co miesiąc" },
-  ];
+  const freq: Freq = draft?.freq ?? "none";
+  const pick = (v: Freq) => persist(v === "none" ? null : v === "daily" ? { freq: "daily" } : { freq: v, day: draft?.day ?? 1 });
 
   return (
-    <div className="popover-surface flex flex-col gap-1 p-2">
-      <span className="eyebrow flex items-center gap-1.5 px-1 pb-0.5 text-[0.62rem]">
-        <Repeat size={11} />
-        Powtarzaj
-      </span>
-
-      <div role="radiogroup" aria-label="Częstotliwość powtarzania" className="flex flex-col gap-0.5">
+    <div className="flex w-[220px] flex-col gap-1">
+      <div role="radiogroup" aria-label="Częstotliwość powtarzania" className="flex flex-col">
         {FREQ_OPTS.map((opt) => {
-          const active = currentFreq === opt.value;
+          const active = freq === opt.value;
           return (
-            <button
-              key={opt.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              disabled={disabled}
-              onClick={() => pickFreq(opt.value)}
-              data-active={active}
-              className="flex items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition-colors hover:bg-muted active:bg-primary/10 data-[active=true]:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <span
-                aria-hidden="true"
-                className="grid h-[15px] w-[15px] shrink-0 place-items-center rounded-full border-[1.5px] border-border data-[active=true]:border-primary data-[active=true]:border-[4.5px]"
-                data-active={active}
-              />
-              <span
-                className={`flex-1 text-[13px] ${
-                  active ? "font-semibold text-foreground" : "font-medium text-muted-foreground"
-                }`}
-              >
-                {opt.label}
-              </span>
+            <button key={opt.value} type="button" role="radio" aria-checked={active} disabled={disabled} onClick={() => pick(opt.value)}
+              className={cn("flex h-8 items-center gap-2 rounded-md px-2 text-left text-sm outline-none hover:bg-n-100 disabled:text-n-400", active ? "font-medium text-foreground" : "text-n-600")}>
+              <span aria-hidden className={cn("size-3.5 shrink-0 rounded-full border bg-card", active ? "border-[4.5px] border-control-on" : "border-[1.5px] border-n-400")} />
+              {opt.label}
             </button>
           );
         })}
       </div>
-
-      {/* Weekly: day-picker (P W Ś C P S N) */}
-      {currentFreq === "weekly" && (
-        <div className="flex flex-wrap gap-1 px-1 pt-1.5">
+      {freq === "weekly" && (
+        <div className="flex gap-1 px-2 pt-1">
           {WEEKDAY_LETTERS.map((letter, idx) => {
             const active = (draft?.day ?? 1) === idx;
             return (
-              <button
-                key={idx}
-                type="button"
-                disabled={disabled}
-                aria-label={WEEKDAYS[idx]}
-                aria-pressed={active}
-                onClick={() => persist({ freq: "weekly", day: idx })}
-                data-active={active}
-                className="grid h-[26px] w-[26px] shrink-0 place-items-center rounded-[8px] bg-muted/50 font-mono text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-muted active:bg-primary/10 data-[active=true]:bg-primary data-[active=true]:text-white disabled:cursor-not-allowed disabled:opacity-60"
-              >
+              <button key={idx} type="button" disabled={disabled} aria-label={WEEKDAYS[idx]} aria-pressed={active} onClick={() => persist({ freq: "weekly", day: idx })}
+                className={cn("grid size-6 place-items-center rounded-sm font-mono text-2xs font-semibold outline-none", active ? "bg-control-on text-white" : "bg-n-100 text-n-600 hover:bg-n-200")}>
                 {letter}
               </button>
             );
           })}
         </div>
       )}
-
-      {/* Monthly: numeric input 1-31 */}
-      {currentFreq === "monthly" && (
-        <div className="flex items-center gap-2 px-1 pt-1.5">
-          <span className="text-[12px] text-muted-foreground">Dzień</span>
-          <input
-            type="number"
-            min={1}
-            max={31}
-            disabled={disabled}
-            value={draft?.day ?? 1}
-            onChange={(e) => {
-              const v = Math.max(1, Math.min(31, parseInt(e.target.value || "1", 10) || 1));
-              persist({ freq: "monthly", day: v });
-            }}
-            aria-label="Dzień miesiąca"
-            className="h-7 w-14 rounded-[8px] border border-border bg-card/40 px-2 text-center font-mono text-[12.5px] tabular-nums outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60"
-          />
-          <span className="text-[12px] text-muted-foreground">. miesiąca</span>
+      {freq === "monthly" && (
+        <div className="flex items-center gap-2 px-2 pt-1 text-xs text-n-600">
+          Dzień
+          <Input type="number" min={1} max={31} size="sm" disabled={disabled} value={draft?.day ?? 1} aria-label="Dzień miesiąca" className="w-14 text-center font-mono"
+            onChange={(e) => persist({ freq: "monthly", day: Math.max(1, Math.min(31, parseInt(e.target.value || "1", 10) || 1)) })} />
+          miesiąca
         </div>
       )}
-
-      {/* Live RRULE preview */}
-      <div className="mt-1 truncate px-1 pt-0.5 font-mono text-[10px] tracking-tight text-muted-foreground/80">
-        {rrule}
-      </div>
-
-      {draft && (
-        <span className="px-1 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/70">
-          {summary} · cron 00:05 UTC
-        </span>
-      )}
+      {draft && <span className="px-2 pt-1 font-mono text-[10px] text-n-500">{summarizeRule(draft)} · cron 00:05 UTC</span>}
     </div>
   );
 }

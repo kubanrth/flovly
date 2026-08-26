@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { execFileSync } from "node:child_process";
 
 // Shared navigation for the redesigned shell (top bar + sidebar + board header).
 // Seed data guarantees: workspace "Kickback" → board "Sprint 1" with tasks and
@@ -40,7 +41,10 @@ export async function gotoFirstBoard(page: Page) {
 // The table streams in after the board header (table/loading.tsx skeleton);
 // on `next dev` that can exceed the 5s default expect timeout.
 export async function waitForTable(page: Page) {
-  await expect(page.locator("table thead th").first()).toBeVisible({ timeout: 15_000 });
+  // Desktop renders a <table>; below 768px the Lista is a card list (B1-mobile).
+  await expect(
+    page.locator('table thead th, [data-ui="list-mobile"] [data-ui="list-row"]').first(),
+  ).toBeVisible({ timeout: 15_000 });
 }
 
 export function boardTab(page: Page, name: ViewName) {
@@ -52,17 +56,35 @@ export async function openView(page: Page, name: ViewName) {
   await page.waitForURL(VIEW_URL[name]);
 }
 
-// Task drawer = the dialog that contains the title textarea (the Ateron AI
-// panel is also a role=dialog, so never use a bare getByRole("dialog")).
+// Task panel (B2) = the 600px side sheet with data-ui="task-panel" (mobile: full-screen, same attribute).
 export function taskDrawer(page: Page) {
-  return page.getByRole("dialog").filter({ has: page.getByLabel("Tytuł zadania") });
+  return page.locator('[data-ui="task-panel"]');
 }
 
-// From the table view: click the first task link → intercepting-route drawer.
+// From the list view: click the first task link → intercepting-route side panel.
 export async function openFirstTask(page: Page) {
-  await page.locator('table tbody tr td a[href*="/t/"]').first().click();
+  const link = page.locator('[data-ui="list-row"] a[href*="/t/"], table tbody tr a[href*="/t/"]').first();
+  await expect(link).toBeVisible({ timeout: 15_000 });
+  await link.click();
+  // Rows keep streaming in after the header renders; a click that lands while
+  // the list re-renders is swallowed, so retry once before failing.
+  try {
+    await page.waitForURL(/\/t\//, { timeout: 5_000 });
+  } catch {
+    await link.click();
+    await page.waitForURL(/\/t\//, { timeout: 10_000 });
+  }
   const drawer = taskDrawer(page);
-  // Drawer streams the task RSC payload — slow on `next dev` under full-suite load.
+  // Panel streams the task RSC payload — slow on `next dev` under full-suite load.
   await expect(drawer).toBeVisible({ timeout: 15_000 });
+  await expect(drawer.getByLabel("Tytuł zadania")).toBeVisible({ timeout: 15_000 });
   return drawer;
+}
+
+
+// View config (filters/groupBy/widths) is persisted per view and shared by every
+// spec on the seed board — a spec that groups or filters would hide rows for the
+// next one. Call in beforeAll where a clean, ungrouped table is required.
+export function resetFixtures() {
+  execFileSync("npx", ["tsx", "e2e/reset-fixtures.ts"], { stdio: "ignore" });
 }

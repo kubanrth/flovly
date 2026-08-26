@@ -284,12 +284,8 @@ function buildSections(
         label: t.title,
         hint: t.workspaceName,
         searchValue: `zadanie task ${t.title} ${t.workspaceName}`,
-        // Otwiera tablicę zawierającą task — modal taska otwiera się
-        // przez ?task=<id> query (już istniejący pattern w Tabeli).
-        onSelect: () =>
-          navigate(
-            `/w/${t.workspaceId}/b/${t.boardId}/table?task=${t.id}`,
-          ),
+        // B2: ⌘K opens the task as the centered 960 modal (intercepting route + ?mode=modal).
+        onSelect: () => navigate(`/w/${t.workspaceId}/t/${t.id}?mode=modal`),
       })),
     });
   }

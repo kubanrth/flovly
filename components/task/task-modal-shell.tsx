@@ -2,34 +2,28 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
-import { Dialog as BaseDialog } from "@base-ui/react/dialog";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useUiPref } from "@/hooks/use-ui-pref";
+import { TaskShellContext } from "@/components/task/task-shell-context";
 
-// Intercepting-route task modal — closing navigates back in history so the intercepted route unmounts naturally.
-// sessionStorage 'taskModalReturnTo' lets CreateTaskButton route to the originating page (table/kanban) instead of workspace overview.
-// Controlled `open` state: X click closes UI immediately, then navigates (avoids 2-click feel).
-export function TaskModalShell({
-  taskId,
-  children,
-}: {
-  taskId: string;
-  children: React.ReactNode;
-}) {
+export const PANEL_MIN = 480;
+export const PANEL_MAX = 800;
+
+// Intercepting-route task shell (B2). `panel` = 600px right sheet WITHOUT a
+// scrim — the list underneath stays interactive (clicking another row swaps
+// the task). `modal` = centered 960×760 dialog with scrim (⌘K / notifications).
+// Closing navigates back to the originating list + scroll (K135/K138 logic
+// kept verbatim below, only the scroll container changed: the v5 shell
+// scrolls `[data-ui=main]`, not `window`).
+export function TaskModalShell({ taskId, mode = "panel", children }: { taskId: string; mode?: "panel" | "modal"; children: React.ReactNode }) {
   const router = useRouter();
   const [open, setOpen] = useState(true);
-  // Idempotency guard — close() fired twice per X click (onClick + onOpenChange) and second call
-  // saw empty sessionStorage so router.back() jumped an extra level.
+  // Idempotency guard — close() fired twice per X click (onClick + onOpenChange).
   const closingRef = useRef(false);
-
-  // Scroll position podłoża zapisana w momencie OTWARCIA drawer'a. base-ui
-  // robi scroll-lock body kiedy się otwiera; jego własna restore-logic
-  // gubiła pozycję gdy w międzyczasie router.refresh() / revalidatePath
-  // przebudował underlying page (np. nowy task w tabeli) → po zamknięciu
-  // lądowaliśmy na samym dole. Trzymamy własną wartość i restore'ujemy
-  // ręcznie z scroll: false na route push'u.
-  const restoreScrollYRef = useRef<number | null>(null);
+  const restoreRef = useRef<{ main: number; win: number } | null>(null);
   useEffect(() => {
-    restoreScrollYRef.current = window.scrollY;
+    restoreRef.current = { main: mainEl()?.scrollTop ?? 0, win: window.scrollY };
   }, []);
 
   const close = () => {
@@ -42,98 +36,96 @@ export function TaskModalShell({
       sessionStorage.removeItem("taskModalReturnTo");
       if (raw) {
         const parsed = JSON.parse(raw) as { taskId?: string; path?: string };
-        if (parsed?.taskId === taskId && typeof parsed.path === "string") {
-          returnTo = parsed.path;
-        }
+        if (parsed?.taskId === taskId && typeof parsed.path === "string") returnTo = parsed.path;
       }
-    } catch {
-      /* sessionStorage off or bad JSON — fallback to back */
-    }
-    // F12-K135: fallback = ostatnia nie-taskowa ścieżka z RouteTracker'a
-    // ((app) layout, aktualizuje się na każdą SPA-nawigację).
-    // Poprzednie podejście (K106/K119) używało document.referrer — ale
-    // referrer trzyma ostatni PEŁNY document load, nie SPA history. User
-    // wchodził do appki z /inbox → close drawer'a przenosił do powiadomień
-    // mimo że siedział w tabeli. sessionStorage tracker nie ma tej wady.
+    } catch { /* sessionStorage off or bad JSON — fallback to back */ }
+    // F12-K135: fallback = last non-task path from RouteTracker (SPA history, not document.referrer).
     if (!returnTo) {
       try {
         const last = sessionStorage.getItem("flovly:lastListPath");
-        // Sanity: internal path, bez /t/<id> (tracker i tak je pomija —
-        // defensive double-check na wypadek starych/uszkodzonych wpisów).
-        if (
-          last &&
-          last.startsWith("/") &&
-          !last.startsWith("//") &&
-          !/\/t\/[A-Za-z0-9_-]+/.test(last)
-        ) {
-          returnTo = last;
-        }
-      } catch {
-        /* sessionStorage off — fallback to router.back() */
-      }
+        if (last && last.startsWith("/") && !last.startsWith("//") && !/\/t\/[A-Za-z0-9_-]+/.test(last)) returnTo = last;
+      } catch { /* sessionStorage off — fallback to router.back() */ }
     }
-    // F12-K138: scroll pozycja z RouteTracker'a (zapisywana NA BIEŻĄCO gdy
-    // user scrollował listę) — ref z mount'u drawer'a bywał przekłamany bo
-    // base-ui scroll-lock potrafił już wyzerować window.scrollY.
-    let restoreY = restoreScrollYRef.current ?? 0;
+    // F12-K138: window scroll from RouteTracker (kept for legacy window-scrolling pages);
+    // `[data-ui=main]` scroll comes from our mount-time ref (no scroll-lock on the non-modal panel).
+    const restore = { ...(restoreRef.current ?? { main: 0, win: 0 }) };
     try {
-      const stored = sessionStorage.getItem("flovly:lastListScroll");
-      const n = stored !== null ? Number(stored) : NaN;
-      if (Number.isFinite(n) && n >= 0) restoreY = n;
-    } catch {
-      /* sessionStorage off — zostaje ref */
-    }
-    if (returnTo) {
-      router.push(returnTo, { scroll: false });
-    } else {
-      router.back();
-    }
-    // F12-K138: restore PONAWIANY — pojedynczy rAF przegrywał wyścig z
-    // (a) unlock'iem scroll-locka base-ui (własny restore), (b) commitem
-    // re-renderu tabeli po revalidate (zmiana wysokości strony). Efekt u
-    // klienta: widok "zjeżdżał na dół" albo przesuwał się o kilkadziesiąt
-    // px. Kilka prób w oknie ~250ms wygrywa z oboma.
-    const apply = () => window.scrollTo({ top: restoreY, behavior: "instant" });
+      const n = Number(sessionStorage.getItem("flovly:lastListScroll"));
+      if (Number.isFinite(n) && n > 0) restore.win = n;
+    } catch { /* noop */ }
+    if (returnTo) router.push(returnTo, { scroll: false });
+    else router.back();
+    // Retry over ~250ms — a single rAF loses the race with the post-revalidate table re-render.
+    const apply = () => {
+      const main = mainEl();
+      if (main && main.scrollTop !== restore.main) main.scrollTop = restore.main;
+      if (restore.win) window.scrollTo({ top: restore.win, behavior: "instant" });
+    };
     requestAnimationFrame(apply);
     setTimeout(apply, 50);
     setTimeout(apply, 130);
     setTimeout(apply, 250);
   };
 
+  const ctx = { mode, close };
+  const onOpenChange = (next: boolean) => { if (!next) close(); };
+
+  if (mode === "modal") {
+    return (
+      <TaskShellContext.Provider value={ctx}>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          <DialogContent data-ui="task-modal" showCloseButton={false} initialFocus={false} className="h-[760px] max-h-[calc(100dvh-32px)] sm:max-w-[960px]">
+            <DialogTitle className="sr-only">Zadanie</DialogTitle>
+            {children}
+          </DialogContent>
+        </Dialog>
+      </TaskShellContext.Provider>
+    );
+  }
+
   return (
-    <BaseDialog.Root
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) close();
-      }}
-    >
-      <BaseDialog.Portal>
-        {/* F12-K104: ujednolicone z tokens — backdrop z-[100] (modalBackdrop),
-            popup z-[110] (modal). Sidebar hamburger ma z-[80] więc nadal jest
-            pod drawerem (klient: "po stworzeniu zadania nie da się go
-            zamknąć"). Portalled popovery WEWNĄTRZ drawera muszą używać
-            z-[200] (popoverInModal) żeby wyjść nad popup. */}
-        <BaseDialog.Backdrop className="fixed inset-0 z-[100] bg-background/70 data-[closed]:opacity-0 data-[open]:opacity-100" />
-        <BaseDialog.Popup
-          className="fixed inset-y-0 right-0 z-[110] flex w-full max-w-[960px] flex-col overflow-y-auto border-l border-border bg-background shadow-[0_18px_40px_-16px_rgba(76,29,149,0.40),0_30px_70px_-24px_rgba(124,92,255,0.24)] data-[closed]:translate-x-full data-[open]:translate-x-0 transition-transform duration-200"
-          initialFocus={undefined}
-        >
-          {/* F12-K41: padding sm:px-8 — na mobile (~360-400px szerokości
-              drawer = full width) px-8 było za szerokie. */}
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 sm:px-8">
-            <BaseDialog.Title className="eyebrow">Szczegóły zadania</BaseDialog.Title>
-            <button
-              type="button"
-              onClick={close}
-              className="grid h-9 w-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label="Zamknij"
-            >
-              <X size={18} />
-            </button>
-          </div>
-          <div className="flex-1 px-4 py-6 sm:px-8 sm:py-8">{children}</div>
-        </BaseDialog.Popup>
-      </BaseDialog.Portal>
-    </BaseDialog.Root>
+    <TaskShellContext.Provider value={ctx}>
+      <Sheet open={open} onOpenChange={onOpenChange} modal={false} disablePointerDismissal>
+        <PanelContent>{children}</PanelContent>
+      </Sheet>
+    </TaskShellContext.Provider>
   );
+}
+
+function PanelContent({ children }: { children: React.ReactNode }) {
+  const [width, setWidth] = useUiPref<number>("ui:task-panel-w", 600);
+  const w = Math.min(PANEL_MAX, Math.max(PANEL_MIN, width));
+  // Drag handle on the left edge: width = viewport right edge − pointer x.
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const move = (ev: PointerEvent) => setWidth(Math.min(PANEL_MAX, Math.max(PANEL_MIN, Math.round(window.innerWidth - ev.clientX))));
+    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+  return (
+    <SheetContent
+      side="right"
+      modal={false}
+      showCloseButton={false}
+      data-ui="task-panel"
+      style={{ "--panel": `${w}px` } as React.CSSProperties}
+      className="panel-in top-0! md:top-(--topbar)! md:h-auto"
+      initialFocus={false}
+    >
+      <SheetTitle className="sr-only">Zadanie</SheetTitle>
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Zmień szerokość panelu"
+        onPointerDown={onPointerDown}
+        className="absolute inset-y-0 -left-1 z-10 hidden w-2 cursor-col-resize hover:bg-orange-500/30 md:block"
+      />
+      {children}
+    </SheetContent>
+  );
+}
+
+function mainEl() {
+  return typeof document === "undefined" ? null : document.querySelector<HTMLElement>('[data-ui="main"]');
 }

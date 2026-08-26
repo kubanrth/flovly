@@ -4,7 +4,7 @@ import type { AppFrameProps } from "@/components/layout/shell-types";
 import { BoardShell } from "@/components/view/board-shell";
 import { BoardHeader } from "@/components/view/board-header";
 import { CreateViewDialog } from "@/components/view/create-view-dialog";
-import { TableToolbar } from "@/components/view/table-toolbar";
+import { BoardToolbar } from "@/components/view/board-toolbar";
 import { ShareBoardDialog } from "@/components/board/share-board-dialog";
 import type { ViewName } from "@/lib/board-views";
 
@@ -47,7 +47,7 @@ export default async function DevBoardHeaderPage({ searchParams }: { searchParam
           canEditName
           defaultViewIds={{ table: "v1", kanban: "v2" }}
           members={MEMBERS}
-          toolbar={active === "table" ? <TableToolbar people={MEMBERS} /> : undefined}
+          toolbar={active === "table" ? <BoardToolbar people={MEMBERS} filterButtons={[{ label: "Status" }, { label: "Priorytet" }, { label: "Tag" }]} /> : undefined}
           createViewButton={<CreateViewDialog workspaceId="ws1" boardId="b1" enabled={ALL} existingDefaultTypes={ALL} />}
           actions={<ShareBoardDialog workspaceId="ws1" boardId="b1" initialLinks={[]} />}
         />

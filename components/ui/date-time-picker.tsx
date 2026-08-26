@@ -29,6 +29,9 @@ export interface DateTimePickerProps {
   // Każda edycja (dzień, godzina, preset, wyczyść) — autosave bez formularza.
   onChange?: (iso: string) => void;
   dateOnly?: boolean;
+  // Custom display of the picked date (Lista shows „29 sie”); text then inherits the trigger colour.
+  format?: (d: Date) => string;
+  triggerClassName?: string;
 }
 
 function isoToDate(iso: string | null): Date | null {
@@ -45,7 +48,7 @@ function formatDisplay(d: Date | null, dateOnly: boolean) {
 }
 const PRESETS: [string, number][] = [["Dzisiaj", 0], ["Jutro", 1], ["W tygodniu", 7]];
 
-export function DateTimePicker({ name, form, defaultValue, disabled, placeholder = "Wybierz datę", label, variant = "input", dateOnly = false, onChange }: DateTimePickerProps) {
+export function DateTimePicker({ name, form, defaultValue, disabled, placeholder = "Wybierz datę", label, variant = "input", dateOnly = false, onChange, format, triggerClassName }: DateTimePickerProps) {
   const [date, setDate] = useState<Date | null>(() => isoToDate(defaultValue));
   const [prevDefault, setPrevDefault] = useState(defaultValue);
   if (defaultValue !== prevDefault) {
@@ -84,11 +87,11 @@ export function DateTimePicker({ name, form, defaultValue, disabled, placeholder
 
   const isCell = variant === "cell";
   const triggerClass = isCell
-    ? cn("flex h-full min-h-7 w-full items-center gap-1.5 rounded-sm px-2 text-left text-sm outline-none hover:bg-row-hover disabled:pointer-events-none disabled:text-n-400", open && "bg-row-hover")
-    : cn(inputVariants({ size: "md" }), "flex items-center gap-2 text-left", open && "border-orange-500");
+    ? cn("flex h-full min-h-7 w-full items-center gap-1.5 rounded-sm px-2 text-left text-sm outline-none hover:bg-row-hover disabled:pointer-events-none disabled:text-n-400", open && "bg-row-hover", triggerClassName)
+    : cn(inputVariants({ size: "md" }), "flex items-center gap-2 text-left", open && "border-orange-500", triggerClassName);
   const triggerInner = (
     <>
-      <span className={cn("min-w-0 flex-1 truncate", date ? "font-mono text-xs tabular-nums text-foreground" : "text-n-500")}>{date ? formatDisplay(date, dateOnly) : isCell ? "—" : placeholder}</span>
+      <span className={cn("min-w-0 flex-1 truncate", date ? (format ? "" : "font-mono text-xs tabular-nums text-foreground") : "text-n-500")}>{date ? (format ? format(date) : formatDisplay(date, dateOnly)) : isCell ? "—" : placeholder}</span>
       {date && !disabled && (
         <span role="button" tabIndex={-1} aria-label="Wyczyść datę" onClick={(e) => { e.stopPropagation(); update(null); }} className="inline-flex size-4 shrink-0 items-center justify-center rounded-[2px] text-n-500 hover:text-foreground">
           <IconClose width={11} height={11} />

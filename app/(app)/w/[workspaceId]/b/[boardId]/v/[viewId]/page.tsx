@@ -3,7 +3,10 @@ import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { BoardTable, type CustomTableColumn } from "@/components/table/board-table";
-import type { TableFilter, TableSort } from "@/lib/table-filters";
+import { ListStateProvider } from "@/components/table/list-state";
+import { parseListConfig } from "@/components/table/list-config";
+import { ListToolbar } from "@/components/table/list-toolbar";
+import { taskInclude, toTableTask } from "@/components/table/table-reads";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { RoadmapView } from "@/components/roadmap/roadmap-view";
 import { GanttView } from "@/components/roadmap/gantt-view";
@@ -60,21 +63,25 @@ export default async function CustomBoardViewPage({
         ? <CreateTaskButton workspaceId={workspaceId} boardId={boardId} viewId={viewId} />
         : null;
 
-  return (
-    <BoardShell bgCss={bgCss}>
-      <BoardHeaderServer
-        workspaceId={workspaceId}
-        boardId={boardId}
-        board={{ name: board.name, description: board.description }}
-        active={viewTypeName}
-        activeViewId={view.id}
-        enabledViews={enabledViews}
-        extra={<BoardLinksServer workspaceId={workspaceId} boardId={boardId} />}
-        actions={actions}
-      />
+  const header = (toolbar?: React.ReactNode) => (
+    <BoardHeaderServer
+      workspaceId={workspaceId}
+      boardId={boardId}
+      board={{ name: board.name, description: board.description }}
+      active={viewTypeName}
+      activeViewId={view.id}
+      enabledViews={enabledViews}
+      toolbar={toolbar}
+      extra={<BoardLinksServer workspaceId={workspaceId} boardId={boardId} />}
+      actions={actions}
+    />
+  );
 
-      <ViewTransition>
-      {view.type === "TABLE" && (
+  // Lista shares its state (filters/sort/columns) between the header toolbar and
+  // the table, so the provider wraps both.
+  if (view.type === "TABLE") {
+    return (
+      <BoardShell bgCss={bgCss}>
         <TableRenderer
           workspaceId={workspaceId}
           boardId={boardId}
@@ -82,8 +89,16 @@ export default async function CustomBoardViewPage({
           canEdit={canEdit}
           canManageBoard={canManageBoard}
           configJson={view.configJson}
+          header={header(<ListToolbar />)}
         />
-      )}
+      </BoardShell>
+    );
+  }
+
+  return (
+    <BoardShell bgCss={bgCss}>
+      {header()}
+      <ViewTransition>
       {view.type === "KANBAN" && (
         <KanbanRenderer
           workspaceId={workspaceId}
@@ -128,6 +143,7 @@ async function TableRenderer({
   canEdit,
   canManageBoard,
   configJson,
+  header,
 }: {
   workspaceId: string;
   boardId: string;
@@ -135,6 +151,7 @@ async function TableRenderer({
   canEdit: boolean;
   canManageBoard: boolean;
   configJson: unknown;
+  header: React.ReactNode;
 }) {
   const memberships = await db.workspaceMembership.findMany({
     where: { workspaceId },
@@ -164,130 +181,32 @@ async function TableRenderer({
           taskViews: { some: { viewId } },
         },
         orderBy: [{ statusColumn: { order: "asc" } }, { rowOrder: "asc" }],
-        include: {
-          assignees: {
-            include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
-          },
-          tags: { include: { tag: true } },
-          customValues: true,
-          // Built-in 'Załączniki' column needs file metadata.
-          attachments: {
-            where: { deletedAt: null },
-            select: {
-              id: true,
-              filename: true,
-              mimeType: true,
-              sizeBytes: true,
-            },
-            orderBy: { createdAt: "desc" },
-          },
-          _count: {
-            select: {
-              comments: { where: { deletedAt: null } },
-              linksOut: true,
-              linksIn: true,
-              attachments: { where: { deletedAt: null } },
-            },
-          },
-          subtasks: { select: { completed: true } },
-        },
+        include: taskInclude,
       },
     },
   });
   if (!board) return null;
 
-  const cfg = (configJson ?? {}) as {
-    columnOrder?: string[];
-    hidden?: string[];
-    filters?: unknown;
-    sort?: unknown;
-    groupBy?: unknown;
-    widths?: unknown;
-    pinned?: unknown;
-  };
-  const cfgWidths =
-    cfg.widths && typeof cfg.widths === "object"
-      ? (cfg.widths as Record<string, number>)
-      : undefined;
-  const cfgPinned = Array.isArray(cfg.pinned)
-    ? (cfg.pinned as string[])
-    : undefined;
-  const cfgFilters = Array.isArray(cfg.filters)
-    ? (cfg.filters as TableFilter[])
-    : undefined;
-  const cfgSort =
-    cfg.sort && typeof cfg.sort === "object"
-      ? (cfg.sort as TableSort)
-      : cfg.sort === null
-        ? null
-        : undefined;
-  const cfgGroupBy =
-    typeof cfg.groupBy === "string" || cfg.groupBy === null
-      ? (cfg.groupBy as string | null)
-      : undefined;
-
   return (
-    <BoardTable
-      workspaceId={workspaceId}
-      boardId={boardId}
-      statusColumns={board.statusColumns.map((c) => ({
-        id: c.id,
-        name: c.name,
-        colorHex: c.colorHex,
-      }))}
-      tasks={board.tasks.map((t) => ({
-        id: t.id,
-        displayId: t.displayId,
-        title: t.title,
-        statusColumnId: t.statusColumnId,
-        priority: t.priority,
-        startAt: t.startAt ? t.startAt.toISOString() : null,
-        stopAt: t.stopAt ? t.stopAt.toISOString() : null,
-        createdAt: t.createdAt.toISOString(),
-        assignees: t.assignees.map((a) => ({
-          id: a.userId,
-          name: a.user.name,
-          email: a.user.email,
-          avatarUrl: a.user.avatarUrl,
-        })),
-        tags: t.tags.map((tt) => ({
-          id: tt.tag.id,
-          name: tt.tag.name,
-          colorHex: tt.tag.colorHex,
-        })),
-        customValues: Object.fromEntries(
-          t.customValues.map((v) => [v.columnId, v.valueText ?? ""]),
-        ),
-        attachments: t.attachments.map((a) => ({
-          id: a.id,
-          filename: a.filename,
-          mimeType: a.mimeType,
-          sizeBytes: a.sizeBytes,
-        })),
-        hasDescription: docHasText(t.descriptionJson),
-        commentCount: t._count.comments,
-        subtaskCount: t.subtasks.length,
-        subtaskDoneCount: t.subtasks.filter((s) => s.completed).length,
-        linkedCount: t._count.linksOut + t._count.linksIn,
-      }))}
-      canEdit={canEdit}
-      canManagePrefs={canManageBoard}
-      initialColumnOrder={Array.isArray(cfg.columnOrder) ? cfg.columnOrder : undefined}
-      initialHiddenColumns={Array.isArray(cfg.hidden) ? cfg.hidden : undefined}
-      initialFilters={cfgFilters}
-      initialSort={cfgSort}
-      initialGroupBy={cfgGroupBy}
-      initialWidths={cfgWidths}
-      initialPinned={cfgPinned}
-      customColumns={board.customColumns.map((c) => ({
-        id: c.id,
-        name: c.name,
-        type: c.type as CustomTableColumn["type"],
-        options: c.options,
-      }))}
-      members={memberships.map((m) => m.user)}
-      allTags={allTags}
-    />
+    <ListStateProvider
+      meta={{
+        workspaceId,
+        boardId,
+        viewId,
+        canEdit,
+        canManagePrefs: canManageBoard,
+        statusColumns: board.statusColumns.map((c) => ({ id: c.id, name: c.name, colorHex: c.colorHex })),
+        customColumns: board.customColumns.map((c) => ({ id: c.id, name: c.name, type: c.type as CustomTableColumn["type"], options: c.options })),
+        members: memberships.map((m) => m.user),
+        allTags,
+      }}
+      initialConfig={parseListConfig(configJson)}
+    >
+      {header}
+      <ViewTransition>
+        <BoardTable tasks={board.tasks.map((t) => toTableTask(t, docHasText(t.descriptionJson)))} />
+      </ViewTransition>
+    </ListStateProvider>
   );
 }
 

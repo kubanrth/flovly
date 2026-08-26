@@ -15,21 +15,7 @@ import { Color } from "@tiptap/extension-color";
 import { Highlight } from "@tiptap/extension-highlight";
 import type { SuggestionProps, SuggestionKeyDownProps } from "@tiptap/suggestion";
 import { MentionList, type MentionListHandle, type MentionMember } from "@/components/task/mention-list";
-import {
-  Bold as BoldIcon,
-  Italic as ItalicIcon,
-  Strikethrough,
-  List,
-  ListOrdered,
-  Code2,
-  Link as LinkIcon,
-  Heading2,
-  Quote,
-  Table as TableIcon,
-  Image as ImageIcon,
-  Palette,
-  Highlighter,
-} from "lucide-react";
+import { IconExternal, IconImage, IconList, IconListNumbered, IconTable } from "@/components/ui/icons";
 import { useEffect, useRef, useState } from "react";
 
 export type RichTextDoc = { type: "doc"; content?: unknown[] };
@@ -44,7 +30,10 @@ export interface RichTextEditorProps {
   placeholder?: string;
   // `display` strips toolbar + outer border so a read-only comment body
   // reads as flowing prose, not a form field.
-  variant?: "field" | "display";
+  // `compact` / `compact-lg` = single-line composer (32 / 44px), no toolbar (B2 comment box).
+  variant?: "field" | "display" | "compact" | "compact-lg";
+  // Focus the editor on mount (edit mode entered by click).
+  autoFocus?: boolean;
   // When provided, typing "@" opens an autocomplete of these members and
   // inserts a mention node. The Mention node is always registered in the
   // schema so display-variant editors can still render mention chips.
@@ -171,12 +160,14 @@ export function RichTextEditor({
   onChange,
   extras = "default",
   onImageUpload,
+  autoFocus,
 }: RichTextEditorProps) {
   const [json, setJson] = useState<string>(
     initial && !isDocEmpty(initial) ? JSON.stringify(initial) : "",
   );
   const showToolbar = variant === "field" && !readOnly;
-  const showFrame = variant === "field";
+  const isCompact = variant === "compact" || variant === "compact-lg";
+  const showFrame = variant === "field" || isCompact;
   const isBriefMode = extras === "brief";
 
   const briefExtensions = isBriefMode
@@ -225,8 +216,12 @@ export function RichTextEditor({
       attributes: {
         class:
           variant === "display"
-            ? "tiptap-content focus:outline-none text-[0.92rem] leading-[1.55]"
-            : "tiptap-content min-h-[120px] focus:outline-none text-[0.98rem] leading-[1.6]",
+            ? "tiptap-content focus:outline-none text-sm leading-[19px]"
+            : variant === "compact"
+              ? "tiptap-content focus:outline-none text-sm leading-5"
+              : variant === "compact-lg"
+                ? "tiptap-content focus:outline-none text-base leading-5"
+                : "tiptap-content min-h-[80px] focus:outline-none text-sm leading-5",
       },
     },
     onUpdate: ({ editor }) => {
@@ -241,22 +236,25 @@ export function RichTextEditor({
   useEffect(() => {
     editor?.setEditable(!readOnly);
   }, [editor, readOnly]);
+  useEffect(() => {
+    if (autoFocus && editor) editor.commands.focus("end");
+  }, [autoFocus, editor]);
 
   return (
-    <div className="flex flex-col gap-2">
-      {showToolbar && (
-        <Toolbar
-          editor={editor}
-          isBriefMode={isBriefMode}
-          onImageUpload={onImageUpload}
-        />
-      )}
+    <div className="flex flex-col" data-variant={variant}>
       {showFrame ? (
         <div
-          className="rounded-md border border-border bg-transparent px-3 py-2 transition-colors focus-within:border-primary"
+          className={
+            isCompact
+              ? `flex flex-col justify-center rounded-sm border border-input-border bg-card px-2.5 py-[5px] hover:border-input-border-hover focus-within:border-orange-500 ${variant === "compact-lg" ? "min-h-11 px-3" : "min-h-8"}`
+              : "rounded-sm border border-input-border bg-card focus-within:border-orange-500 focus-within:shadow-[var(--focus)]"
+          }
           data-readonly={readOnly ? "true" : "false"}
         >
-          <EditorContent editor={editor} />
+          {showToolbar && <Toolbar editor={editor} isBriefMode={isBriefMode} onImageUpload={onImageUpload} />}
+          <div className={isCompact ? undefined : "px-3 py-2.5"}>
+            <EditorContent editor={editor} />
+          </div>
         </div>
       ) : (
         <EditorContent editor={editor} />
@@ -266,35 +264,24 @@ export function RichTextEditor({
         .tiptap-content p { margin: 0.25em 0; }
         .tiptap-content p:first-child { margin-top: 0; }
         .tiptap-content p:last-child { margin-bottom: 0; }
-        .tiptap-content h2 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; margin: 0.8em 0 0.3em; }
-        .tiptap-content h3 { font-family: var(--font-display); font-size: 1.08rem; font-weight: 600; letter-spacing: -0.01em; margin: 0.7em 0 0.25em; }
+        .tiptap-content h2 { font-size: 16px; line-height: 22px; font-weight: 600; letter-spacing: -0.2px; margin: 0.8em 0 0.3em; }
+        .tiptap-content h3 { font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -0.1px; margin: 0.7em 0 0.25em; }
         .tiptap-content ul, .tiptap-content ol { padding-left: 1.4em; margin: 0.3em 0; }
         .tiptap-content ul { list-style: disc; }
         .tiptap-content ol { list-style: decimal; }
         .tiptap-content li > p { margin: 0.1em 0; }
-        .tiptap-content code { background: var(--muted); padding: 0.1em 0.35em; border-radius: 0.25em; font-family: var(--font-mono); font-size: 0.9em; }
+        .tiptap-content code { background: var(--n-100); padding: 0 4px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px; }
         .tiptap-content pre { background: var(--muted); padding: 0.7em 0.9em; border-radius: 0.5em; margin: 0.6em 0; overflow-x: auto; font-family: var(--font-mono); font-size: 0.88em; line-height: 1.5; }
         .tiptap-content pre code { background: transparent; padding: 0; }
         .tiptap-content blockquote { border-left: 2px solid var(--border); padding-left: 0.9em; color: var(--muted-foreground); margin: 0.5em 0; font-style: italic; }
         .tiptap-content p.is-editor-empty:first-child::before {
           content: attr(data-placeholder);
-          color: var(--muted-foreground);
-          opacity: 0.55;
+          color: var(--fg-3);
           float: left;
           pointer-events: none;
           height: 0;
         }
-        .tiptap-content .mention-chip {
-          display: inline-flex;
-          align-items: center;
-          padding: 0 0.35em;
-          border-radius: 0.3em;
-          background: color-mix(in oklch, var(--accent-brand) 18%, transparent);
-          color: var(--accent-brand);
-          font-weight: 600;
-          font-size: 0.94em;
-          white-space: nowrap;
-        }
+        .tiptap-content .mention-chip { color: var(--orange-700); font-weight: 500; white-space: nowrap; }
         .tiptap-content .rt-table { border-collapse: collapse; margin: 0.6em 0; table-layout: fixed; width: 100%; overflow: hidden; }
         .tiptap-content .rt-table td, .tiptap-content .rt-table th {
           border: 1px solid var(--border);
@@ -375,72 +362,72 @@ function Toolbar({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-1">
+    <div className="flex flex-wrap items-center gap-0.5 border-b border-n-100 px-1.5 py-1">
       <Btn
         label="Nagłówek"
         active={editor.isActive("heading", { level: 2 })}
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
       >
-        <Heading2 size={14} />
+        <span className="text-xs font-bold">H</span>
       </Btn>
       <Btn
         label="Pogrubienie"
         active={editor.isActive("bold")}
         onClick={() => editor.chain().focus().toggleBold().run()}
       >
-        <BoldIcon size={14} />
+        <span className="text-xs font-bold">B</span>
       </Btn>
       <Btn
         label="Kursywa"
         active={editor.isActive("italic")}
         onClick={() => editor.chain().focus().toggleItalic().run()}
       >
-        <ItalicIcon size={14} />
+        <span className="text-xs italic">I</span>
       </Btn>
       <Btn
         label="Przekreślenie"
         active={editor.isActive("strike")}
         onClick={() => editor.chain().focus().toggleStrike().run()}
       >
-        <Strikethrough size={14} />
+        <span className="text-xs line-through">S</span>
       </Btn>
-      <span className="mx-1 h-4 w-px bg-border" aria-hidden />
+      <span className="mx-[3px] h-3.5 w-px bg-border" aria-hidden />
       <Btn
         label="Lista punktowa"
         active={editor.isActive("bulletList")}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
       >
-        <List size={14} />
+        <IconList width={14} height={14} />
       </Btn>
       <Btn
         label="Lista numerowana"
         active={editor.isActive("orderedList")}
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
       >
-        <ListOrdered size={14} />
+        <IconListNumbered width={14} height={14} />
       </Btn>
-      <span className="mx-1 h-4 w-px bg-border" aria-hidden />
+      <span className="mx-[3px] h-3.5 w-px bg-border" aria-hidden />
       <Btn
         label="Cytat"
         active={editor.isActive("blockquote")}
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
       >
-        <Quote size={14} />
+        <span className="text-sm font-semibold leading-none">„</span>
       </Btn>
       <Btn
         label="Blok kodu"
         active={editor.isActive("codeBlock")}
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
       >
-        <Code2 size={14} />
+        <span className="font-mono text-[10px]">&lt;/&gt;</span>
       </Btn>
       <Btn label="Link" active={editor.isActive("link")} onClick={setLink}>
-        <LinkIcon size={14} />
+        <IconExternal width={14} height={14} />
       </Btn>
 
       {isBriefMode && (
         <>
-          <span className="mx-1 h-4 w-px bg-border" aria-hidden />
+          <span className="mx-[3px] h-3.5 w-px bg-border" aria-hidden />
 
           <div className="relative">
             <Btn
@@ -452,7 +439,7 @@ function Toolbar({
                 setTableOpen(false);
               }}
             >
-              <Palette size={14} />
+              <span className="text-xs font-semibold underline decoration-orange-500 decoration-2">A</span>
             </Btn>
             {colorOpen && (
               <ColorSwatchPopover
@@ -479,7 +466,7 @@ function Toolbar({
                 setTableOpen(false);
               }}
             >
-              <Highlighter size={14} />
+              <span className="rounded-[2px] bg-chip-yellow-bg px-0.5 text-xs font-semibold">A</span>
             </Btn>
             {highlightOpen && (
               <ColorSwatchPopover
@@ -507,7 +494,7 @@ function Toolbar({
                 setHighlightOpen(false);
               }}
             >
-              <TableIcon size={14} />
+              <IconTable width={14} height={14} />
             </Btn>
             {tableOpen && (
               <TablePopover
@@ -524,7 +511,7 @@ function Toolbar({
               active={false}
               onClick={() => fileInputRef.current?.click()}
             >
-              <ImageIcon size={14} />
+              <IconImage width={14} height={14} />
             </Btn>
           )}
           <input
@@ -557,14 +544,14 @@ function ColorSwatchPopover({
   // ledwo klikalne. Teraz większe swatche w 4×2 gridzie, wyraźny
   // separator i pełnoszerokościowy "Usuń kolor" jako secondary CTA.
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 flex w-[224px] flex-col gap-2 rounded-lg border border-border bg-popover p-3 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]">
+    <div className="popover-surface absolute left-0 top-full z-50 mt-1 flex w-[224px] flex-col gap-2 p-2.5">
       <div className="grid grid-cols-4 gap-2">
         {colors.map((c) => (
           <button
             key={c}
             type="button"
             onClick={() => onPick(c)}
-            className="h-9 w-full rounded-md border border-border transition-transform hover:scale-[1.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="h-7 w-full rounded-sm border border-border outline-none"
             style={{ background: c }}
             aria-label={`Kolor ${c}`}
             title={c}
@@ -575,7 +562,7 @@ function ColorSwatchPopover({
       <button
         type="button"
         onClick={onClear}
-        className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-center font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className="h-7 w-full rounded-md border border-border bg-card text-center text-xs text-n-600 outline-none hover:bg-n-100"
       >
         Usuń kolor
       </button>
@@ -586,7 +573,7 @@ function ColorSwatchPopover({
 function TablePopover({ editor, onAfter }: { editor: Editor; onAfter: () => void }) {
   const isInTable = editor.isActive("table");
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 flex w-44 flex-col gap-0.5 rounded-lg border border-border bg-popover p-1 shadow-[0_18px_40px_-12px_rgba(10,10,40,0.3)]">
+    <div className="popover-surface absolute left-0 top-full z-50 mt-1 flex w-44 flex-col p-1">
       {!isInTable ? (
         <MenuItem
           onClick={() => {
@@ -614,7 +601,7 @@ function TablePopover({ editor, onAfter }: { editor: Editor; onAfter: () => void
           <MenuItem onClick={() => { editor.chain().focus().addRowBefore().run(); onAfter(); }}>
             + Wiersz powyżej
           </MenuItem>
-          <div className="my-1 h-px bg-border" />
+          <div className="my-1 h-px bg-n-100" />
           <MenuItem onClick={() => { editor.chain().focus().deleteColumn().run(); onAfter(); }}>
             Usuń kolumnę
           </MenuItem>
@@ -646,11 +633,7 @@ function MenuItem({
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center rounded-md px-2.5 py-1.5 text-left text-[0.82rem] transition-colors ${
-        destructive
-          ? "text-destructive hover:bg-destructive/10"
-          : "text-foreground hover:bg-accent"
-      }`}
+      className={`flex h-8 w-full items-center rounded-md px-2 text-left text-sm outline-none hover:bg-n-100 ${destructive ? "text-danger-text" : "text-foreground"}`}
     >
       {children}
     </button>
@@ -675,7 +658,7 @@ function Btn({
       aria-label={label}
       title={label}
       data-active={active ? "true" : "false"}
-      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground data-[active=true]:bg-accent data-[active=true]:text-primary focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
+      className="grid size-6 place-items-center rounded-sm text-n-600 outline-none hover:bg-n-100 hover:text-foreground data-[active=true]:bg-n-100 data-[active=true]:text-foreground"
     >
       {children}
     </button>

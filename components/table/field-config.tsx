@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
 import {
   ALL_FIELD_TYPES,
   COMPUTED_FIELD_TYPES,
@@ -11,13 +10,19 @@ import {
   type FieldType,
   type SelectOption,
 } from "@/lib/table-fields";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Segmented } from "@/components/ui/segmented";
+import { IconPlus, IconTrash } from "@/components/ui/icons";
+import { FieldTypeIcon } from "@/components/table/field-icons";
 
 export function FieldTypePicker({
   value,
   onChange,
   disabled,
-  // Computed types are still selectable in the picker (for future), but
-  // disabled here while we don't yet implement them in cells.
   showComputed = false,
 }: {
   value: FieldType;
@@ -25,30 +30,28 @@ export function FieldTypePicker({
   disabled?: boolean;
   showComputed?: boolean;
 }) {
-  const types = showComputed
-    ? ALL_FIELD_TYPES
-    : ALL_FIELD_TYPES.filter((t) => !COMPUTED_FIELD_TYPES.has(t));
+  const types = showComputed ? ALL_FIELD_TYPES : ALL_FIELD_TYPES.filter((t) => !COMPUTED_FIELD_TYPES.has(t));
   return (
-    <div className="grid grid-cols-2 gap-1.5">
+    <div className="grid grid-cols-2 gap-1" role="radiogroup" aria-label="Typ pola">
       {types.map((t) => {
         const meta = FIELD_TYPE_META[t];
-        const Icon = meta.icon;
         const active = value === t;
         return (
           <button
             key={t}
             type="button"
+            role="radio"
+            aria-checked={active}
             onClick={() => onChange(t)}
             disabled={disabled}
             title={meta.description}
-            className={`flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-left transition-colors disabled:opacity-60 ${
-              active
-                ? "border-primary bg-primary/8 text-foreground"
-                : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
-            }`}
+            className={cn(
+              "flex h-7 items-center gap-2 rounded-md border px-2 text-left text-xs font-medium outline-none disabled:opacity-60",
+              active ? "border-orange-500 bg-selected text-foreground" : "border-border text-muted-foreground hover:bg-n-100 hover:text-foreground active:bg-n-200",
+            )}
           >
-            <Icon size={14} className={active ? "text-primary" : ""} />
-            <span className="truncate text-[0.78rem] font-medium">{meta.label}</span>
+            <FieldTypeIcon type={t} size={13} className="shrink-0" />
+            <span className="truncate">{meta.label}</span>
           </button>
         );
       })}
@@ -56,61 +59,31 @@ export function FieldTypePicker({
   );
 }
 
-export function SelectOptionsEditor({
-  value,
-  onChange,
-}: {
-  value: SelectOption[];
-  onChange: (next: SelectOption[]) => void;
-}) {
+export function SelectOptionsEditor({ value, onChange }: { value: SelectOption[]; onChange: (next: SelectOption[]) => void }) {
   const [draft, setDraft] = useState("");
-
   const add = () => {
     const v = draft.trim();
-    if (!v) return;
-    if (value.some((o) => o.value === v)) return;
-    const color = SELECT_PALETTE[value.length % SELECT_PALETTE.length];
-    onChange([...value, { value: v, color }]);
+    if (!v || value.some((o) => o.value === v)) return;
+    onChange([...value, { value: v, color: SELECT_PALETTE[value.length % SELECT_PALETTE.length] }]);
     setDraft("");
   };
-
   return (
-    <div className="flex flex-col gap-1.5">
-      <ul className="flex flex-col gap-1">
-        {value.map((opt, idx) => (
-          <li
-            key={`${opt.value}-${idx}`}
-            className="flex items-center gap-1.5 rounded-md border border-border bg-background px-1.5 py-1"
-          >
-            <ColorSwatch
-              color={opt.color}
-              onPick={(c) => {
-                const next = [...value];
-                next[idx] = { ...opt, color: c };
-                onChange(next);
-              }}
-            />
-            <input
-              value={opt.value}
-              onChange={(e) => {
-                const next = [...value];
-                next[idx] = { ...opt, value: e.target.value };
-                onChange(next);
-              }}
-              className="flex-1 min-w-0 bg-transparent text-[0.82rem] outline-none"
-            />
-            <button
-              type="button"
-              onClick={() => onChange(value.filter((_, i) => i !== idx))}
-              aria-label="Usuń opcję"
-              className="grid h-5 w-5 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-            >
-              <Trash2 size={11} />
-            </button>
-          </li>
-        ))}
-      </ul>
-      <div className="flex items-center gap-1.5 rounded-md border border-dashed border-border px-2 py-1 transition-colors focus-within:border-primary/60">
+    <div className="flex flex-col gap-1">
+      {value.map((opt, idx) => (
+        <div key={idx} className="flex h-8 items-center gap-2 rounded-sm border border-border px-1.5">
+          <ColorSwatch color={opt.color} onPick={(c) => onChange(value.map((o, i) => (i === idx ? { ...o, color: c } : o)))} />
+          <input
+            value={opt.value}
+            onChange={(e) => onChange(value.map((o, i) => (i === idx ? { ...o, value: e.target.value } : o)))}
+            aria-label="Nazwa opcji"
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none focus-visible:shadow-none"
+          />
+          <Button variant="ghost" size="sm" iconOnly aria-label="Usuń opcję" onClick={() => onChange(value.filter((_, i) => i !== idx))}>
+            <IconTrash />
+          </Button>
+        </div>
+      ))}
+      <div className="flex h-8 items-center gap-1.5 rounded-sm border border-dashed border-n-400 px-1.5 focus-within:border-orange-500">
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -121,196 +94,82 @@ export function SelectOptionsEditor({
             }
           }}
           placeholder="Dodaj opcję…"
-          className="flex-1 bg-transparent text-[0.82rem] outline-none placeholder:text-muted-foreground/60"
+          aria-label="Nowa opcja"
+          className="min-w-0 flex-1 bg-transparent text-sm outline-none focus-visible:shadow-none"
         />
-        <button
-          type="button"
-          onClick={add}
-          disabled={!draft.trim()}
-          aria-label="Dodaj opcję"
-          title="Dodaj opcję (Enter)"
-          className="grid h-5 w-5 shrink-0 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <Plus size={11} />
-        </button>
+        <Button variant="ghost" size="sm" iconOnly aria-label="Dodaj opcję" disabled={!draft.trim()} onClick={add}>
+          <IconPlus />
+        </Button>
       </div>
     </div>
   );
 }
 
-function ColorSwatch({
-  color,
-  onPick,
-}: {
-  color: string;
-  onPick: (c: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
+function ColorSwatch({ color, onPick }: { color: string; onPick: (c: string) => void }) {
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-label="Zmień kolor"
-        className="block h-4 w-4 rounded-full ring-1 ring-foreground/10"
-        style={{ background: color }}
-      />
-      {open && (
-        <>
-          <button
-            type="button"
-            aria-label="Zamknij"
-            onClick={() => setOpen(false)}
-            className="fixed inset-0 z-40 cursor-default"
-          />
-          <div className="absolute left-0 top-[calc(100%+4px)] z-50 grid grid-cols-4 gap-1 rounded-md border border-border bg-popover p-1.5 shadow-md">
-            {SELECT_PALETTE.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => {
-                  onPick(c);
-                  setOpen(false);
-                }}
-                className="h-5 w-5 rounded-full ring-1 ring-foreground/10 transition-transform hover:scale-110"
-                style={{ background: c }}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+    <Popover>
+      <PopoverTrigger aria-label="Zmień kolor" className="block size-4 shrink-0 rounded-full outline-none hover:shadow-[0_0_0_2px_var(--n-300)]" style={{ background: color }} />
+      <PopoverContent className="grid grid-cols-4 gap-1.5 p-2">
+        {SELECT_PALETTE.map((c) => (
+          <button key={c} type="button" aria-label={`Kolor ${c}`} onClick={() => onPick(c)} className={cn("size-5 rounded-full outline-none hover:shadow-[0_0_0_2px_var(--n-300)]", c === color && "shadow-[0_0_0_2px_var(--n-900)]")} style={{ background: c }} />
+        ))}
+      </PopoverContent>
+    </Popover>
   );
 }
 
-export function NumberFormatPicker({
-  value,
-  onChange,
-}: {
-  value: FieldOptions;
-  onChange: (next: FieldOptions) => void;
-}) {
+const NUMBER_FORMATS = [
+  { value: "integer", label: "Całkowita" },
+  { value: "decimal", label: "Dziesiętna" },
+  { value: "currency", label: "Waluta" },
+  { value: "percent", label: "Procent" },
+] as const;
+
+export function NumberFormatPicker({ value, onChange }: { value: FieldOptions; onChange: (next: FieldOptions) => void }) {
   const fmt = value.numberFormat ?? "decimal";
   return (
     <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-2 gap-1">
-        {(["integer", "decimal", "currency", "percent"] as const).map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => onChange({ ...value, numberFormat: f })}
-            className={`rounded-md border px-2 py-1 text-[0.74rem] font-medium transition-colors ${
-              fmt === f
-                ? "border-primary bg-primary/8 text-foreground"
-                : "border-border text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {f === "integer"
-              ? "Liczba całk."
-              : f === "decimal"
-                ? "Dziesiętna"
-                : f === "currency"
-                  ? "Waluta"
-                  : "Procent"}
-          </button>
-        ))}
-      </div>
+      <Segmented options={[...NUMBER_FORMATS]} value={fmt} onChange={(f) => onChange({ ...value, numberFormat: f as FieldOptions["numberFormat"] })} />
       {fmt === "currency" && (
-        <label className="flex items-center gap-2 text-[0.74rem] text-muted-foreground">
+        <label className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
           Waluta
-          <input
-            value={value.numberCurrency ?? "PLN"}
-            onChange={(e) =>
-              onChange({ ...value, numberCurrency: e.target.value.toUpperCase().slice(0, 4) })
-            }
-            className="w-20 rounded-md border border-border bg-background px-2 py-1 text-[0.78rem] uppercase text-foreground outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40"
-          />
+          <Input size="sm" value={value.numberCurrency ?? "PLN"} onChange={(e) => onChange({ ...value, numberCurrency: e.target.value.toUpperCase().slice(0, 4) })} className="w-20 uppercase" />
         </label>
       )}
-      {(fmt === "decimal" || fmt === "currency" || fmt === "percent") && (
-        <label className="flex items-center gap-2 text-[0.74rem] text-muted-foreground">
+      {fmt !== "integer" && (
+        <label className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
           Miejsca po przecinku
-          <input
-            type="number"
-            min={0}
-            max={6}
-            value={value.numberPrecision ?? 2}
-            onChange={(e) =>
-              onChange({ ...value, numberPrecision: Math.max(0, Math.min(6, Number(e.target.value))) })
-            }
-            className="w-16 rounded-md border border-border bg-background px-2 py-1 text-[0.78rem] text-foreground outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40"
-          />
+          <Input size="sm" type="number" min={0} max={6} value={value.numberPrecision ?? 2} onChange={(e) => onChange({ ...value, numberPrecision: Math.max(0, Math.min(6, Number(e.target.value))) })} className="w-16" />
         </label>
       )}
     </div>
   );
 }
 
-export function DateFormatPicker({
-  value,
-  onChange,
-}: {
-  value: FieldOptions;
-  onChange: (next: FieldOptions) => void;
-}) {
-  const includeTime = value.dateIncludeTime ?? false;
+export function DateFormatPicker({ value, onChange }: { value: FieldOptions; onChange: (next: FieldOptions) => void }) {
   return (
-    <label className="flex items-center gap-2 text-[0.78rem] text-muted-foreground">
-      <input
-        type="checkbox"
-        checked={includeTime}
-        onChange={(e) => onChange({ ...value, dateIncludeTime: e.target.checked })}
-        className="h-3.5 w-3.5 accent-[var(--primary)]"
-      />
+    <label className="flex items-center gap-2 text-xs text-muted-foreground">
+      <Checkbox size="sm" checked={value.dateIncludeTime ?? false} onCheckedChange={(c) => onChange({ ...value, dateIncludeTime: c === true })} />
       Pokazuj godzinę
     </label>
   );
 }
 
-export function RatingMaxPicker({
-  value,
-  onChange,
-}: {
-  value: FieldOptions;
-  onChange: (next: FieldOptions) => void;
-}) {
-  const max = value.ratingMax ?? 5;
+export function RatingMaxPicker({ value, onChange }: { value: FieldOptions; onChange: (next: FieldOptions) => void }) {
   return (
-    <label className="flex items-center gap-2 text-[0.78rem] text-muted-foreground">
+    <label className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
       Maks. ocena
-      <input
-        type="number"
-        min={3}
-        max={10}
-        value={max}
-        onChange={(e) =>
-          onChange({ ...value, ratingMax: Math.max(3, Math.min(10, Number(e.target.value))) })
-        }
-        className="w-16 rounded-md border border-border bg-background px-2 py-1 text-[0.78rem] text-foreground outline-none focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/40"
-      />
+      <Input size="sm" type="number" min={3} max={10} value={value.ratingMax ?? 5} onChange={(e) => onChange({ ...value, ratingMax: Math.max(3, Math.min(10, Number(e.target.value))) })} className="w-16" />
     </label>
   );
 }
 
 // Compose the right configuration sub-control(s) for a given type.
-export function FieldOptionsEditor({
-  type,
-  value,
-  onChange,
-}: {
-  type: FieldType;
-  value: FieldOptions;
-  onChange: (next: FieldOptions) => void;
-}) {
+export function FieldOptionsEditor({ type, value, onChange }: { type: FieldType; value: FieldOptions; onChange: (next: FieldOptions) => void }) {
   switch (type) {
     case "SINGLE_SELECT":
     case "MULTI_SELECT":
-      return (
-        <SelectOptionsEditor
-          value={value.selectOptions ?? []}
-          onChange={(opts) => onChange({ ...value, selectOptions: opts })}
-        />
-      );
+      return <SelectOptionsEditor value={value.selectOptions ?? []} onChange={(opts) => onChange({ ...value, selectOptions: opts })} />;
     case "NUMBER":
       return <NumberFormatPicker value={value} onChange={onChange} />;
     case "DATE":

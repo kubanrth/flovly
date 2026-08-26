@@ -1,6 +1,7 @@
 import { test as setup, expect } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 
 const STORAGE = "e2e/.auth/admin.json";
 const EMAIL = "admin@danielos.local";
@@ -34,4 +35,11 @@ setup("authenticate as admin", async ({ page }) => {
   await expect(page).toHaveURL(/\/workspaces/);
 
   await page.context().storageState({ path: STORAGE });
+});
+
+// Board view config (filters/groupBy/widths) persists per view, so a test that
+// sets a filter would hide rows for every later test. Reset the seed board's
+// TABLE view before each run — keeps specs order-independent.
+setup("reset seed fixtures", async () => {
+  execFileSync("npx", ["tsx", "e2e/reset-fixtures.ts"], { stdio: "inherit" });
 });

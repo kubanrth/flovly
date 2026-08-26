@@ -1,91 +1,54 @@
 "use client";
 
-import {
-  useActionState,
-  startTransition,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Trash2,
-  Plus,
-  Check,
-  X,
-  Bell,
-  Flag,
-  Maximize2,
-  Pencil,
-  Search,
-} from "lucide-react";
 import type { Role } from "@/lib/generated/prisma/enums";
-import {
-  createTagAction,
-  deleteTaskAction,
-  patchTaskAction,
-  toggleAssigneeAction,
-  toggleTagAction,
-  updateTaskAction,
-  type UpdateTaskState,
-} from "@/app/(app)/w/[workspaceId]/t/actions";
-import { type RichTextDoc } from "@/components/task/rich-text-editor";
+import { patchTaskAction } from "@/app/(app)/w/[workspaceId]/t/actions";
+import type { RichTextDoc } from "@/components/task/rich-text-editor";
 import { DescriptionSection } from "@/components/task/description-section";
-import { TaskTimer } from "@/components/task/task-timer";
-import { FieldCell } from "@/components/table/field-cells";
-import { parseFieldOptions } from "@/lib/table-fields";
-import { CommentsSection, type CommentItem } from "@/components/task/comments-section";
-import { ActivityLog, type ActivityEntry } from "@/components/task/activity-log";
-import { AttachmentsSection, type AttachmentItem } from "@/components/task/attachments-section";
-import { StatusPill } from "@/components/task/status-pill";
 import { SubtasksSection, type SubtaskItem } from "@/components/task/subtasks-section";
+import { AttachmentsSection, type AttachmentItem } from "@/components/task/attachments-section";
 import { LinkedTasksSection } from "@/components/task/linked-tasks-section";
-import { MoveTaskMenu, type MoveTargetBoard } from "@/components/task/move-task-menu";
 import { PollSection, type PollData } from "@/components/task/poll-section";
-import { SendEmailDialog } from "@/components/task/send-email-dialog";
-import { assignTaskToMilestoneAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/milestone-actions";
-import { DateTimePicker } from "@/components/ui/date-time-picker";
-import { RecurrencePicker } from "@/components/task/recurrence-picker";
-import { PortalDropdown } from "@/components/ui/portal-dropdown";
-
-// Tag palette moved to lib/colors.ts (BRAND_PALETTE).
-import { TAG_PALETTE as TAG_COLORS } from "@/lib/colors";
+import { CommentComposer, type CommentItem } from "@/components/task/comments-section";
+import type { ActivityEntry } from "@/components/task/activity-log";
+import { TaskActivity } from "@/components/task/task-activity";
+import { TaskHeader, TaskMobileHeader, TaskPageBar, type TaskHeaderProps } from "@/components/task/task-header";
+import { StatusChipMenu, PriorityChipMenu } from "@/components/task/status-chip-menu";
+import { TaskDetailsCard, TaskDetailsColumn, type TaskDetailsProps } from "@/components/task/task-details-column";
+import { readTaskMeta, type TaskMeta } from "@/components/task/task-detail-reads";
+import { useTaskShell, type TaskViewMode } from "@/components/task/task-shell-context";
+import type { MoveTargetBoard } from "@/components/task/move-task-menu";
 import type { TaskPriorityValue } from "@/lib/task-priority";
-import { PriorityPickerCell } from "@/components/table/priority-picker-cell";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { AvatarStack } from "@/components/ui/avatar";
+import { IconWarning } from "@/components/ui/icons";
+import { cn } from "@/lib/utils";
 
 export interface TaskDetailProps {
   workspaceId: string;
   role: Role;
   task: {
     id: string;
-    // Human-friendly per-workspace ID (1, 2, 3...).
-    displayId: number;
+    displayId: number; // human per-workspace ID
     title: string;
     descriptionJson: RichTextDoc | null;
     statusColumnId: string | null;
-    // F12-K75: priorytet zadania (sterowany inline picker'em — bez submit form'a).
     priority: TaskPriorityValue;
     milestoneId: string | null;
     startAt: string | null;
     stopAt: string | null;
     reminderAt: string | null;
     reminderOffset: string | null;
-    // Recurrence rule (cron spawns instances daily at 00:05 UTC).
     recurrenceRule: { freq: "daily" | "weekly" | "monthly"; day?: number } | null;
     recurrenceParentId: string | null;
-    // Time tracking — accumulated seconds + ISO timer state.
     timeTrackedSeconds: number;
     timerStartedAt: string | null;
     timerCompletedAt: string | null;
   };
   statusColumns: { id: string; name: string; colorHex: string }[];
   milestones: { id: string; title: string; startAt: string; stopAt: string }[];
-  allMembers: {
-    id: string;
-    name: string | null;
-    email: string;
-    avatarUrl: string | null;
-  }[];
+  allMembers: { id: string; name: string | null; email: string; avatarUrl: string | null }[];
   assigneeIds: Set<string>;
   allTags: { id: string; name: string; colorHex: string }[];
   tagIds: Set<string>;
@@ -104,1181 +67,224 @@ export interface TaskDetailProps {
   poll: PollData | null;
   canManagePoll: boolean;
   canVote: boolean;
-  // saveTaskCustomValueAction revalidates both this card and the table page.
-  customColumns: {
-    id: string;
-    name: string;
-    type: import("@/lib/table-fields").FieldType;
-    options: unknown;
-  }[];
+  customColumns: { id: string; name: string; type: import("@/lib/table-fields").FieldType; options: unknown }[];
   customValues: Record<string, string>;
-  // F12-K63: linked tasks (other tasks referenced from this one or referencing
-  // it). Both directions merged so the section reads symmetrically.
   linkedTasks: LinkedTaskItem[];
-  // Candidate pool fed to the "Powiąż zadanie" picker. Capped on the server
-  // (most-recent N) so very large workspaces stay responsive.
   linkCandidates: LinkCandidate[];
-  // F12-K67: lista tablic w workspace do których można przenieść task'a.
-  // Excluding current board jest po stronie UI (MoveTaskMenu) bo i tak
-  // potrzebujemy aktualnego board.id do generowania linka "wróć".
   boardId: string;
   workspaceBoards: MoveTargetBoard[];
-  // F12-K67: opcjonalny kontakt CRM powiązany z task'iem + pool wszystkich
-  // kontaktów w workspace do picker'a.
   contactId: string | null;
   workspaceContacts: { id: string; label: string }[];
+  // Redesign extras (read by page.tsx via readTaskMeta; optional so lib/task-fetch stays untouched).
+  meta?: TaskMeta | null;
+  mode?: TaskViewMode;
 }
 
 export interface LinkedTaskItem {
   linkId: string;
-  task: {
-    id: string;
-    title: string;
-    displayId: number;
-    primaryAssignee: {
-      id: string;
-      name: string | null;
-      email: string;
-      avatarUrl: string | null;
-    } | null;
-  };
+  task: { id: string; title: string; displayId: number; primaryAssignee: { id: string; name: string | null; email: string; avatarUrl: string | null } | null };
 }
+export interface LinkCandidate { id: string; title: string; displayId: number }
 
-export interface LinkCandidate {
-  id: string;
-  title: string;
-  displayId: number;
-}
-
-// Inicjały do avatara (max 2 znaki, uppercase).
-function initialsOf(name: string | null, email: string): string {
-  const src = name?.trim() || email.split("@")[0] || "?";
-  const parts = src.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return (parts[0]![0]! + parts[1]![0]!).toUpperCase();
-  return src.slice(0, 2).toUpperCase();
-}
-
-export function TaskDetail({
-  workspaceId,
-  task,
-  statusColumns,
-  milestones,
-  allMembers,
-  assigneeIds,
-  allTags,
-  tagIds,
-  canEdit,
-  canDelete,
-  comments,
-  canComment,
-  canModerateComments,
-  activity,
-  attachments,
-  canUpload,
-  canModerateAttachments,
-  subtasks,
-  canManageSubtasks,
-  poll,
-  canManagePoll,
-  canVote,
-  currentUserId,
-  linkedTasks,
-  linkCandidates,
-  boardId,
-  workspaceBoards,
-  customColumns,
-  customValues,
-}: TaskDetailProps) {
+// Task view in 3 modes (B2): side panel 600 / modal 960 / full page — plus the mobile full-screen layout.
+export function TaskDetail(props: TaskDetailProps) {
+  const { workspaceId, task, canEdit, meta, allMembers, currentUserId, activity } = props;
+  const shell = useTaskShell();
   const router = useRouter();
-  const [state, formAction, pending] = useActionState<UpdateTaskState, FormData>(
-    updateTaskAction,
-    null,
-  );
+  const isMobile = useIsMobile();
+  const mode: TaskViewMode = props.mode ?? shell?.mode ?? "page";
+  const rootRef = useRef<HTMLDivElement>(null);
 
-  const fieldErrors = !state?.ok ? state?.fieldErrors : undefined;
-  const flash = state?.ok ? state.message : null;
-
-  // Long task titles wrap to multiple lines — auto-grow the textarea so the
-  // whole title is visible without scrolling/clipping. `field-sizing:content`
-  // does this natively on new browsers; this JS path is the fallback that
-  // works everywhere and also handles paste / programmatic value changes.
-  const titleRef = useRef<HTMLTextAreaElement>(null);
+  // ── Optimistic-lock conflict (AK73). `seenVersion` = version this card was rendered from; our own
+  // mutations bump it too (selfMutations > 0 → adopt silently), anything else = someone else edited.
+  const seenVersion = useRef<number | undefined>(meta?.version);
+  const selfMutations = useRef(0);
+  const [conflict, setConflict] = useState(false);
+  const [formKey, setFormKey] = useState(0);
   useEffect(() => {
-    const el = titleRef.current;
-    if (!el) return;
-    const fit = () => {
-      el.style.height = "auto";
-      el.style.height = `${el.scrollHeight}px`;
-    };
-    fit();
-    el.addEventListener("input", fit);
-    const ro = new ResizeObserver(fit); // re-fit when modal width changes wrap
-    ro.observe(el);
-    return () => {
-      el.removeEventListener("input", fit);
-      ro.disconnect();
-    };
-  }, [task.title]);
-
-  // Belt-and-suspenders router.refresh after assignee toggle — Realtime broadcast can fail silently.
-  const toggleAssigneeWithRefresh = async (fd: FormData) => {
-    await toggleAssigneeAction(fd);
+    const v = meta?.version;
+    if (v === undefined || seenVersion.current === undefined || v === seenVersion.current) { seenVersion.current = v; return; }
+    if (selfMutations.current > 0) { selfMutations.current = 0; seenVersion.current = v; return; }
+    setConflict(true);
+  }, [meta?.version]);
+  const onMutate = () => { selfMutations.current += 1; };
+  const refresh = () => {
+    seenVersion.current = meta?.version;
+    selfMutations.current = 0;
+    setConflict(false);
+    setFormKey((k) => k + 1);
     router.refresh();
   };
 
-  // Aktywni przypisani jako stack avatarów (max 5 + counter).
-  const activeAssignees = allMembers.filter((m) => assigneeIds.has(m.id));
-  const activeTags = allTags.filter((t) => tagIds.has(t.id));
-
-  return (
-    <div className="flex flex-col gap-6">
-      {/* =====================================================================
-          HEADER — v4 layout
-          Row 1: ID badge (#42) + Status pill + Priority pill + akcje (expand / X)
-          Row 2: tytuł zadania (textarea, edytowalny inline) + ikona pencila
-          ===================================================================== */}
-      <header className="flex flex-col gap-3.5">
-        {/* meta row */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex h-6 items-center rounded-md bg-primary/12 px-2 font-mono text-[0.72rem] font-semibold tracking-tight text-primary">
-            #{task.displayId || "—"}
-          </span>
-
-          {/* status — pill statyczna w nagłówku, edytowalna z prawego sidebar'a */}
-          <HeaderStatusPill task={task} statusColumns={statusColumns} />
-          {/* priority — pill statyczna w nagłówku, edytowalna z prawego sidebar'a */}
-          <HeaderPriorityPill priority={task.priority} />
-
-          {/* prawa strona — akcje (email / move / expand / close obsługuje shell) */}
-          <div className="ml-auto flex items-center gap-1.5">
-            {canEdit && (
-              <SendEmailDialog
-                taskId={task.id}
-                taskTitle={task.title}
-                attachments={attachments.map((a) => ({
-                  id: a.id,
-                  filename: a.filename,
-                  sizeBytes: a.sizeBytes,
-                }))}
-              />
-            )}
-            {canEdit && workspaceBoards.length > 1 && (
-              <MoveTaskMenu
-                taskId={task.id}
-                currentBoardId={boardId}
-                availableBoards={workspaceBoards}
-              />
-            )}
-            <button
-              type="button"
-              aria-label="Pełny widok"
-              className="grid h-[30px] w-[30px] place-items-center rounded-[9px] border border-border bg-card/60 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-              onClick={() => {
-                // F12-K119: window.location zamiast router.push — escape z
-                // intercepting modal route (@modal/(.)t/[taskId]). router.push
-                // z poziomu drawer'a do tego samego URL'a jest no-op (Next już
-                // tam jest), plus intercept route zostaje aktywny. Full nav
-                // wymusza ponowny resolve do prawdziwego page.tsx (nie modal).
-                window.location.assign(`/w/${workspaceId}/t/${task.id}`);
-              }}
-            >
-              <Maximize2 size={14} />
-            </button>
-          </div>
-        </div>
-
-        {/* title row */}
-        <form
-          id="task-update-form"
-          action={(fd) => startTransition(() => formAction(fd))}
-          className="flex flex-col gap-2"
-        >
-          <input type="hidden" name="id" value={task.id} />
-          <div className="flex items-start gap-2">
-            <textarea
-              ref={titleRef}
-              name="title"
-              required
-              maxLength={2000}
-              rows={1}
-              readOnly={!canEdit}
-              defaultValue={task.title}
-              aria-label="Tytuł zadania"
-              aria-invalid={!!fieldErrors?.title}
-              // F12-K96: autosave na blur (Save button usunięty w v4 polish).
-              // Mirror pattern z StatusPill onCommit fix (F12-K92): trim,
-              // skip jeśli pusty albo bez zmiany, wywołaj patchTaskAction.
-              onBlur={(e) => {
-                if (!canEdit) return;
-                const next = e.currentTarget.value.trim();
-                if (!next || next === task.title) return;
-                const fd = new FormData();
-                fd.set("id", task.id);
-                fd.set("title", next);
-                startTransition(() => patchTaskAction(fd));
-              }}
-              // Enter (bez Shift) = blur → trigger save (UX z Linear/Notion).
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  e.currentTarget.blur();
-                }
-              }}
-              className="flex-1 resize-none overflow-hidden rounded-sm border-0 bg-transparent p-0 font-display text-[1.5rem] font-bold leading-[1.2] tracking-[-0.02em] text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 aria-[invalid=true]:text-destructive md:text-[1.75rem] [field-sizing:content]"
-            />
-            {canEdit && (
-              <Pencil
-                size={15}
-                className="mt-2 shrink-0 text-muted-foreground"
-                aria-hidden
-              />
-            )}
-          </div>
-          {fieldErrors?.title && (
-            <span className="font-mono text-[0.68rem] text-destructive">
-              {fieldErrors.title}
-            </span>
-          )}
-
-          {/* recurrence info — istniejące zadanie cykliczne (instancja) */}
-          {task.recurrenceParentId && (
-            <p className="font-mono text-[0.66rem] uppercase tracking-[0.12em] text-muted-foreground">
-              🔁 instancja zadania cyklicznego — edytuj szablon żeby zmienić regułę
-            </p>
-          )}
-
-          {/* flash + error pod tytułem */}
-          {!state?.ok && state?.error && (
-            <p className="font-mono text-[0.72rem] uppercase tracking-[0.14em] text-destructive">
-              {state.error}
-            </p>
-          )}
-          {flash && (
-            <span className="font-mono text-[0.7rem] uppercase tracking-[0.14em] text-primary">
-              {flash}
-            </span>
-          )}
-        </form>
-      </header>
-
-      {/* =====================================================================
-          BODY — 2 kolumny: main (1fr) + sticky meta sidebar (280px)
-          Mobile (max-md): meta sidebar zwija się pod main column.
-          ===================================================================== */}
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_320px]">
-        {/* ============ MAIN COLUMN ============ */}
-        <main className="flex min-w-0 flex-col gap-8">
-          {/* F12-K129: eyebrow POMINIĘTY na każdym Section który wrap'uje
-              child z własnym header'em (Description, Subtasks, Attachments,
-              Linked, Poll, Comments — wszystkie renderują "eyebrow + count
-              + action buttons" wewnątrz siebie). Wcześniej mieliśmy
-              "PODZADANIA / PODZADANIA" duplikat. */}
-          <Section>
-            <DescriptionSection
-              taskId={task.id}
-              initial={task.descriptionJson}
-              canEdit={canEdit}
-            />
-          </Section>
-
-          <Section>
-            <SubtasksSection
-              taskId={task.id}
-              subtasks={subtasks}
-              canManage={canManageSubtasks}
-            />
-          </Section>
-
-          <Section>
-            <AttachmentsSection
-              taskId={task.id}
-              attachments={attachments}
-              canUpload={canUpload}
-              canModerate={canModerateAttachments}
-            />
-          </Section>
-
-          {(linkedTasks.length > 0 || canEdit) && (
-            <Section>
-              <LinkedTasksSection
-                workspaceId={workspaceId}
-                taskId={task.id}
-                linkedTasks={linkedTasks}
-                candidates={linkCandidates}
-                canEdit={canEdit}
-              />
-            </Section>
-          )}
-
-          {(poll || canManagePoll) && (
-            <Section>
-              <PollSection
-                taskId={task.id}
-                poll={poll}
-                canManage={canManagePoll}
-                canVote={canVote}
-                currentUserId={currentUserId}
-              />
-            </Section>
-          )}
-
-          {/* F12-K54: custom kolumny tabeli — sekcja tylko gdy board ma jakieś. */}
-          {customColumns.length > 0 && (
-            <Section eyebrow="Pola dodatkowe">
-              <div className="grid gap-3 sm:grid-cols-2">
-                {customColumns.map((col) => (
-                  <div key={col.id} className="flex flex-col gap-1.5">
-                    <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                      {col.name}
-                    </span>
-                    <div className="min-h-[34px] rounded-md border border-border bg-background px-2 py-1.5">
-                      <FieldCell
-                        taskId={task.id}
-                        columnId={col.id}
-                        type={col.type}
-                        raw={customValues[col.id] ?? ""}
-                        options={parseFieldOptions(col.options)}
-                        disabled={!canEdit}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Section>
-          )}
-
-          <Section>
-            <CommentsSection
-              taskId={task.id}
-              comments={comments}
-              canComment={canComment}
-              canModerateComments={canModerateComments}
-              members={allMembers}
-            />
-          </Section>
-
-          {/* Activity feed — audit timeline */}
-          <Section eyebrow="Aktywność">
-            <ActivityLog entries={activity} />
-          </Section>
-        </main>
-
-        {/* ============ META SIDEBAR (sticky 280px) ============ */}
-        <aside className="md:sticky md:top-4 md:self-start">
-          <div className="flex flex-col gap-5 rounded-2xl border border-border bg-card/40 p-5 shadow-[0_4px_24px_-12px_rgba(0,0,0,0.12)]">
-            {/* STATUS picker inline */}
-            <MetaBlock label="Status">
-              <StatusPill
-                form="task-update-form"
-                name="statusColumnId"
-                statuses={statusColumns}
-                defaultValue={task.statusColumnId}
-                disabled={!canEdit}
-                onCommit={(newStatusId) => {
-                  const fd = new FormData();
-                  fd.set("id", task.id);
-                  fd.set("statusColumnId", newStatusId);
-                  startTransition(() => patchTaskAction(fd));
-                }}
-              />
-            </MetaBlock>
-
-            {/* PRIORITY picker inline (F12-K75 — instant save) */}
-            <MetaBlock label="Priorytet">
-              <PriorityPickerCell
-                taskId={task.id}
-                current={task.priority}
-                canEdit={canEdit}
-              />
-            </MetaBlock>
-
-            {/* ASSIGNEES stack — max 5 avatarów + "+ Dodaj" */}
-            <MetaBlock label="Przypisane">
-              <AssigneesStack
-                activeAssignees={activeAssignees}
-                allMembers={allMembers}
-                assigneeIds={assigneeIds}
-                taskId={task.id}
-                canEdit={canEdit}
-                onToggle={toggleAssigneeWithRefresh}
-              />
-            </MetaBlock>
-
-            {/* DATES — start / koniec */}
-            <div className="grid grid-cols-2 gap-3">
-              <MetaBlock label="Start">
-                <DateTimePicker
-                  form="task-update-form"
-                  name="startAt"
-                  defaultValue={task.startAt}
-                  disabled={!canEdit}
-                  placeholder="Brak daty"
-                  label="Data startu"
-                  onChange={(iso) => {
-                    if (!canEdit) return;
-                    const fd = new FormData();
-                    fd.set("id", task.id);
-                    fd.set("startAt", iso ?? "");
-                    startTransition(() => patchTaskAction(fd));
-                  }}
-                />
-              </MetaBlock>
-              <MetaBlock label="Koniec">
-                <DateTimePicker
-                  form="task-update-form"
-                  name="stopAt"
-                  defaultValue={task.stopAt}
-                  disabled={!canEdit}
-                  placeholder="Brak daty"
-                  label="Data końca"
-                  onChange={(iso) => {
-                    if (!canEdit) return;
-                    const fd = new FormData();
-                    fd.set("id", task.id);
-                    fd.set("stopAt", iso ?? "");
-                    startTransition(() => patchTaskAction(fd));
-                  }}
-                />
-              </MetaBlock>
-            </div>
-
-            {/* MILESTONE — instant select */}
-            <MetaBlock
-              label={
-                <span className="inline-flex items-center gap-1.5">
-                  <Flag size={11} aria-hidden /> Milestone
-                </span>
-              }
-            >
-              <MilestoneSection
-                // remount on server change — fresh state bez setState-in-render.
-                key={`ms-${task.milestoneId ?? "none"}`}
-                taskId={task.id}
-                currentMilestoneId={task.milestoneId}
-                milestones={milestones}
-                canEdit={canEdit}
-              />
-            </MetaBlock>
-
-            {/* TAGS — max 5 + "+ Dodaj tag" */}
-            <MetaBlock label="Tagi">
-              <TagsSection
-                workspaceId={workspaceId}
-                taskId={task.id}
-                allTags={allTags}
-                tagIds={tagIds}
-                activeTags={activeTags}
-                canEdit={canEdit}
-              />
-            </MetaBlock>
-
-            {/* REMINDER — wpinka do parent form'a (hidden input) */}
-            <MetaBlock
-              label={
-                <span className="inline-flex items-center gap-1.5">
-                  <Bell size={11} aria-hidden /> Przypomnienie
-                </span>
-              }
-            >
-              <ReminderField
-                defaultValue={task.reminderOffset ?? "none"}
-                reminderAt={task.reminderAt}
-                disabled={!canEdit}
-                taskId={task.id}
-              />
-            </MetaBlock>
-
-            {/* RECURRENCE — tylko dla template'ów (nie instancji) */}
-            {!task.recurrenceParentId && (
-              <MetaBlock label="Cykliczność">
-                <RecurrencePicker
-                  taskId={task.id}
-                  rule={task.recurrenceRule}
-                  disabled={!canEdit}
-                />
-              </MetaBlock>
-            )}
-          </div>
-        </aside>
-      </div>
-
-      {/* =====================================================================
-          FOOTER — TaskTimer (pill, lewa) + Autosave status + Delete (prawa).
-          Save button usunięty: zmiany lecą autosave-em (patchTaskAction).
-          `pending` z useActionState dalej żyje na potrzeby wskaźnika
-          "Zapisuję…" obok timera, ale dedykowany Save CTA jest zbędny.
-          Sticky liquid-plain bar —  z hairline shadow.
-          ===================================================================== */}
-      {/* F12-K86: footer wyrównany do jednej linii baseline. flex-nowrap na
-          desktop wymusza single row; min-w-0 na timer wrapperze + shrink/grow
-          radzi sobie z długimi nazwami. Autosave indicator middle, Usuń right. */}
-      <footer className="sticky bottom-0 z-10 -mx-4 mt-2 flex items-center gap-3 border-t border-border bg-background/80 px-4 py-3 max-md:flex-wrap md:-mx-6 md:flex-nowrap md:px-6">
-        {/* Timer pill (zachowuje pełną logikę startedAt/completedAt + duration display) */}
-        <div className="flex min-w-0 shrink-0 items-center">
-          <TaskTimer
-            taskId={task.id}
-            accumulatedSeconds={task.timeTrackedSeconds}
-            startedAt={task.timerStartedAt}
-            completedAt={task.timerCompletedAt}
-            canEdit={canEdit}
-          />
-        </div>
-
-        {/* Autosave status — subtle text-only indicator zamiast Save buttona.
-            shrink-0 + truncate żeby nie psuł flex-nowrap. */}
-        {canEdit && (
-          <span
-            aria-live="polite"
-            className="shrink-0 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground/80"
-          >
-            {pending ? "Zapisuję…" : "Autosave"}
-          </span>
-        )}
-
-        <div className="ml-auto flex shrink-0 items-center gap-2">
-          {canDelete && (
-            <form action={deleteTaskAction} className="m-0">
-              <input type="hidden" name="id" value={task.id} />
-              <input type="hidden" name="workspaceId" value={workspaceId} />
-              <button
-                type="submit"
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 font-sans text-[0.84rem] font-semibold text-destructive transition-colors hover:border-destructive/50 hover:bg-destructive/15 active:scale-[0.97] motion-reduce:active:scale-100"
-              >
-                <Trash2 size={14} /> Usuń
-              </button>
-            </form>
-          )}
-        </div>
-      </footer>
-    </div>
-  );
-}
-
-/* =========================================================================
-   ATOMOWE PRIMITIVES — wewnętrzne komponenty layoutu
-   ========================================================================= */
-
-// Sekcja main column: eyebrow + content + delikatny separator border-b.
-function Section({
-  eyebrow,
-  children,
-}: {
-  // F12-K129: eyebrow opcjonalny — child sekcje (SubtasksSection,
-  // DescriptionSection, CommentsSection, LinkedTasksSection, PollSection,
-  // AttachmentsSection) mają WŁASNE headery z count'em + action buttons.
-  // Wcześniej Section renderowała eyebrow zawsze → duplikat "PODZADANIA /
-  // PODZADANIA" itd. Now: jeśli eyebrow undefined, tylko border + spacing.
-  eyebrow?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="flex flex-col gap-3 border-b border-border pb-8 last:border-0 last:pb-0">
-      {eyebrow && (
-        <span className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-          {eyebrow}
-        </span>
-      )}
-      <div>{children}</div>
-    </section>
-  );
-}
-
-// Pojedynczy "kafelek" w meta sidebar — label + kontrolka.
-function MetaBlock({
-  label,
-  children,
-}: {
-  label: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-        {label}
-      </span>
-      {children}
-    </div>
-  );
-}
-
-// Header status pill — wyświetla aktualny status (read-only podgląd; edycja w sidebar).
-function HeaderStatusPill({
-  task,
-  statusColumns,
-}: {
-  task: { statusColumnId: string | null };
-  statusColumns: { id: string; name: string; colorHex: string }[];
-}) {
-  const current = statusColumns.find((s) => s.id === task.statusColumnId);
-  if (!current) {
-    return (
-      <span className="inline-flex h-6 items-center gap-1.5 rounded-full border border-border bg-card/60 px-2.5 text-[0.72rem] font-semibold text-muted-foreground">
-        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
-        Brak statusu
-      </span>
-    );
-  }
-  return (
-    <span
-      className="inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[0.72rem] font-semibold"
-      style={{
-        background: `${current.colorHex}1F`,
-        border: `1px solid ${current.colorHex}55`,
-        color: current.colorHex,
-      }}
-    >
-      <span
-        className="h-1.5 w-1.5 rounded-full"
-        style={{ background: current.colorHex }}
-      />
-      {current.name}
-    </span>
-  );
-}
-
-// Header priority pill — kolorowa pillka według priorytetu.
-function HeaderPriorityPill({ priority }: { priority: TaskPriorityValue }) {
-  if (priority === "NONE") return null;
-  const palette: Record<
-    Exclude<TaskPriorityValue, "NONE">,
-    { label: string; color: string; bg: string; border: string }
-  > = {
-    LOW: { label: "P3 · Niski", color: "#2F6FE8", bg: "rgba(52,190,248,.14)", border: "rgba(52,190,248,.3)" },
-    MEDIUM: { label: "P2 · Średni", color: "#A78BFA", bg: "rgba(167,139,250,.14)", border: "rgba(167,139,250,.3)" },
-    HIGH: { label: "P1 · Wysoki", color: "#F59E0B", bg: "rgba(245,158,11,.14)", border: "rgba(245,158,11,.3)" },
-    URGENT: { label: "P0 · Pilny", color: "#FB7185", bg: "rgba(244,63,94,.14)", border: "rgba(244,63,94,.3)" },
-  };
-  const p = palette[priority];
-  return (
-    <span
-      className="inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[0.72rem] font-semibold"
-      style={{ background: p.bg, border: `1px solid ${p.border}`, color: p.color }}
-    >
-      <svg
-        width="11"
-        height="11"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={p.color}
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        aria-hidden
-      >
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 8v4M12 16h.01" />
-      </svg>
-      {p.label}
-    </span>
-  );
-}
-
-// Stack avatarów przypisanych + przycisk "+ Dodaj" otwierający picker'a.
-// Picker jest popoverem (PortalDropdown) — toggle per user via form action.
-function AssigneesStack({
-  activeAssignees,
-  allMembers,
-  assigneeIds,
-  taskId,
-  canEdit,
-  onToggle,
-}: {
-  activeAssignees: TaskDetailProps["allMembers"];
-  allMembers: TaskDetailProps["allMembers"];
-  assigneeIds: Set<string>;
-  taskId: string;
-  canEdit: boolean;
-  onToggle: (fd: FormData) => Promise<void>;
-}) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const visible = activeAssignees.slice(0, 5);
-  const overflow = Math.max(0, activeAssignees.length - 5);
-  // React Compiler memoizes — bezpośredni filter na każdy render OK.
-  const q = query.trim().toLowerCase();
-  const filteredMembers = q
-    ? allMembers.filter((m) => {
-        const name = (m.name ?? "").toLowerCase();
-        const email = m.email.toLowerCase();
-        return name.includes(q) || email.includes(q);
-      })
-    : allMembers;
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center">
-        {visible.length === 0 && (
-          <span className="text-[0.78rem] text-muted-foreground">Brak przypisanych</span>
-        )}
-        {visible.map((m, i) => (
-          <span
-            key={m.id}
-            className="grid h-7 w-7 place-items-center overflow-hidden rounded-lg border-2 border-card bg-primary font-display text-[0.62rem] font-bold text-white"
-            style={{ marginLeft: i === 0 ? 0 : -7, zIndex: 10 - i }}
-            title={m.name ?? m.email}
-          >
-            {m.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={m.avatarUrl} alt="" width={28} height={28} className="h-full w-full object-cover" />
-            ) : (
-              initialsOf(m.name, m.email)
-            )}
-          </span>
-        ))}
-        {overflow > 0 && (
-          <span
-            className="grid h-7 w-7 place-items-center rounded-lg border-2 border-card bg-muted text-[0.62rem] font-bold text-muted-foreground"
-            style={{ marginLeft: -7 }}
-          >
-            +{overflow}
-          </span>
-        )}
-        {canEdit && (
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-label="Dodaj osobę"
-            aria-expanded={open}
-            className="grid h-7 w-7 place-items-center rounded-lg border-2 border-card bg-muted/60 text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
-            style={{ marginLeft: visible.length > 0 || overflow > 0 ? -7 : 0 }}
-          >
-            <Plus size={14} />
-          </button>
-        )}
-      </div>
-
-      {/* Picker — rozwijana lista członków (toggle per user) */}
-      {open && canEdit && (
-        <div className="popover-surface popover-enter flex flex-col gap-1 p-2">
-          {/* Search input — filtruje członków po name/email */}
-          <label className="mx-1 mt-1 mb-1 flex items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-2.5 py-1.5">
-            <Search size={13} className="text-muted-foreground" aria-hidden />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Szukaj osoby…"
-              aria-label="Szukaj osoby"
-              className="min-w-0 flex-1 bg-transparent text-[0.78rem] text-foreground placeholder:text-muted-foreground/80 outline-none"
-            />
-          </label>
-          {filteredMembers.length === 0 ? (
-            <p className="px-2 py-3 text-center text-[0.76rem] text-muted-foreground">
-              Brak dopasowań
-            </p>
-          ) : (
-            filteredMembers.map((m) => {
-              const active = assigneeIds.has(m.id);
-              return (
-                <form key={m.id} action={onToggle} className="m-0">
-                  <input type="hidden" name="taskId" value={taskId} />
-                  <input type="hidden" name="userId" value={m.id} />
-                  <button
-                    type="submit"
-                    data-active={active ? "true" : "false"}
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.82rem] transition-colors hover:bg-primary/10 data-[active=true]:bg-primary/12 data-[active=true]:text-foreground"
-                    title={m.email}
-                  >
-                    <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-md bg-primary font-display text-[0.6rem] font-bold text-white">
-                      {m.avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={m.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
-                      ) : (
-                        initialsOf(m.name, m.email)
-                      )}
-                    </span>
-                    <span className="truncate">{m.name ?? m.email.split("@")[0]}</span>
-                    {active && <Check size={13} className="ml-auto text-primary" />}
-                  </button>
-                </form>
-              );
-            })
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* =========================================================================
-   SUB-SECTIONS (zachowane z poprzedniej wersji, lekko przearanżowane)
-   ========================================================================= */
-
-// Optimistic UI: setValue runs immediately; router.refresh() pulls fresh props through intercepted modal route.
-function MilestoneSection({
-  taskId,
-  currentMilestoneId,
-  milestones,
-  canEdit,
-}: {
-  taskId: string;
-  currentMilestoneId: string | null;
-  milestones: { id: string; title: string; startAt: string; stopAt: string }[];
-  canEdit: boolean;
-}) {
-  const router = useRouter();
-  const [value, setValue] = useState<string>(currentMilestoneId ?? "");
-
-  // Sentinel — PortalDropdown traktuje "" jako brak selekcji.
-  const NONE = "__none__";
-  const handleChange = (next: string) => {
-    const persisted = next === NONE ? "" : next;
-    const previous = value;
-    setValue(persisted);
-    const fd = new FormData();
-    fd.set("taskId", taskId);
-    fd.set("milestoneId", persisted);
+  // Title: autosave on blur / Enter. Pre-check the server version so a stale card never overwrites (K96 + AK73).
+  const saveTitle = (next: string) => {
+    if (!canEdit || !next || next === task.title) return;
     startTransition(async () => {
-      const result = await assignTaskToMilestoneAction(fd);
-      // F12-K69: server zwraca {ok:false,error} gdy daty zadania wychodzą poza
-      // zakres milestone'a. Roll back UI + komunikat zamiast cichego no-op.
-      if (result && !result.ok) {
-        setValue(previous);
-        alert(result.error);
-        return;
+      if (seenVersion.current !== undefined) {
+        const fresh = await readTaskMeta(workspaceId, task.id);
+        // Our own not-yet-refreshed mutations bumped the version too, so compare
+        // against seen + pending; a bigger jump means somebody else edited.
+        if (fresh) {
+          if (fresh.version !== seenVersion.current + selfMutations.current) { setConflict(true); return; }
+          seenVersion.current = fresh.version;
+          selfMutations.current = 0;
+        }
       }
-      router.refresh();
+      onMutate();
+      const fd = new FormData();
+      fd.set("id", task.id);
+      fd.set("title", next);
+      await patchTaskAction(fd);
     });
   };
 
-  return (
-    <PortalDropdown<string>
-      ariaLabel="Wybierz milestone"
-      disabled={!canEdit}
-      width={240}
-      placeholder="— brak —"
-      emptyHint="Utwórz milestone w roadmapie"
-      value={value === "" ? NONE : value}
-      onChange={handleChange}
-      options={[
-        { value: NONE, label: "— brak —" },
-        ...milestones.map((m) => ({
-          value: m.id,
-          label: m.title,
-        })),
-      ]}
-      triggerClassName="inline-flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-border bg-background/60 px-3 text-[0.82rem] outline-none transition-colors hover:border-primary/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
-    />
-  );
-}
+  // `M` = open the assignees picker (mirrors the list-row hotkey).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.key !== "m" && e.key !== "M") || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      const trigger = rootRef.current?.querySelector<HTMLElement>('[data-field="assignees"] [aria-haspopup], [data-field="assignees"] button');
+      if (trigger) { e.preventDefault(); trigger.click(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
-// Hidden-input + v4 ReminderPicker — reminderOffset flows into parent form's
-// FormData via form="task-update-form" attribute na hidden inputie.
-// Custom UI per Flovly v4 spec: relative offsets row (15min / 1h / 1d) +
-// "Inne" trigger ujawniający listę pozostałych offsetów. Wartości i kontrakt
-// niezmienione — server akceptuje te same kody.
-function ReminderField({
-  defaultValue,
-  reminderAt,
-  disabled,
-  taskId,
-}: {
-  defaultValue: string;
-  reminderAt: string | null;
-  disabled: boolean;
-  taskId: string;
-}) {
-  const [value, setValue] = useState<string>(defaultValue);
-  // Quick-pick offsets pokazane jako chip-row (15min nieobsługiwany przez backend,
-  // więc mapujemy "15min" → "1h" jako visual placeholder dla "krótko przed").
-  // Faktyczne kody backendowe (none/1h/4h/1d/3d) ujawniamy w rozwijanej liście "Inne".
-  const QUICK: { value: string; label: string }[] = [
-    { value: "1h", label: "1 h" },
-    { value: "4h", label: "4 h" },
-    { value: "1d", label: "1 dzień" },
-    { value: "3d", label: "3 dni" },
-    { value: "none", label: "Brak" },
-  ];
-  return (
-    <div className="popover-surface flex flex-col gap-1.5 p-2">
-      <input
-        type="hidden"
-        form="task-update-form"
-        name="reminderOffset"
-        value={value}
-      />
-      <span className="eyebrow block px-1 text-[0.62rem]">Przypomnij</span>
-      <div className="flex flex-wrap gap-1" role="radiogroup" aria-label="Czas przypomnienia">
-        {QUICK.map((opt) => {
-          const active = value === opt.value;
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              disabled={disabled}
-              onClick={() => {
-                if (!disabled) {
-                  const fd = new FormData();
-                  fd.set("id", taskId);
-                  fd.set("reminderOffset", opt.value);
-                  startTransition(() => patchTaskAction(fd));
-                  setValue(opt.value);
-                }
-              }}
-              data-active={active}
-              className="inline-flex min-h-[28px] items-center gap-1.5 rounded-[8px] border border-border/60 bg-card/40 px-2.5 py-1 text-[12.5px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-primary/10 data-[active=true]:border-primary/40 data-[active=true]:bg-primary/10 data-[active=true]:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <Bell size={12} className="opacity-70" aria-hidden />
-              <span>{opt.label}</span>
-            </button>
-          );
-        })}
-      </div>
-      {reminderAt && (
-        <span className="mt-0.5 flex items-center gap-1.5 rounded-[8px] border border-border bg-card/50 px-2 py-1 font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
-          <Bell size={11} aria-hidden />
-          {new Date(reminderAt).toLocaleString("pl-PL", {
-            dateStyle: "medium",
-            timeStyle: "short",
-          })}
-        </span>
-      )}
+  const me = allMembers.find((m) => m.id === currentUserId);
+  const author = { name: me?.name ?? me?.email.split("@")[0] ?? "Ja", avatarUrl: me?.avatarUrl ?? null };
+  const lastActor = activity[0]?.actor ? (activity[0].actor.name ?? activity[0].actor.email.split("@")[0]!) : null;
+  const board = props.workspaceBoards.find((b) => b.id === props.boardId);
+  const assignees = allMembers.filter((m) => props.assigneeIds.has(m.id)).map((m) => ({ name: m.name ?? m.email.split("@")[0]!, src: m.avatarUrl }));
+
+  const headerProps: TaskHeaderProps = {
+    mode, workspaceId, boardId: props.boardId, workspaceBoards: props.workspaceBoards, task, statusColumns: props.statusColumns,
+    attachments: props.attachments.map((a) => ({ id: a.id, filename: a.filename, sizeBytes: a.sizeBytes })),
+    canEdit, canDelete: props.canDelete, onMutate,
+  };
+  const detailsProps: TaskDetailsProps = {
+    mode, workspaceId, task, milestones: props.milestones, allMembers, assigneeIds: props.assigneeIds, allTags: props.allTags, tagIds: props.tagIds,
+    canEdit, customColumns: props.customColumns, customValues: props.customValues, meta: meta ?? null, lastActor, onMutate,
+  };
+  const mentionMembers = allMembers;
+  const timeEntries = meta?.timeEntries ?? [];
+
+  const title = (size: "lg" | "xl" | "mobile") => (
+    <TitleField key={`title-${formKey}`} value={task.title} canEdit={canEdit} onSave={saveTitle}
+      className={size === "xl" ? "max-w-[720px] text-xl" : size === "mobile" ? "text-[19px] leading-[25px]" : "text-lg"} />
+  );
+  const sections = (mobile: boolean) => (
+    <>
+      <DescriptionSection key={`desc-${formKey}`} taskId={task.id} initial={task.descriptionJson} canEdit={canEdit} onMutate={onMutate} />
+      <SubtasksSection taskId={task.id} subtasks={props.subtasks} canManage={props.canManageSubtasks} mobile={mobile} barClassName={mode === "page" && !mobile ? "max-w-[200px]" : undefined} />
+      <AttachmentsSection taskId={task.id} attachments={props.attachments} canUpload={props.canUpload} canModerate={props.canModerateAttachments} />
+      {(props.linkedTasks.length > 0 || canEdit) && <LinkedTasksSection workspaceId={workspaceId} taskId={task.id} linkedTasks={props.linkedTasks} candidates={props.linkCandidates} canEdit={canEdit} />}
+      {(props.poll || props.canManagePoll) && <PollSection taskId={task.id} poll={props.poll} canManage={props.canManagePoll} canVote={props.canVote} currentUserId={currentUserId} />}
+    </>
+  );
+  const activityBlock = (mobile: boolean) => (
+    <TaskActivity comments={props.comments} activity={activity} timeEntries={timeEntries} members={mentionMembers} canModerateComments={props.canModerateComments} mobile={mobile} />
+  );
+  const banner = conflict && (
+    <div className="flex shrink-0 items-center gap-2 border-b border-border bg-chip-yellow-bg px-3 py-2 text-xs text-chip-yellow-fg" role="status" data-ui="task-conflict">
+      <IconWarning width={14} height={14} className="shrink-0" />
+      <span className="flex-1">Ktoś zmienił to zadanie, kiedy je edytowałeś — odśwież, żeby zobaczyć zmiany.</span>
+      <button type="button" onClick={refresh} className="font-semibold underline outline-none">Odśwież</button>
     </div>
   );
-}
 
-function TagsSection({
-  workspaceId,
-  taskId,
-  allTags,
-  tagIds,
-  activeTags,
-  canEdit,
-}: {
-  workspaceId: string;
-  taskId: string;
-  allTags: { id: string; name: string; colorHex: string }[];
-  tagIds: Set<string>;
-  activeTags: { id: string; name: string; colorHex: string }[];
-  canEdit: boolean;
-}) {
-  const router = useRouter();
-  const [picking, setPicking] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [color, setColor] = useState(TAG_COLORS[0]);
-  const [tagQuery, setTagQuery] = useState("");
-
-  // Same belt-and-suspenders pattern as TaskDetail — table re-fetches even if Realtime is silent.
-  const toggleTagWithRefresh = async (fd: FormData) => {
-    await toggleTagAction(fd);
-    router.refresh();
-  };
-
-  const visibleActive = activeTags.slice(0, 5);
-  const overflow = Math.max(0, activeTags.length - 5);
-  // React Compiler memoizes — bezpośredni filter na każdy render OK.
-  const tq = tagQuery.trim().toLowerCase();
-  const filteredTags = tq
-    ? allTags.filter((t) => t.name.toLowerCase().includes(tq))
-    : allTags;
-
-  return (
-    <div className="flex flex-col gap-2">
-      {/* Aktywne tagi (max 5 + counter) */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        {visibleActive.length === 0 && !picking && (
-          <span className="text-[0.78rem] text-muted-foreground">Brak tagów</span>
-        )}
-        {visibleActive.map((t) => (
-          <span
-            key={t.id}
-            className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[0.72rem] font-medium"
-            style={{
-              borderColor: `${t.colorHex}55`,
-              background: `${t.colorHex}1A`,
-              color: t.colorHex,
-            }}
-          >
-            {t.name}
-          </span>
-        ))}
-        {overflow > 0 && (
-          <span className="rounded-full border border-border bg-card/60 px-2 py-0.5 text-[0.7rem] text-muted-foreground">
-            +{overflow}
-          </span>
-        )}
-        {canEdit && !picking && !creating && (
-          <button
-            type="button"
-            onClick={() => setPicking(true)}
-            className="inline-flex items-center gap-1 rounded-full border border-dashed border-border px-2.5 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground"
-          >
-            <Plus size={10} /> Dodaj tag
-          </button>
-        )}
-      </div>
-
-      {/* Picker — pełna lista tagów (toggle) + przycisk "Nowy tag" */}
-      {picking && canEdit && (
-        <div className="popover-surface popover-enter flex flex-col gap-2 p-2.5">
-          {/* Search input — filtruje tagi po name */}
-          <label className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-2.5 py-1.5">
-            <Search size={13} className="text-muted-foreground" aria-hidden />
-            <input
-              type="text"
-              value={tagQuery}
-              onChange={(e) => setTagQuery(e.target.value)}
-              placeholder="Szukaj tagu…"
-              aria-label="Szukaj tagu"
-              className="min-w-0 flex-1 bg-transparent text-[0.78rem] text-foreground placeholder:text-muted-foreground/80 outline-none"
-            />
-          </label>
-          {allTags.length === 0 ? (
-            <p className="text-[0.78rem] text-muted-foreground">Brak tagów w workspace.</p>
-          ) : filteredTags.length === 0 ? (
-            <p className="px-1 py-2 text-[0.76rem] text-muted-foreground">Brak dopasowań</p>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {filteredTags.map((t) => {
-                const active = tagIds.has(t.id);
-                return (
-                  <form key={t.id} action={toggleTagWithRefresh} className="m-0">
-                    <input type="hidden" name="taskId" value={taskId} />
-                    <input type="hidden" name="tagId" value={t.id} />
-                    <button
-                      type="submit"
-                      data-active={active ? "true" : "false"}
-                      className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[0.72rem] font-medium transition-[border-color,opacity] data-[active=false]:opacity-50 hover:opacity-100"
-                      style={{
-                        borderColor: active ? t.colorHex : "var(--border)",
-                        background: active ? `${t.colorHex}1A` : "transparent",
-                        color: active ? t.colorHex : "var(--foreground)",
-                      }}
-                    >
-                      <span
-                        className="h-1.5 w-1.5 rounded-full"
-                        style={{ background: t.colorHex }}
-                      />
-                      {t.name}
-                    </button>
-                  </form>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => setCreating(true)}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-primary transition-colors hover:bg-primary/10"
-            >
-              <Plus size={10} /> Nowy tag
-            </button>
-            <button
-              type="button"
-              onClick={() => setPicking(false)}
-              className="ml-auto text-[0.7rem] text-muted-foreground hover:text-foreground"
-            >
-              Gotowe
-            </button>
+  if (isMobile) {
+    return (
+      <div ref={rootRef} className="flex h-full min-h-0 flex-col bg-card" data-ui="task-detail" data-mode={mode} data-layout="mobile">
+        <TaskMobileHeader {...headerProps} />
+        {banner}
+        <div className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pt-4 pb-3">
+          <div className="mb-2.5 flex items-center gap-2">
+            <StatusChipMenu taskId={task.id} statusColumns={props.statusColumns} value={task.statusColumnId} canEdit={canEdit} onMutate={onMutate} className="h-7 px-2.5" />
+            <PriorityChipMenu taskId={task.id} value={task.priority} canEdit={canEdit} short onMutate={onMutate} className="h-7 px-[9px]" />
+            {assignees.length > 0 && <AvatarStack people={assignees} size={26} max={3} className="ml-auto" />}
           </div>
-
-          {creating && (
-            <form
-              action={createTagAction}
-              onSubmit={() => {
-                setCreating(false);
-                setColor(TAG_COLORS[0]);
-              }}
-              className="flex flex-wrap items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 p-2"
-            >
-              <input type="hidden" name="workspaceId" value={workspaceId} />
-              <input type="hidden" name="colorHex" value={color} />
-              <input
-                name="name"
-                type="text"
-                required
-                maxLength={32}
-                placeholder="np. urgent"
-                autoFocus
-                aria-label="Nazwa nowego tagu"
-                className="min-w-[110px] flex-1 rounded-md bg-transparent px-2 py-1 text-[0.78rem] outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
-              />
-              <div className="flex items-center gap-1">
-                {TAG_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setColor(c)}
-                    className="grid h-5 w-5 place-items-center rounded-full transition-transform hover:scale-110"
-                    style={{
-                      background: c,
-                      outline: color === c ? "2px solid var(--foreground)" : "none",
-                      outlineOffset: color === c ? 2 : 0,
-                    }}
-                    aria-label={`kolor ${c}`}
-                  />
-                ))}
-              </div>
-              <button
-                type="submit"
-                className="grid h-7 w-7 place-items-center rounded-md bg-primary text-white transition-opacity hover:opacity-90"
-                aria-label="Utwórz tag"
-              >
-                <Check size={12} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setCreating(false)}
-                className="grid h-7 w-7 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Anuluj"
-              >
-                <X size={12} />
-              </button>
-            </form>
-          )}
+          <div className="mb-3.5">{title("mobile")}</div>
+          <div className="flex flex-col gap-4">{sections(true)}</div>
+          <TaskDetailsCard {...detailsProps} mobile />
+          {activityBlock(true)}
         </div>
-      )}
+        {props.canComment && <div className="shrink-0 border-t border-border bg-card safe-bottom"><CommentComposer taskId={task.id} members={mentionMembers} author={author} mobile /></div>}
+      </div>
+    );
+  }
+
+  if (mode === "page") {
+    return (
+      <div ref={rootRef} className="flex h-full min-h-0 flex-col bg-card" data-ui="task-detail" data-mode="page">
+        <TaskPageBar {...headerProps} workspaceName={board?.workspaceName ?? "Przestrzeń"} boardName={board?.name ?? "Tablica"} />
+        {banner}
+        <div className="flex min-h-0 flex-1">
+          <div className="min-w-0 flex-1 overflow-y-auto px-10 py-6">
+            <div className="mb-2 flex items-center gap-2.5">
+              <StatusChipMenu taskId={task.id} statusColumns={props.statusColumns} value={task.statusColumnId} canEdit={canEdit} onMutate={onMutate} />
+              <PriorityChipMenu taskId={task.id} value={task.priority} canEdit={canEdit} onMutate={onMutate} />
+            </div>
+            <div className="mb-5">{title("xl")}</div>
+            <div className="flex max-w-[720px] flex-col gap-5">
+              {sections(false)}
+              {activityBlock(false)}
+              {props.canComment && <div className="-mx-3"><CommentComposer taskId={task.id} members={mentionMembers} author={author} /></div>}
+            </div>
+          </div>
+          <TaskDetailsColumn {...detailsProps} />
+        </div>
+      </div>
+    );
+  }
+
+  // panel (600, resizable) / modal (960)
+  return (
+    <div ref={rootRef} className="flex h-full min-h-0 flex-col bg-card" data-ui="task-detail" data-mode={mode}>
+      {banner}
+      <TaskHeader {...headerProps} />
+      <div className="flex min-h-0 flex-1">
+        <div className={cn("min-w-0 flex-1 overflow-y-auto pb-3", mode === "modal" ? "px-5 pt-5" : "px-4 pt-4")}>
+          <div className={mode === "modal" ? "mb-4" : "mb-3.5"}>{title("lg")}</div>
+          <div className="flex flex-col gap-4">{sections(false)}</div>
+          {activityBlock(false)}
+        </div>
+        <TaskDetailsColumn {...detailsProps} />
+      </div>
+      {props.canComment && <div className="shrink-0 border-t border-border bg-card"><CommentComposer taskId={task.id} members={mentionMembers} author={author} /></div>}
     </div>
   );
 }
 
-// F12-K67: dropdown wiążący task'a z kontaktem CRM. Autosave przez
-// patchTaskAction po onChange (mirror MilestoneSection / ReminderField pattern).
-// workspaceId potrzebny serwerowi do walidacji że kontakt jest z tego workspace'u.
-// NOTE: ContactField celowo wyciągnięty z karty zadania w F12-K67 — klient nie
-// chciał widzieć picker'a klienta przy każdym tasku. Linkowanie task ↔ kontakt
-// robi się teraz po stronie kontaktu (ContactTasksTile) oraz przez Deal.contactId.
-// Komponent zostawiony w pliku jako re-eksport gdyby był potrzebny gdzie indziej.
-export function ContactField({
-  taskId,
-  workspaceId: _workspaceId,
-  contactId,
-  contacts,
-  disabled,
-}: {
-  taskId: string;
-  workspaceId: string;
-  contactId: string | null;
-  contacts: { id: string; label: string }[];
-  disabled: boolean;
-}) {
-  const submit = (next: string) => {
-    const fd = new FormData();
-    fd.set("id", taskId);
-    fd.set("contactId", next);
-    startTransition(() => patchTaskAction(fd));
-  };
+// Inline-editable title: textarea that grows with content; blur / Enter saves, Escape restores.
+function TitleField({ value, canEdit, onSave, className }: { value: string; canEdit: boolean; onSave: (next: string) => void; className?: string }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const fit = () => { el.style.height = "auto"; el.style.height = `${el.scrollHeight}px`; };
+    fit();
+    el.addEventListener("input", fit);
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => { el.removeEventListener("input", fit); ro.disconnect(); };
+  }, [value]);
   return (
-    <div className="flex flex-col gap-2">
-      <span className="font-mono text-[0.62rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-        Kontakt (klient)
-      </span>
-      <select
-        value={contactId ?? ""}
-        onChange={(e) => submit(e.target.value)}
-        disabled={disabled}
-        className="h-9 w-full rounded-lg border border-border bg-background/60 px-3 text-[0.82rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <option value="">— brak —</option>
-        {contacts.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.label}
-          </option>
-        ))}
-      </select>
-    </div>
+    <textarea
+      ref={ref}
+      name="title"
+      rows={1}
+      required
+      maxLength={2000}
+      readOnly={!canEdit}
+      defaultValue={value}
+      aria-label="Tytuł zadania"
+      onBlur={(e) => onSave(e.currentTarget.value.trim())}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.blur(); }
+        if (e.key === "Escape") { e.currentTarget.value = value; e.currentTarget.blur(); }
+      }}
+      className={cn("-mx-1 block w-[calc(100%+8px)] resize-none overflow-hidden rounded-sm border-0 bg-transparent px-1 py-0 font-semibold leading-[26px] tracking-[-0.2px] text-foreground outline-none [field-sizing:content] hover:bg-n-50 focus-visible:bg-card focus-visible:shadow-[var(--focus)] read-only:hover:bg-transparent", className)}
+    />
   );
 }

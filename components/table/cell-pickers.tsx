@@ -1,20 +1,24 @@
 "use client";
 
-// Inline assignee + tag pickers used as table cells. Click the
-// cell → portal popover with searchable list → toggle item. Mirrors the
-// task-detail modal UX so users don't have to open a task just to add a
-// person or tag.
+// Inline assignee + tag pickers (Lista cells). Click → popover (bottom sheet
+// <768px) with search → toggle. Mirrors the task-panel UX.
 
-import { startTransition, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { startTransition, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Search, UserPlus, Tag as TagIcon } from "lucide-react";
-import {
-  toggleAssigneeAction,
-  toggleTagAction,
-} from "@/app/(app)/w/[workspaceId]/t/actions";
+import { createTagAction, toggleAssigneeAction, toggleTagAction } from "@/app/(app)/w/[workspaceId]/t/actions";
+import { TAG_PALETTE } from "@/lib/colors";
 import { useIsMobile } from "@/hooks/use-is-mobile";
+import { cn } from "@/lib/utils";
+import { Avatar, AvatarStack } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { CheckMark } from "@/components/ui/checkbox";
+import { TagChip } from "@/components/ui/chip";
+import { InputGroup } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { IconPlus, IconSearch } from "@/components/ui/icons";
+import { hueForColor } from "@/components/ui/status-hue";
+import { memberName } from "@/components/table/types";
 
 export interface PickerMember {
   id: string;
@@ -29,120 +33,68 @@ export interface PickerTag {
   colorHex: string;
 }
 
-// Shared positioning logic. Anchors a fixed-position popover under the
-// trigger element, flipping above when clipped, and capping height so it
-// stays inside the viewport.
-function computeCoords(
-  trigger: HTMLElement,
-  desiredWidth: number,
-  desiredHeight = 320,
-): { top: number; left: number; maxHeight: number; placement: "below" | "above" } {
-  const r = trigger.getBoundingClientRect();
-  const GAP = 6;
-  const margin = 8;
-  const spaceBelow = window.innerHeight - r.bottom - margin;
-  const spaceAbove = r.top - margin;
-  const placement: "below" | "above" =
-    spaceBelow >= Math.min(desiredHeight, 200) || spaceBelow >= spaceAbove ? "below" : "above";
-  const left = Math.min(
-    Math.max(r.left, margin),
-    window.innerWidth - desiredWidth - margin,
-  );
-  if (placement === "below") {
-    const maxHeight = Math.min(desiredHeight, spaceBelow);
-    return { top: r.bottom + GAP, left, maxHeight, placement };
+const TRIGGER = "flex h-7 w-full min-w-0 items-center rounded-sm px-1 text-left outline-none enabled:hover:bg-n-100 disabled:cursor-default data-popup-open:bg-n-100";
+
+// Popover on desktop, bottom sheet on mobile — same body.
+function CellPopover({ open, onOpenChange, disabled, ariaLabel, title, trigger, children }: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  disabled: boolean;
+  ariaLabel: string;
+  title: string;
+  trigger: ReactNode;
+  children: ReactNode;
+}) {
+  const isMobile = useIsMobile();
+  if (isMobile) {
+    return (
+      <>
+        <button type="button" disabled={disabled} aria-label={ariaLabel} onClick={() => onOpenChange(true)} className={TRIGGER}>{trigger}</button>
+        <Sheet open={open} onOpenChange={onOpenChange}>
+          <SheetContent side="bottom" showCloseButton={false} className="gap-0 p-0">
+            <div className="sheet-drag-handle" aria-hidden="true" />
+            <SheetTitle className="px-4 pb-2 pt-3 text-base font-semibold">{title}</SheetTitle>
+            <div className="safe-bottom max-h-[70dvh] overflow-y-auto px-3 pb-3">{children}</div>
+          </SheetContent>
+        </Sheet>
+      </>
+    );
   }
-  const maxHeight = Math.min(desiredHeight, spaceAbove);
-  return { top: Math.max(margin, r.top - GAP - maxHeight), left, maxHeight, placement };
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger disabled={disabled} aria-label={ariaLabel} className={TRIGGER}>{trigger}</PopoverTrigger>
+      <PopoverContent align="start" className="w-[260px] p-1.5">{children}</PopoverContent>
+    </Popover>
+  );
 }
 
-type Coords = ReturnType<typeof computeCoords>;
+function OptionRow({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button type="button" role="option" aria-selected={active} onClick={onClick} className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm outline-none hover:bg-n-100 focus-visible:bg-n-100">
+      <span className={cn("flex size-4 shrink-0 items-center justify-center rounded-sm border-[1.5px] border-n-400 bg-card text-white", active && "border-control-on bg-control-on")}>
+        {active && <CheckMark />}
+      </span>
+      {children}
+    </button>
+  );
+}
 
-// ─────────────────────────────────────────────────────────────────────
-// Assignee picker
-// ─────────────────────────────────────────────────────────────────────
-
-export function AssigneePickerCell({
-  taskId,
-  current,
-  members,
-  canEdit,
-}: {
-  taskId: string;
-  current: PickerMember[];
-  members: PickerMember[];
-  canEdit: boolean;
-}) {
+export function AssigneePickerCell({ taskId, current, members, canEdit }: { taskId: string; current: PickerMember[]; members: PickerMember[]; canEdit: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const isMobile = useIsMobile();
-  const [coords, setCoords] = useState<Coords | null>(null);
   const [query, setQuery] = useState("");
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const popRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const close = () => {
-    setOpen(false);
-    setCoords(null);
-    setQuery("");
-  };
-
-  const recompute = () => {
-    if (!triggerRef.current) return;
-    setCoords(computeCoords(triggerRef.current, 280, 360));
-  };
-
-  const onTriggerClick = () => {
-    if (!canEdit) return;
-    if (open) {
-      close();
-      return;
-    }
-    if (isMobile) {
-      // Mobile: Sheet sam pozycjonuje, pomijamy computeCoords.
-      setOpen(true);
-      return;
-    }
-    if (!triggerRef.current) return;
-    setCoords(computeCoords(triggerRef.current, 280, 360));
-    setOpen(true);
-  };
-
-  useEffect(() => {
-    // Mobile: Sheet ma własny outside-click/Escape.
-    if (!open || isMobile) return;
-    const onDoc = (e: MouseEvent) => {
-      if (popRef.current?.contains(e.target as Node)) return;
-      if (triggerRef.current?.contains(e.target as Node)) return;
-      close();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    const onReflow = () => recompute();
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onKey);
-    window.addEventListener("resize", onReflow);
-    window.addEventListener("scroll", onReflow, true);
-    setTimeout(() => inputRef.current?.focus(), 0);
-    return () => {
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("keydown", onKey);
-      window.removeEventListener("resize", onReflow);
-      window.removeEventListener("scroll", onReflow, true);
-    };
-  }, [open, isMobile]);
-
-  const assignedIds = new Set(current.map((m) => m.id));
+  // Optimistic toggles until the refreshed row lands (reset when props change).
+  const [optimistic, setOptimistic] = useState(current);
+  const [prev, setPrev] = useState(current);
+  if (prev !== current) {
+    setPrev(current);
+    setOptimistic(current);
+  }
+  const assigned = new Set(optimistic.map((m) => m.id));
   const q = query.trim().toLowerCase();
-  const filtered = members.filter((m) => {
-    if (!q) return true;
-    const n = (m.name ?? "").toLowerCase();
-    return n.includes(q) || m.email.toLowerCase().includes(q);
-  });
-
+  const filtered = members.filter((m) => !q || (m.name ?? "").toLowerCase().includes(q) || m.email.toLowerCase().includes(q));
   const toggle = (userId: string) => {
+    setOptimistic((cur) => (cur.some((m) => m.id === userId) ? cur.filter((m) => m.id !== userId) : [...cur, members.find((m) => m.id === userId)!].filter(Boolean)));
     const fd = new FormData();
     fd.set("taskId", taskId);
     fd.set("userId", userId);
@@ -151,330 +103,55 @@ export function AssigneePickerCell({
       router.refresh();
     });
   };
-
   return (
-    <>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={onTriggerClick}
-        disabled={!canEdit}
-        className="group/cell flex w-full items-center gap-1 rounded-md py-1 text-left transition-colors enabled:hover:bg-accent/40 disabled:cursor-default"
-        aria-label={current.length === 0 ? "Przypisz osobę" : `Przypisanych: ${current.length}`}
-      >
-        {current.length === 0 ? (
-          <span className="inline-flex items-center gap-1.5 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground/70 group-hover/cell:text-foreground">
-            <UserPlus size={11} className="opacity-60 group-hover/cell:opacity-100" />
-            przypisz
-          </span>
-        ) : (
-          <span className="flex -space-x-1.5">
-            {current.slice(0, 4).map((a) => (
-              <span
-                key={a.id}
-                title={a.name ?? a.email}
-                className="grid h-6 w-6 place-items-center overflow-hidden rounded-full border-2 border-background bg-primary font-display text-[0.6rem] font-bold text-white"
-              >
-                {a.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={a.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
-                ) : (
-                  (a.name ?? a.email).slice(0, 2).toUpperCase()
-                )}
-              </span>
-            ))}
-            {current.length > 4 && (
-              <span className="grid h-6 w-6 place-items-center rounded-full border-2 border-background bg-muted font-mono text-[0.58rem] text-muted-foreground">
-                +{current.length - 4}
-              </span>
-            )}
-          </span>
-        )}
-      </button>
-      {open && coords && !isMobile && typeof document !== "undefined" &&
-        createPortal(
-          <div
-            ref={popRef}
-            style={{
-              position: "fixed",
-              top: coords.top,
-              left: coords.left,
-              width: 300,
-              maxHeight: coords.maxHeight,
-            }}
-            // z-[200] === Z.popoverInModal (F12-K104).
-            className="popover-surface popover-enter z-[200] flex flex-col overflow-hidden p-2"
-          >
-            <div className="mb-1.5 shrink-0">
-              <span className="eyebrow mb-1.5 block px-1.5 text-[0.66rem]">
-                Przypisz
-              </span>
-              <div className="flex items-center gap-2 rounded-[8px] border border-border bg-card/60 px-2 py-1.5">
-                <Search size={12} className="text-muted-foreground" />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Szukaj osoby…"
-                  className="flex-1 bg-transparent text-[0.8125rem] outline-none placeholder:text-muted-foreground/60"
-                />
-              </div>
-            </div>
-            <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">
-              {filtered.length === 0 && (
-                <li className="px-2 py-3 text-center font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                  Brak dopasowań
-                </li>
-              )}
-              {filtered.map((m) => {
-                const active = assignedIds.has(m.id);
-                return (
-                  <li key={m.id}>
-                    <button
-                      type="button"
-                      onClick={() => toggle(m.id)}
-                      data-active={active}
-                      className="flex w-full items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition-colors hover:bg-muted active:bg-primary/10 data-[active=true]:bg-primary/10"
-                    >
-                      <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-[6px] bg-primary font-display text-[10px] font-bold text-white">
-                        {m.avatarUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={m.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
-                        ) : (
-                          (m.name ?? m.email).slice(0, 2).toUpperCase()
-                        )}
-                      </span>
-                      <span className="flex min-w-0 flex-1 flex-col leading-tight">
-                        <span className="truncate text-[13px] font-medium text-foreground">
-                          {m.name ?? m.email.split("@")[0]}
-                        </span>
-                        <span className="truncate font-mono text-[10px] text-muted-foreground/80">
-                          @{m.email.split("@")[0]}
-                        </span>
-                      </span>
-                      {active && (
-                        <span
-                          className="grid h-4 w-4 shrink-0 place-items-center text-primary"
-                          aria-hidden="true"
-                        >
-                          <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.6"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M20 6 9 17l-5-5" />
-                          </svg>
-                        </span>
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-            {current.length > 0 && (
-              <div className="mt-1 shrink-0 border-t border-border/60 pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    // Toggle off każdego current — ten sam server action, raz na osobę.
-                    current.forEach((m) => toggle(m.id));
-                  }}
-                  className="flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[13px] font-medium text-destructive transition-colors hover:bg-destructive/10 active:bg-destructive/15"
-                >
-                  Zdejmij przypisanie
-                </button>
-              </div>
-            )}
-          </div>,
-          document.body,
-        )}
-
-      {/* Mobile: bottom sheet — przypisz osobę. Search input + lista 48px rows + sticky footer. */}
-      {isMobile && (
-        <Sheet open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
-          <SheetContent
-            side="bottom"
-            showCloseButton={false}
-            className="sheet-mobile-surface max-h-[85dvh] gap-0 p-0"
-          >
-            <div className="flex max-h-[85dvh] flex-col">
-              <div className="pt-3">
-                <div className="sheet-drag-handle" aria-hidden="true" />
-              </div>
-              <div className="flex shrink-0 flex-col gap-2 px-4 pb-2">
-                <SheetTitle className="text-base font-bold text-foreground">
-                  Przypisz osobę
-                </SheetTitle>
-                <div className="flex items-center gap-2 rounded-[10px] border border-border bg-card/60 px-2.5 py-2">
-                  <Search size={13} className="text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Szukaj osoby…"
-                    className="flex-1 bg-transparent text-[0.875rem] outline-none placeholder:text-muted-foreground/60"
-                  />
-                </div>
-              </div>
-              <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-2">
-                {filtered.length === 0 && (
-                  <li className="px-2 py-4 text-center font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
-                    Brak dopasowań
-                  </li>
-                )}
-                {filtered.map((m) => {
-                  const active = assignedIds.has(m.id);
-                  return (
-                    <li key={m.id}>
-                      <button
-                        type="button"
-                        onClick={() => toggle(m.id)}
-                        data-active={active}
-                        className="flex min-h-[48px] w-full items-center gap-3 rounded-[12px] px-3 text-left transition-colors active:bg-primary/15 data-[active=true]:bg-primary/10"
-                      >
-                        <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-[8px] bg-primary font-display text-[11px] font-bold text-white">
-                          {m.avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={m.avatarUrl} alt="" width={32} height={32} className="h-full w-full object-cover" />
-                          ) : (
-                            (m.name ?? m.email).slice(0, 2).toUpperCase()
-                          )}
-                        </span>
-                        <span className="flex min-w-0 flex-1 flex-col leading-tight">
-                          <span className="truncate text-[14px] font-medium text-foreground">
-                            {m.name ?? m.email.split("@")[0]}
-                          </span>
-                          <span className="truncate font-mono text-[11px] text-muted-foreground/80">
-                            @{m.email.split("@")[0]}
-                          </span>
-                        </span>
-                        {active && (
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.6"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="shrink-0 text-primary"
-                            aria-hidden="true"
-                          >
-                            <path d="M20 6 9 17l-5-5" />
-                          </svg>
-                        )}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-              {current.length > 0 && (
-                <div className="shrink-0 border-t border-border/60 px-3 pt-2 pb-safe-bottom">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      current.forEach((m) => toggle(m.id));
-                    }}
-                    className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[10px] text-[14px] font-medium text-destructive transition-colors active:bg-destructive/15"
-                  >
-                    Zdejmij przypisanie
-                  </button>
-                </div>
-              )}
-            </div>
-          </SheetContent>
-        </Sheet>
+    <CellPopover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) setQuery("");
+      }}
+      disabled={!canEdit}
+      ariaLabel={optimistic.length === 0 ? "Przypisz osobę" : `Przypisanych: ${optimistic.length}`}
+      title="Przypisz osobę"
+      trigger={optimistic.length === 0 ? <span className="text-n-400">—</span> : <AvatarStack people={optimistic.map((a) => ({ name: memberName(a), src: a.avatarUrl }))} size={22} max={3} />}
+    >
+      <InputGroup size="sm" leading={<IconSearch />} autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Szukaj osoby…" aria-label="Szukaj osoby" className="mb-1 text-xs" />
+      <div role="listbox" aria-label="Osoby" className="flex max-h-[280px] flex-col overflow-y-auto">
+        {filtered.length === 0 && <p className="px-2 py-3 text-center text-xs text-n-500">Brak dopasowań</p>}
+        {filtered.map((m) => (
+          <OptionRow key={m.id} active={assigned.has(m.id)} onClick={() => toggle(m.id)}>
+            <Avatar name={memberName(m)} src={m.avatarUrl} size={20} />
+            <span className="min-w-0 flex-1 truncate">{memberName(m)}</span>
+          </OptionRow>
+        ))}
+      </div>
+      {optimistic.length > 0 && (
+        <div className="mt-1 border-t border-n-100 pt-1">
+          <Button variant="ghost" size="sm" className="w-full justify-start text-danger-text hover:text-danger-text" onClick={() => optimistic.forEach((m) => toggle(m.id))}>
+            Zdejmij przypisanie
+          </Button>
+        </div>
       )}
-    </>
+    </CellPopover>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Tag picker
-// ─────────────────────────────────────────────────────────────────────
-
-export function TagPickerCell({
-  taskId,
-  current,
-  allTags,
-  canEdit,
-}: {
-  taskId: string;
-  current: PickerTag[];
-  allTags: PickerTag[];
-  canEdit: boolean;
-}) {
+export function TagPickerCell({ taskId, workspaceId, current, allTags, canEdit }: { taskId: string; workspaceId?: string; current: PickerTag[]; allTags: PickerTag[]; canEdit: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const isMobile = useIsMobile();
-  const [coords, setCoords] = useState<Coords | null>(null);
   const [query, setQuery] = useState("");
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const popRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const close = () => {
-    setOpen(false);
-    setCoords(null);
-    setQuery("");
-  };
-
-  const recompute = () => {
-    if (!triggerRef.current) return;
-    setCoords(computeCoords(triggerRef.current, 280, 360));
-  };
-
-  const onTriggerClick = () => {
-    if (!canEdit) return;
-    if (open) {
-      close();
-      return;
-    }
-    if (isMobile) {
-      setOpen(true);
-      return;
-    }
-    if (!triggerRef.current) return;
-    setCoords(computeCoords(triggerRef.current, 280, 360));
-    setOpen(true);
-  };
-
-  useEffect(() => {
-    if (!open || isMobile) return;
-    const onDoc = (e: MouseEvent) => {
-      if (popRef.current?.contains(e.target as Node)) return;
-      if (triggerRef.current?.contains(e.target as Node)) return;
-      close();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    const onReflow = () => recompute();
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onKey);
-    window.addEventListener("resize", onReflow);
-    window.addEventListener("scroll", onReflow, true);
-    setTimeout(() => inputRef.current?.focus(), 0);
-    return () => {
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("keydown", onKey);
-      window.removeEventListener("resize", onReflow);
-      window.removeEventListener("scroll", onReflow, true);
-    };
-  }, [open, isMobile]);
-
-  const tagIds = new Set(current.map((t) => t.id));
+  const [creating, setCreating] = useState(false);
+  const [optimistic, setOptimistic] = useState(current);
+  const [prev, setPrev] = useState(current);
+  if (prev !== current) {
+    setPrev(current);
+    setOptimistic(current);
+  }
+  const has = new Set(optimistic.map((t) => t.id));
   const q = query.trim().toLowerCase();
   const filtered = allTags.filter((t) => !q || t.name.toLowerCase().includes(q));
-
   const toggle = (tagId: string) => {
+    setOptimistic((cur) => (cur.some((t) => t.id === tagId) ? cur.filter((t) => t.id !== tagId) : [...cur, allTags.find((t) => t.id === tagId)!].filter(Boolean)));
     const fd = new FormData();
     fd.set("taskId", taskId);
     fd.set("tagId", tagId);
@@ -483,227 +160,58 @@ export function TagPickerCell({
       router.refresh();
     });
   };
-
+  const canCreate = Boolean(workspaceId) && q.length > 0 && !allTags.some((t) => t.name.toLowerCase() === q);
+  const create = () => {
+    if (!workspaceId || creating) return;
+    const fd = new FormData();
+    fd.set("workspaceId", workspaceId);
+    fd.set("name", query.trim());
+    fd.set("colorHex", TAG_PALETTE[allTags.length % TAG_PALETTE.length]!);
+    setCreating(true);
+    startTransition(async () => {
+      await createTagAction(fd);
+      setCreating(false);
+      setQuery("");
+      router.refresh();
+    });
+  };
   return (
-    <>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={onTriggerClick}
-        disabled={!canEdit}
-        className="group/cell flex w-full items-center gap-1 rounded-md py-1 text-left transition-colors enabled:hover:bg-accent/40 disabled:cursor-default"
-        aria-label={current.length === 0 ? "Dodaj tag" : `Tagów: ${current.length}`}
-      >
-        {current.length === 0 ? (
-          <span className="inline-flex items-center gap-1.5 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground/70 group-hover/cell:text-foreground">
-            <TagIcon size={11} className="opacity-60 group-hover/cell:opacity-100" />
-            dodaj tag
-          </span>
+    <CellPopover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) setQuery("");
+      }}
+      disabled={!canEdit}
+      ariaLabel={optimistic.length === 0 ? "Dodaj tag" : `Tagów: ${optimistic.length}`}
+      title="Tagi"
+      trigger={
+        optimistic.length === 0 ? (
+          <span className="text-n-400">—</span>
         ) : (
-          <span className="flex flex-wrap gap-1">
-            {current.map((t) => (
-              <span
-                key={t.id}
-                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.7rem] font-medium"
-                style={{ background: `${t.colorHex}1A`, color: t.colorHex }}
-              >
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: t.colorHex }}
-                />
-                {t.name}
-              </span>
-            ))}
+          <span className="flex min-w-0 items-center gap-1 overflow-hidden whitespace-nowrap">
+            {optimistic.map((t) => <TagChip key={t.id} label={t.name} hue={hueForColor(t.colorHex)} size="sm" />)}
           </span>
-        )}
-      </button>
-      {open && coords && !isMobile && typeof document !== "undefined" &&
-        createPortal(
-          <div
-            ref={popRef}
-            style={{
-              position: "fixed",
-              top: coords.top,
-              left: coords.left,
-              width: 280,
-              maxHeight: coords.maxHeight,
-            }}
-            // z-[200] === Z.popoverInModal (F12-K104).
-            className="popover-surface popover-enter z-[200] flex flex-col overflow-hidden p-2"
-          >
-            <div className="mb-1.5 shrink-0">
-              <span className="eyebrow mb-1.5 block px-1.5 text-[0.66rem]">
-                Tagi
-              </span>
-              <div className="flex items-center gap-2 rounded-[8px] border border-border bg-card/60 px-2 py-1.5">
-                <Search size={12} className="text-muted-foreground" />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Szukaj tagu…"
-                  className="flex-1 bg-transparent text-[0.8125rem] outline-none placeholder:text-muted-foreground/60"
-                />
-              </div>
-            </div>
-            <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">
-              {filtered.length === 0 && (
-                <li className="px-2 py-3 text-center font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                  {allTags.length === 0
-                    ? "Brak tagów — utwórz przez modal zadania"
-                    : "Brak dopasowań"}
-                </li>
-              )}
-              {filtered.map((t) => {
-                const active = tagIds.has(t.id);
-                return (
-                  <li key={t.id}>
-                    <button
-                      type="button"
-                      onClick={() => toggle(t.id)}
-                      data-active={active}
-                      className="flex w-full items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition-colors hover:bg-muted active:bg-primary/10 data-[active=true]:bg-primary/10"
-                    >
-                      <span
-                        className="h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{ background: t.colorHex }}
-                        aria-hidden="true"
-                      />
-                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">
-                        {t.name}
-                      </span>
-                      {active && (
-                        <svg
-                          width="13"
-                          height="13"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.6"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="shrink-0 text-primary"
-                          aria-hidden="true"
-                        >
-                          <path d="M20 6 9 17l-5-5" />
-                        </svg>
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-            {query.trim() &&
-              allTags.length > 0 &&
-              !allTags.some(
-                (t) => t.name.toLowerCase() === query.trim().toLowerCase(),
-              ) && (
-                <div className="mt-1 shrink-0 border-t border-border/60 pt-1">
-                  <div
-                    className="flex w-full items-center gap-2 rounded-[8px] border border-dashed border-primary/40 px-2 py-1.5 text-[13px] text-primary"
-                    aria-hidden="true"
-                    title="Stwórz tag przez modal zadania"
-                  >
-                    <svg
-                      width="13"
-                      height="13"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                    >
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                    <span className="truncate">
-                      Stwórz &bdquo;{query.trim()}&rdquo;
-                    </span>
-                  </div>
-                </div>
-              )}
-          </div>,
-          document.body,
-        )}
-
-      {/* Mobile: bottom sheet — tagi. */}
-      {isMobile && (
-        <Sheet open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
-          <SheetContent
-            side="bottom"
-            showCloseButton={false}
-            className="sheet-mobile-surface max-h-[85dvh] gap-0 p-0"
-          >
-            <div className="flex max-h-[85dvh] flex-col">
-              <div className="pt-3">
-                <div className="sheet-drag-handle" aria-hidden="true" />
-              </div>
-              <div className="flex shrink-0 flex-col gap-2 px-4 pb-2">
-                <SheetTitle className="text-base font-bold text-foreground">
-                  Tagi
-                </SheetTitle>
-                <div className="flex items-center gap-2 rounded-[10px] border border-border bg-card/60 px-2.5 py-2">
-                  <Search size={13} className="text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Szukaj tagu…"
-                    className="flex-1 bg-transparent text-[0.875rem] outline-none placeholder:text-muted-foreground/60"
-                  />
-                </div>
-              </div>
-              <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-safe-bottom">
-                {filtered.length === 0 && (
-                  <li className="px-2 py-4 text-center font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground">
-                    {allTags.length === 0
-                      ? "Brak tagów — utwórz przez modal zadania"
-                      : "Brak dopasowań"}
-                  </li>
-                )}
-                {filtered.map((t) => {
-                  const active = tagIds.has(t.id);
-                  return (
-                    <li key={t.id}>
-                      <button
-                        type="button"
-                        onClick={() => toggle(t.id)}
-                        data-active={active}
-                        className="flex min-h-[48px] w-full items-center gap-3 rounded-[12px] px-3 text-left transition-colors active:bg-primary/15 data-[active=true]:bg-primary/10"
-                      >
-                        <span
-                          className="h-3 w-3 shrink-0 rounded-full"
-                          style={{ background: t.colorHex }}
-                          aria-hidden="true"
-                        />
-                        <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-foreground">
-                          {t.name}
-                        </span>
-                        {active && (
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.6"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="shrink-0 text-primary"
-                            aria-hidden="true"
-                          >
-                            <path d="M20 6 9 17l-5-5" />
-                          </svg>
-                        )}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </SheetContent>
-        </Sheet>
+        )
+      }
+    >
+      <InputGroup size="sm" leading={<IconSearch />} autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Szukaj tagu…" aria-label="Szukaj tagu" className="mb-1 text-xs" />
+      <div role="listbox" aria-label="Tagi" className="flex max-h-[280px] flex-col overflow-y-auto">
+        {filtered.length === 0 && !canCreate && <p className="px-2 py-3 text-center text-xs text-n-500">{allTags.length === 0 ? "Brak tagów" : "Brak dopasowań"}</p>}
+        {filtered.map((t) => (
+          <OptionRow key={t.id} active={has.has(t.id)} onClick={() => toggle(t.id)}>
+            <TagChip label={t.name} hue={hueForColor(t.colorHex)} size="sm" />
+          </OptionRow>
+        ))}
+      </div>
+      {canCreate && (
+        <div className="mt-1 border-t border-n-100 pt-1">
+          <Button variant="ghost" size="sm" className="w-full justify-start text-link" loading={creating} onClick={create}>
+            <IconPlus />
+            Stwórz „{query.trim()}”
+          </Button>
+        </div>
       )}
-    </>
+    </CellPopover>
   );
 }

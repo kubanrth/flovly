@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Lista skeleton: header rows + table rows matching final layout heights.
+// Lista skeleton: header (breadcrumb, title, tabs, toolbar) + table header + rows at layout heights.
 export default function TableLoading() {
   return (
     <div role="status" aria-label="Ładowanie listy">
@@ -12,6 +12,12 @@ export default function TableLoading() {
             <Skeleton key={i} className="mb-2 h-4 w-16" />
           ))}
         </div>
+      </div>
+      <div className="flex h-11 items-center gap-2 border-b border-border px-6">
+        <Skeleton className="h-7 w-[200px]" />
+        <Skeleton className="h-7 w-16" />
+        <Skeleton className="h-7 w-20" />
+        <Skeleton className="h-7 w-14" />
       </div>
       <div className="flex flex-col">
         <Skeleton className="h-8 w-full rounded-none bg-table-header" />

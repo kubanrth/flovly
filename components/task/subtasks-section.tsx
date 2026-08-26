@@ -1,209 +1,71 @@
 "use client";
 
 import { startTransition, useState } from "react";
-import { CheckSquare, Square, Trash2, Plus } from "lucide-react";
-import {
-  createSubtaskAction,
-  deleteSubtaskAction,
-  toggleSubtaskAction,
-} from "@/app/(app)/w/[workspaceId]/t/subtask-actions";
-import { subtaskPl } from "@/lib/pluralize";
+import { createSubtaskAction, deleteSubtaskAction, toggleSubtaskAction } from "@/app/(app)/w/[workspaceId]/t/subtask-actions";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { IconPlus, IconTrash } from "@/components/ui/icons";
+import { cn } from "@/lib/utils";
 
-export interface SubtaskItem {
-  id: string;
-  title: string;
-  completed: boolean;
-}
+export interface SubtaskItem { id: string; title: string; completed: boolean }
 
-export function SubtasksSection({
-  taskId,
-  subtasks,
-  canManage,
-}: {
-  taskId: string;
-  subtasks: SubtaskItem[];
-  canManage: boolean;
-}) {
+// B2 Podzadania: eyebrow + mono "2/5" + 4px green progress, 30px rows (44 mobile), inline add.
+export function SubtasksSection({ taskId, subtasks, canManage, mobile, barClassName }: { taskId: string; subtasks: SubtaskItem[]; canManage: boolean; mobile?: boolean; barClassName?: string }) {
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState("");
-
-  const doneCount = subtasks.filter((s) => s.completed).length;
-  // Progress bar aiming for 100%. 0 subtasks = 0% (hidden).
-  const pct = subtasks.length === 0 ? 0 : Math.round((doneCount / subtasks.length) * 100);
-  const complete = subtasks.length > 0 && doneCount === subtasks.length;
+  const done = subtasks.filter((s) => s.completed).length;
+  const pct = subtasks.length === 0 ? 0 : Math.round((done / subtasks.length) * 100);
+  const reset = () => { setAdding(false); setTitle(""); };
 
   return (
-    <section className="flex flex-col gap-3">
-      <div className="flex items-baseline justify-between gap-3">
-        <div className="flex items-baseline gap-3">
-          <span className="eyebrow">Podzadania</span>
-          {subtasks.length > 0 && (
-            <span className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted-foreground">
-              {doneCount} z {subtasks.length} · {subtasks.length}{" "}
-              {subtaskPl(subtasks.length)}
+    <section className="flex flex-col" data-ui="task-subtasks">
+      <div className="mb-1.5 flex items-center gap-2">
+        <span className="eyebrow">Podzadania</span>
+        {subtasks.length > 0 && (
+          <>
+            <span className="font-mono text-2xs text-n-600">{done}/{subtasks.length}</span>
+            <span role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`Postęp podzadań: ${pct}%`} className={cn("h-1 flex-1 overflow-hidden rounded-[2px] bg-n-100", barClassName)}>
+              <span className="block h-1 bg-success" style={{ width: `${pct}%` }} />
             </span>
-          )}
-        </div>
-        {/* F12-K97: small pill CTA pokazujemy TYLKO gdy są już podzadania.
-            Pusty stan dostaje full-width CTA na dole (mirror "Powiąż zadanie"). */}
-        {canManage && !adding && subtasks.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/8 px-2.5 py-1 text-[12px] font-semibold text-primary transition-colors hover:border-primary/60 hover:bg-primary/14 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
-            <Plus size={13} />
-            Dodaj
-          </button>
+          </>
         )}
       </div>
-
-      {subtasks.length > 0 && (
-        <div className="flex items-center gap-3">
-          <div
-            className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-muted"
-            role="progressbar"
-            aria-valuenow={pct}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={`Postęp podzadań: ${pct}%`}
-          >
-            <div
-              className="h-full rounded-full bg-primary transition-[width] duration-500 data-[complete=true]:bg-gradient-to-r data-[complete=true]:from-emerald-400 data-[complete=true]:to-emerald-500"
-              data-complete={complete ? "true" : "false"}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          <span
-            data-complete={complete ? "true" : "false"}
-            className="shrink-0 font-mono text-[0.66rem] font-semibold tracking-[0.12em] text-muted-foreground data-[complete=true]:text-emerald-500"
-          >
-            {pct}%
-          </span>
-        </div>
-      )}
-
-      {subtasks.length > 0 && (
-        // No outer card border — items sit directly on the drawer surface.
-        // Subtle row hover surface gives the same affordance as the old card.
-        <ul className="flex flex-col gap-1">
-          {subtasks.map((s) => (
-            <li
-              key={s.id}
-              className="group flex items-center gap-2 rounded-lg bg-card/40 px-2 py-1.5 transition-colors hover:bg-accent/60"
-            >
-              <form
-                action={(fd) => startTransition(() => toggleSubtaskAction(fd))}
-                className="m-0 flex shrink-0"
-              >
+      <ul className="flex flex-col">
+        {subtasks.map((s) => (
+          <li key={s.id} className={cn("group flex items-center gap-2", mobile ? "min-h-11 gap-2.5" : "h-[30px]")}>
+            <form action={(fd) => startTransition(() => toggleSubtaskAction(fd))} className="m-0 flex">
+              <input type="hidden" name="subtaskId" value={s.id} />
+              <input type="hidden" name="completed" value={s.completed ? "false" : "true"} />
+              <Checkbox checked={s.completed} size={mobile ? "lg" : "sm"} disabled={!canManage} ariaLabel={s.completed ? `Odznacz: ${s.title}` : `Zaznacz: ${s.title}`} onClick={(e) => (e.currentTarget as HTMLElement).closest("form")?.requestSubmit()} />
+            </form>
+            <span className={cn("min-w-0 flex-1 truncate", mobile ? "text-base" : "text-sm", s.completed && "text-n-500 line-through")}>{s.title}</span>
+            {canManage && (
+              <form action={(fd) => startTransition(() => deleteSubtaskAction(fd))} className="m-0">
                 <input type="hidden" name="subtaskId" value={s.id} />
-                <input
-                  type="hidden"
-                  name="completed"
-                  value={s.completed ? "false" : "true"}
-                />
-                <button
-                  type="submit"
-                  aria-label={s.completed ? "Odznacz" : "Zaznacz"}
-                  disabled={!canManage}
-                  className="grid h-5 w-5 place-items-center text-muted-foreground transition-colors hover:text-primary disabled:cursor-not-allowed"
-                >
-                  {s.completed ? <CheckSquare size={16} /> : <Square size={16} />}
-                </button>
+                <Button type="submit" variant="ghost" size="sm" iconOnly aria-label={`Usuń podzadanie: ${s.title}`} className={cn("size-6 opacity-0 hover:text-danger-text focus-visible:opacity-100 group-hover:opacity-100", mobile && "opacity-100")}><IconTrash /></Button>
               </form>
-              <span
-                className={`flex-1 truncate text-[0.92rem] transition-colors ${
-                  s.completed ? "text-muted-foreground line-through" : ""
-                }`}
-              >
-                {s.title}
-              </span>
-              {canManage && (
-                <form
-                  action={(fd) => startTransition(() => deleteSubtaskAction(fd))}
-                  className="m-0"
-                >
-                  <input type="hidden" name="subtaskId" value={s.id} />
-                  <button
-                    type="submit"
-                    aria-label="Usuń"
-                    className="grid h-6 w-6 place-items-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </form>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {adding && canManage && (
+            )}
+          </li>
+        ))}
+        {!canManage && subtasks.length === 0 && <li className="text-sm text-n-500">Brak podzadań.</li>}
+      </ul>
+      {canManage && (adding ? (
         <form
-          action={(fd) =>
-            startTransition(async () => {
-              await createSubtaskAction(fd);
-              setAdding(false);
-              setTitle("");
-            })
-          }
-          className="flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 p-1.5"
+          action={(fd) => startTransition(async () => { await createSubtaskAction(fd); reset(); })}
+          className={cn("flex items-center gap-2", mobile ? "min-h-11" : "h-[30px]")}
         >
           <input type="hidden" name="taskId" value={taskId} />
-          <input
-            name="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            maxLength={200}
-            autoFocus
-            placeholder="Co trzeba zrobić?"
-            className="flex-1 bg-transparent px-2 py-1 text-[0.9rem] outline-none placeholder:text-muted-foreground/60"
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                setAdding(false);
-                setTitle("");
-              }
-            }}
-          />
-          <button
-            type="submit"
-            disabled={!title.trim()}
-            className="inline-flex h-8 items-center rounded-md bg-primary px-3 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-          >
-            Dodaj
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setAdding(false);
-              setTitle("");
-            }}
-            className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground"
-          >
-            Anuluj
-          </button>
+          <Input name="title" value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={200} autoFocus placeholder="Co trzeba zrobić?" size="sm" aria-label="Tytuł podzadania"
+            onKeyDown={(e) => { if (e.key === "Escape") reset(); }} className="h-7" />
+          <Button type="submit" size="sm" disabled={!title.trim()}>Dodaj</Button>
+          <Button variant="ghost" size="sm" onClick={reset}>Anuluj</Button>
         </form>
-      )}
-
-      {/* F12-K97: empty-state CTA full-width — mirror "Powiąż zadanie" w
-          linked-tasks-section. Lepiej widoczne niż mała plomba w headerze
-          + tekst, klient explicitly requested ten sam design. */}
-      {canManage && !adding && subtasks.length === 0 && (
-        <button
-          type="button"
-          onClick={() => setAdding(true)}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/10 font-sans text-[0.95rem] font-semibold text-fuchsia-700 shadow-[0_1px_2px_rgba(217,70,239,0.08)] transition-colors hover:border-fuchsia-500/50 hover:bg-fuchsia-500/15"
-        >
-          <Plus size={14} /> Dodaj podzadanie
+      ) : (
+        <button type="button" onClick={() => setAdding(true)} className={cn("flex items-center gap-2 rounded-sm text-n-500 outline-none hover:text-foreground", mobile ? "min-h-11 gap-2.5 text-base" : "h-[30px] text-sm")}>
+          <IconPlus width={mobile ? 18 : 14} height={mobile ? 18 : 14} /> Dodaj podzadanie
         </button>
-      )}
-
-      {subtasks.length === 0 && !adding && !canManage && (
-        <p className="text-[0.86rem] text-muted-foreground/80">
-          Brak podzadań.
-        </p>
-      )}
+      ))}
     </section>
   );
 }

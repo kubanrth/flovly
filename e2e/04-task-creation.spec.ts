@@ -9,6 +9,16 @@ test.describe("task creation", () => {
     const dialog = page.locator('[data-ui="create-task-dialog"]');
     await expect(dialog).toBeVisible();
 
+    // AK55: 480px dialog, fields in mockup order, title autofocused, footer hint.
+    // Poll: the popup scales in from .98 (150ms), so a one-shot boundingBox can land mid-animation.
+    await expect.poll(async () => Math.abs((await dialog.boundingBox())!.width - 480)).toBeLessThanOrEqual(2);
+    await expect(dialog.locator("label")).toHaveText([
+      "Tytuł", "Tablica", "Status", "Priorytet", "Termin", "Przypisani", /^Dodaj do widoku/,
+    ]);
+    await expect(dialog.locator('input[name="title"]')).toBeFocused();
+    await expect(dialog.getByText("Utwórz i dodaj kolejne")).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Anuluj" })).toBeVisible();
+
     const title = `e2e-task-${Date.now()}`;
     await dialog.locator('input[name="title"]').fill(title);
 
@@ -27,5 +37,24 @@ test.describe("task creation", () => {
     await drawer.getByRole("button", { name: "Zamknij" }).first().click();
     await expect(drawer).toBeHidden();
     await expect(page.locator("table tbody").getByText(title).first()).toBeVisible();
+  });
+
+  test("⇧Enter creates and keeps the dialog open with a cleared title", async ({ page }) => {
+    await gotoFirstBoard(page);
+    await page.locator('[data-ui="board-header"]').getByRole("button", { name: "Nowe zadanie" }).click();
+    const dialog = page.locator('[data-ui="create-task-dialog"]');
+    const input = dialog.locator('input[name="title"]');
+
+    const title = `e2e-shift-${Date.now()}`;
+    await input.fill(title);
+    await input.press("Shift+Enter");
+
+    await expect(input).toHaveValue("", { timeout: 10_000 });
+    await expect(dialog).toBeVisible();
+    await expect(input).toBeFocused();
+
+    await dialog.getByRole("button", { name: "Anuluj" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.locator("table tbody").getByText(title).first()).toBeVisible({ timeout: 10_000 });
   });
 });

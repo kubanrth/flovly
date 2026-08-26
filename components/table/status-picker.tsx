@@ -1,49 +1,32 @@
 "use client";
 
-// Portal-rendered so popover isn't clipped by overflow-x-auto table wrapper.
+// Inline status editor: StatusChip trigger → popover (bottom sheet <768px) with
+// search, drag-reorder, add/edit/delete for board managers.
 
-import { startTransition, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { Check, GripVertical, Pencil, Plus, Search, X } from "lucide-react";
-import {
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { startTransition, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { GripVertical } from "lucide-react";
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  createStatusColumnAction,
-  deleteStatusColumnAction,
-  reorderStatusColumnsAction,
-  updateStatusColumnAction,
-} from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
+import { createStatusColumnAction, deleteStatusColumnAction, reorderStatusColumnsAction, updateStatusColumnAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
 import { patchTaskAction } from "@/app/(app)/w/[workspaceId]/t/actions";
+import { STATUS_PALETTE } from "@/lib/colors";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { StatusChip } from "@/components/ui/chip";
+import { Input, InputGroup } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { IconCheck, IconClose, IconPen, IconPlus, IconSearch } from "@/components/ui/icons";
+import { hueForColor } from "@/components/ui/status-hue";
 
 export interface StatusOption {
   id: string;
   name: string;
   colorHex: string;
 }
-
-// Paleta z `lib/colors.ts` (BRAND_PALETTE).
-import { STATUS_PALETTE as PRESET_COLORS } from "@/lib/colors";
 
 export function StatusPicker({
   taskId,
@@ -60,336 +43,105 @@ export function StatusPicker({
   current: StatusOption | null;
   options: StatusOption[];
   canEdit: boolean;
-  // Whether the user can add/edit/delete statuses (board.update perm).
   canManageBoard: boolean;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
-  const isMobile = useIsMobile();
-  // Either `top` (opening downward) or `bottom` (opening upward) is set, never
-  // both. Anchoring by `bottom` when above keeps a short list glued to the cell.
-  const [coords, setCoords] = useState<{
-    top?: number;
-    bottom?: number;
-    left: number;
-    maxHeight: number;
-  } | null>(null);
   const [query, setQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const popRef = useRef<HTMLDivElement>(null);
-
-  const computeCoords = () => {
-    const rect = triggerRef.current?.getBoundingClientRect();
-    if (!rect) return null;
-    // Jeśli trigger jest poza viewportem (user scrolluje
-    // tabelę lub stronę), zwracamy null — caller zamknie picker
-    // zamiast pozwolić mu utknąć przy górze viewportu.
-    if (
-      rect.bottom < 0 ||
-      rect.top > window.innerHeight ||
-      rect.right < 0 ||
-      rect.left > window.innerWidth
-    ) {
-      return null;
-    }
-    const POP_WIDTH = 280;
-    const GAP = 4;
-    const PAD = 12;
-    const spaceBelow = window.innerHeight - rect.bottom - GAP - PAD;
-    const spaceAbove = rect.top - GAP - PAD;
-    const useBelow = spaceBelow >= 260 || spaceBelow >= spaceAbove;
-    const left = Math.max(8, Math.min(window.innerWidth - POP_WIDTH - 8, rect.left));
-    if (useBelow) {
-      return { top: rect.bottom + GAP, left, maxHeight: Math.max(220, spaceBelow) };
-    }
-    // Opening upward: anchor the popup's BOTTOM edge just above the trigger so a
-    // short list hugs the cell instead of floating at the top of the viewport.
-    return {
-      bottom: window.innerHeight - rect.top + GAP,
-      left,
-      maxHeight: Math.max(220, spaceAbove),
-    };
-  };
-
-  const openPicker = () => {
-    // Mobile: bottom sheet — pomijamy computeCoords (Sheet sam pozycjonuje).
-    if (isMobile) {
-      setOpen(true);
-      return;
-    }
-    const c = computeCoords();
-    if (!c) return;
-    setCoords(c);
-    setOpen(true);
-  };
+  const isMobile = useIsMobile();
+  // Optimistic pick until the server row lands (reset when `current` changes).
+  const [override, setOverride] = useState<StatusOption | null | undefined>(undefined);
+  const [prevCurrent, setPrevCurrent] = useState(current);
+  if (prevCurrent !== current) {
+    setPrevCurrent(current);
+    setOverride(undefined);
+  }
+  const shown = override === undefined ? current : override;
 
   const close = () => {
     setOpen(false);
-    setCoords(null);
     setQuery("");
     setEditingId(null);
     setAdding(false);
   };
-
-  useEffect(() => {
-    // Mobile: Base UI Sheet ma własny outside-click + Escape handling.
-    // Skip żeby nie podwajać close logic.
-    if (!open || isMobile) return;
-    const onDoc = (e: MouseEvent) => {
-      if (
-        !popRef.current?.contains(e.target as Node) &&
-        !triggerRef.current?.contains(e.target as Node)
-      ) {
-        close();
-      }
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    const onReflow = () => {
-      const c = computeCoords();
-      if (c) {
-        setCoords(c);
-      } else {
-        // Trigger wyjechał z viewportu — zamykamy zamiast
-        // zostawiać picker oddzielony od triggera.
-        close();
-      }
-    };
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onKey);
-    window.addEventListener("resize", onReflow);
-    window.addEventListener("scroll", onReflow, true);
-    return () => {
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("keydown", onKey);
-      window.removeEventListener("resize", onReflow);
-      window.removeEventListener("scroll", onReflow, true);
-    };
-  }, [open, isMobile]);
-
   const pick = (statusId: string) => {
-    // Toggle off if clicking the current selection — feels more
-    // forgiving than "you must reopen the picker to clear".
-    const next = current?.id === statusId ? "" : statusId;
+    const next = shown?.id === statusId ? null : (options.find((o) => o.id === statusId) ?? null);
+    setOverride(next);
     const fd = new FormData();
     fd.set("id", taskId);
-    fd.set("statusColumnId", next);
-    startTransition(() => patchTaskAction(fd));
+    fd.set("statusColumnId", next?.id ?? "");
+    startTransition(async () => {
+      await patchTaskAction(fd);
+      router.refresh();
+    });
     close();
   };
 
-  // Read-only fallback for non-editors. Hook ordering must remain
-  // stable, so this branch is below all hook calls.
-  if (!canEdit) {
-    return current ? <Pill option={current} /> : <Empty />;
-  }
+  const chip = shown ? (
+    <StatusChip label={shown.name} hue={hueForColor(shown.colorHex)} size="md" />
+  ) : (
+    <span className="inline-flex h-5 items-center rounded-sm border border-dashed border-n-300 px-[7px] text-2xs text-n-500">— brak —</span>
+  );
+  if (!canEdit) return chip;
 
-  const filtered = query.trim()
-    ? options.filter((o) => o.name.toLowerCase().includes(query.trim().toLowerCase()))
-    : options;
-
-  return (
+  const filtered = query.trim() ? options.filter((o) => o.name.toLowerCase().includes(query.trim().toLowerCase())) : options;
+  const body = (mobile: boolean) => (
     <>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => (open ? close() : openPicker())}
-        // v4 spec (linia 49): pill rounded-full + dot 6x6 + label 11.5/600.
-        // Trigger nadal funkcjonalnie identyczny — tylko zmiana wizualna.
-        className="inline-flex h-7 max-w-full items-center gap-[5px] rounded-full px-[9px] py-[3px] outline-none transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
-        style={{
-          color: current ? current.colorHex : "var(--muted-foreground)",
-          background: current ? `${current.colorHex}22` : "transparent",
-          border: current ? "none" : "1px dashed var(--border)",
-        }}
-      >
-        {current && (
-          <span
-            className="h-[6px] w-[6px] shrink-0 rounded-full"
-            style={{ background: current.colorHex }}
-            aria-hidden="true"
-          />
-        )}
-        <span className="truncate text-[11.5px] font-semibold leading-none">
-          {current ? current.name : "— brak —"}
-        </span>
-      </button>
-
-      {open && coords && !isMobile && typeof document !== "undefined" &&
-        createPortal(
-          <div
-            ref={popRef}
-            style={{
-              position: "fixed",
-              ...(coords.top !== undefined
-                ? { top: coords.top }
-                : { bottom: coords.bottom }),
-              left: coords.left,
-              width: 280,
-              maxHeight: coords.maxHeight,
-            }}
-            // z-[200] === Z.popoverInModal (F12-K104).
-            className="popover-surface popover-enter z-[200] flex flex-col overflow-hidden p-[7px]"
-          >
-            <div className="mb-1.5 shrink-0">
-              <span className="eyebrow mb-1.5 block px-1.5 text-[0.66rem]">
-                Status
-              </span>
-              <div className="flex items-center gap-1.5 rounded-[8px] border border-border bg-card/60 px-2 py-1.5">
-                <Search size={12} className="text-muted-foreground" />
-                <input
-                  autoFocus
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Szukaj statusu…"
-                  className="flex-1 bg-transparent text-[0.8125rem] outline-none placeholder:text-muted-foreground/60"
-                />
-              </div>
-            </div>
-
-            <ReorderableList
-              options={options}
-              filtered={filtered}
-              workspaceId={workspaceId}
-              boardId={boardId}
-              currentId={current?.id ?? null}
-              canManageBoard={canManageBoard}
-              editingId={editingId}
-              setEditingId={setEditingId}
-              isFiltered={query.trim().length > 0}
-              adding={adding}
-              onPick={pick}
-            />
-
-            {canManageBoard && (
-              <div className="mt-1 shrink-0 border-t border-border/60 pt-1">
-                {adding ? (
-                  <AddRow
-                    workspaceId={workspaceId}
-                    boardId={boardId}
-                    onDone={() => setAdding(false)}
-                  />
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setAdding(true)}
-                    className="flex w-full items-center gap-2 rounded-[8px] px-2 py-1.5 text-left text-[0.8125rem] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-primary/10"
-                  >
-                    <Plus size={14} strokeWidth={2} />
-                    <span>Dodaj status</span>
-                  </button>
-                )}
-              </div>
-            )}
-          </div>,
-          document.body,
-        )}
-
-      {/* Mobile: bottom sheet zamiast popovera. Spec v4 linie 153-168:
-          plain surface rounded-t-24, drag handle, height-content, list status. */}
-      {isMobile && (
-        <Sheet
-          open={open}
-          onOpenChange={(o) => {
-            if (!o) close();
-            else setOpen(true);
-          }}
-        >
-          <SheetContent
-            side="bottom"
-            showCloseButton={false}
-            className="sheet-mobile-surface max-h-[85dvh] gap-0 p-0"
-          >
-            <div className="flex max-h-[85dvh] flex-col">
-              <div className="pt-3">
-                <div className="sheet-drag-handle" aria-hidden="true" />
-              </div>
-              <div className="flex shrink-0 flex-col gap-2 px-4 pb-2">
-                <SheetTitle className="text-base font-bold text-foreground">
-                  Status
-                </SheetTitle>
-                <div className="flex items-center gap-2 rounded-[10px] border border-border bg-card/60 px-2.5 py-2">
-                  <Search size={13} className="text-muted-foreground" />
-                  <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Szukaj statusu…"
-                    className="flex-1 bg-transparent text-[0.875rem] outline-none placeholder:text-muted-foreground/60"
-                  />
-                </div>
-              </div>
-              <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-2">
-                <ReorderableList
-                  options={options}
-                  filtered={filtered}
-                  workspaceId={workspaceId}
-                  boardId={boardId}
-                  currentId={current?.id ?? null}
-                  canManageBoard={canManageBoard}
-                  editingId={editingId}
-                  setEditingId={setEditingId}
-                  isFiltered={query.trim().length > 0}
-                  adding={adding}
-                  onPick={pick}
-                />
-              </div>
-              {canManageBoard && (
-                <div className="shrink-0 border-t border-border/60 px-3 pt-2 pb-safe-bottom">
-                  {adding ? (
-                    <AddRow
-                      workspaceId={workspaceId}
-                      boardId={boardId}
-                      onDone={() => setAdding(false)}
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setAdding(true)}
-                      className="flex min-h-[44px] w-full items-center gap-2 rounded-[10px] px-3 text-left text-[0.875rem] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:bg-primary/10"
-                    >
-                      <Plus size={15} strokeWidth={2} />
-                      <span>Dodaj status</span>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </SheetContent>
-        </Sheet>
+      <InputGroup size="sm" leading={<IconSearch />} autoFocus={!mobile} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Szukaj statusu…" aria-label="Szukaj statusu" className="mb-1 text-xs" />
+      <ReorderableList
+        options={options}
+        filtered={filtered}
+        workspaceId={workspaceId}
+        boardId={boardId}
+        currentId={shown?.id ?? null}
+        canManageBoard={canManageBoard}
+        editingId={editingId}
+        setEditingId={setEditingId}
+        isFiltered={query.trim().length > 0}
+        adding={adding}
+        onPick={pick}
+      />
+      {canManageBoard && (
+        <div className="mt-1 border-t border-n-100 pt-1">
+          {adding ? (
+            <AddRow workspaceId={workspaceId} boardId={boardId} onDone={() => setAdding(false)} />
+          ) : (
+            <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setAdding(true)}>
+              <IconPlus />
+              Dodaj status
+            </Button>
+          )}
+        </div>
       )}
     </>
   );
-}
+  const triggerClass = "inline-flex h-7 max-w-full items-center rounded-sm px-1 outline-none hover:bg-n-100 data-popup-open:bg-n-100";
 
-function Pill({ option }: { option: StatusOption }) {
+  if (isMobile) {
+    return (
+      <>
+        <button type="button" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen(true)} className={triggerClass}>{chip}</button>
+        <Sheet open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
+          <SheetContent side="bottom" showCloseButton={false} className="gap-0 p-0">
+            <div className="sheet-drag-handle" aria-hidden="true" />
+            <SheetTitle className="px-4 pb-2 pt-3 text-base font-semibold">Status</SheetTitle>
+            <div className="safe-bottom max-h-[70dvh] overflow-y-auto px-3 pb-3">{body(true)}</div>
+          </SheetContent>
+        </Sheet>
+      </>
+    );
+  }
   return (
-    <span
-      className="inline-flex h-6 items-center rounded-full px-2 font-mono text-[0.62rem] font-semibold uppercase tracking-[0.12em]"
-      style={{ color: option.colorHex, background: `${option.colorHex}22` }}
-    >
-      {option.name}
-    </span>
+    <Popover open={open} onOpenChange={(o) => (o ? setOpen(true) : close())}>
+      <PopoverTrigger aria-haspopup="listbox" className={triggerClass}>{chip}</PopoverTrigger>
+      <PopoverContent align="start" className="w-[260px] p-1.5">{body(false)}</PopoverContent>
+    </Popover>
   );
 }
 
-function Empty() {
-  return (
-    <span className="font-mono text-[0.7rem] text-muted-foreground/60">—</span>
-  );
-}
-
-function Row({
-  option,
-  isCurrent,
-  canManage,
-  canDelete,
-  canReorder,
-  onPick,
-  onEdit,
-  onDelete,
-}: {
+function Row({ option, isCurrent, canManage, canDelete, canReorder, onPick, onEdit, onDelete }: {
   option: StatusOption;
   isCurrent: boolean;
   canManage: boolean;
@@ -399,246 +151,95 @@ function Row({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: option.id, disabled: !canReorder });
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.6 : 1,
-  };
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: option.id, disabled: !canReorder });
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      data-active={isCurrent}
-      className="group flex items-center gap-1 rounded-[8px] px-1 py-0.5 transition-colors hover:bg-muted active:bg-primary/10 data-[active=true]:bg-primary/10"
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 }}
+      data-active={isCurrent || undefined}
+      className="group flex h-8 items-center gap-0.5 rounded-md pr-0.5 hover:bg-n-100 data-active:bg-n-100"
     >
       {canReorder && (
-        <button
-          type="button"
-          {...attributes}
-          {...listeners}
-          aria-label={`Przeciągnij ${option.name}`}
-          title="Przeciągnij aby zmienić kolejność"
-          className="grid h-6 w-4 shrink-0 cursor-grab place-items-center rounded-sm text-muted-foreground/60 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 active:cursor-grabbing"
-        >
-          <GripVertical size={11} />
+        <button type="button" {...attributes} {...listeners} aria-label={`Przeciągnij ${option.name}`} className="inline-flex size-6 shrink-0 cursor-grab items-center justify-center rounded-sm text-n-400 opacity-0 outline-none group-hover:opacity-100 active:cursor-grabbing">
+          <GripVertical size={12} strokeWidth={1.5} />
         </button>
       )}
-      <button
-        type="button"
-        onClick={onPick}
-        className="flex flex-1 items-center gap-2.5 rounded-[8px] py-1 pl-1.5 pr-1 text-left"
-      >
-        <span
-          className="h-2 w-2 shrink-0 rounded-full"
-          style={{ background: option.colorHex }}
-          aria-hidden="true"
-        />
-        <span className="flex-1 truncate text-[13px] font-medium text-foreground">
-          {option.name}
-        </span>
-        {isCurrent && (
-          <Check
-            size={13}
-            className="shrink-0 text-primary"
-            strokeWidth={2.6}
-            aria-hidden="true"
-          />
-        )}
+      <button type="button" role="option" aria-selected={isCurrent} onClick={onPick} className={cn("flex h-full min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 text-left text-sm outline-none", !canReorder && "pl-2")}>
+        <span className="size-2 shrink-0 rounded-full" style={{ background: option.colorHex }} aria-hidden="true" />
+        <span className="min-w-0 flex-1 truncate text-foreground">{option.name}</span>
+        {isCurrent && <IconCheck width={14} height={14} className="shrink-0 text-success" />}
       </button>
       {canManage && (
-        <button
-          type="button"
-          onClick={onEdit}
-          aria-label={`Edytuj ${option.name}`}
-          className="grid h-6 w-6 shrink-0 place-items-center rounded-[6px] text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
-        >
-          <Pencil size={11} />
-        </button>
+        <Button variant="ghost" size="sm" iconOnly aria-label={`Edytuj ${option.name}`} onClick={onEdit} className="size-6 opacity-0 group-hover:opacity-100 focus-visible:opacity-100">
+          <IconPen />
+        </Button>
       )}
       {canDelete && (
-        <button
-          type="button"
-          onClick={onDelete}
-          aria-label={`Usuń ${option.name}`}
-          className="grid h-6 w-6 shrink-0 place-items-center rounded-[6px] text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
-        >
-          <X size={11} />
-        </button>
+        <Button variant="ghost" size="sm" iconOnly aria-label={`Usuń ${option.name}`} onClick={onDelete} className="size-6 opacity-0 hover:text-danger-text group-hover:opacity-100 focus-visible:opacity-100">
+          <IconClose />
+        </Button>
       )}
     </div>
   );
 }
 
-function EditRow({
-  workspaceId,
-  option,
-  onDone,
-}: {
-  workspaceId: string;
-  option: StatusOption;
-  onDone: () => void;
-}) {
-  const [name, setName] = useState(option.name);
-  const [color, setColor] = useState(option.colorHex);
-  const submit = () => {
-    if (!name.trim()) return;
-    const fd = new FormData();
-    fd.set("workspaceId", workspaceId);
-    fd.set("columnId", option.id);
-    fd.set("name", name.trim());
-    fd.set("colorHex", color);
-    startTransition(async () => {
-      await updateStatusColumnAction(fd);
-      onDone();
-    });
-  };
+function StatusForm({ initialName, initialColor, submitLabel, onSubmit, onDone }: { initialName: string; initialColor: string; submitLabel: string; onSubmit: (name: string, color: string) => void; onDone: () => void }) {
+  const [name, setName] = useState(initialName);
+  const [color, setColor] = useState(initialColor);
+  const submit = () => name.trim() && onSubmit(name.trim(), color);
   return (
-    <div className="flex flex-col gap-1.5 rounded-md border border-primary/40 bg-primary/5 p-2">
-      <input
+    <div className="flex flex-col gap-1.5 rounded-md border border-orange-500 bg-selected p-2">
+      <Input
         autoFocus
+        size="sm"
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
             submit();
-          } else if (e.key === "Escape") {
-            onDone();
-          }
+          } else if (e.key === "Escape") onDone();
         }}
         maxLength={40}
-        className="rounded-sm border border-border bg-background px-1.5 py-0.5 text-[0.78rem] outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
-      />
-      <ColorRow selected={color} onChange={setColor} />
-      <div className="flex items-center justify-end gap-1">
-        <button
-          type="button"
-          onClick={onDone}
-          className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Anuluj
-        </button>
-        <button
-          type="button"
-          onClick={submit}
-          className="inline-flex h-6 items-center rounded-md bg-primary px-2 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90"
-        >
-          Zapisz
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function AddRow({
-  workspaceId,
-  boardId,
-  onDone,
-}: {
-  workspaceId: string;
-  boardId: string;
-  onDone: () => void;
-}) {
-  const [name, setName] = useState("");
-  const [color, setColor] = useState(PRESET_COLORS[0]);
-  const submit = () => {
-    if (!name.trim()) return;
-    const fd = new FormData();
-    fd.set("workspaceId", workspaceId);
-    fd.set("boardId", boardId);
-    fd.set("name", name.trim());
-    fd.set("colorHex", color);
-    startTransition(async () => {
-      await createStatusColumnAction(fd);
-      onDone();
-    });
-  };
-  return (
-    <div className="flex flex-col gap-1.5 p-2">
-      <input
-        autoFocus
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            submit();
-          } else if (e.key === "Escape") {
-            onDone();
-          }
-        }}
         placeholder="Nazwa statusu…"
-        maxLength={40}
-        className="rounded-sm border border-border bg-background px-1.5 py-1 text-[0.82rem] outline-none focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
+        aria-label="Nazwa statusu"
       />
-      <ColorRow selected={color} onChange={setColor} />
+      <div className="flex items-center gap-1" role="radiogroup" aria-label="Kolor">
+        {STATUS_PALETTE.map((c) => (
+          <button key={c} type="button" role="radio" aria-checked={c === color} aria-label={`Kolor ${c}`} onClick={() => setColor(c)} className={cn("size-5 rounded-full outline-none hover:shadow-[0_0_0_2px_var(--n-300)]", c === color && "shadow-[0_0_0_2px_var(--n-900)]")} style={{ background: c }} />
+        ))}
+      </div>
       <div className="flex items-center justify-end gap-1">
-        <button
-          type="button"
-          onClick={onDone}
-          className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Anuluj
-        </button>
-        <button
-          type="button"
-          onClick={submit}
-          disabled={!name.trim()}
-          className="inline-flex h-6 items-center rounded-md bg-primary px-2 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
-        >
-          Dodaj
-        </button>
+        <Button variant="ghost" size="sm" onClick={onDone}>Anuluj</Button>
+        <Button size="sm" onClick={submit} disabled={!name.trim()}>{submitLabel}</Button>
       </div>
     </div>
   );
 }
 
-function ColorRow({
-  selected,
-  onChange,
-}: {
-  selected: string;
-  onChange: (c: string) => void;
-}) {
+function AddRow({ workspaceId, boardId, onDone }: { workspaceId: string; boardId: string; onDone: () => void }) {
   return (
-    <div className="flex items-center gap-1">
-      {PRESET_COLORS.map((c) => (
-        <button
-          key={c}
-          type="button"
-          onClick={() => onChange(c)}
-          aria-label={`Kolor ${c}`}
-          className="grid h-5 w-5 place-items-center rounded-full transition-transform hover:scale-110"
-          style={{
-            background: c,
-            outline: selected === c ? "2px solid var(--foreground)" : "none",
-            outlineOffset: selected === c ? 2 : 0,
-          }}
-        />
-      ))}
-    </div>
+    <StatusForm
+      initialName=""
+      initialColor={STATUS_PALETTE[0]!}
+      submitLabel="Dodaj"
+      onDone={onDone}
+      onSubmit={(name, colorHex) => {
+        const fd = new FormData();
+        fd.set("workspaceId", workspaceId);
+        fd.set("boardId", boardId);
+        fd.set("name", name);
+        fd.set("colorHex", colorHex);
+        startTransition(async () => {
+          await createStatusColumnAction(fd);
+          onDone();
+        });
+      }}
+    />
   );
 }
 
-// Wraps the visible Row list in a SortableContext + DndContext when the user
-// can manage statuses and isn't filtering. Drag-end sends the new order to
-// reorderStatusColumnsAction so it persists. We mirror the order locally for
-// instant feedback — revalidate on the server then refreshes props.
-function ReorderableList({
-  options,
-  filtered,
-  workspaceId,
-  boardId,
-  currentId,
-  canManageBoard,
-  editingId,
-  setEditingId,
-  isFiltered,
-  adding,
-  onPick,
-}: {
+function ReorderableList({ options, filtered, workspaceId, boardId, currentId, canManageBoard, editingId, setEditingId, isFiltered, adding, onPick }: {
   options: StatusOption[];
   filtered: StatusOption[];
   workspaceId: string;
@@ -651,29 +252,24 @@ function ReorderableList({
   adding: boolean;
   onPick: (id: string) => void;
 }) {
-  // Optimistic mirror — keeps the dragged row in its new slot before the server
-  // revalidate lands. Reset when the upstream options array changes (e.g.,
-  // someone else reordered via the manage dialog).
+  // Optimistic mirror of the order until the server revalidate lands.
   const [order, setOrder] = useState<StatusOption[]>(options);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setOrder(options);
   }, [options]);
-
   const canReorder = canManageBoard && !isFiltered && !editingId && !adding;
-
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
-
   const onDragEnd = (e: DragEndEvent) => {
     const { active, over } = e;
     if (!over || active.id === over.id) return;
-    const oldIx = order.findIndex((s) => s.id === active.id);
-    const newIx = order.findIndex((s) => s.id === over.id);
-    if (oldIx < 0 || newIx < 0) return;
-    const next = arrayMove(order, oldIx, newIx);
+    const from = order.findIndex((s) => s.id === active.id);
+    const to = order.findIndex((s) => s.id === over.id);
+    if (from < 0 || to < 0) return;
+    const next = arrayMove(order, from, to);
     setOrder(next);
     const fd = new FormData();
     fd.set("workspaceId", workspaceId);
@@ -681,63 +277,56 @@ function ReorderableList({
     fd.set("ids", next.map((s) => s.id).join(","));
     startTransition(() => reorderStatusColumnsAction(fd));
   };
-
-  // While filtering, render the filtered slice without drag-handles.
-  const visible = isFiltered
-    ? filtered
-    : (() => {
-        const idIndex = new Map(order.map((s, i) => [s.id, i]));
-        return [...filtered].sort(
-          (a, b) => (idIndex.get(a.id) ?? 0) - (idIndex.get(b.id) ?? 0),
-        );
-      })();
+  const idx = new Map(order.map((s, i) => [s.id, i]));
+  const visible = isFiltered ? filtered : [...filtered].sort((a, b) => (idx.get(a.id) ?? 0) - (idx.get(b.id) ?? 0));
 
   return (
-    <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain">
-      {visible.length === 0 && !adding && (
-        <li className="px-2 py-3 text-center font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground/70">
-          brak statusów
-        </li>
-      )}
-      <DndContext id="status-columns"
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={onDragEnd}
-      >
-        <SortableContext
-          items={visible.map((o) => o.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {visible.map((o) => (
-            <li key={o.id}>
-              {editingId === o.id ? (
-                <EditRow
-                  workspaceId={workspaceId}
-                  option={o}
-                  onDone={() => setEditingId(null)}
-                />
-              ) : (
-                <Row
-                  option={o}
-                  isCurrent={currentId === o.id}
-                  canManage={canManageBoard}
-                  canDelete={canManageBoard && options.length > 1}
-                  canReorder={canReorder}
-                  onPick={() => onPick(o.id)}
-                  onEdit={() => setEditingId(o.id)}
-                  onDelete={() => {
-                    if (!confirm(`Usunąć status „${o.name}"?`)) return;
-                    const fd = new FormData();
-                    fd.set("workspaceId", workspaceId);
-                    fd.set("columnId", o.id);
-                    startTransition(() => deleteStatusColumnAction(fd));
-                  }}
-                />
-              )}
-            </li>
-          ))}
+    <div role="listbox" aria-label="Status" className="flex max-h-[280px] flex-col overflow-y-auto overscroll-contain">
+      {visible.length === 0 && !adding && <p className="px-2 py-3 text-center text-xs text-n-500">Brak statusów</p>}
+      <DndContext id="status-columns" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <SortableContext items={visible.map((o) => o.id)} strategy={verticalListSortingStrategy}>
+          {visible.map((o) =>
+            editingId === o.id ? (
+              <StatusForm
+                key={o.id}
+                initialName={o.name}
+                initialColor={o.colorHex}
+                submitLabel="Zapisz"
+                onDone={() => setEditingId(null)}
+                onSubmit={(name, colorHex) => {
+                  const fd = new FormData();
+                  fd.set("workspaceId", workspaceId);
+                  fd.set("columnId", o.id);
+                  fd.set("name", name);
+                  fd.set("colorHex", colorHex);
+                  startTransition(async () => {
+                    await updateStatusColumnAction(fd);
+                    setEditingId(null);
+                  });
+                }}
+              />
+            ) : (
+              <Row
+                key={o.id}
+                option={o}
+                isCurrent={currentId === o.id}
+                canManage={canManageBoard}
+                canDelete={canManageBoard && options.length > 1}
+                canReorder={canReorder}
+                onPick={() => onPick(o.id)}
+                onEdit={() => setEditingId(o.id)}
+                onDelete={() => {
+                  if (!confirm(`Usunąć status „${o.name}”?`)) return;
+                  const fd = new FormData();
+                  fd.set("workspaceId", workspaceId);
+                  fd.set("columnId", o.id);
+                  startTransition(() => deleteStatusColumnAction(fd));
+                }}
+              />
+            ),
+          )}
         </SortableContext>
       </DndContext>
-    </ul>
+    </div>
   );
 }

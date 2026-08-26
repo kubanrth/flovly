@@ -205,13 +205,17 @@ export default async function MyTasksPage({
   // (konwencja: Do zrobienia → W trakcie → Testy → Done). Schema nie ma flagi
   // isDone — bez tej heurystyki "zakończone" trafiały do "Zaległe" (gdy stopAt
   // w przeszłości), co klient wprost zgłosił jako bug.
+  // Name check first: boards where someone appended a column AFTER "Done"
+  // (Done:3, FAZA-2030:4, test:5) broke the position-only heuristic and pushed
+  // finished tasks back into "Zaległe".
+  const DONE_NAME = /^(done|zrobione|gotowe|uko(ń|n)czone|zako(ń|n)czone)$/i;
   const isTaskDone = (a: (typeof assignments)[number]): boolean => {
     const sc = a.task.statusColumn;
     if (!sc) return false;
+    if (DONE_NAME.test(sc.name.trim())) return true;
     const columns = a.task.board.statusColumns;
     if (columns.length === 0) return false;
-    const maxOrder = columns[columns.length - 1].order;
-    return sc.order === maxOrder;
+    return sc.order === columns[columns.length - 1].order;
   };
 
   const active = assignments.filter((a) => a.task.workspace && !isTaskDone(a));

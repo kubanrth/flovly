@@ -222,7 +222,7 @@ function NotificationRow({
         ? `/w/${payload.workspaceId}/support`
         : "/inbox"
       : payload.workspaceId && payload.taskId
-        ? `/w/${payload.workspaceId}/t/${payload.taskId}`
+        ? `/w/${payload.workspaceId}/t/${payload.taskId}?mode=modal` // B2: notifications open the 960 modal
         : "/inbox";
 
   // Only attach hotkey hooks when the notification actually points to a
