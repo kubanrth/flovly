@@ -414,8 +414,10 @@ export function GanttView({
         </div>
       </div>
 
-      {/* ── zoom / today control — floats over the bottom-right of the grid ── */}
-      <div className="absolute right-4 bottom-11 z-30 flex h-7 items-center gap-2">
+      {/* ── zoom / today control — floats over the bottom-right of the grid.
+             right-20 keeps the last button clear of the fixed Ateron FAB
+             (58px + gutter), which otherwise sat on top of it. ── */}
+      <div className="absolute right-20 bottom-11 z-30 flex h-7 items-center gap-2">
         <Tooltip content="Przeciągnij uchwyt paska, aby zmienić termin · romb = milestone">
           <button
             type="button"

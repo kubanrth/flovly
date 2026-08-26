@@ -113,7 +113,10 @@ export function TaskLinePool({
               draggable
               onDragStart={(e) => {
                 e.dataTransfer.setData(TASK_MIME, t.id);
-                e.dataTransfer.effectAllowed = "copy";
+                // "move", not "copy": the stage column answers with
+                // dropEffect "move", and a copy/move mismatch makes Chrome
+                // cancel the drop — the task never left the pool.
+                e.dataTransfer.effectAllowed = "move";
               }}
               className="cursor-grab rounded-lg border border-border bg-card px-3 py-2.5 transition-colors duration-150 ease-out hover:bg-row-hover active:cursor-grabbing"
             >

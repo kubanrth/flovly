@@ -102,7 +102,10 @@ export function ViewSwitcher({
   const base = `/w/${workspaceId}/b/${boardId}`;
   const overviewActive = pathname === `${base}/overview` || !!pathname?.startsWith(`${base}/overview/`);
   const summaryActive = pathname === `${base}/summary`;
-  const views = ORDER.filter((v) => !enabled || enabled.includes(v));
+  // The view you are actually on always gets a tab, even when the workspace
+  // has it disabled — otherwise the URL works but no tab is marked active and
+  // there is no way back to it.
+  const views = ORDER.filter((v) => !enabled || enabled.includes(v) || v === active);
   const total = views.length + 1 + (customViews?.length ?? 0);
 
   const items: TabItem[] = [

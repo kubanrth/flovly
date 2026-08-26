@@ -24,7 +24,8 @@ export default async function BoardGanttPage({
     include: {
       workspace: { select: { enabledViews: true } },
       milestones: {
-        where: { deletedAt: null },
+        // Same scoping as the default Roadmapa — custom views own their milestones.
+        where: { deletedAt: null, boardViewId: null },
         orderBy: [{ startAt: "asc" }, { orderIndex: "asc" }],
         select: { id: true, title: true, startAt: true, stopAt: true },
       },

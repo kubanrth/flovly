@@ -128,15 +128,17 @@ export function BoardOverviewEditor({
         </span>
       </div>
 
-      <div className="flex-1">
-        <div className="mx-auto max-w-[760px] px-10 pb-15 pt-8 max-md:px-4 max-md:pt-6">
+      <div className="min-h-0 flex-1 overflow-auto">
+        {/* The column stretches so a click below the last paragraph still lands
+            in the document instead of on dead space. */}
+        <div className="mx-auto flex h-full max-w-[760px] flex-col px-10 pb-15 pt-8 max-md:px-4 max-md:pt-6">
           {lastChange && (
             <div className="mb-6 flex items-center gap-2">
               <Avatar name={lastChange.name} src={lastChange.avatarUrl} size={20} />
               <span className="text-xs text-n-500">{lastChange.name} · ostatnia zmiana {lastChange.label}</span>
             </div>
           )}
-          <EditorContent editor={editor} />
+          <EditorContent editor={editor} className="flex min-h-0 flex-1 flex-col [&>.ProseMirror]:min-h-full [&>.ProseMirror]:flex-1" />
         </div>
       </div>
 

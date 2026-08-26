@@ -25,7 +25,7 @@ export default async function WorkspaceLayout({
 
   return (
     <>
-      <div className="min-w-0 flex-1 overflow-x-hidden">{children}</div>
+      <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden">{children}</div>
       {modal}
       <CzesiekFab workspaceId={workspace.id} />
     </>

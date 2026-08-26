@@ -3,7 +3,9 @@
 // stay order- and time-independent:
 //   1. clears persisted view config (filters/groupBy/widths) on the seed board,
 //   2. parks 4 admin-assigned tasks in the my-tasks buckets (overdue / today /
-//      upcoming / no due date), all in a non-done status column.
+//      upcoming / no due date), all in a non-done status column,
+//   3. enables every board view on the demo workspace,
+//   4. soft-deletes boards and tasks left behind by earlier runs.
 // A bare tsx subprocess doesn't get Next.js's .env loading.
 import "dotenv/config";
 import { db } from "@/lib/db";
@@ -59,6 +61,46 @@ void (async () => {
       create: { taskId: t.id, userId: admin.id },
     });
   }
-  console.log(`reset ${reset.count} view(s); ${tasks.length} my-tasks buckets on board ${board.id}`);
+  // Boards the specs create pile up across runs: they slow every page that
+  // lists boards and make `gotoFirstBoard` pick an arbitrary one. Soft-delete
+  // last run's leftovers before this run starts.
+  const junk = await db.board.updateMany({
+    where: {
+      workspace: { slug: "demo" },
+      deletedAt: null,
+      // Only the prefixes the specs and critics generate. Nothing broader —
+      // "AK…" also matches the seeded AK59 board the my-tasks fixture parks on.
+      OR: [{ name: { startsWith: "e2e-board-" } }, { name: { startsWith: "KRYTYK-" } }],
+    },
+    data: { deletedAt: new Date() },
+  });
+
+  // Tasks the specs create also pile up: the seed board went from 6 to 142
+  // rows across runs, which pushed the Lista past the 5 s expect timeout and
+  // made unrelated specs fail. Only creation-shaped names are pruned — specs
+  // that RENAME a seed task (AK45/AK66) must keep their row.
+  const stale = await db.task.updateMany({
+    where: {
+      board: { workspace: { slug: "demo" } },
+      deletedAt: null,
+      OR: [
+        { title: { startsWith: "e2e-" } },
+        { title: { startsWith: "kanban-" } },
+        { title: { startsWith: "probe-" } },
+        { title: { startsWith: "konflikt-" } },
+        { title: { startsWith: "autosave-" } },
+        { title: "AK54" },
+      ],
+    },
+    data: { deletedAt: new Date() },
+  });
+
+  // Seed data predates CALENDAR and TASKLINE, so those tabs never rendered.
+  await db.workspace.updateMany({
+    where: { slug: "demo" },
+    data: { enabledViews: ["TABLE", "KANBAN", "ROADMAP", "GANTT", "CALENDAR", "WHITEBOARD", "TASKLINE"] },
+  });
+
+  console.log(`reset ${reset.count} view(s); ${junk.count} stale board(s); ${stale.count} stale task(s); ${tasks.length} my-tasks buckets on board ${board.id}`);
   await db.$disconnect();
 })();

@@ -79,7 +79,7 @@ export function KanbanColumn({
   }
 
   return (
-    <section data-ui="kanban-column" data-column-id={id} aria-label={`Kolumna ${name}, ${tasks.length} ${taskPl(tasks.length)}`} className="w-[280px] shrink-0">
+    <section role="group" data-ui="kanban-column" data-column-id={id} aria-label={`Kolumna ${name}, ${tasks.length} ${taskPl(tasks.length)}`} className="w-[280px] shrink-0">
       <div className="flex h-8 items-center gap-1.5 px-1">
         {renaming && column ? (
           <ColumnNameInput

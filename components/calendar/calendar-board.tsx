@@ -205,7 +205,7 @@ export function CalendarBoard({
   }
 
   return (
-    <div data-ui="calendar-view" className="-mx-6 -my-4 flex min-h-[calc(100dvh-260px)] flex-col bg-card">
+    <div data-ui="calendar-view" className="-mx-6 -my-4 flex min-h-0 flex-1 flex-col bg-card">
       {/* Toolbar — ‹ Miesiąc › Dzisiaj … Status Osoba ⋯ */}
       <div data-ui="calendar-toolbar" className="flex flex-none items-center gap-2 border-b border-border px-6 py-2">
         <Button
@@ -269,8 +269,10 @@ export function CalendarBoard({
       {/* Grid — first row = Pon…Nd headers, then whole Mon-first weeks. */}
       <div
         data-ui="calendar-grid"
-        className="grid flex-1 grid-cols-7 border-b border-border"
-        style={{ gridTemplateRows: `32px repeat(${days.length / 7}, minmax(112px, 1fr))` }}
+        className="grid min-h-0 flex-1 grid-cols-7 border-b border-border"
+        // minmax(0,1fr): a 112px floor made a 6-week month overflow the viewport
+        // and push the footer off screen. Cells scroll internally instead.
+        style={{ gridTemplateRows: `32px repeat(${days.length / 7}, minmax(0, 1fr))` }}
       >
         {WEEKDAYS.map((name, i) => (
           <div

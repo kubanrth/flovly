@@ -32,7 +32,10 @@ export default async function RoadmapPage({
         statusColumns: { orderBy: { order: "asc" } },
         views: { where: { type: "ROADMAP" } },
         milestones: {
-          where: { deletedAt: null },
+          // boardViewId: null = the board's own Roadmapa. Milestones created
+          // inside a custom ROADMAP view belong to that view only (K131/K134);
+          // without this filter they leaked into the default one.
+          where: { deletedAt: null, boardViewId: null },
           orderBy: [{ orderIndex: "asc" }, { startAt: "asc" }],
           include: {
             assignee: { select: { id: true, name: true, email: true, avatarUrl: true } },

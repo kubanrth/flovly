@@ -155,7 +155,7 @@ export function KanbanBoardView({ initialTasks }: { initialTasks: KanbanTask[] }
 
   if (isMobile) {
     return (
-      <div data-ui="kanban-view" className="-mx-4 -my-4 flex flex-col">
+      <div data-ui="kanban-view" className="-mx-4 -my-4 flex min-h-0 flex-1 flex-col">
         <KanbanMobile buckets={buckets} columnIds={columnIds} columnById={columnById} />
         {assign.menu}
       </div>
@@ -165,8 +165,8 @@ export function KanbanBoardView({ initialTasks }: { initialTasks: KanbanTask[] }
   if (s.groupBy !== "status") {
     const lanes = buildSwimlanes(visible, columnIds, s.groupBy, s.members, s.sort);
     return (
-      <div data-ui="kanban-view" className="-mx-6 -my-4 flex flex-col">
-        <div className="min-h-[60vh] flex-1 overflow-x-auto bg-canvas px-6 py-3">
+      <div data-ui="kanban-view" className="-mx-6 -my-4 flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 overflow-auto bg-canvas px-6 py-3">
           <div className="flex gap-3 pb-1.5 pl-[176px]">
             {columnIds.map((id) => (
               <span key={id} className="eyebrow w-[300px] shrink-0 truncate text-fg-2">
@@ -223,8 +223,8 @@ export function KanbanBoardView({ initialTasks }: { initialTasks: KanbanTask[] }
         },
       }}
     >
-      <div data-ui="kanban-view" className="-mx-6 -my-4 flex flex-col">
-        <div className="min-h-[60vh] flex-1 overflow-x-auto bg-canvas px-6 py-4">
+      <div data-ui="kanban-view" className="-mx-6 -my-4 flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 overflow-auto bg-canvas px-6 py-4">
           <div className="flex items-start gap-3">
             {columnIds.map((id) => (
               <KanbanColumn key={id} id={id} column={columnById.get(id) ?? null} tasks={buckets.get(id) ?? []} hoverProps={hoverProps} />

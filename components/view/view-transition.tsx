@@ -36,7 +36,7 @@ export function ViewTransition({ children }: { children: ReactNode }) {
         key={pathname}
         data-view-transition=""
         style={{ animation: "view-transition-fade-in 200ms ease-out both" }}
-        className="flex flex-col gap-4 md:gap-6"
+        className="flex min-h-0 flex-1 flex-col gap-4 md:gap-6"
       >
         {children}
       </div>

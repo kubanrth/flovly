@@ -48,3 +48,25 @@ dopisanymi po „Done" (np. `Done:3, FAZA-2030:4`) zadania z ostatniej kolumny b
 jako ukończone. Podpięte: `/my-tasks`, licznik w pasku bocznym, Podsumowanie tablicy, Roadmapa.
 `components/profile/dashboard-tiles.tsx` celowo zostaje przy swoim luźnym dopasowaniu —
 to inny kontekst (kafle profilu w wielu przestrzeniach).
+
+### F3 — poprawki po krytykach
+- **AK105** — zapis milestone'u był widoczny po 0,9–1,4 s. React trzyma tranzycję akcji
+  formularza otwartą do końca rundy do serwera, więc optymistyczny echo-patch nie mógł się
+  scommitować wcześniej. Edycja wysyła formularz ręcznie, poza tranzycją → 3–7 ms.
+- **AK115** — do Linii zadań **nie dało się dodać zadania**: pula ustawiała
+  `effectAllowed = "copy"`, kolumna etapu odpowiadała `dropEffect = "move"`, a Chrome przy
+  takim rozjeździe anuluje `drop`. Zgodne wartości + `data-ui="taskline-column"`.
+- **AK119** — milestone utworzony w custom widoku ROADMAP pokazywał się w domyślnej Roadmapie:
+  domyślne trasy `roadmap` i `gantt` pobierały milestone'y bez `boardViewId: null`.
+- **AK111 / AK118 / AK97** — stopki nie trzymały się dołu ekranu (Podsumowanie kończyło się
+  na 760px, stopka kanbana lądowała na y=5809, pole edycji Opisu miało 21px wysokości).
+  Łańcuch flex był przerwany w trzech miejscach: `<main>` było blokiem, layout przestrzeni
+  blokiem, `BoardShell` bez `min-h-0`. Kalendarz dodatkowo miał podłogę wiersza 112px,
+  przez którą 6-tygodniowy miesiąc wypychał stopkę poza ekran.
+- Pływający przycisk Ateron zasłaniał „Zwiń wszystkie milestone'y" na Osi czasu i „−"
+  w zoomie whiteboardu — oba klastry odsunięte o szerokość przycisku.
+- Zakładka aktywnego widoku pokazuje się nawet wtedy, gdy przestrzeń ma ten widok wyłączony
+  (wcześniej URL działał, ale żadna zakładka nie była aktywna).
+- `e2e/reset-fixtures.ts` sprząta po poprzednich przebiegach: tablice `e2e-board-*`/`KRYTYK-*`
+  i zadania o nazwach tworzonych przez testy. Bez tego tablica testowa urosła z 6 do 142 zadań
+  i Lista przestawała się mieścić w 5-sekundowym limicie, wywracając niepowiązane testy.

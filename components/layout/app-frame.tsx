@@ -29,7 +29,9 @@ export function AppFrame({ user, workspaces, boards, unreadNotificationCount, my
         <TopBar user={user} unreadCount={unreadNotificationCount} boards={boards} workspaces={workspaces.map((w) => ({ id: w.id, name: w.name }))} onToggleSidebar={toggle} />
         <div className="flex min-h-0 flex-1">
           <Sidebar user={user} workspaces={workspaces} unreadNotificationCount={unreadNotificationCount} myTasksCount={myTasksCount} mode={mode} mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
-          <main data-ui="main" className="min-w-0 flex-1 overflow-auto bg-background">{children}</main>
+          {/* flex column so a view can claim the full height (footer pinned to the
+              bottom) instead of collapsing to its content. */}
+          <main data-ui="main" className="flex min-w-0 flex-1 flex-col overflow-auto bg-background">{children}</main>
         </div>
       </div>
       <Toaster />

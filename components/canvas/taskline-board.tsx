@@ -347,6 +347,8 @@ export function TaskLineBoard({
             return (
               <div
                 key={stage.id}
+                data-ui="taskline-column"
+                data-stage-id={stage.id}
                 className="flex min-w-0 flex-1 flex-col gap-2 max-md:w-full"
                 onDragOver={(e) => onDragOver(e, { stageId: stage.id, beforeId: null })}
                 onDragLeave={(e) => {

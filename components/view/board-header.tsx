@@ -4,6 +4,7 @@ import { BoardHeaderMenu } from "@/components/view/board-header-menu";
 import { EditableBoardName } from "@/components/board/editable-board-name";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { AvatarStack } from "@/components/ui/avatar";
+import { IconChevronRight } from "@/components/ui/icons";
 
 export interface BoardMember {
   id: string;
@@ -85,7 +86,18 @@ export function BoardHeader({
         />
       </div>
       {toolbar}
-      {extra && <div className="border-b border-border px-6 py-2 max-md:px-4">{extra}</div>}
+      {/* Link folders. The v5 mockups have no such strip and it ate ~150px of
+          every board view, so it is collapsed by default — <details> keeps that
+          a platform behaviour instead of another piece of state. */}
+      {extra && (
+        <details data-ui="board-links" className="group border-b border-border">
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 px-6 py-1.5 text-xs text-fg-2 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-orange-500 max-md:px-4 [&::-webkit-details-marker]:hidden">
+            <IconChevronRight className="size-3 transition-transform duration-150 group-open:rotate-90" />
+            Linki tablicy
+          </summary>
+          <div className="px-6 pb-2 max-md:px-4">{extra}</div>
+        </details>
+      )}
     </div>
   );
 }

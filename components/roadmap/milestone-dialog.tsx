@@ -116,18 +116,25 @@ export function MilestoneDialog({
   const [startAt, setStartAt] = useState(initial?.startAt ?? defaults.start);
   const [stopAt, setStopAt] = useState(initial?.stopAt ?? defaults.stop);
 
-  // Close after a successful submit; echo the new values upwards first.
+  const patch = (): MilestonePatch => ({
+    title,
+    startAt,
+    stopAt,
+    assignee: members.find((m) => m.id === assigneeId) ?? null,
+    descriptionText: description,
+  });
+
+  // Creating needs the id the action returns, so it waits. Editing does not:
+  // waiting for the round trip put the change on screen 0.9–1.4 s after the
+  // click, so an edit echoes upwards and closes immediately (below) and only
+  // the create path lands here. A rejected save corrects itself when the
+  // revalidated `milestones` prop clears the optimistic overlay.
   useEffect(() => {
     if (!state?.ok) return;
-    onSaved?.(state.milestoneId, {
-      title,
-      startAt,
-      stopAt,
-      assignee: members.find((m) => m.id === assigneeId) ?? null,
-      descriptionText: description,
-    });
+    onSaved?.(state.milestoneId, patch());
     onClose();
-  }, [state, onSaved, onClose, title, startAt, stopAt, description, assigneeId, members]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- patch() reads the current field state on purpose
+  }, [state]);
 
   const remove = () => {
     if (!initial) return;
@@ -167,6 +174,20 @@ export function MilestoneDialog({
 
         <form
           action={(fd) => startTransition(() => (isEdit ? updateAction(fd) : createAction(fd)))}
+          onSubmit={(e) => {
+            // Editing bypasses the form action: React holds a form-action
+            // transition open until the server round trip settles, which put
+            // the change on screen ~1.3 s after the click. Submitting by hand
+            // lets the optimistic echo commit in the same frame.
+            if (!isEdit || !initial || !title.trim()) return;
+            e.preventDefault();
+            const fd = new FormData(e.currentTarget);
+            onSaved?.(initial.id, patch());
+            onClose();
+            startTransition(async () => {
+              await updateMilestoneAction(null, fd);
+            });
+          }}
           className="flex min-h-0 flex-1 flex-col"
         >
           <input type="hidden" name="workspaceId" value={workspaceId} />

@@ -14,7 +14,9 @@ export function BoardShell({
 }) {
   return (
     <div
-      className="flex w-full flex-1 flex-col [&>*:not([data-ui=board-header])]:px-6 [&>*:not([data-ui=board-header])]:py-4 max-md:[&>*:not([data-ui=board-header])]:px-4"
+      // min-h-0 so a view that claims the height scrolls inside itself and
+      // keeps its footer pinned, instead of stretching the whole page.
+      className="flex min-h-0 w-full flex-1 flex-col [&>*:not([data-ui=board-header])]:px-6 [&>*:not([data-ui=board-header])]:py-4 max-md:[&>*:not([data-ui=board-header])]:px-4"
       style={bgCss ? { background: bgCss } : undefined}
     >
       {children}

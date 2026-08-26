@@ -15,7 +15,7 @@ test.describe("kanban", () => {
 
   test("inline 'new task' in a column adds card", async ({ page }) => {
     const column = page.locator('[role="group"][aria-label^="Kolumna"]').first();
-    await column.getByRole("button", { name: "Nowe zadanie" }).click();
+    await column.getByRole("button", { name: "Utwórz zadanie" }).click();
     const title = `kanban-${Date.now()}`;
     await column.getByPlaceholder("Tytuł zadania…").fill(title);
     await column.getByPlaceholder("Tytuł zadania…").press("Enter");
