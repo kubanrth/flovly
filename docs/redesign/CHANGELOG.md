@@ -124,3 +124,14 @@ zajętej" tablicy — czyli 400-wierszowej pozostałości po krytyku, której te
 oglądają. Fixture wybiera teraz najstarszą niepustą tablicę i sprząta zadania importu;
 `openFirstTask` ponawia klik także wtedy, gdy URL się zmienił, a panel nie wstał.
 Dwa kolejne pełne przebiegi: 50/50.
+
+### F4 — druga runda krytyka
+- **„Otwórz zadanie" z inboxa nie otwierało modala 960**, tylko pełną stronę. Przechwytujący
+  route żyje pod `w/[workspaceId]`, więc nie łapie nawigacji z `/inbox` — ale strona zadania
+  i tak ignorowała `?mode=modal` i zawsze wymuszała `mode="page"`. Teraz honoruje parametr,
+  więc linki z inboxa i z Cmd+K dostają modal bez ruszania przechwytywania (i bez ryzyka dla
+  panelu bocznego z F2).
+- **AK138 „Ukończone wcześniej"** — klauzula, której krytyk nie mógł wytworzyć, bo dzisiejsze
+  ukończenia zawsze trafiają do dzisiejszego kubełka. Zweryfikowana przez zaseedowanie pozycji
+  ukończonej 36 h wcześniej: sekcja renderuje się zwinięta („UKOŃCZONE WCZEŚNIEJ · 1")
+  i rozwija po kliknięciu.
