@@ -263,9 +263,7 @@ export const ShapeNode = memo(function ShapeNode({
 
   const textColor = d.textColorHex || textColorFor(d.colorHex);
   const accent = accentFor(d.colorHex);
-  const selectedRing = selected
-    ? "0 0 0 2px color-mix(in oklch, var(--primary) 40%, transparent)"
-    : "none";
+  const selectedRing = selected ? "0 0 0 2px var(--orange-500)" : "none";
 
   const inline = (
     <ShapeLabel
@@ -319,7 +317,6 @@ export const ShapeNode = memo(function ShapeNode({
           height={d.height}
           colorHex={d.colorHex}
           ringShadow={selectedRing}
-          selected={!!selected}
         >
           {inline}
         </StickyShape>
@@ -484,9 +481,9 @@ function RectangleShape({
         width,
         height,
         background: colorHex,
-        borderRadius: 12,
-        border: `1.5px solid ${selected ? "var(--primary)" : accent}`,
-        boxShadow: `${ringShadow === "none" ? "" : ringShadow + ", "}0 1px 2px rgba(10,10,40,0.04), 0 8px 20px -10px rgba(10,10,40,0.15)`,
+        borderRadius: 6,
+        border: `1px solid ${selected ? "var(--orange-500)" : accent}`,
+        boxShadow: ringShadow === "none" ? "var(--shadow-sm)" : ringShadow,
         position: "relative",
       }}
       className="grid place-items-center overflow-hidden"
@@ -534,7 +531,7 @@ function DiamondShape({
         style={{
           position: "absolute",
           inset: 0,
-          filter: "drop-shadow(0 8px 20px rgba(10,10,40,0.2))",
+          filter: "drop-shadow(0 1px 2px rgba(20,17,13,.06))",
         }}
         preserveAspectRatio="none"
       >
@@ -542,7 +539,7 @@ function DiamondShape({
           points={points}
           fill={colorHex}
           stroke={accent}
-          strokeWidth={2}
+          strokeWidth={1.5}
           strokeLinejoin="round"
         />
       </svg>
@@ -577,8 +574,8 @@ function CircleShape({
         height,
         background: colorHex,
         borderRadius: "50%",
-        border: `2px solid ${accent}`,
-        boxShadow: `${ringShadow === "none" ? "" : ringShadow + ", "}0 10px 24px -12px ${accent}40, 0 2px 4px rgba(10,10,40,0.08)`,
+        border: `1.5px solid ${accent}`,
+        boxShadow: ringShadow === "none" ? "var(--shadow-sm)" : ringShadow,
         color: textColor,
       }}
       className="grid place-items-center"
@@ -593,14 +590,12 @@ function StickyShape({
   height,
   colorHex,
   ringShadow,
-  selected: _selected,
   children,
 }: {
   width: number;
   height: number;
   colorHex: string;
   ringShadow: string;
-  selected: boolean;
   children: React.ReactNode;
 }) {
   const tilt = ((Math.abs(hashFromString(colorHex)) % 5) - 2) * 0.6;
@@ -611,26 +606,18 @@ function StickyShape({
         width,
         height,
         background: colorHex,
-        borderRadius: 6,
+        borderRadius: 4,
+        border: `1px solid ${accentFor(colorHex)}`,
         transform: `rotate(${tilt}deg)`,
-        boxShadow: `${ringShadow === "none" ? "" : ringShadow + ", "}
-          0 1px 2px rgba(0,0,0,0.06),
-          0 6px 14px -8px rgba(0,0,0,0.18),
-          0 20px 30px -18px rgba(0,0,0,0.22),
-          inset 0 -2px 4px rgba(0,0,0,0.04)`,
+        boxShadow:
+          ringShadow === "none"
+            ? "var(--shadow-e1)"
+            : `${ringShadow}, var(--shadow-e1)`,
         color: text,
         position: "relative",
       }}
-      className="grid place-items-center"
+      className="grid items-start justify-items-start p-3"
     >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute right-0 top-0 h-3 w-3"
-        style={{
-          background: `linear-gradient(225deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 60%)`,
-          borderTopRightRadius: 6,
-        }}
-      />
       {children}
     </div>
   );
@@ -909,25 +896,45 @@ function isPaleHex(hex: string): boolean {
 
 // --- Color helpers ---
 
+// Pastele z palety v5 → ich pełny odcień (chip-*-fg / kolor statusu).
+// Dzięki temu krawędź karteczki jest taka jak w B9 (#FBF0C8 → #E8A100).
+const V5_ACCENT: Record<string, string> = {
+  "#FBF0C8": "#E8A100",
+  "#DDF3E6": "#1E9E5A",
+  "#FFE8DB": "#E04E00",
+  "#DDE9FC": "#2F6FE8",
+  "#FDE3E1": "#D6382C",
+  "#EDE3FA": "#5A2E8A",
+  "#FBE2EE": "#8A1F52",
+  "#D8F1EF": "#0F5C57",
+  "#E3E4FB": "#2F3A8F",
+  "#EFE4DA": "#5C3A1E",
+  "#EDEBE7": "#8A857D",
+  "#FFFFFF": "#E6E3DE",
+  "#1C1A17": "#1C1A17",
+};
+
 function accentFor(hex: string): string {
-  if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return "var(--primary)";
+  if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return "var(--orange-500)";
+  const v5 = V5_ACCENT[hex.toUpperCase()];
+  if (v5) return v5;
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   const y = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-  if (y > 0.92) return "#FF5C00";
+  if (y > 0.92) return "#E6E3DE";
   const darken = (n: number) => Math.max(0, Math.round(n * 0.75));
   const hx = (n: number) => darken(n).toString(16).padStart(2, "0");
   return `#${hx(r)}${hx(g)}${hx(b)}`;
 }
 
 function textColorFor(hex: string): string {
-  if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return "#0F172A";
+  if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return "#1C1A17";
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   const y = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-  return y > 0.6 ? "#0F172A" : "#FFFFFF";
+  return y > 0.6 ? "#1C1A17" : "#FFFFFF";
 }
 
 // F12-K73: Task Line reference node. Renderuje task card z displayId pill +

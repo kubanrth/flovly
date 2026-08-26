@@ -76,3 +76,17 @@ Stan po F1 (B4: nagłówek tablicy / tabsy / toolbar / dialog nowego widoku, 202
   jest sam tekst placeholdera (tego wymaga AK117).
 - **Wstawianie obrazu** działa przez URL (`window.prompt`) — dokumenty tablic nie mają akcji
   uploadu, a faza nie dokłada server actions.
+
+### B4 Tablica (kanban)
+- **Limit WIP i zwinięcie kolumny** zapisują się w `localStorage` (`ui:kanban:<boardId>`) —
+  `StatusColumn` ma tylko `id/boardId/name/colorHex/order/createdAt`, a akcje zapisu prefów są
+  zamknięte Zodem na klucze widoku TABLE. Skutek: limit ustawiony przez jedną osobę nie jest
+  widoczny dla zespołu. Ścieżka wyjścia: pole `StatusColumn.wipLimit` + rozszerzenie akcji.
+- **Stan toolbara kanbana** (szukaj/osoba/priorytet/grupowanie/sortowanie) jest sesyjny z tego
+  samego powodu — D16 („zapis w `BoardView.configJson`") wymagałby akcji świadomej kanbana.
+- **Drag & drop w trybie swimlane** — karty są tam tylko do odczytu, zgodnie z makietą
+  `B4-tablica-swimlane` (nowy tryb, więc nie ma czego regresować).
+- **Chevrony kolejności kolumn** zniknęły z nagłówka kanbana (makieta ich nie ma). Sama funkcja
+  została — `reorderStatusColumnsAction` obsługuje picker statusu (`components/table/status-picker.tsx`).
+- **Mobilny „Utwórz zadanie"** otwiera wspólny `CreateTaskDialog` bez wstępnie wybranej kolumny —
+  dialog nie przyjmuje `statusColumnId`.
