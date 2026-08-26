@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { createOnce } from "@/components/canvas/create-once";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
@@ -457,17 +458,21 @@ async function WhiteboardRenderer({
     },
   });
   if (!canvas) {
-    canvas = await db.processCanvas.create({
-      data: { workspaceId, boardId, kind, name: boardName, creatorId: userId },
-      include: {
-        nodes: {
-          include: {
-            taskLinks: { include: { task: { select: { id: true, title: true, deletedAt: true } } } },
-          },
+    const canvasInclude = {
+      nodes: {
+        include: {
+          taskLinks: { include: { task: { select: { id: true, title: true, deletedAt: true } } } },
         },
-        edges: true,
       },
-    });
+      edges: true,
+    } as const;
+    canvas = await createOnce(
+      () => db.processCanvas.create({
+        data: { workspaceId, boardId, kind, name: boardName, creatorId: userId },
+        include: canvasInclude,
+      }),
+      () => db.processCanvas.findFirst({ where: { boardId, kind, deletedAt: null }, include: canvasInclude }),
+    );
   }
 
   const boardTasks = await db.task.findMany({

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { createOnce } from "@/components/canvas/create-once";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
@@ -19,42 +20,24 @@ async function ensureBoardCanvas(
 ) {
   // F12-K73: filtruj po kind żeby nie złapać przypadkiem canvasu Task Line
   // (Board ma teraz N canvasów, po jednym per kind).
-  const existing = await db.processCanvas.findFirst({
-    where: { boardId, kind: "whiteboard", deletedAt: null },
-    include: {
-      nodes: {
-        include: {
-          taskLinks: {
-            include: { task: { select: { id: true, title: true, deletedAt: true } } },
-          },
-        },
+  const include = {
+    nodes: {
+      include: {
+        taskLinks: { include: { task: { select: { id: true, title: true, deletedAt: true } } } },
       },
-      edges: true,
-      strokes: { orderBy: { createdAt: "asc" } },
     },
-  });
+    edges: true,
+    strokes: { orderBy: { createdAt: "asc" as const } },
+  };
+  const read = () => db.processCanvas.findFirst({ where: { boardId, kind: "whiteboard", deletedAt: null }, include });
+
+  const existing = await read();
   if (existing) return existing;
 
-  const created = await db.processCanvas.create({
-    data: {
-      workspaceId,
-      boardId,
-      name: boardName,
-      creatorId,
-    },
-    include: {
-      nodes: {
-        include: {
-          taskLinks: {
-            include: { task: { select: { id: true, title: true, deletedAt: true } } },
-          },
-        },
-      },
-      edges: true,
-      strokes: { orderBy: { createdAt: "asc" } },
-    },
-  });
-  return created;
+  return createOnce(
+    () => db.processCanvas.create({ data: { workspaceId, boardId, name: boardName, creatorId }, include }),
+    read,
+  );
 }
 
 export default async function BoardWhiteboardPage({

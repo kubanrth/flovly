@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { createOnce } from "@/components/canvas/create-once";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
@@ -22,35 +23,23 @@ async function ensureTaskLineCanvas(
   creatorId: string,
   boardName: string,
 ) {
-  const existing = await db.processCanvas.findFirst({
-    where: { boardId, kind: "taskline", deletedAt: null },
-    include: {
-      nodes: {
-        where: { shape: "TASK_REF" },
-        orderBy: { x: "asc" },
-      },
-      taskLineRows: { orderBy: { order: "asc" } },
-    },
-  });
+  const include = {
+    nodes: { where: { shape: "TASK_REF" as const }, orderBy: { x: "asc" as const } },
+    taskLineRows: { orderBy: { order: "asc" as const } },
+  };
+  const read = () => db.processCanvas.findFirst({ where: { boardId, kind: "taskline", deletedAt: null }, include });
+
+  const existing = await read();
   if (existing) return existing;
 
-  const created = await db.processCanvas.create({
-    data: {
-      workspaceId,
-      boardId,
-      kind: "taskline",
-      name: `Task Line — ${boardName}`,
-      creatorId,
-    },
-    include: {
-      nodes: {
-        where: { shape: "TASK_REF" },
-        orderBy: { x: "asc" },
-      },
-      taskLineRows: { orderBy: { order: "asc" } },
-    },
-  });
-  return created;
+  return createOnce(
+    () =>
+      db.processCanvas.create({
+        data: { workspaceId, boardId, kind: "taskline", name: `Task Line — ${boardName}`, creatorId },
+        include,
+      }),
+    read,
+  );
 }
 
 // Lazy backfill: jeśli canvas nie ma żadnej linii, tworzymy domyślną

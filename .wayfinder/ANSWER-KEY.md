@@ -89,38 +89,38 @@ Wszystkie checki binarne. `PW:` = skrypt Playwright (chromium 1440×900, storage
 
 ## F3 — widoki tablicy
 
-- [ ] AK90: Kanban kolumny — VERIFY: PW: `[data-ui=kanban-column]` width 280±2; nagłówek: nazwa 11px uppercase + „· N" mono + [+] [⋯]; kolumna „Gotowe" zwijalna do 40px z pionowym tekstem
-- [ ] AK91: Karty kanban — VERIFY: PW: `[data-ui=kanban-card]`: tytuł 13px/500, dolny wiersz: #ID mono, ikona priorytetu, chipy tagów, data (po terminie czerwona), awatary 20px po prawej; border `rgb(230, 227, 222)`, radius 8
-- [ ] AK92: Drag między kolumnami — VERIFY: PW: przeciągnij kartę z „Do zrobienia" do „W toku" → slot `#FFF4EE` z przerywaną pomarańczową ramką podczas przeciągania; po upuszczeniu status zadania = W toku (reload potwierdza)
-- [ ] AK93: Quick add w kolumnie — VERIFY: PW: „Utwórz zadanie" na dole kolumny → input → Enter → karta; input zostaje otwarty
-- [ ] AK94: WIP + zarządzanie kolumnami — VERIFY: PW: ⋯ kolumny → Zmień nazwę / Kolor / Usuń działają; nagłówek pokazuje „WIP N/M" gdy limit ustawiony
-- [ ] AK95: Swimlane — VERIFY: PW: „Grupuj: Przypisany" → wiersze torów z awatarem+imieniem+„N zadania" 164px po lewej, kolumny 300px; stopka „Swimlane: Przypisany · N tory"
-- [ ] AK96: Kanban mobile — VERIFY: PW-M: jedna kolumna; pasek chipów statusów (aktywny z ringiem); przełączenie chipa zmienia listę; dolny „Utwórz zadanie" 44px; brak overflow
-- [ ] AK97: PNG B4 ×3 — VERIFY: PNG `B4-tablica`, `B4-tablica-swimlane`, PNG-M `B4-tablica-mobile`
-- [ ] AK98: Oś czasu układ — VERIFY: PW: `[data-ui=gantt-left]` width 452±2 z nagłówkiem ☐/›/#ID/Tytuł; `[data-ui=gantt-grid]` z nagłówkami miesięcy; `[data-ui=gantt-today]` width 2, bg `rgb(255, 92, 0)`, etykieta „Dziś" nad linią
-- [ ] AK99: Milestone'y zwinięte/rozwinięte — VERIFY: PW: wiersz milestone'u `#FAF9F7` z ◇, tytułem 600, „N/M · daty" mono, paskiem postępu 3px; klik › rozwija zadania (ID gotowych przekreślone, chip statusu); pasek zbiorczy `#FFE8DB`/`#E04E00`
-- [ ] AK100: Paski zadań + drag dat — VERIFY: PW: pasek 20px z pastelowym tłem i 1px krawędzią koloru statusu, ciemny tekst; przeciągnij prawy uchwyt +2 kolumny → `stopAt` zadania +14 dni (tygodnie) po reloadzie
-- [ ] AK101: Zależności + zoom — VERIFY: PW: zadanie z TaskLink ma strzałkę `rgb(176, 171, 163)` w `svg`; segmented Dzisiaj/Tygodnie/Miesiące/Kwartały w prawym dolnym rogu zmienia nagłówki siatki; „Dzisiaj" centruje linię
-- [ ] AK102: Oś czasu mobile — VERIFY: PW-M: kontener przewijany poziomo (szer. wewn. 560), kolumna „Zadanie" 140px sticky, segmented zoom na dole
-- [ ] AK103: PNG B5 ×3 — VERIFY: PNG `B5-os-czasu`, `B5-os-czasu-rozwinieta`, PNG-M `B5-os-czasu-mobile`
-- [ ] AK104: Roadmapa tryby — VERIFY: PW: segmented „Paski | Markery" + przełącznik „Tablica zbiorcza"; Paski: milestone `#FFE8DB` 28px z chevronem, „N/M · tablica", pasek postępu; rozwinięcie pokazuje paski zadań; Markery: kółka z liczbą zadań (kolor wg postępu), tytuł, „do <data> · N/M", przerywane łuki między markerami
-- [ ] AK105: Dialog milestone'a — VERIFY: PW: klik milestone'u → dialog 440±2: Tytuł, Opis, Start, Koniec, Odpowiedzialny, „Usuń milestone" (czerwony) po lewej, Anuluj/Zapisz; zapis < 1s widoczny bez reloadu
-- [ ] AK106: PNG B6 ×2 — VERIFY: PNG `B6-roadmapa`, `B6-roadmapa-markery`
-- [ ] AK107: Kalendarz — VERIFY: PW: `[data-ui=calendar-grid]` 7 kolumn od „Pon", weekendy `#FAF9F7`; pigułki 20px z paskiem 3px statusu; dzień z >3 zadaniami pokazuje „+N więcej" `rgb(184, 63, 0)`; klik dnia → popover 280 z listą i „Dodaj zadanie na <data>"; drag pigułki na inny dzień zmienia `startAt`; nawigacja ‹ › Dzisiaj; dziś ma ring pomarańczowy
-- [ ] AK108: Kalendarz mobile — VERIFY: PW-M: mini-siatka z kropkami kolorów statusów; wybrany dzień czarny; lista dnia poniżej; dolny przycisk „Dodaj zadanie na <data>"
-- [ ] AK109: PNG B7 ×2 — VERIFY: PNG `B7-kalendarz`, PNG-M `B7-kalendarz-mobile`
-- [ ] AK110: Podsumowanie — VERIFY: PW: `[data-ui=summary-kpi]` ×3 (Ukończone „N z M", W toku, Po terminie czerwone z ID) — brak kafla Budżet; „Statusy" pasek segmentowy 12px + legenda z „N · %"; „Obciążenie zespołu" paski czarne z liczbami; „Milestone'y" z paskami postępu + link „Oś czasu"; „Ostatnia aktywność" 4 wpisy z AuditLog; stopka „stan na dziś, <data>"
-- [ ] AK111: PNG B8 — VERIFY: PNG `B8-podsumowanie` (bez kafla Budżet — zgodnie z OMITTED.md)
-- [ ] AK112: Whiteboard chrome — VERIFY: PW: kanwa `backgroundImage` zawiera `radial-gradient` 1px kropek, `backgroundSize 24px 24px`, bg `rgb(250, 249, 247)`; `[data-ui=whiteboard-toolbar]` na dole na środku (8 narzędzi + separator + undo/redo); zoom prawy dół z „%"; stos awatarów obecnych w nagłówku; silnik: dodaj notatkę, ramkę, strzałkę, kartę zadania #ID → po reloadzie obecne (Yjs)
-- [ ] AK113: `git diff v4-pre-redesign -- components/canvas/canvas-editor.tsx` nie zmienia logiki Yjs — VERIFY: diff nie dotyka linii z `Y.Doc`, `useYjs`, `awareness`, `onNodesChange`, `onEdgesChange` (grep w diffie → 0)
-- [ ] AK114: PNG B9 — VERIFY: PNG `B9-whiteboard`
-- [ ] AK115: Linia zadań — VERIFY: PW: `[data-ui=taskline-stage]` ×N pigułki 36px (aktywna `rgb(28, 26, 23)` biały tekst) z licznikiem, łączniki 2px `#D2CEC7` ze strzałką; kolumny kart pod etapami; drag karty do innego etapu → slot „Upuść tutaj → <etap>"; „Pokaż N starsze…" w ostatniej; dodaj/zmień nazwę/usuń etap; klik karty → panel zadania
-- [ ] AK116: PNG B10 — VERIFY: PNG `B10-linia-zadan`
-- [ ] AK117: Opis tablicy — VERIFY: PW: toolbar 28px (Akapit ▾, B I U S, listy, checklista, link, `</>`, obraz, tabela) + „Zapisano · hh:mm" po prawej; treść max-width 760; pisanie → autosave (reload zachowuje); „Wpisz „/" aby wstawić blok…" placeholder
-- [ ] AK118: PNG B11 — VERIFY: PNG `B11-opis` (bez „Historia wersji" — OMITTED)
-- [ ] AK119: Widoki custom scoping — VERIFY: PW: nowy widok Roadmapa → milestone utworzony w nim nie pojawia się w domyślnej Roadmapie; nowy Whiteboard ma pustą kanwę; e2e 08 zielony
-- [ ] AK120: Tło tablicy — VERIFY: PW: ⋯ tablicy → Tło → kolor → nagłówek tablicy pokazuje kolor; „Brak" przywraca
-- [ ] AK121: F3 bramka — VERIFY: jak AK35 + e2e 07/08/09 zielone
+- [x] AK90: Kanban kolumny — VERIFY: PW: `[data-ui=kanban-column]` width 280±2; nagłówek: nazwa 11px uppercase + „· N" mono + [+] [⋯]; kolumna „Gotowe" zwijalna do 40px z pionowym tekstem
+- [x] AK91: Karty kanban — VERIFY: PW: `[data-ui=kanban-card]`: tytuł 13px/500, dolny wiersz: #ID mono, ikona priorytetu, chipy tagów, data (po terminie czerwona), awatary 20px po prawej; border `rgb(230, 227, 222)`, radius 8
+- [x] AK92: Drag między kolumnami — VERIFY: PW: przeciągnij kartę z „Do zrobienia" do „W toku" → slot `#FFF4EE` z przerywaną pomarańczową ramką podczas przeciągania; po upuszczeniu status zadania = W toku (reload potwierdza)
+- [x] AK93: Quick add w kolumnie — VERIFY: PW: „Utwórz zadanie" na dole kolumny → input → Enter → karta; input zostaje otwarty
+- [x] AK94: WIP + zarządzanie kolumnami — VERIFY: PW: ⋯ kolumny → Zmień nazwę / Kolor / Usuń działają; nagłówek pokazuje „WIP N/M" gdy limit ustawiony
+- [x] AK95: Swimlane — VERIFY: PW: „Grupuj: Przypisany" → wiersze torów z awatarem+imieniem+„N zadania" 164px po lewej, kolumny 300px; stopka „Swimlane: Przypisany · N tory"
+- [x] AK96: Kanban mobile — VERIFY: PW-M: jedna kolumna; pasek chipów statusów (aktywny z ringiem); przełączenie chipa zmienia listę; dolny „Utwórz zadanie" 44px; brak overflow
+- [x] AK97: PNG B4 ×3 — VERIFY: PNG `B4-tablica`, `B4-tablica-swimlane`, PNG-M `B4-tablica-mobile`
+- [x] AK98: Oś czasu układ — VERIFY: PW: `[data-ui=gantt-left]` width 452±2 z nagłówkiem ☐/›/#ID/Tytuł; `[data-ui=gantt-grid]` z nagłówkami miesięcy; `[data-ui=gantt-today]` width 2, bg `rgb(255, 92, 0)`, etykieta „Dziś" nad linią
+- [x] AK99: Milestone'y zwinięte/rozwinięte — VERIFY: PW: wiersz milestone'u `#FAF9F7` z ◇, tytułem 600, „N/M · daty" mono, paskiem postępu 3px; klik › rozwija zadania (ID gotowych przekreślone, chip statusu); pasek zbiorczy `#FFE8DB`/`#E04E00`
+- [x] AK100: Paski zadań + drag dat — VERIFY: PW: pasek 20px z pastelowym tłem i 1px krawędzią koloru statusu, ciemny tekst; przeciągnij prawy uchwyt +2 kolumny → `stopAt` zadania +14 dni (tygodnie) po reloadzie
+- [x] AK101: Zależności + zoom — VERIFY: PW: zadanie z TaskLink ma strzałkę `rgb(176, 171, 163)` w `svg`; segmented Dzisiaj/Tygodnie/Miesiące/Kwartały w prawym dolnym rogu zmienia nagłówki siatki; „Dzisiaj" centruje linię
+- [x] AK102: Oś czasu mobile — VERIFY: PW-M: kontener przewijany poziomo (szer. wewn. 560), kolumna „Zadanie" 140px sticky, segmented zoom na dole
+- [x] AK103: PNG B5 ×3 — VERIFY: PNG `B5-os-czasu`, `B5-os-czasu-rozwinieta`, PNG-M `B5-os-czasu-mobile`
+- [x] AK104: Roadmapa tryby — VERIFY: PW: segmented „Paski | Markery" + przełącznik „Tablica zbiorcza"; Paski: milestone `#FFE8DB` 28px z chevronem, „N/M · tablica", pasek postępu; rozwinięcie pokazuje paski zadań; Markery: kółka z liczbą zadań (kolor wg postępu), tytuł, „do <data> · N/M", przerywane łuki między markerami
+- [x] AK105: Dialog milestone'a — VERIFY: PW: klik milestone'u → dialog 440±2: Tytuł, Opis, Start, Koniec, Odpowiedzialny, „Usuń milestone" (czerwony) po lewej, Anuluj/Zapisz; zapis < 1s widoczny bez reloadu
+- [x] AK106: PNG B6 ×2 — VERIFY: PNG `B6-roadmapa`, `B6-roadmapa-markery`
+- [x] AK107: Kalendarz — VERIFY: PW: `[data-ui=calendar-grid]` 7 kolumn od „Pon", weekendy `#FAF9F7`; pigułki 20px z paskiem 3px statusu; dzień z >3 zadaniami pokazuje „+N więcej" `rgb(184, 63, 0)`; klik dnia → popover 280 z listą i „Dodaj zadanie na <data>"; drag pigułki na inny dzień zmienia `startAt`; nawigacja ‹ › Dzisiaj; dziś ma ring pomarańczowy
+- [x] AK108: Kalendarz mobile — VERIFY: PW-M: mini-siatka z kropkami kolorów statusów; wybrany dzień czarny; lista dnia poniżej; dolny przycisk „Dodaj zadanie na <data>"
+- [x] AK109: PNG B7 ×2 — VERIFY: PNG `B7-kalendarz`, PNG-M `B7-kalendarz-mobile`
+- [x] AK110: Podsumowanie — VERIFY: PW: `[data-ui=summary-kpi]` ×3 (Ukończone „N z M", W toku, Po terminie czerwone z ID) — brak kafla Budżet; „Statusy" pasek segmentowy 12px + legenda z „N · %"; „Obciążenie zespołu" paski czarne z liczbami; „Milestone'y" z paskami postępu + link „Oś czasu"; „Ostatnia aktywność" 4 wpisy z AuditLog; stopka „stan na dziś, <data>"
+- [x] AK111: PNG B8 — VERIFY: PNG `B8-podsumowanie` (bez kafla Budżet — zgodnie z OMITTED.md)
+- [x] AK112: Whiteboard chrome — VERIFY: PW: kanwa `backgroundImage` zawiera `radial-gradient` 1px kropek, `backgroundSize 24px 24px`, bg `rgb(250, 249, 247)`; `[data-ui=whiteboard-toolbar]` na dole na środku (8 narzędzi + separator + undo/redo); zoom prawy dół z „%"; stos awatarów obecnych w nagłówku; silnik: dodaj notatkę, ramkę, strzałkę, kartę zadania #ID → po reloadzie obecne (Yjs)
+- [x] AK113: `git diff v4-pre-redesign -- components/canvas/canvas-editor.tsx` nie zmienia logiki Yjs — VERIFY: diff nie dotyka linii z `Y.Doc`, `useYjs`, `awareness`, `onNodesChange`, `onEdgesChange` (grep w diffie → 0)
+- [x] AK114: PNG B9 — VERIFY: PNG `B9-whiteboard`
+- [x] AK115: Linia zadań — VERIFY: PW: `[data-ui=taskline-stage]` ×N pigułki 36px (aktywna `rgb(28, 26, 23)` biały tekst) z licznikiem, łączniki 2px `#D2CEC7` ze strzałką; kolumny kart pod etapami; drag karty do innego etapu → slot „Upuść tutaj → <etap>"; „Pokaż N starsze…" w ostatniej; dodaj/zmień nazwę/usuń etap; klik karty → panel zadania
+- [x] AK116: PNG B10 — VERIFY: PNG `B10-linia-zadan`
+- [x] AK117: Opis tablicy — VERIFY: PW: toolbar 28px (Akapit ▾, B I U S, listy, checklista, link, `</>`, obraz, tabela) + „Zapisano · hh:mm" po prawej; treść max-width 760; pisanie → autosave (reload zachowuje); „Wpisz „/" aby wstawić blok…" placeholder
+- [x] AK118: PNG B11 — VERIFY: PNG `B11-opis` (bez „Historia wersji" — OMITTED)
+- [x] AK119: Widoki custom scoping — VERIFY: PW: nowy widok Roadmapa → milestone utworzony w nim nie pojawia się w domyślnej Roadmapie; nowy Whiteboard ma pustą kanwę; e2e 08 zielony
+- [x] AK120: Tło tablicy — VERIFY: PW: ⋯ tablicy → Tło → kolor → nagłówek tablicy pokazuje kolor; „Brak" przywraca
+- [x] AK121: F3 bramka — VERIFY: jak AK35 + e2e 07/08/09 zielone
 
 ## F4 — przestrzeń + osobiste
 

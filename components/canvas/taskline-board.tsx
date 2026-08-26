@@ -6,6 +6,7 @@
 // Backend bez zmian: te same akcje z `c/taskline-actions.ts`.
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useToast } from "@/components/ui/toast";
 import Link from "next/link";
 import {
   appendTaskToFlowAction,
@@ -110,6 +111,8 @@ export function TaskLineBoard({
     });
   };
 
+  const toast = useToast();
+
   const moveToStage = (nodeId: string, stageId: string) => {
     if (!canEdit) return;
     const card = cards.find((c) => c.id === nodeId);
@@ -120,22 +123,22 @@ export function TaskLineBoard({
       prev.map((c) => (c.id === nodeId ? { ...c, lineId: stageId, x: tempX } : c)),
     );
     startTransition(async () => {
-      // Brak akcji „przenieś" — składamy ją z istniejących: usuń + dopnij.
-      const removed = await removeFromFlowAction({ nodeId });
-      if (!removed.ok) {
+      // Brak akcji „przenieś" — składamy ją z istniejących: dopnij + usuń.
+      // Kolejność ma znaczenie: przy usuwaniu najpierw nieudane dopięcie
+      // (np. karta wskazuje skasowane zadanie) kasowało kartę bezpowrotnie.
+      const res = await appendTaskToFlowAction({ canvasId, lineId: stageId, taskId: card.taskId });
+      if (!res.ok) {
         setCards(snapshot);
+        toast.add({ title: "Nie udało się przenieść karty", description: res.error });
         return;
       }
-      const res = await appendTaskToFlowAction({
-        canvasId,
-        lineId: stageId,
-        taskId: card.taskId,
-      });
-      setCards((prev) =>
-        res.ok
-          ? prev.map((c) => (c.id === nodeId ? { ...c, id: res.nodeId, x: res.x } : c))
-          : prev.filter((c) => c.id !== nodeId),
-      );
+      const removed = await removeFromFlowAction({ nodeId });
+      if (!removed.ok) {
+        // Dopięcie przeszło, więc karta jest w nowym etapie; stara zostaje do
+        // czasu odświeżenia zamiast zniknąć bez śladu.
+        toast.add({ title: "Karta przeniesiona, ale stara kopia została", description: removed.error });
+      }
+      setCards((prev) => prev.map((c) => (c.id === nodeId ? { ...c, id: res.nodeId, x: res.x } : c)));
     });
   };
 

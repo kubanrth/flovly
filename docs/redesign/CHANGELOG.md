@@ -70,3 +70,15 @@ to inny kontekst (kafle profilu w wielu przestrzeniach).
 - `e2e/reset-fixtures.ts` sprząta po poprzednich przebiegach: tablice `e2e-board-*`/`KRYTYK-*`
   i zadania o nazwach tworzonych przez testy. Bez tego tablica testowa urosła z 6 do 142 zadań
   i Lista przestawała się mieścić w 5-sekundowym limicie, wywracając niepowiązane testy.
+
+### F3 — druga runda krytyka
+- **Tworzenie custom widoku Whiteboard kończyło się ekranem błędu** w ~2 na 3 próby.
+  Kanwa powstaje leniwie przy pierwszym wejściu, a pierwsze wejście renderuje się więcej
+  niż raz (prefetch + nawigacja) — oba przebiegi widziały „brak kanwy” i wchodziły w `create`,
+  przegrany łapał unikalność `(boardId, kind)`. `upsert` tego nie zamyka: z `include` Prisma
+  robi read-then-write. Rozwiązanie: `components/canvas/create-once.ts` (+ self-check),
+  użyte w trzech miejscach, które tworzyły kanwę leniwie.
+- **Przenoszenie karty między etapami mogło ją skasować bezpowrotnie.** Sekwencja była
+  „usuń + dopnij”; gdy dopięcie zawiodło (np. karta wskazywała skasowane zadanie), węzeł
+  już nie istniał i karta znikała bez komunikatu. Teraz „dopnij + usuń”, z komunikatem
+  przy każdym niepowodzeniu.
