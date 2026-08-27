@@ -151,9 +151,13 @@ export function SecretVault({
     <div data-ui="vault" className="flex min-h-0 min-w-0 flex-1 flex-col">
       <header className="flex shrink-0 items-center gap-2.5 px-8 pt-4 max-md:px-4">
         <h1 className="text-xl font-semibold tracking-[-0.3px]">Hasła</h1>
-        <Chip hue="green" size="lg" className="mt-1 gap-1.5">
+        {/* Makieta pisze „Szyfrowane E2E", ale lib/vault-crypto.ts szyfruje
+            w bazie i sam mówi, że to NIE jest end-to-end — serwer widzi hasło
+            w momencie szyfrowania i odszyfrowania. Nie obiecujemy czegoś,
+            czego kod nie robi. */}
+        <Chip hue="green" size="lg" className="mt-1 gap-1.5" title="Hasła są szyfrowane w bazie (AES-256-GCM). Serwer odszyfrowuje je na żądanie, więc nie jest to szyfrowanie end-to-end.">
           <IconShieldCheck width={11} height={11} />
-          Szyfrowane E2E
+          Szyfrowane w bazie
         </Chip>
         <span className="flex-1" />
         <Button onClick={() => setAddOpen(true)}>

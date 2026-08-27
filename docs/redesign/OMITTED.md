@@ -291,3 +291,14 @@ Stan po F1 (B4: nagłówek tablicy / tabsy / toolbar / dialog nowego widoku, 202
   `components/admin/confirm-submit.tsx`. Nic nie zostało poluzowane: `requireSuperAdmin()`
   zostaje w layoucie, na każdej stronie i w każdej akcji.
 - **Zbiorczy reset haseł** dalej wyłączony (brak kanału dostarczenia hasła) — stan zastany.
+
+### E6 Hasła — etykieta szyfrowania
+- Makieta pisze **„Szyfrowane E2E"**, ale `lib/vault-crypto.ts` szyfruje w bazie
+  (AES-256-GCM) i sam w komentarzu zaznacza, że to **nie** jest end-to-end — serwer widzi
+  hasło w momencie szyfrowania i odszyfrowania. Chip mówi więc „Szyfrowane w bazie",
+  z wyjaśnieniem w `title`. Obiecywanie E2E tam, gdzie serwer ma dostęp do haseł, byłoby
+  fałszywą deklaracją bezpieczeństwa.
+- **`VAULT_KEY` nie było w `.env`**, więc sejf nie potrafił nic zapisać ani odczytać na
+  stagingu (`encrypt()` rzuca poniżej 32 znaków klucza). Dodany klucz lokalny; zmienna
+  jest teraz opisana w `.env.example`. Produkcja ma swój klucz w Coolify — jego utrata
+  oznacza bezpowrotną utratę danych sejfu.
