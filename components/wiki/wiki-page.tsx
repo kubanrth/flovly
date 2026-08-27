@@ -15,7 +15,7 @@ import { RichTextEditor, type RichTextDoc } from "@/components/task/rich-text-ed
 import { plPlural } from "@/lib/pluralize";
 import { cn } from "@/lib/utils";
 import { updateWikiPageAction } from "@/app/(app)/w/[workspaceId]/wiki/actions";
-import { extractHeadings, readingMinutes } from "./headings";
+import { readingMinutes, slugify } from "./headings";
 
 export function WikiPage({
   workspaceId,
@@ -43,20 +43,40 @@ export function WikiPage({
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const headings = extractHeadings(doc);
   const minutes = readingMinutes(doc);
+  const [headings, setHeadings] = useState<{ id: string; text: string }[]>([]);
 
-  // Kotwice spisu: <h2> renderowane przez Tiptap nie mają `id`, więc
-  // dopinamy je po renderze, w kolejności dokumentu (ta sama, z której
-  // `extractHeadings` bierze pozycje).
+  // The table of contents is read off the rendered DOM, not off the stored
+  // doc. Two reasons the doc-based version was wrong: Tiptap renders a stored
+  // level-1 heading as <h2> while `extractHeadings(doc, 2)` skips it (so the
+  // list was short and the index→node mapping slid by one), and Tiptap mounts
+  // its nodes outside React's render, so an effect keyed on the doc ran before
+  // the headings existed and never assigned a single id — every anchor was dead.
   useEffect(() => {
-    const nodes = contentRef.current?.querySelectorAll(".tiptap-content h2");
-    if (!nodes) return;
-    nodes.forEach((el, i) => {
-      const h = headings[i];
-      if (h) el.setAttribute("id", h.id);
-    });
-  }, [headings, editing]);
+    const root = contentRef.current;
+    if (!root) return;
+    const sync = () => {
+      const seen = new Map<string, number>();
+      const next = [...root.querySelectorAll<HTMLElement>(".tiptap-content h2")].map((el, i) => {
+        const text = el.textContent?.trim() ?? "";
+        const base = slugify(text, `sekcja-${i + 1}`);
+        const n = (seen.get(base) ?? 0) + 1;
+        seen.set(base, n);
+        const id = n === 1 ? base : `${base}-${n}`;
+        el.setAttribute("id", id);
+        return { id, text };
+      });
+      setHeadings((prev) =>
+        prev.length === next.length && prev.every((h, i) => h.id === next[i]!.id && h.text === next[i]!.text)
+          ? prev
+          : next,
+      );
+    };
+    sync();
+    const mo = new MutationObserver(sync);
+    mo.observe(root, { childList: true, subtree: true, characterData: true });
+    return () => mo.disconnect();
+  }, [editing]);
 
   const jumpTo = (id: string) => {
     const el = contentRef.current?.querySelector(`#${CSS.escape(id)}`);

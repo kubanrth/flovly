@@ -302,3 +302,13 @@ Stan po F1 (B4: nagłówek tablicy / tabsy / toolbar / dialog nowego widoku, 202
   stagingu (`encrypt()` rzuca poniżej 32 znaków klucza). Dodany klucz lokalny; zmienna
   jest teraz opisana w `.env.example`. Produkcja ma swój klucz w Coolify — jego utrata
   oznacza bezpowrotną utratę danych sejfu.
+
+### E9 Support — kompozytor odpowiedzi
+- Makieta E9 ma na dole panelu kompozytor: zakładki „Odpowiedź do klienta" / „Notatka
+  wewnętrzna", pole tekstowe, „Szablon ▾", „Rozwiąż po wysłaniu" i „Wyślij". **Nie da się go
+  zbudować bez zmiany schematu**: `SupportTicket` ma wyłącznie pole `description` — nie ma
+  modelu wiadomości ani pola widoczności, więc odpowiedź nie miałaby gdzie się zapisać, a
+  zakładka „notatka wewnętrzna" obiecywałaby poufność, której backend nie zapewnia (każdy
+  członek przestrzeni widzi całe zgłoszenie). W tym miejscu jest pasek akcji: priorytet,
+  termin, NATYCHMIAST, edycja treści, rozwiązanie. Ścieżka wyjścia: model `SupportMessage`
+  z polem `visibility`.
