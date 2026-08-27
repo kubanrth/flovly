@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuSub, MenuSubContent, MenuSubTrigger, MenuTrigger } from "@/components/ui/dropdown-menu";
-import { IconEdit, IconLink, IconMore, IconImage } from "@/components/ui/icons";
+import { IconEdit, IconLink, IconMore, IconImage, IconTrash } from "@/components/ui/icons";
+import { deleteBoardAction } from "@/app/(app)/w/[workspaceId]/b/actions";
 import { TINTS } from "./board-tints";
 
 // ponytail: per-device via localStorage — Board has no background column and
@@ -19,7 +20,20 @@ function paint(color: string | null) {
 }
 
 // ⋯ in the board header's breadcrumb row (A2).
-export function BoardHeaderMenu({ boardId, canEditName }: { boardId: string; canEditName: boolean }) {
+export function BoardHeaderMenu({
+  workspaceId,
+  boardId,
+  boardName,
+  canEditName,
+  canDelete,
+}: {
+  workspaceId: string;
+  boardId: string;
+  boardName: string;
+  canEditName: boolean;
+  canDelete: boolean;
+}) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   useEffect(() => {
     let saved: string | null = null;
     try {
@@ -58,6 +72,31 @@ export function BoardHeaderMenu({ boardId, canEditName }: { boardId: string; can
           >
             Zmień nazwę
           </MenuItem>
+        )}
+        {canDelete && (
+          <>
+            <MenuSeparator />
+            <MenuItem
+              icon={<IconTrash />}
+              destructive
+              closeOnClick={false}
+              onClick={() => {
+                // Dwustopniowo zamiast window.confirm: skasowanie tablicy
+                // chowa wszystkie jej zadania, więc jeden przypadkowy klik
+                // w menu nie może tego zrobić.
+                if (!confirmingDelete) {
+                  setConfirmingDelete(true);
+                  return;
+                }
+                const fd = new FormData();
+                fd.set("workspaceId", workspaceId);
+                fd.set("boardId", boardId);
+                startTransition(() => void deleteBoardAction(fd));
+              }}
+            >
+              {confirmingDelete ? `Na pewno usunąć „${boardName}"?` : "Usuń tablicę"}
+            </MenuItem>
+          </>
         )}
         <MenuSeparator />
         <MenuSub>

@@ -37,6 +37,8 @@ export async function BoardHeaderServer({
 }) {
   const ctx = await requireWorkspaceMembership(workspaceId);
   const canManage = can(ctx.role, "board.update");
+  // Usuwanie to inne uprawnienie niż zmiana nazwy — MEMBER edytuje, kasuje ADMIN.
+  const canDelete = can(ctx.role, "board.delete");
 
   const [allViews, memberships, workspace] = await Promise.all([
     // One query for both custom views (name != null) and default view-type
@@ -88,6 +90,7 @@ export async function BoardHeaderServer({
       customViews={customViews}
       canManageViews={canManage}
       canEditName={canManage}
+      canDeleteBoard={canDelete}
       defaultViewIds={defaultViewIds}
       members={members}
       toolbar={toolbar}

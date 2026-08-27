@@ -174,3 +174,11 @@ na obecność tokenów i wyciszenie animacji — dwa kolejne pełne przebiegi 61
 `/w/<ws>/settings` dla roli bez uprawnień wołało `notFound()`, więc odmowa wyglądała jak
 zepsuty link („404 — Tej strony już nie ma"). Teraz ekran „Brak dostępu"; kontrole serwerowe
 bez zmian.
+
+### Usuwanie tablicy — przywrócone
+Funkcja zniknęła przy przepisywaniu przestrzeni w F4: `deleteBoardAction` została w backendzie,
+ale straciła jedyne wywołanie (dialog z `components/workspaces/`), a ja skasowałem ten dialog
+jako martwy kod, bo nikt go już nie importował. Pozycja „Usuń tablicę" wróciła do menu ⋯
+tablicy, bramkowana osobnym uprawnieniem `board.delete` (nie tym samym co zmiana nazwy —
+MEMBER edytuje, kasuje ADMIN). Dwustopniowe potwierdzenie zamiast `window.confirm`, bo
+skasowanie tablicy chowa wszystkie jej zadania. Regresję pilnuje teraz test w spec 03.

@@ -25,6 +25,7 @@ export function BoardHeader({
   customViews,
   canManageViews,
   canEditName,
+  canDeleteBoard,
   createViewButton,
   actions,
   extra,
@@ -43,6 +44,8 @@ export function BoardHeader({
   canManageViews?: boolean;
   // Default false — BoardHeaderServer sets true when `can(role, "board.update")`.
   canEditName?: boolean;
+  /** `board.delete` — pozycja „Usuń tablicę" w menu ⋯. */
+  canDeleteBoard?: boolean;
   createViewButton?: ReactNode;
   actions?: ReactNode;
   extra?: ReactNode;
@@ -60,7 +63,13 @@ export function BoardHeader({
           />
           <span className="flex-1" />
           {actions}
-          <BoardHeaderMenu boardId={boardId} canEditName={!!canEditName} />
+          <BoardHeaderMenu
+            workspaceId={workspaceId}
+            boardId={boardId}
+            boardName={board.name}
+            canEditName={!!canEditName}
+            canDelete={!!canDeleteBoard}
+          />
         </div>
         <div className="mt-1 flex items-center gap-2.5">
           {/* [&>button]:mx-0 — EditableTitle's -mx-1 + max-w-full is a cyclic % that clips 8px; -ml-1 keeps the optical align. */}
