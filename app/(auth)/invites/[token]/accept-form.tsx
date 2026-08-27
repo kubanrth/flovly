@@ -47,7 +47,12 @@ export function AcceptInviteForm({
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="invite-email">E-mail</Label>
-        <Input id="invite-email" value={email} readOnly disabled className="font-mono" />
+        <Input
+          id="invite-email"
+          value={email}
+          readOnly
+          className="bg-canvas font-mono text-muted-foreground"
+        />
       </div>
 
       {!isExistingUser && (

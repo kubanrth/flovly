@@ -13,7 +13,9 @@ export const metadata: Metadata = {
 // ścieżki względne (nie `//host`, nie `https://…`) — inaczej link do logowania
 // staje się open redirectem. Serwer i tak ma własny callback, to druga warstwa.
 function safeRedirect(value: string | undefined): string {
-  return value && /^\/(?!\/)/.test(value) ? value : "/workspaces";
+  // `/\evil.com` też jest odrzucane: przeglądarki normalizują backslash do
+  // ukośnika, więc bez tego `//evil.com` przeszłoby tylnymi drzwiami.
+  return value && /^\/(?![/\\])/.test(value) ? value : "/workspaces";
 }
 
 export default async function SecureAccessPortalPage({

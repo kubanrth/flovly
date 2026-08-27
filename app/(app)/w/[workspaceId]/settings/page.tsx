@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
+import { Forbidden } from "@/components/errors/forbidden";
 import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 import {
   DeleteWorkspaceForm,
@@ -16,7 +17,11 @@ export default async function WorkspaceSettingsPage({
   const { workspaceId } = await params;
   const ctx = await requireWorkspaceMembership(workspaceId);
 
-  if (!can(ctx.role, "workspace.updateSettings")) notFound();
+  // AK187: rola bez uprawnień dostaje 403, nie mylące 404. Serwerowy guard
+  // w `updateWorkspaceAction`/`deleteWorkspaceAction` zostaje — to tylko UI.
+  if (!can(ctx.role, "workspace.updateSettings")) {
+    return <Forbidden description="Ustawienia przestrzeni może zmieniać tylko administrator." backHref={`/w/${workspaceId}`} backLabel="Wróć do przestrzeni" />;
+  }
 
   const workspace = await db.workspace.findFirst({
     where: { id: workspaceId, deletedAt: null },

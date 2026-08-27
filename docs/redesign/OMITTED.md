@@ -312,3 +312,15 @@ Stan po F1 (B4: nagłówek tablicy / tabsy / toolbar / dialog nowego widoku, 202
   członek przestrzeni widzi całe zgłoszenie). W tym miejscu jest pasek akcji: priorytet,
   termin, NATYCHMIAST, edycja treści, rozwiązanie. Ścieżka wyjścia: model `SupportMessage`
   z polem `visibility`.
+
+## F6 — hardening
+
+### Logowanie
+- **Limit prób jest komunikatem UI, nie blokadą.** Autorytatywny limiter to
+  `checkLimit("auth.login", …)` (5 prób / 15 min) po stronie serwera. Na stagingu
+  `UPSTASH_REDIS_REST_*` są puste, więc limiter przepuszcza wszystko i serwer nigdy nie
+  wyśle komunikatu o limicie — stąd podpowiedź liczona po stronie klienta. **Na produkcji
+  trzeba mieć skonfigurowany Upstash**, inaczej limit logowania faktycznie nie działa.
+- Usunięte martwe kontrolki: „Zapomniałem hasła" prowadziło pod nieistniejącą trasę,
+  „Pozostań zalogowany" wysyłało pole, którego żadna akcja nie czytała, a „Odrzuć"
+  przy zaproszeniu niczego serwerowo nie odrzucało.

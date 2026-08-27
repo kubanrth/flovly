@@ -88,10 +88,7 @@ export function OnboardingTour() {
             {STEPS.map((s, i) => (
               <span
                 key={s.title}
-                className={cn(
-                  "h-1.5 rounded-full transition-[width,background-color] duration-150 ease-[var(--ease-out)]",
-                  i === step ? "w-4 bg-orange-500" : "w-1.5 bg-n-300",
-                )}
+                className={cn("h-1.5 rounded-full", i === step ? "w-4 bg-orange-500" : "w-1.5 bg-n-300")}
               />
             ))}
           </div>
