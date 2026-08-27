@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Trash2 } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { deleteDealAction } from "@/app/(app)/w/[workspaceId]/sales/actions";
 import { DealForm } from "@/components/sales/deal-form";
 import { DealMobileActions } from "@/components/sales/deal-mobile-actions";
+import { Button } from "@/components/ui/button";
+import { IconChevronLeft, IconTrash } from "@/components/ui/icons";
 import type { RichTextDoc } from "@/components/task/rich-text-editor";
 import {
   DealTimeline,
@@ -137,41 +138,29 @@ export default async function DealDetailPage({
   }));
 
   return (
-    <main className="flex-1 px-4 py-6 md:px-14 md:py-14">
-      {/* Wyrównanie szerokości — pipeline ma max-w-[1400px], karta deala
-          z max-w-3xl wyglądała wąsko obok niego. 6xl = ~1152px. */}
-      <div className="mx-auto flex max-w-6xl flex-col gap-6 md:gap-8">
-        <div className="flex flex-col gap-3">
-          <Link
-            href={`/w/${workspaceId}/sales`}
-            className="eyebrow inline-flex w-fit items-center gap-1.5 transition-colors hover:text-foreground"
-          >
-            <ArrowLeft size={11} /> Pipeline
-          </Link>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="flex min-w-0 flex-col gap-1">
-              <span className="eyebrow">Deal</span>
-              <h1 className="truncate font-display text-[1.5rem] font-bold leading-[1.1] tracking-[-0.03em] md:text-[2rem]">
-                {deal.title}
-              </h1>
-            </div>
-            {canDelete && (
-              <form action={deleteDealAction} className="m-0">
-                <input type="hidden" name="workspaceId" value={workspaceId} />
-                <input type="hidden" name="dealId" value={deal.id} />
-                <button
-                  type="submit"
-                  aria-label="Usuń deal"
-                  title="Usuń deal"
-                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-card px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
-                >
-                  <Trash2 size={12} /> Usuń
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
+    <div className="flex min-w-0 flex-1 flex-col" style={{ minHeight: "calc(100dvh - var(--topbar))" }}>
+      <header className="flex shrink-0 items-center gap-2 px-8 pt-4 max-md:px-4">
+        <Link
+          href={`/w/${workspaceId}/sales`}
+          className="inline-flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-xs text-muted-foreground outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
+        >
+          <IconChevronLeft width={13} height={13} /> Plan sprzedaży
+        </Link>
+        <span aria-hidden className="shrink-0 text-n-400">/</span>
+        <h1 className="min-w-0 flex-1 truncate text-xl font-semibold tracking-[-0.3px]">{deal.title}</h1>
+        {canDelete && (
+          <form action={deleteDealAction} className="m-0 shrink-0">
+            <input type="hidden" name="workspaceId" value={workspaceId} />
+            <input type="hidden" name="dealId" value={deal.id} />
+            <Button type="submit" variant="secondary" className="hover:text-danger-text">
+              <IconTrash width={14} height={14} /> Usuń
+            </Button>
+          </form>
+        )}
+      </header>
 
+      <div className="min-h-0 flex-1 overflow-auto px-8 py-4 max-md:px-4">
+        <div className="flex max-w-[980px] flex-col gap-5">
         {canEdit ? (
           <DealForm
             mode="edit"
@@ -206,7 +195,7 @@ export default async function DealDetailPage({
             })}
           />
         ) : (
-          <p className="rounded-md border border-border bg-card px-4 py-8 text-center text-[0.88rem] text-muted-foreground">
+          <p className="rounded-lg border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
             Twoja rola nie pozwala na edycję deala.
           </p>
         )}
@@ -219,6 +208,7 @@ export default async function DealDetailPage({
           users={userLookup}
           contacts={contactLookup}
         />
+        </div>
       </div>
 
       {canEdit && (
@@ -229,6 +219,6 @@ export default async function DealDetailPage({
           stages={mobileStages}
         />
       )}
-    </main>
+    </div>
   );
 }

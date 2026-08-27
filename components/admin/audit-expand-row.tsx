@@ -7,8 +7,8 @@
 // Spec ref: `Flovly Admin Sub-views & Extras.dc.html` — chevron caret on right;
 // click opens a row showing red (old) / green (new) JSON for `payload`.
 
-import { ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { IconChevronDown } from "@/components/ui/icons";
 
 interface AuditDiff {
   old?: Record<string, unknown> | null;
@@ -41,11 +41,12 @@ export function AuditExpandRow({
         disabled={!hasDiff}
         onClick={() => setOpen((v) => !v)}
         data-open={open ? "true" : "false"}
-        className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-default disabled:opacity-30 data-[open=true]:bg-accent data-[open=true]:text-foreground"
+        className="grid size-7 place-items-center rounded-md text-muted-foreground outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200 disabled:cursor-default disabled:text-n-300 data-[open=true]:bg-n-100 data-[open=true]:text-foreground"
       >
-        <ChevronDown
-          size={13}
-          className="transition-transform duration-150 ease-out data-[open=true]:rotate-180"
+        <IconChevronDown
+          width={13}
+          height={13}
+          className="transition-transform duration-150 ease-[var(--ease-out)] data-[open=true]:rotate-180"
           data-open={open ? "true" : "false"}
         />
       </button>
@@ -74,14 +75,12 @@ function DiffPortalSlot({
   // contents-display: position absolute under the row's last cell.
   return (
     <div
-      className="absolute right-2 top-full z-20 mt-1 w-[min(520px,calc(100vw-2rem))] rounded-xl border border-border bg-popover p-3 text-left shadow-[0_18px_40px_-16px_rgba(10,10,40,0.5)]"
+      className="popover-surface absolute right-2 top-full z-20 mt-1 w-[min(520px,calc(100vw-2rem))] p-3 text-left shadow-e2"
       role="region"
       aria-label="Diff JSON"
     >
       <div className="mb-2 flex items-center justify-between">
-        <span className="font-mono text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground">
-          Diff
-        </span>
+        <span className="eyebrow">Diff</span>
       </div>
       <DiffBody diff={diff} />
       <span className="sr-only">cols={colSpan}</span>
@@ -117,15 +116,15 @@ function DiffPane({
   return (
     <div
       data-tone={tone}
-      className="rounded-lg border border-border bg-background/40 p-2 data-[tone=new]:border-emerald-500/30 data-[tone=new]:bg-emerald-500/[0.06] data-[tone=old]:border-destructive/30 data-[tone=old]:bg-destructive/[0.06]"
+      className="rounded-md border border-border p-2 data-[tone=new]:bg-chip-green-bg data-[tone=old]:bg-chip-red-bg"
     >
       <div
         data-tone={tone}
-        className="mb-1 font-mono text-[0.56rem] uppercase tracking-[0.14em] text-muted-foreground data-[tone=new]:text-emerald-500 data-[tone=old]:text-destructive"
+        className="eyebrow mb-1 data-[tone=new]:text-success-text data-[tone=old]:text-danger-text"
       >
         {label}
       </div>
-      <pre className="max-h-[180px] overflow-auto whitespace-pre-wrap break-all font-mono text-[0.72rem] leading-[1.5] text-foreground">
+      <pre className="max-h-[180px] overflow-auto whitespace-pre-wrap break-all font-mono text-2xs leading-[1.5] text-foreground">
         {data ? JSON.stringify(data, null, 2) : "—"}
       </pre>
     </div>

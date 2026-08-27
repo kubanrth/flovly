@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Check, X } from "lucide-react";
+import { IconCheck, IconChevronDown, IconClose } from "@/components/ui/icons";
+import { Chip } from "@/components/ui/chip";
 import { moveDealAction } from "@/app/(app)/w/[workspaceId]/sales/actions";
 
 /**
@@ -67,7 +68,7 @@ export function DealMobileActions({
         // safe-area-inset-bottom (iPhone) — content row dostaje 12px padding
         // + dodatkowy env padding pod nim. Z-index 30 nad standardowym
         // contentem, pod stagepicker overlay'em (z-40).
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card md:hidden"
         style={{
           paddingBottom: "max(12px, env(safe-area-inset-bottom))",
         }}
@@ -77,17 +78,17 @@ export function DealMobileActions({
             type="button"
             onClick={() => setStagePickerOpen(true)}
             disabled={pending}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-3 text-[0.86rem] font-semibold transition-colors active:bg-accent disabled:opacity-60"
+            className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-md border border-border bg-card px-3 text-sm font-medium outline-none active:bg-n-100 disabled:text-n-400"
           >
             <span
-              className="h-2 w-2 shrink-0 rounded-full"
+              className="size-2 shrink-0 rounded-full"
               style={{ background: currentStage?.colorHex ?? "var(--muted-foreground)" }}
               aria-hidden
             />
             <span className="truncate">
               {currentStage?.name ?? "Zmień stage"}
             </span>
-            <ChevronDown size={14} aria-hidden />
+            <IconChevronDown width={13} height={13} aria-hidden />
           </button>
           <button
             type="button"
@@ -95,9 +96,9 @@ export function DealMobileActions({
             disabled={!wonStage || pending || currentStageId === wonStage?.id}
             aria-label="Zamknij jako wygrane"
             title={wonStage ? "Zamknij jako wygrane" : "Brak etapu typu „wygrane” w workspace"}
-            className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-emerald-500 text-white shadow-sm transition-opacity active:opacity-80 disabled:opacity-40"
+            className="grid size-11 shrink-0 place-items-center rounded-md bg-success text-white outline-none active:opacity-80 disabled:bg-n-100 disabled:text-n-400"
           >
-            <Check size={18} strokeWidth={2.5} />
+            <IconCheck width={18} height={18} strokeWidth={2} />
           </button>
           <button
             type="button"
@@ -105,9 +106,9 @@ export function DealMobileActions({
             disabled={!lostStage || pending || currentStageId === lostStage?.id}
             aria-label="Zamknij jako przegrane"
             title={lostStage ? "Zamknij jako przegrane" : "Brak etapu typu „przegrane” w workspace"}
-            className="grid h-12 w-12 shrink-0 place-items-center rounded-lg bg-rose-500 text-white shadow-sm transition-opacity active:opacity-80 disabled:opacity-40"
+            className="grid size-11 shrink-0 place-items-center rounded-md bg-danger text-white outline-none active:opacity-80 disabled:bg-n-100 disabled:text-n-400"
           >
-            <X size={18} strokeWidth={2.5} />
+            <IconClose width={18} height={18} strokeWidth={2} />
           </button>
         </div>
       </div>
@@ -149,18 +150,14 @@ function StagePickerSheet({
         type="button"
         aria-label="Zamknij"
         onClick={onClose}
-        className="flex-1 bg-black/40"
+        className="flex-1 bg-scrim"
       />
       <div
-        className="rounded-t-2xl border-t border-border bg-popover shadow-[0_-20px_40px_-12px_rgba(0,0,0,0.4)]"
+        className="sheet-mobile-surface"
         style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
       >
-        <div className="flex justify-center pt-2.5">
-          <span className="h-1.5 w-10 rounded-full bg-border" aria-hidden />
-        </div>
-        <h3 className="px-4 pt-3 pb-2 font-display text-[1rem] font-semibold">
-          Zmień etap
-        </h3>
+        <span className="sheet-drag-handle" aria-hidden />
+        <h3 className="px-4 pt-3 pb-2 text-md font-semibold">Zmień etap</h3>
         <ul className="flex max-h-[60vh] flex-col gap-1 overflow-y-auto px-2 pb-2">
           {stages.map((s) => {
             const active = s.id === currentStageId;
@@ -170,30 +167,18 @@ function StagePickerSheet({
                   type="button"
                   onClick={() => onPick(s.id)}
                   disabled={pending || active}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition-colors active:bg-accent disabled:opacity-60 data-[active=true]:bg-accent/60"
+                  className="flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-left outline-none active:bg-n-100 disabled:text-n-400 data-[active=true]:bg-selected"
                   data-active={active ? "true" : "false"}
                 >
                   <span
-                    className="h-3 w-3 shrink-0 rounded-full"
+                    className="size-3 shrink-0 rounded-full"
                     style={{ background: s.colorHex }}
                     aria-hidden
                   />
-                  <span className="flex-1 truncate text-[0.94rem] font-medium">
-                    {s.name}
-                  </span>
-                  {s.closedKind === "won" && (
-                    <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-emerald-600">
-                      wygrane
-                    </span>
-                  )}
-                  {s.closedKind === "lost" && (
-                    <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-rose-600">
-                      przegrane
-                    </span>
-                  )}
-                  {active && (
-                    <Check size={14} className="shrink-0 text-primary" aria-hidden />
-                  )}
+                  <span className="flex-1 truncate text-sm font-medium">{s.name}</span>
+                  {s.closedKind === "won" && <Chip hue="green" size="sm">wygrane</Chip>}
+                  {s.closedKind === "lost" && <Chip hue="red" size="sm">przegrane</Chip>}
+                  {active && <IconCheck width={14} height={14} className="shrink-0 text-orange-700" aria-hidden />}
                 </button>
               </li>
             );

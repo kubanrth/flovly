@@ -1,14 +1,18 @@
 "use client";
 
 import { useActionState, startTransition, useId, useMemo, useState } from "react";
-import { Bell, Check } from "lucide-react";
 import {
   createDealAction,
   updateDealAction,
   type DealFormState,
 } from "@/app/(app)/w/[workspaceId]/sales/actions";
 import { RichTextEditor, type RichTextDoc } from "@/components/task/rich-text-editor";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { IconReminders } from "@/components/ui/icons";
+import { Input, Textarea } from "@/components/ui/input";
 import {
   SearchableDropdown,
   type SearchableDropdownOption,
@@ -119,7 +123,7 @@ export function DealForm({
         label: s.name,
         leading: (
           <span
-            className="grid h-3 w-3 shrink-0 place-items-center rounded-full"
+            className="size-3 shrink-0 rounded-full"
             style={{ background: s.colorHex }}
           />
         ),
@@ -130,27 +134,13 @@ export function DealForm({
   const ownerOptions = useMemo<SearchableDropdownOption[]>(
     () =>
       members.map((m) => {
-        const display = m.name ?? m.email.split("@")[0];
-        const initials = (m.name ?? m.email).slice(0, 2).toUpperCase();
+        const display = m.name ?? m.email.split("@")[0]!;
         return {
           id: m.id,
           label: display,
           sublabel: m.email,
           searchText: `${m.name ?? ""} ${m.email}`,
-          leading: (
-            <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.55rem] font-bold text-white">
-              {m.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={m.avatarUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                initials
-              )}
-            </span>
-          ),
+          leading: <Avatar name={display} src={m.avatarUrl} size={22} />,
         };
       }),
     [members],
@@ -170,11 +160,11 @@ export function DealForm({
   return (
     <form
       action={(fd) => startTransition(() => formAction(fd))}
-      className="flex flex-col gap-6"
+      className="flex flex-col gap-4"
     >
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <label htmlFor={titleId} className="eyebrow">Tytuł deala *</label>
-        <input
+        <Input
           id={titleId}
           name="title"
           required
@@ -182,48 +172,36 @@ export function DealForm({
           autoFocus
           defaultValue={initial?.title ?? ""}
           placeholder="np. Wdrożenie systemu CRM dla XYZ Sp. z o.o."
-          aria-invalid={!!fieldErrors?.title}
-          className="h-10 rounded-md border border-border bg-background px-3 text-[0.95rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
+          error={fieldErrors?.title}
         />
-        {fieldErrors?.title && (
-          <span className="font-mono text-[0.66rem] text-destructive">
-            {fieldErrors.title}
-          </span>
-        )}
       </div>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-        <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="flex flex-col gap-1.5">
           <label htmlFor={valueId} className="eyebrow">Wartość</label>
-          <input
+          <Input
             id={valueId}
             name="valueAmount"
             inputMode="decimal"
             defaultValue={initial?.valueAmount != null ? String(initial.valueAmount) : ""}
             placeholder="0,00"
-            className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="font-mono"
           />
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           <label htmlFor={currencyId} className="eyebrow">Waluta</label>
-          <input
+          <Input
             id={currencyId}
             name="valueCurrency"
             maxLength={6}
             defaultValue={initial?.valueCurrency ?? "PLN"}
             placeholder="PLN"
-            className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] uppercase outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="font-mono uppercase"
           />
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           <label htmlFor={closeDateId} className="eyebrow">Planowane zamknięcie</label>
-          <input
-            id={closeDateId}
-            name="expectedCloseAt"
-            type="date"
-            defaultValue={dateValue}
-            className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
-          />
+          <Input id={closeDateId} name="expectedCloseAt" type="date" defaultValue={dateValue} />
         </div>
       </div>
 
@@ -235,14 +213,12 @@ export function DealForm({
           i user nie miał feedback'u że coś zostało zapisane.
           Cron /api/cron/send-reminders co 15 min skanuje gdy reminderAt < now
           i reminderSentAt = null. Re-arming czyści reminderSentAt. */}
-      <div className="flex flex-col gap-4 rounded-xl border border-primary/40 bg-primary/5 p-5">
-        <div className="flex items-baseline gap-2">
-          <Bell size={13} className="text-primary" />
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-canvas p-4">
+        <div className="flex items-center gap-2">
+          <IconReminders width={14} height={14} className="text-muted-foreground" />
           <span className="eyebrow">Przypomnienie email</span>
           {initial?.reminderAt && (
-            <span className="ml-auto inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 font-mono text-[0.58rem] uppercase tracking-[0.12em] text-emerald-700">
-              <Check size={9} /> ustawione
-            </span>
+            <Chip hue="green" dot size="sm" className="ml-auto">Ustawione</Chip>
           )}
         </div>
 
@@ -258,23 +234,23 @@ export function DealForm({
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor={reminderNoteId} className="eyebrow">Treść (opcjonalna)</label>
-          <textarea
+          <Textarea
             id={reminderNoteId}
             name="reminderNote"
             defaultValue={initial?.reminderNote ?? ""}
             maxLength={500}
             rows={3}
             placeholder='Co Ci ma się przypomnieć? np. „zadzwonić w sprawie umowy"…'
-            className="min-h-[80px] resize-y rounded-md border border-border bg-background p-2.5 text-[0.88rem] leading-[1.55] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="min-h-20 resize-y"
           />
-          <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground/70">
-            wkleja się w mailu jako blockquote pod tytułem deal&apos;a
+          <span className="text-xs text-muted-foreground">
+            Wkleja się w mailu jako cytat pod tytułem deala.
           </span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-        <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="flex flex-col gap-1.5">
           <span className="eyebrow">Etap *</span>
           <SearchableDropdown
             name="stageId"
@@ -287,14 +263,10 @@ export function DealForm({
             ariaLabel="Etap dealu"
             invalid={!!fieldErrors?.stageId}
           />
-          {fieldErrors?.stageId && (
-            <span className="font-mono text-[0.66rem] text-destructive">
-              {fieldErrors.stageId}
-            </span>
-          )}
+          {fieldErrors?.stageId && <span className="text-xs text-danger-text">{fieldErrors.stageId}</span>}
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           <span className="eyebrow">Opiekun</span>
           <SearchableDropdown
             name="ownerId"
@@ -308,7 +280,7 @@ export function DealForm({
           />
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           <span className="eyebrow">Kontakt / klient</span>
           <SearchableDropdown
             name="contactId"
@@ -323,7 +295,7 @@ export function DealForm({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <span className="eyebrow">Notatki</span>
         <RichTextEditor
           name="notesJson"
@@ -334,24 +306,20 @@ export function DealForm({
       </div>
 
       {formError && (
-        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-[0.88rem] text-destructive">
+        <p role="alert" className="rounded-md border border-border bg-chip-red-bg px-3 py-2 text-sm text-danger-text">
           {formError}
-        </div>
+        </p>
       )}
       {flash && (
-        <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[0.88rem] text-emerald-700">
+        <p role="status" className="rounded-md border border-border bg-chip-green-bg px-3 py-2 text-sm text-success-text">
           {flash}
-        </div>
+        </p>
       )}
 
-      <div className="flex items-center justify-end gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex h-10 items-center rounded-lg bg-primary px-5 font-sans text-[0.9rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-        >
+      <div className="flex items-center justify-end">
+        <Button type="submit" size="lg" loading={pending} disabled={pending}>
           {pending ? "Zapisuję…" : isEdit ? "Zapisz" : "Utwórz deal"}
-        </button>
+        </Button>
       </div>
     </form>
   );

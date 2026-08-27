@@ -2,16 +2,6 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/admin-guard";
 import {
-  Ban,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  ShieldCheck,
-  ShieldOff,
-  Trash2,
-  UserCheck,
-} from "lucide-react";
-import {
   softDeleteUserAction,
   toggleSuperAdminAction,
   toggleUserBanAction,
@@ -19,14 +9,21 @@ import {
 import { plPlural } from "@/lib/pluralize";
 import { CreateUserDialog } from "@/components/admin/create-user-dialog";
 import { ResetPasswordDialog } from "@/components/admin/reset-password-dialog";
+import { ConfirmSubmit } from "@/components/admin/confirm-submit";
 import {
   UsersBulkBar,
   UsersRowCheckbox,
   UsersSelectAllCheckbox,
   UsersSelectionProvider,
 } from "@/components/admin/users-bulk-actions";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import { DataFooter, DataTable, DataTd, DataTh, DataThead, DataTr } from "@/components/ui/data-table";
+import { IconChevronLeft, IconChevronRight, IconSearch, IconShieldCheck, IconTrash } from "@/components/ui/icons";
+import { InputGroup } from "@/components/ui/input";
 
-// Pagination: 50 rows/page. >50 users hits the pager footer; ≤50 stays single-page.
+// Paginacja: 50 wierszy na stronę.
 const PAGE_SIZE = 50;
 
 async function loadUsers(query: string, limit: number, offset: number) {
@@ -46,11 +43,7 @@ async function loadUsers(query: string, limit: number, offset: number) {
       take: limit,
       skip: offset,
       include: {
-        _count: {
-          select: {
-            memberships: { where: { workspace: { deletedAt: null } } },
-          },
-        },
+        _count: { select: { memberships: { where: { workspace: { deletedAt: null } } } } },
       },
     }),
     db.user.count({ where }),
@@ -77,132 +70,92 @@ export default async function AdminUsersPage({
   const selectableIds = users.filter((u) => u.id !== admin.userId).map((u) => u.id);
 
   return (
-    <main className="flex-1 px-4 py-6 md:px-14 md:py-14">
-      <div className="mx-auto flex max-w-6xl flex-col gap-5 md:gap-6">
-        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end md:justify-between md:gap-4">
-          <div className="flex flex-col gap-2">
-            <span className="eyebrow">Użytkownicy</span>
-            <h1 className="font-display text-[1.5rem] font-bold leading-[1.1] tracking-[-0.03em] md:text-[2rem]">
-              {total} {plPlural(total, "konto", "konta", "kont")}
-            </h1>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <form action="/admin/users" className="flex items-center gap-2">
-              <input
-                name="q"
-                type="search"
-                defaultValue={query}
-                placeholder="szukaj po email / imię…"
-                className="h-9 w-full rounded-md border border-border bg-card px-3 text-[0.88rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:w-[260px]"
-              />
-              <button
-                type="submit"
-                className="inline-flex h-9 shrink-0 items-center rounded-md border border-border bg-card px-3 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Szukaj
-              </button>
-            </form>
-            <CreateUserDialog />
-          </div>
-        </div>
-
-        <UsersSelectionProvider allIds={selectableIds}>
-          <div className="overflow-hidden rounded-xl border border-border bg-card">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[680px] text-left">
-                <thead className="border-b border-border bg-muted/50">
-                  <tr className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                    <th className="w-[28px] px-3 py-2">
-                      <UsersSelectAllCheckbox />
-                    </th>
-                    <th className="px-4 py-2">Użytkownik</th>
-                    <th className="px-4 py-2">Rola</th>
-                    <th className="px-4 py-2">Przestrzenie</th>
-                    <th className="px-4 py-2">Ostatnio</th>
-                    <th className="px-4 py-2">Status</th>
-                    <th className="px-4 py-2 text-right">Akcje</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((u) => (
-                    <UserRow key={u.id} user={u} isSelf={u.id === admin.userId} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {users.length === 0 && (
-              <p className="px-4 py-8 text-center text-[0.88rem] text-muted-foreground">
-                {query ? "Brak dopasowań." : "Brak użytkowników."}
-              </p>
-            )}
-          </div>
-
-          {total > PAGE_SIZE && (
-            <Pager
-              page={pageNum}
-              totalPages={totalPages}
-              total={total}
-              query={query}
-              shown={users.length}
-              offset={offset}
-            />
-          )}
-
-          {/* Sticky bulk-action bar — appears only with ≥1 row selected. */}
-          <UsersBulkBar />
-        </UsersSelectionProvider>
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2.5">
+        <h1 className="text-xl font-semibold tracking-[-0.3px]">Użytkownicy</h1>
+        <span className="font-mono text-xs text-muted-foreground">
+          {total} {plPlural(total, "konto", "konta", "kont")}
+        </span>
+        <span className="flex-1" />
+        <form action="/admin/users" className="flex items-center gap-2">
+          <InputGroup
+            name="q"
+            type="search"
+            defaultValue={query}
+            placeholder="Szukaj po e-mailu lub imieniu…"
+            aria-label="Szukaj użytkownika"
+            leading={<IconSearch width={13} height={13} />}
+            className="md:w-[260px]"
+          />
+          <Button type="submit" variant="secondary">
+            Szukaj
+          </Button>
+        </form>
+        <CreateUserDialog />
       </div>
-    </main>
+
+      <UsersSelectionProvider allIds={selectableIds}>
+        <DataTable
+          className="[--row-h:44px]"
+          footer={
+            <DataFooter>
+              {total === 0 ? 0 : offset + 1}–{offset + users.length} z {total}
+            </DataFooter>
+          }
+        >
+          <DataThead>
+            <tr>
+              <DataTh width={36} aria-label="Zaznacz">
+                <UsersSelectAllCheckbox />
+              </DataTh>
+              <DataTh>Użytkownik</DataTh>
+              <DataTh width={140}>Rola</DataTh>
+              <DataTh width={120} align="right">Przestrzenie</DataTh>
+              <DataTh width={130}>Ostatnio</DataTh>
+              <DataTh width={130}>Status</DataTh>
+              <DataTh width={140} align="right">Akcje</DataTh>
+            </tr>
+          </DataThead>
+          <tbody>
+            {users.map((u) => (
+              <UserTableRow key={u.id} user={u} isSelf={u.id === admin.userId} />
+            ))}
+            {users.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-2.5 py-10 text-center text-sm text-muted-foreground">
+                  {query ? "Brak dopasowań." : "Brak użytkowników."}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </DataTable>
+
+        {total > PAGE_SIZE && <Pager page={pageNum} totalPages={totalPages} query={query} />}
+
+        {/* Pasek akcji zbiorczych — widoczny dopiero przy ≥1 zaznaczeniu. */}
+        <UsersBulkBar />
+      </UsersSelectionProvider>
+    </div>
   );
 }
 
-function Pager({
-  page,
-  totalPages,
-  total,
-  query,
-  shown,
-  offset,
-}: {
-  page: number;
-  totalPages: number;
-  total: number;
-  query: string;
-  shown: number;
-  offset: number;
-}) {
+function Pager({ page, totalPages, query }: { page: number; totalPages: number; query: string }) {
   const qParam = query ? `&q=${encodeURIComponent(query)}` : "";
-  const prevDisabled = page <= 1;
-  const nextDisabled = page >= totalPages;
-  const from = total === 0 ? 0 : offset + 1;
-  const to = offset + shown;
   return (
-    <nav
-      aria-label="Strony"
-      className="flex flex-wrap items-center justify-between gap-2 text-[0.78rem] text-muted-foreground"
-    >
-      <span className="font-mono text-[0.66rem] uppercase tracking-[0.12em]">
-        {from}–{to} z {total}
+    <nav aria-label="Strony" className="flex items-center justify-end gap-1">
+      <PagerLink disabled={page <= 1} href={`/admin/users?page=${page - 1}${qParam}`} label="Poprzednia strona">
+        <IconChevronLeft width={14} height={14} />
+      </PagerLink>
+      <span className="px-2 font-mono text-2xs text-muted-foreground">
+        {page} / {totalPages}
       </span>
-      <div className="flex items-center gap-1">
-        <PagerLink
-          disabled={prevDisabled}
-          href={`/admin/users?page=${page - 1}${qParam}`}
-          aria-label="Poprzednia"
-        >
-          <ChevronLeft size={13} />
-        </PagerLink>
-        <span className="px-2 font-mono text-[0.66rem] uppercase tracking-[0.12em]">
-          {page} / {totalPages}
-        </span>
-        <PagerLink
-          disabled={nextDisabled}
-          href={`/admin/users?page=${page + 1}${qParam}`}
-          aria-label="Następna"
-        >
-          <ChevronRight size={13} />
-        </PagerLink>
-      </div>
+      <PagerLink
+        disabled={page >= totalPages}
+        href={`/admin/users?page=${page + 1}${qParam}`}
+        label="Następna strona"
+      >
+        <IconChevronRight width={14} height={14} />
+      </PagerLink>
     </nav>
   );
 }
@@ -210,149 +163,132 @@ function Pager({
 function PagerLink({
   disabled,
   href,
+  label,
   children,
-  ...rest
 }: {
   disabled: boolean;
   href: string;
+  label: string;
   children: React.ReactNode;
-} & React.AriaAttributes) {
-  if (disabled)
+}) {
+  if (disabled) {
     return (
-      <span
-        aria-disabled
-        {...rest}
-        className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground/40"
-      >
+      <span aria-label={label} aria-disabled className="grid size-7 place-items-center rounded-md text-n-400">
         {children}
       </span>
     );
+  }
   return (
     <Link
       href={href}
-      {...rest}
-      className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+      aria-label={label}
+      className="grid size-7 place-items-center rounded-md text-muted-foreground outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
     >
       {children}
     </Link>
   );
 }
 
-function UserRow({ user, isSelf }: { user: UserRow; isSelf: boolean }) {
-  const initials = (user.name ?? user.email).slice(0, 2).toUpperCase();
+function UserTableRow({ user, isSelf }: { user: UserRow; isSelf: boolean }) {
   const isDeleted = !!user.deletedAt;
+  const displayName = user.name ?? user.email.split("@")[0]!;
 
   return (
-    <tr
-      data-deleted={isDeleted ? "true" : "false"}
-      className="border-b border-border last:border-b-0 data-[deleted=true]:opacity-60"
-    >
-      <td className="px-3 py-3">
-        {!isSelf && !isDeleted && <UsersRowCheckbox id={user.id} />}
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-3">
-          <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.68rem] font-bold text-white">
-            {user.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.avatarUrl} alt="" width={32} height={32} className="h-full w-full object-cover" />
-            ) : (
-              initials
-            )}
+    <DataTr className={isDeleted ? "opacity-60" : undefined}>
+      <DataTd>{!isSelf && !isDeleted && <UsersRowCheckbox id={user.id} />}</DataTd>
+      <DataTd>
+        <span className="flex items-center gap-2.5">
+          <Avatar name={displayName} src={user.avatarUrl} size={24} />
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span className="truncate text-sm font-medium">{displayName}</span>
+            <span className="truncate font-mono text-2xs text-fg-3">{user.email}</span>
           </span>
-          <div className="flex min-w-0 flex-col">
-            <span className="truncate text-[0.88rem] font-medium">
-              {user.name ?? user.email.split("@")[0]}
-            </span>
-            <span className="truncate font-mono text-[0.64rem] uppercase tracking-[0.12em] text-muted-foreground">
-              {user.email}
-            </span>
-          </div>
-        </div>
-      </td>
-      <td className="px-4 py-3">
+        </span>
+      </DataTd>
+      <DataTd>
         {user.isSuperAdmin ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-primary">
-            <ShieldCheck size={10} /> Super admin
-          </span>
+          <Chip hue="orange" size="sm">Super admin</Chip>
         ) : (
-          <span className="font-mono text-[0.64rem] uppercase tracking-[0.14em] text-muted-foreground">
-            Member
-          </span>
+          <span className="text-xs text-muted-foreground">Member</span>
         )}
-      </td>
-      <td className="px-4 py-3 font-mono text-[0.78rem]">{user._count.memberships}</td>
-      <td className="px-4 py-3 font-mono text-[0.7rem] uppercase tracking-[0.12em] text-muted-foreground">
+      </DataTd>
+      <DataTd align="right" className="font-mono text-xs">{user._count.memberships}</DataTd>
+      <DataTd className="font-mono text-2xs text-muted-foreground">
         {user.lastSeenAt ? formatAgo(user.lastSeenAt) : "—"}
-      </td>
-      <td className="px-4 py-3">
+      </DataTd>
+      <DataTd>
         {isDeleted ? (
-          <span className="inline-flex items-center gap-1 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-destructive">
-            <Trash2 size={10} /> Usunięty
-          </span>
+          <Chip hue="red" size="sm">Usunięty</Chip>
         ) : user.isBanned ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-destructive">
-            <Ban size={10} /> Zbanowany
-          </span>
+          <Chip hue="red" dot size="sm">Zbanowany</Chip>
         ) : (
-          <span className="inline-flex items-center gap-1 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-            <Check size={10} /> Aktywny
-          </span>
+          <Chip hue="green" dot size="sm">Aktywny</Chip>
         )}
-      </td>
-      <td className="px-4 py-3">
+      </DataTd>
+      <DataTd align="right">
         {isSelf ? (
-          <span className="block text-right font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-            to Ty
-          </span>
+          <span className="text-xs text-muted-foreground">to Ty</span>
         ) : (
-          <div className="flex items-center justify-end gap-1">
-            {!isDeleted && (
-              <ResetPasswordDialog userId={user.id} email={user.email} />
-            )}
+          <span className="flex items-center justify-end gap-0.5">
+            {!isDeleted && <ResetPasswordDialog userId={user.id} email={user.email} />}
             {!isDeleted && (
               <form action={toggleSuperAdminAction} className="m-0">
                 <input type="hidden" name="id" value={user.id} />
-                <button
-                  type="submit"
-                  className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                  aria-label={user.isSuperAdmin ? "Odbierz super admin" : "Nadaj super admin"}
-                  title={user.isSuperAdmin ? "Odbierz super admin" : "Nadaj super admin"}
+                <ConfirmSubmit
+                  label={user.isSuperAdmin ? "Odbierz super admin" : "Nadaj super admin"}
+                  confirmMessage={
+                    user.isSuperAdmin
+                      ? `Odebrać uprawnienia super admina użytkownikowi ${user.email}?`
+                      : `Nadać uprawnienia super admina użytkownikowi ${user.email}?`
+                  }
                 >
-                  {user.isSuperAdmin ? <ShieldOff size={13} /> : <ShieldCheck size={13} />}
-                </button>
+                  <IconShieldCheck width={14} height={14} />
+                </ConfirmSubmit>
               </form>
             )}
             {!isDeleted && (
               <form action={toggleUserBanAction} className="m-0">
                 <input type="hidden" name="id" value={user.id} />
-                <button
-                  type="submit"
-                  className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                  aria-label={user.isBanned ? "Odbanuj" : "Zbanuj"}
-                  title={user.isBanned ? "Odbanuj" : "Zbanuj"}
+                <ConfirmSubmit
+                  label={user.isBanned ? "Odbanuj" : "Zbanuj"}
+                  confirmMessage={
+                    user.isBanned ? `Odbanować ${user.email}?` : `Zbanować ${user.email}?`
+                  }
                 >
-                  {user.isBanned ? <UserCheck size={13} /> : <Ban size={13} />}
-                </button>
+                  <BanGlyph banned={user.isBanned} />
+                </ConfirmSubmit>
               </form>
             )}
             {!isDeleted && (
               <form action={softDeleteUserAction} className="m-0">
                 <input type="hidden" name="id" value={user.id} />
-                <button
-                  type="submit"
-                  className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                  aria-label="Usuń"
-                  title="Usuń"
+                <ConfirmSubmit
+                  label="Usuń użytkownika"
+                  destructive
+                  confirmMessage={`Usunąć konto ${user.email}? Operacja jest miękka, ale użytkownik traci dostęp.`}
                 >
-                  <Trash2 size={13} />
-                </button>
+                  <IconTrash width={14} height={14} />
+                </ConfirmSubmit>
               </form>
             )}
-          </div>
+          </span>
         )}
-      </td>
-    </tr>
+      </DataTd>
+    </DataTr>
+  );
+}
+
+// Zakaz/odblokowanie: kółko z ukośnikiem albo bez — `icons.tsx` nie ma bana.
+function BanGlyph({ banned }: { banned: boolean }) {
+  return (
+    <svg width={14} height={14} viewBox="0 0 16 16" fill="none" aria-hidden>
+      <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.5" />
+      {banned ? (
+        <path d="M5.5 8.2l1.8 1.8 3.2-3.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      ) : (
+        <path d="M4.2 11.8l7.6-7.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      )}
+    </svg>
   );
 }
 

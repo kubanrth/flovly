@@ -4,7 +4,6 @@
 // Each row shows: monospace key + human description + "last changed by" meta
 // + toggle (rendered by the client child).
 
-import { Flag } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/admin-guard";
 import { SystemFlagsToggle } from "@/components/admin/system-flags-toggle";
@@ -76,27 +75,19 @@ export default async function AdminFlagsPage() {
   const flags = await loadFlags();
 
   return (
-    <main className="flex-1 px-4 py-6 md:px-14 md:py-14">
-      <div className="mx-auto flex max-w-3xl flex-col gap-5 md:gap-6">
-        <div className="flex flex-col gap-2">
-          <span className="eyebrow inline-flex items-center gap-1.5">
-            <Flag size={11} /> Flagi systemowe
-          </span>
-          <h1 className="font-display text-[1.5rem] font-bold leading-[1.1] tracking-[-0.03em] md:text-[2rem]">
-            Kill switches
-          </h1>
-          <p className="text-[0.84rem] text-muted-foreground md:text-[0.88rem]">
-            Globalne przełączniki funkcji aplikacji. Zmiany wchodzą natychmiast i
-            są logowane w audycie admina.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-3 md:p-4">
-          {flags.map((flag) => (
-            <SystemFlagsToggle key={flag.key} flag={flag} />
-          ))}
-        </div>
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2.5">
+        <h1 className="text-xl font-semibold tracking-[-0.3px]">Flagi systemowe</h1>
+        <span className="max-w-[70ch] text-xs text-muted-foreground">
+          Globalne przełączniki funkcji. Zmiany wchodzą natychmiast i trafiają do logu akcji admina.
+        </span>
       </div>
-    </main>
+
+      <div className="flex max-w-[720px] flex-col gap-1.5 rounded-lg border border-border bg-canvas p-2">
+        {flags.map((flag) => (
+          <SystemFlagsToggle key={flag.key} flag={flag} />
+        ))}
+      </div>
+    </div>
   );
 }

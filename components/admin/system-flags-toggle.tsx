@@ -1,15 +1,21 @@
 "use client";
 
-// Per-row client toggle for /admin/flags.
+// Wiersz flagi systemowej na /admin/flags.
 //
-// Autosave on flip — UX matches the rest of the admin panel (no "Save" buttons
-// for single-field toggles). The destructive flag (`kill_switch_writes`)
-// shows a confirm dialog before turning ON, because flipping it blocks all
-// app writes globally and lacks a graceful rollback flow.
+// Zapis od razu po przełączeniu (bez przycisku „Zapisz"). Flaga destrukcyjna
+// (`kill_switch_writes`) wymaga potwierdzenia przy WŁĄCZANIU — blokuje wszystkie
+// zapisy w aplikacji; wyłączenie zostaje jednoklikowe, żeby zdjęcie blokady
+// w trakcie incydentu było natychmiastowe.
 
-import { AlertTriangle, Check, Loader2, X } from "lucide-react";
 import { startTransition, useState } from "react";
 import { updateSystemFlagAction } from "@/app/(admin)/admin/flags/actions";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { IconCheck, IconClose, IconWarning } from "@/components/ui/icons";
+import { Spinner } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
 interface FlagRow {
   key: string;
@@ -24,8 +30,7 @@ interface FlagRow {
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 export function SystemFlagsToggle({ flag }: { flag: FlagRow }) {
-  // Optimistic local state — flips immediately so the user sees feedback.
-  // Reverts on server error.
+  // Stan optymistyczny — cofa się, gdy serwer odmówi.
   const [checked, setChecked] = useState(flag.value);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -45,15 +50,11 @@ export function SystemFlagsToggle({ flag }: { flag: FlagRow }) {
         return;
       }
       setSaveState("saved");
-      // Fade the "saved" indicator after a beat so it doesn't linger.
       setTimeout(() => setSaveState("idle"), 1400);
     });
   };
 
   const onToggle = () => {
-    // Destructive flag — flipping ON requires confirmation. Flipping OFF
-    // (recovery) is intentionally one-click so admins can lift a kill switch
-    // fast in incident response.
     if (flag.destructive && !checked) {
       setConfirmOpen(true);
       return;
@@ -64,26 +65,24 @@ export function SystemFlagsToggle({ flag }: { flag: FlagRow }) {
   return (
     <>
       <div
-        data-destructive={flag.destructive ? "true" : "false"}
-        className="flex items-center gap-3 rounded-xl border border-border bg-background/40 p-3 transition-colors hover:border-border/80 data-[destructive=true]:border-destructive/30"
+        className={cn(
+          "flex items-center gap-3 rounded-md border border-border bg-card p-3",
+          flag.destructive && "border-chip-red-fg/30",
+        )}
       >
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <div className="flex items-center gap-2">
-            <code className="truncate font-mono text-[0.78rem] font-semibold text-foreground">
-              {flag.key}
-            </code>
+            <code className="truncate font-mono text-xs font-semibold">{flag.key}</code>
             {flag.destructive && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-destructive/12 px-1.5 py-0.5 font-mono text-[0.56rem] font-bold uppercase tracking-[0.14em] text-destructive">
-                <AlertTriangle size={9} /> destrukt.
-              </span>
+              <Chip hue="red" size="sm">destrukcyjna</Chip>
             )}
           </div>
-          <p className="text-[0.8rem] text-muted-foreground">{flag.description}</p>
+          <p className="text-xs text-muted-foreground">{flag.description}</p>
           {(flag.lastChangedAt || flag.lastChangedBy) && (
-            <p className="mt-1 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground/70">
+            <p className="font-mono text-2xs text-fg-3">
               ostatnio:{" "}
               {flag.lastChangedBy
-                ? flag.lastChangedBy.name ?? flag.lastChangedBy.email.split("@")[0]
+                ? (flag.lastChangedBy.name ?? flag.lastChangedBy.email.split("@")[0])
                 : "—"}
               {flag.lastChangedAt && (
                 <>
@@ -98,134 +97,58 @@ export function SystemFlagsToggle({ flag }: { flag: FlagRow }) {
               )}
             </p>
           )}
-          {error && (
-            <p className="mt-1 text-[0.72rem] text-destructive">{error}</p>
-          )}
+          {error && <p className="text-xs text-danger-text">{error}</p>}
         </div>
 
         <div className="flex items-center gap-2">
           <SaveIndicator state={saveState} />
-          <Toggle
+          <Switch
             checked={checked}
             disabled={saveState === "saving"}
-            onChange={onToggle}
-            destructive={flag.destructive}
-            label={flag.label}
+            onCheckedChange={onToggle}
+            aria-label={flag.label}
           />
         </div>
       </div>
 
-      {confirmOpen && (
-        <ConfirmKillSwitch
-          flagKey={flag.key}
-          onCancel={() => setConfirmOpen(false)}
-          onConfirm={() => {
-            setConfirmOpen(false);
-            commit(true);
-          }}
-        />
-      )}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent size="sm">
+          <DialogHeader>
+            <DialogTitle>Włączyć kill switch?</DialogTitle>
+          </DialogHeader>
+          <DialogBody className="flex gap-3">
+            <span className="grid size-8 shrink-0 place-items-center rounded-md bg-chip-red-bg text-danger-text" aria-hidden>
+              <IconWarning width={16} height={16} />
+            </span>
+            <p className="text-sm text-muted-foreground">
+              Flaga <code className="rounded-sm bg-n-100 px-1.5 py-0.5 font-mono text-xs">{flag.key}</code>{" "}
+              zablokuje wszystkie operacje zapisu w aplikacji dla każdego użytkownika. Wyłączyć
+              będzie ją można tylko z tego ekranu. Włączaj wyłącznie w reakcji na incydent.
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
+              Anuluj
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                setConfirmOpen(false);
+                commit(true);
+              }}
+            >
+              <IconWarning width={14} height={14} /> Włącz kill switch
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
 
 function SaveIndicator({ state }: { state: SaveState }) {
-  if (state === "saving")
-    return <Loader2 size={13} className="animate-spin text-muted-foreground" />;
-  if (state === "saved")
-    return <Check size={13} className="text-emerald-500" aria-label="Zapisano" />;
-  if (state === "error")
-    return <X size={13} className="text-destructive" aria-label="Błąd zapisu" />;
+  if (state === "saving") return <Spinner className="text-muted-foreground" />;
+  if (state === "saved") return <IconCheck width={13} height={13} className="text-success-text" aria-label="Zapisano" />;
+  if (state === "error") return <IconClose width={13} height={13} className="text-danger-text" aria-label="Błąd zapisu" />;
   return null;
-}
-
-// Inline switch primitive — we don't have shadcn/ui Switch yet and adding the
-// full Radix dep just for this row would be overkill. Track grows pill-style,
-// knob slides via translate-x (transform-only animation — guardrail).
-function Toggle({
-  checked,
-  disabled,
-  onChange,
-  destructive,
-  label,
-}: {
-  checked: boolean;
-  disabled?: boolean;
-  onChange: () => void;
-  destructive?: boolean;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      disabled={disabled}
-      onClick={onChange}
-      data-checked={checked ? "true" : "false"}
-      data-destructive={destructive ? "true" : "false"}
-      className="group relative inline-flex h-[24px] w-[42px] shrink-0 items-center rounded-full border border-border bg-muted/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 data-[checked=true]:bg-primary data-[checked=true]:data-[destructive=true]:bg-[linear-gradient(135deg,#F43F5E,#E04E00)] data-[checked=true]:border-transparent"
-    >
-      <span
-        aria-hidden
-        className="absolute left-[2px] inline-block h-[18px] w-[18px] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.3)] transition-transform duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] group-data-[checked=true]:translate-x-[18px]"
-      />
-    </button>
-  );
-}
-
-// Confirm dialog for `kill_switch_writes`. Inline modal pattern matches
-// ResetPasswordDialog (no shadcn Dialog wrapper needed; consistent w/ codebase).
-function ConfirmKillSwitch({
-  flagKey,
-  onCancel,
-  onConfirm,
-}: {
-  flagKey: string;
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4">
-      <div className="relative flex w-[min(440px,100%)] flex-col gap-4 rounded-2xl border border-destructive/40 bg-card p-6 shadow-[0_24px_48px_-12px_rgba(244,63,94,0.25)]">
-        <div className="flex items-start gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-destructive/12 text-destructive">
-            <AlertTriangle size={18} />
-          </span>
-          <div className="flex flex-col gap-1">
-            <h2 className="font-display text-[1.05rem] font-bold leading-tight tracking-[-0.01em]">
-              Włączyć kill switch?
-            </h2>
-            <p className="text-[0.82rem] text-muted-foreground">
-              Flaga{" "}
-              <code className="rounded-sm bg-muted px-1.5 py-0.5 font-mono text-[0.74rem]">
-                {flagKey}
-              </code>{" "}
-              zablokuje wszystkie operacje zapisu w aplikacji dla każdego user&apos;a.
-              Tylko Ty będziesz mógł ją wyłączyć z tego ekranu. Włączaj wyłącznie
-              jako reakcję na incydent.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-1 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="inline-flex h-9 items-center rounded-md border border-border bg-background px-3 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Anuluj
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-destructive px-3 font-sans text-[0.85rem] font-semibold text-destructive-foreground transition-opacity hover:opacity-90"
-          >
-            <AlertTriangle size={13} /> Włącz kill switch
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }

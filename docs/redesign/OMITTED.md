@@ -231,3 +231,63 @@ Stan po F1 (B4: nagłówek tablicy / tabsy / toolbar / dialog nowego widoku, 202
 - **Drzewo stron** — backend trzyma jedną stronę per przestrzeń, więc panel pokazuje jeden
   korzeń zamiast drzewa.
 - **Historia wersji** — brak wersjonowania (ta sama przyczyna co w B11 Opis).
+
+## F5 — E7 / E8 / whiteboardy / panel admina (B5)
+
+### E7 Plan sprzedaży
+- **„Wygrane Q<n>" liczy się po `expectedCloseAt`**, a gdy pole jest puste — po `updatedAt`.
+  `Deal` nie ma `closedAt` (D7), więc kafel nie zna prawdziwej daty wygranej. Ścieżka wyjścia:
+  kolumna `Deal.closedAt` ustawiana w `moveDealAction`.
+- **Kafel „Najbliższy krok" wchłonął moduł przypomnień** (F12-K70/K71): pierwszy wiersz na
+  kaflu, cała lista w popoverze. Makieta ma dokładnie trzy kafle, a osobna sekcja
+  „Nadchodzące przypomnienia" byłaby czwartym blokiem spoza makiety —
+  `components/sales/sales-reminders-tile.tsx` skasowany, funkcja została.
+- **„ważone: N tys." pod kaflem „W pipeline"** — wartość ważona wymaga „% szansy", która
+  jest pominięta.
+- **Zakładka „Prognoza"** (makieta pokazuje tylko „Pipeline") to tabela na wspólnym
+  `DataTable`: etap / liczba dealów / wartość / najbliższe zamknięcie. Bez prognozy
+  ważonej, z tego samego powodu co wyżej.
+- **Suma etapu przy wielu walutach** jest listą kwot rozdzieloną kropką („12 tys. zł ·
+  2 tys. EUR") — nie przeliczamy kursów.
+- **Mobile** (brak makiety) zostaje jednoetapowym widokiem ze swipem; drag&drop tylko na
+  desktopie.
+
+### E8 Creative Board
+- **Chip kategorii** — `CreativeBrief` nie ma kategorii, więc jedyny chip na karcie to status
+  (Szkic / W recenzji / Zatwierdzony / Zarchiwizowany). Podpis pod tytułem ekranu skrócony do
+  „pomysły zespołu" (bez „głosujcie kropkami"), stopka bez „głosowanie: kropki 3/os",
+  kafel przerywany bez „3 głosy na osobę".
+- **Segmenty** mapują cztery statusy na trzy zakładki: Najpopularniejsze = otwarte
+  (IN_REVIEW przed DRAFT, potem najświeższa zmiana), Najnowsze = otwarte wg daty utworzenia,
+  Zrealizowane = APPROVED + ARCHIVED. Reguła zaasertowana w
+  `components/briefs/brief-segments.check.ts`.
+- **Powiązanie pomysł → zadanie idzie po tytule.** „Zrób zadanie" tworzy zadanie o tytule
+  pomysłu (istniejące `createTaskAction`), a lista pokazuje „→ zadanie #ID" dla zadania
+  o dokładnie tym samym tytule. Schemat nie ma relacji brief↔task (D7), więc dwa obiekty
+  o identycznym tytule skleją się fałszywie. Ścieżka wyjścia: `CreativeBrief.taskId`.
+- **Zadanie ląduje na pierwszej tablicy przestrzeni** — `createTaskAction` wymaga `boardId`,
+  a makieta ma jeden przycisk bez wyboru tablicy. Brak tablic albo brak prawa `task.create`
+  → przycisk się nie pojawia.
+- **Opis na karcie** to tekst pierwszego akapitu dokumentu (nagłówki szablonu pomijane) —
+  `briefExcerpt` w `brief-segments.ts`.
+
+### Whiteboardy (AK170)
+- **Lista bez makiety (D5)** — przemalowana prymitywami: karty 3 kolumny, nazwa edytowana
+  w miejscu (`EditableTitle` → `renameCanvasAction`), usuwanie z potwierdzeniem, tworzenie
+  w popoverze. `components/canvas/new-canvas-form.tsx` i `delete-canvas-button.tsx`
+  skasowane — używała ich wyłącznie ta lista.
+
+### Panel admina (AK150)
+- **Tabele na wspólnym `DataTable`** (użytkownicy, przestrzenie, audyt, akcje admina,
+  backupy): nagłówek 32px sticky, wiersze 44px przez `[--row-h:44px]`.
+- **Audyt na wąskim ekranie** zostaje listą kart — sześć kolumn nie mieści się w 390px.
+- **Pasek filtrów obu logów** to jeden komponent (`components/admin/audit-filters.tsx`)
+  z natywnym `<select>` okresu: formularz jest bezskryptowym GET-em, a `Select` z base-ui
+  wymaga klienta.
+- **Nawigacja admina** scalona w `components/admin/admin-nav.tsx` (pasek + sheet);
+  `desktop-sidebar.tsx`, `admin-mobile-nav.tsx` i `admin-nav-item.tsx` skasowane.
+- **Dodane potwierdzenia** przy pojedynczych akcjach (ban/unban, super admin, usunięcie
+  konta, przywrócenie i trwałe skasowanie przestrzeni, backup wszystkich) —
+  `components/admin/confirm-submit.tsx`. Nic nie zostało poluzowane: `requireSuperAdmin()`
+  zostaje w layoucie, na każdej stronie i w każdej akcji.
+- **Zbiorczy reset haseł** dalej wyłączony (brak kanału dostarczenia hasła) — stan zastany.

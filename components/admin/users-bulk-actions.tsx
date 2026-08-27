@@ -11,17 +11,6 @@
 // only the checkboxes (small + dependency-light) and the action bar live here.
 
 import {
-  Ban,
-  Check,
-  ChevronsRight,
-  KeyRound,
-  Loader2,
-  Shield,
-  ShieldOff,
-  UserCheck,
-  X,
-} from "lucide-react";
-import {
   createContext,
   startTransition,
   useCallback,
@@ -31,14 +20,21 @@ import {
   type ReactNode,
 } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Spinner } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import {
+  IconCheck,
+  IconClose,
+  IconLock,
+  IconPasswords,
+  IconShield,
+  IconShieldCheck,
+} from "@/components/ui/icons";
 import {
   bulkSetSuperAdminAction,
   bulkToggleBanAction,
 } from "@/app/(admin)/admin/actions";
-import {
-  bulkUserActionResultZero,
-  type BulkActionResult,
-} from "@/app/(admin)/admin/types";
+import type { BulkActionResult } from "@/app/(admin)/admin/types";
 
 interface SelectionContextValue {
   selected: Set<string>;
@@ -173,17 +169,15 @@ export function UsersBulkBar() {
       <div
         role="status"
         aria-live="polite"
-        className="pointer-events-auto flex max-w-[min(720px,100%)] flex-wrap items-center gap-2 rounded-2xl border border-white/14 bg-card/95 px-3 py-2 shadow-[0_18px_40px_-16px_rgba(10,10,40,0.6)] md:gap-3 md:px-4 md:py-2.5"
+        data-ui="bulk-bar"
+        className="pointer-events-auto flex max-w-[min(720px,100%)] flex-wrap items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 shadow-e2 md:gap-3 md:px-4 md:py-2.5"
       >
-        <span className="inline-flex items-center gap-2 rounded-md bg-primary px-2 py-1 font-mono text-[0.66rem] font-bold uppercase tracking-[0.14em] text-white">
-          {selected.size}{" "}
-          <span className="font-sans normal-case tracking-normal">zaznaczono</span>
-        </span>
+        <Chip hue="orange" size="lg">{selected.size} zaznaczono</Chip>
 
         <Divider />
 
         <BulkButton
-          icon={<Ban size={13} />}
+          icon={<IconLock width={13} height={13} />}
           label="Zawieś"
           tone="warning"
           disabled={pending}
@@ -195,7 +189,7 @@ export function UsersBulkBar() {
           }
         />
         <BulkButton
-          icon={<UserCheck size={13} />}
+          icon={<IconCheck width={13} height={13} />}
           label="Odbanuj"
           disabled={pending}
           onClick={() => run((ids) => bulkToggleBanAction(ids, false))}
@@ -204,7 +198,7 @@ export function UsersBulkBar() {
         <Divider />
 
         <BulkButton
-          icon={<Shield size={13} />}
+          icon={<IconShieldCheck width={13} height={13} />}
           label="Nadaj admina"
           disabled={pending}
           onClick={() =>
@@ -215,7 +209,7 @@ export function UsersBulkBar() {
           }
         />
         <BulkButton
-          icon={<ShieldOff size={13} />}
+          icon={<IconShield width={13} height={13} />}
           label="Odbierz admina"
           disabled={pending}
           onClick={() => run((ids) => bulkSetSuperAdminAction(ids, false))}
@@ -224,7 +218,7 @@ export function UsersBulkBar() {
         <Divider />
 
         <BulkButton
-          icon={<KeyRound size={13} />}
+          icon={<IconPasswords width={13} height={13} />}
           label="Reset hasła"
           tone="muted"
           disabled
@@ -237,19 +231,19 @@ export function UsersBulkBar() {
 
         <Divider />
 
-        {pending && <Loader2 size={13} className="animate-spin text-muted-foreground" />}
+        {pending && <Spinner className="text-muted-foreground" />}
         {result && !pending && (
           <span
             data-tone={result.ok ? "ok" : "err"}
-            className="inline-flex items-center gap-1 font-mono text-[0.66rem] uppercase tracking-[0.12em] data-[tone=err]:text-destructive data-[tone=ok]:text-emerald-500"
+            className="inline-flex items-center gap-1 font-mono text-2xs data-[tone=err]:text-danger-text data-[tone=ok]:text-success-text"
           >
             {result.ok ? (
               <>
-                <Check size={11} /> {result.affected} ok
+                <IconCheck width={11} height={11} /> {result.affected} ok
               </>
             ) : (
               <>
-                <X size={11} /> błąd
+                <IconClose width={11} height={11} /> błąd
               </>
             )}
           </span>
@@ -259,9 +253,9 @@ export function UsersBulkBar() {
           type="button"
           onClick={clear}
           aria-label="Wyczyść zaznaczenie"
-          className="ml-auto grid h-7 w-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="ml-auto grid size-7 place-items-center rounded-md text-muted-foreground outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
         >
-          <X size={13} />
+          <IconClose width={13} height={13} />
         </button>
       </div>
     </div>
@@ -294,7 +288,7 @@ function BulkButton({
       disabled={disabled}
       title={title}
       data-tone={tone}
-      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[0.78rem] text-foreground transition-colors hover:bg-accent data-[tone=warning]:text-amber-500 data-[tone=muted]:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-40"
+      className="inline-flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-foreground outline-none hover:bg-n-100 active:bg-n-200 data-[tone=warning]:text-warning-text data-[tone=muted]:text-muted-foreground disabled:cursor-not-allowed disabled:text-n-400"
     >
       {icon}
       <span className="hidden md:inline">{label}</span>
@@ -302,7 +296,5 @@ function BulkButton({
   );
 }
 
-// Note: bulkUserActionResultZero importujesz teraz bezpośrednio z @/app/(admin)/admin/types
-// (został wyciągnięty z actions.ts żeby spełnić Next.js 16 "use server" rule).
-// Used to gesture toward the bottom bar from the bulk-checked count UI.
-export const BulkBarArrow = ChevronsRight;
+// `bulkUserActionResultZero` importuje się bezpośrednio z @/app/(admin)/admin/types
+// (wyciągnięte z actions.ts przez regułę „use server" w Next.js 16).

@@ -46,25 +46,16 @@ export default async function AdminBackupsPage() {
   }));
 
   return (
-    <main className="flex-1 px-4 py-6 md:px-14 md:py-14">
-      <div className="mx-auto flex max-w-6xl flex-col gap-5 md:gap-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="flex flex-col gap-2">
-            <span className="eyebrow">Backupy</span>
-            <h1 className="font-display text-[1.5rem] font-bold leading-[1.1] tracking-[-0.03em] md:text-[2rem]">
-              Dzienne kopie workspace&apos;ów
-            </h1>
-            <p className="max-w-[64ch] text-[0.86rem] leading-relaxed text-muted-foreground md:text-[0.92rem]">
-              Cron tworzy snapshot każdego workspace&apos;u raz dziennie
-              (01:00 UTC). Plik JSON zawiera całą metadatę: boardy, taski,
-              briefy, support, komentarze, audit log. Możesz też ręcznie
-              wymusić backup teraz.
-            </p>
-          </div>
-        </div>
-
-        <BackupsClient rows={rows} />
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2.5">
+        <h1 className="text-xl font-semibold tracking-[-0.3px]">Backupy</h1>
+        <span className="max-w-[70ch] text-xs text-muted-foreground">
+          Cron robi snapshot każdej przestrzeni raz dziennie (01:00 UTC). JSON zawiera tablice,
+          zadania, pomysły, support, komentarze i audyt. Można też wymusić backup ręcznie.
+        </span>
       </div>
-    </main>
+
+      <BackupsClient rows={rows} />
+    </div>
   );
 }

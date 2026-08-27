@@ -72,16 +72,16 @@ export function isWonStage(stage: StageLite | undefined): boolean {
 }
 
 /** Deale w etapach otwartych (bez „wygrane"/„przegrane") — kafel „W pipeline". */
-export function openDeals(deals: DealLite[], stageById: Map<string, StageLite>): DealLite[] {
+export function openDeals<T extends DealLite>(deals: T[], stageById: Map<string, StageLite>): T[] {
   return deals.filter((d) => (stageById.get(d.stageId)?.closedKind ?? null) === null);
 }
 
 /** Wygrane z bieżącego kwartału — kafel „Wygrane Q<n>". */
-export function wonInQuarter(
-  deals: DealLite[],
+export function wonInQuarter<T extends DealLite>(
+  deals: T[],
   stageById: Map<string, StageLite>,
   q: Quarter,
-): DealLite[] {
+): T[] {
   return deals.filter((d) => {
     if (!isWonStage(stageById.get(d.stageId))) return false;
     if (!d.closedAt) return false;

@@ -1,16 +1,19 @@
 "use client";
 
 import { useActionState, useState, startTransition } from "react";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import { hueForColor } from "@/components/ui/status-hue";
 import {
-  ArrowRight,
-  Circle,
-  CircleCheck,
-  CircleX,
-  MoveRight,
-  Pencil,
-  StickyNote,
-  User as UserIcon,
-} from "lucide-react";
+  IconArrowRight,
+  IconCheckCircle,
+  IconClose,
+  IconMove,
+  IconNotes,
+  IconPen,
+  IconUser,
+} from "@/components/ui/icons";
 import {
   createDealNoteAction,
   type DealNoteState,
@@ -82,18 +85,13 @@ export function DealTimeline({
   contacts: ContactLookup;
 }) {
   return (
-    <section className="flex flex-col gap-5">
-      <div className="flex flex-col gap-1">
-        <span className="eyebrow">Timeline</span>
-        <h2 className="font-display text-[1.2rem] font-bold leading-[1.15] tracking-[-0.02em]">
-          Aktywność
-        </h2>
-      </div>
+    <section className="flex flex-col gap-3">
+      <h2 className="text-md font-semibold">Aktywność</h2>
 
       <NoteComposer workspaceId={workspaceId} dealId={dealId} />
 
       {activities.length === 0 ? (
-        <p className="rounded-md border border-dashed border-border bg-card px-4 py-8 text-center text-[0.86rem] text-muted-foreground">
+        <p className="rounded-lg border border-dashed border-input-border px-4 py-8 text-center text-sm text-muted-foreground">
           Jeszcze nic się tu nie wydarzyło. Dodaj notatkę powyżej.
         </p>
       ) : (
@@ -146,18 +144,12 @@ function NoteComposer({
         placeholder="Dopisz notatkę o tym co się działo — telefon, mail, ustalenia…"
       />
       {state && !state.ok && (
-        <p className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-destructive">
-          {state.error}
-        </p>
+        <p role="alert" className="text-xs text-danger-text">{state.error}</p>
       )}
       <div className="flex items-center justify-end">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex h-8 items-center rounded-md bg-primary px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <Button type="submit" size="sm" loading={pending} disabled={pending}>
           {pending ? "Dodaję…" : "Dodaj notatkę"}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -182,33 +174,19 @@ function ActivityRow({
     <li className="flex gap-3">
       <div className="flex shrink-0 flex-col items-center pt-1">
         {actor ? (
-          <span
-            title={actorLabel}
-            className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.62rem] font-bold text-white"
-          >
-            {actor.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={actor.avatarUrl}
-                alt=""
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              actorLabel.slice(0, 2).toUpperCase()
-            )}
-          </span>
+          <Avatar name={actorLabel} src={actor.avatarUrl} size={26} />
         ) : (
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-muted text-muted-foreground">
-            <UserIcon size={12} />
+          <span className="grid size-[26px] place-items-center rounded-full bg-n-100 text-muted-foreground">
+            <IconUser width={13} height={13} />
           </span>
         )}
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-1 rounded-md border border-border bg-card px-3 py-2">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground">
-          <span className="text-foreground">{actorLabel}</span>
-          <span>·</span>
-          <span>{date}</span>
+      <div className="flex min-w-0 flex-1 flex-col gap-1 rounded-lg border border-border bg-card px-3 py-2">
+        <div className="flex flex-wrap items-baseline gap-x-1.5 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">{actorLabel}</span>
+          <span aria-hidden>·</span>
+          <span className="font-mono text-2xs">{date}</span>
         </div>
         <ActivityBody activity={activity} stages={stages} users={users} contacts={contacts} />
       </div>
@@ -243,8 +221,8 @@ function ActivityBody({
 
     case "created":
       return (
-        <p className="flex items-center gap-1.5 text-[0.86rem]">
-          <Circle size={11} className="text-muted-foreground" />
+        <p className="flex items-center gap-1.5 text-sm">
+          <IconCheckCircle width={13} height={13} className="text-muted-foreground" />
           Utworzono deal.
         </p>
       );
@@ -254,19 +232,15 @@ function ActivityBody({
       const to = typeof body.to === "string" ? stages[body.to] : null;
       const isWon = to && /wygrane/i.test(to.name);
       const isLost = to && /przegrane/i.test(to.name);
-      const Icon = isWon ? CircleCheck : isLost ? CircleX : MoveRight;
-      const iconColor = isWon
-        ? "text-emerald-500"
-        : isLost
-          ? "text-destructive"
-          : "text-primary";
+      const Icon = isWon ? IconCheckCircle : isLost ? IconClose : IconMove;
+      const iconColor = isWon ? "text-success-text" : isLost ? "text-danger-text" : "text-orange-700";
       return (
-        <p className="flex flex-wrap items-center gap-1.5 text-[0.86rem]">
-          <Icon size={12} className={iconColor} />
+        <p className="flex flex-wrap items-center gap-1.5 text-sm">
+          <Icon width={13} height={13} className={iconColor} />
           Etap:
-          <Pill label={from?.name ?? "—"} color={from?.colorHex ?? "#94A3B8"} />
-          <ArrowRight size={11} className="text-muted-foreground" />
-          <Pill label={to?.name ?? "—"} color={to?.colorHex ?? "#94A3B8"} />
+          <Chip hue={hueForColor(from?.colorHex)} size="sm">{from?.name ?? "—"}</Chip>
+          <IconArrowRight width={12} height={12} className="text-muted-foreground" />
+          <Chip hue={hueForColor(to?.colorHex)} size="sm">{to?.name ?? "—"}</Chip>
         </p>
       );
     }
@@ -275,14 +249,14 @@ function ActivityBody({
       const fromBody = body.from as Record<string, unknown> | null;
       const toBody = body.to as Record<string, unknown> | null;
       return (
-        <p className="flex flex-wrap items-center gap-1.5 text-[0.86rem]">
-          <Pencil size={12} className="text-muted-foreground" />
+        <p className="flex flex-wrap items-center gap-1.5 text-sm">
+          <IconPen width={13} height={13} className="text-muted-foreground" />
           Wartość:
-          <code className="rounded bg-muted/40 px-1.5 py-0.5 font-mono text-[0.76rem]">
+          <code className="rounded-sm bg-n-100 px-1.5 py-0.5 font-mono text-2xs">
             {fromBody ? formatMoney(fromBody.amount, fromBody.currency) : "—"}
           </code>
-          <ArrowRight size={11} className="text-muted-foreground" />
-          <code className="rounded bg-muted/40 px-1.5 py-0.5 font-mono text-[0.76rem]">
+          <IconArrowRight width={12} height={12} className="text-muted-foreground" />
+          <code className="rounded-sm bg-n-100 px-1.5 py-0.5 font-mono text-2xs">
             {toBody ? formatMoney(toBody.amount, toBody.currency) : "—"}
           </code>
         </p>
@@ -291,14 +265,14 @@ function ActivityBody({
 
     case "title_change":
       return (
-        <p className="flex flex-wrap items-center gap-1.5 text-[0.86rem]">
-          <Pencil size={12} className="text-muted-foreground" />
+        <p className="flex flex-wrap items-center gap-1.5 text-sm">
+          <IconPen width={13} height={13} className="text-muted-foreground" />
           Tytuł:
-          <code className="rounded bg-muted/40 px-1.5 py-0.5 font-mono text-[0.76rem]">
+          <code className="rounded-sm bg-n-100 px-1.5 py-0.5 font-mono text-2xs">
             {typeof body.from === "string" ? body.from : "—"}
           </code>
-          <ArrowRight size={11} className="text-muted-foreground" />
-          <code className="rounded bg-muted/40 px-1.5 py-0.5 font-mono text-[0.76rem]">
+          <IconArrowRight width={12} height={12} className="text-muted-foreground" />
+          <code className="rounded-sm bg-n-100 px-1.5 py-0.5 font-mono text-2xs">
             {typeof body.to === "string" ? body.to : "—"}
           </code>
         </p>
@@ -308,11 +282,11 @@ function ActivityBody({
       const from = typeof body.from === "string" ? users[body.from] : null;
       const to = typeof body.to === "string" ? users[body.to] : null;
       return (
-        <p className="flex flex-wrap items-center gap-1.5 text-[0.86rem]">
-          <UserIcon size={12} className="text-muted-foreground" />
+        <p className="flex flex-wrap items-center gap-1.5 text-sm">
+          <IconUser width={13} height={13} className="text-muted-foreground" />
           Opiekun:
           <span className="font-medium">{from ? (from.name ?? from.email) : "—"}</span>
-          <ArrowRight size={11} className="text-muted-foreground" />
+          <IconArrowRight width={12} height={12} className="text-muted-foreground" />
           <span className="font-medium">{to ? (to.name ?? to.email) : "—"}</span>
         </p>
       );
@@ -322,11 +296,11 @@ function ActivityBody({
       const from = typeof body.from === "string" ? contacts[body.from] : null;
       const to = typeof body.to === "string" ? contacts[body.to] : null;
       return (
-        <p className="flex flex-wrap items-center gap-1.5 text-[0.86rem]">
-          <UserIcon size={12} className="text-muted-foreground" />
+        <p className="flex flex-wrap items-center gap-1.5 text-sm">
+          <IconUser width={13} height={13} className="text-muted-foreground" />
           Kontakt:
           <span className="font-medium">{from?.label ?? "—"}</span>
-          <ArrowRight size={11} className="text-muted-foreground" />
+          <IconArrowRight width={12} height={12} className="text-muted-foreground" />
           <span className="font-medium">{to?.label ?? "—"}</span>
         </p>
       );
@@ -334,21 +308,11 @@ function ActivityBody({
 
     default:
       return (
-        <p className="flex items-center gap-1.5 text-[0.86rem] text-muted-foreground">
-          <StickyNote size={11} />
+        <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <IconNotes width={12} height={12} />
           {activity.type}
         </p>
       );
   }
 }
 
-function Pill({ label, color }: { label: string; color: string }) {
-  return (
-    <span
-      className="inline-flex h-5 items-center rounded-full px-2 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.12em]"
-      style={{ color, background: `${color}22` }}
-    >
-      {label}
-    </span>
-  );
-}

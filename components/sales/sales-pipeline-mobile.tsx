@@ -1,34 +1,19 @@
 "use client";
 
+// E7 na wąskim ekranie — makieta pokrywa tylko desktop, więc zostaje wzorzec
+// „jeden etap na raz": swipe / chevron przełącza etap, tap w kartę wchodzi
+// w deal (drag&drop między kolumnami nie ma na mobile sensu).
+
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import type {
-  PipelineDeal,
-  PipelineStage,
-} from "@/components/sales/sales-pipeline";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import { IconChevronLeft, IconChevronRight, IconPlus } from "@/components/ui/icons";
+import { formatAmount, isWonStage, sumByCurrency, formatSums } from "@/components/sales/pipeline-model";
+import type { PipelineDeal, PipelineStage } from "@/components/sales/sales-screen";
+import { cn } from "@/lib/utils";
 
-/**
- * B6 CRM mobile · Pipeline single-stage swipe view
- *
- * Zamiast wszystkich stage'y obok siebie (desktop chevron flow) — pokazujemy
- * jeden stage na raz, swipe left/right zmienia stage. Czytelnie wskazuje gdzie
- * jesteśmy:
- * - sticky header z chevron-left / stage name + dot / count + chevron-right
- * - wartość PLN total dla tego stage'a (mono, green-emerald)
- * - dot indicator bar pod listą (jak Instagram stories)
- *
- * Swipe gestures: natywne touchstart/touchmove/touchend, threshold = 60px lub
- * velocity > 0.4 px/ms. NIE używamy framer-motion / use-gesture — package.json
- * nie ma żadnego z nich, a 60-linijkowy native handler robi robotę.
- *
- * Mobile-only render: rodzic SalesPipeline ustawia max-md:hidden na desktop
- * column flow + md:hidden na ten komponent.
- *
- * IMPORTANT: ten komponent NIE robi DnD — na mobile drag-between-columns jest
- * niemożliwy bez kanwy. Zmiana stage'a deala = wejście w kartę deala. Spec to
- * potwierdza ("Zmień stage" jako action button w deal card mobile).
- */
 export function SalesPipelineMobile({
   workspaceId,
   stages,
@@ -38,218 +23,146 @@ export function SalesPipelineMobile({
   stages: PipelineStage[];
   deals: PipelineDeal[];
 }) {
-  const sortedStages = [...stages].sort((a, b) => a.order - b.order);
   const [rawIdx, setIdx] = useState(0);
+  // Clamp pochodny — etapy mogą zniknąć między renderami.
+  const idx = Math.min(rawIdx, Math.max(0, stages.length - 1));
+  const stage = stages[idx];
 
-  // Clamp derived — unika setState w effect'cie (cascading renders) gdy
-  // stage'e znikną/dodadzą się między render'ami.
-  const idx = Math.min(rawIdx, Math.max(0, sortedStages.length - 1));
-  const stage = sortedStages[idx];
-
-  // Refs do swipe state — unikamy re-render'a na każdym touchmove.
-  const touchStartX = useRef<number | null>(null);
-  const touchStartY = useRef<number | null>(null);
-  const touchStartT = useRef<number>(0);
-  const swipedRef = useRef(false);
+  const startX = useRef<number | null>(null);
+  const startY = useRef<number | null>(null);
+  const startT = useRef(0);
+  const swiped = useRef(false);
 
   const goPrev = () => setIdx((i) => Math.max(0, i - 1));
-  const goNext = () => setIdx((i) => Math.min(sortedStages.length - 1, i + 1));
+  const goNext = () => setIdx((i) => Math.min(stages.length - 1, i + 1));
 
-  const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+  const onTouchStart = (e: React.TouchEvent) => {
     const t = e.touches[0];
     if (!t) return;
-    touchStartX.current = t.clientX;
-    touchStartY.current = t.clientY;
-    touchStartT.current = performance.now();
-    swipedRef.current = false;
+    startX.current = t.clientX;
+    startY.current = t.clientY;
+    startT.current = performance.now();
+    swiped.current = false;
   };
-
-  const onTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (touchStartX.current == null || touchStartY.current == null) return;
-    if (swipedRef.current) return;
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (startX.current == null || startY.current == null || swiped.current) return;
     const t = e.touches[0];
     if (!t) return;
-    const dx = t.clientX - touchStartX.current;
-    const dy = t.clientY - touchStartY.current;
-    // Jeśli vertical scroll dominuje, ignorujemy — user scrolluje listę,
-    // nie swipuje stage'a.
+    const dx = t.clientX - startX.current;
+    const dy = t.clientY - startY.current;
+    // Pionowy ruch = scroll listy, nie zmiana etapu.
     if (Math.abs(dy) > Math.abs(dx)) return;
-    const dt = performance.now() - touchStartT.current;
-    const velocity = Math.abs(dx) / Math.max(1, dt);
+    const velocity = Math.abs(dx) / Math.max(1, performance.now() - startT.current);
     if (Math.abs(dx) > 60 || velocity > 0.4) {
       if (dx < 0) goNext();
       else goPrev();
-      swipedRef.current = true;
+      swiped.current = true;
     }
   };
-
   const onTouchEnd = () => {
-    touchStartX.current = null;
-    touchStartY.current = null;
-    swipedRef.current = false;
+    startX.current = null;
+    startY.current = null;
+    swiped.current = false;
   };
 
   if (!stage) {
     return (
-      <p className="rounded-md border border-border bg-card px-4 py-12 text-center text-[0.88rem] text-muted-foreground md:hidden">
-        Brak etapów.
-      </p>
+      <p className="px-4 py-10 text-center text-sm text-muted-foreground md:hidden">Brak etapów.</p>
     );
   }
 
-  const stageDeals = deals
-    .filter((d) => d.stageId === stage.id)
-    .sort((a, b) => a.rowOrder - b.rowOrder);
-
-  // Suma per waluta (PLN/EUR/USD). Empty state nie pokazuje pill'a.
-  const totals = new Map<string, number>();
-  for (const d of stageDeals) {
-    if (d.valueAmount == null) continue;
-    totals.set(
-      d.valueCurrency,
-      (totals.get(d.valueCurrency) ?? 0) + d.valueAmount,
-    );
-  }
-
-  const canPrev = idx > 0;
-  const canNext = idx < sortedStages.length - 1;
+  const stageDeals = deals.filter((d) => d.stageId === stage.id).sort((a, b) => a.rowOrder - b.rowOrder);
+  const won = isWonStage(stage);
 
   return (
-    <div className="flex flex-col gap-3 md:hidden">
-      {/* Stage header z chevronami i count'em. Tap'alne chevron'y dla użytkow-
-          ników którzy wolą nie swipać. */}
-      <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card px-2 py-2">
-        <button
-          type="button"
-          onClick={goPrev}
-          disabled={!canPrev}
-          aria-label="Poprzedni etap"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-foreground transition-colors hover:bg-accent disabled:opacity-30"
-        >
-          <ChevronLeft size={18} />
-        </button>
-        <div className="flex min-w-0 flex-1 flex-col items-center gap-0.5 text-center">
-          <div className="flex items-center gap-2">
-            <span
-              className="h-2.5 w-2.5 shrink-0 rounded-full"
-              style={{ background: stage.colorHex }}
-              aria-hidden
-            />
-            <span className="truncate font-display text-[0.98rem] font-semibold tracking-[-0.01em]">
-              {stage.name}
-            </span>
-            <span className="shrink-0 font-mono text-[0.7rem] text-muted-foreground">
-              {stageDeals.length}
-            </span>
-          </div>
-          {totals.size > 0 && (
-            <div className="flex flex-wrap items-center justify-center gap-1.5 font-mono text-[0.7rem] font-bold tabular-nums text-emerald-600">
-              {[...totals.entries()].map(([cur, sum]) => (
-                <span key={cur}>{formatMoney(sum, cur)}</span>
-              ))}
-            </div>
-          )}
+    <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-auto bg-canvas px-4 pt-1 pb-5 md:hidden">
+      <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-1">
+        <Button variant="ghost" size="lg" iconOnly disabled={idx === 0} onClick={goPrev} aria-label="Poprzedni etap">
+          <IconChevronLeft />
+        </Button>
+        <div className="flex min-w-0 flex-1 flex-col items-center">
+          <span className="flex items-center gap-1.5">
+            <span className="size-2 shrink-0 rounded-full" style={{ background: stage.colorHex }} aria-hidden />
+            <span className="truncate text-sm font-semibold">{stage.name}</span>
+          </span>
+          <span className="font-mono text-2xs text-fg-3">
+            {stageDeals.length} · {formatSums(sumByCurrency(stageDeals))}
+          </span>
         </div>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="lg"
+          iconOnly
+          disabled={idx >= stages.length - 1}
           onClick={goNext}
-          disabled={!canNext}
           aria-label="Następny etap"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-foreground transition-colors hover:bg-accent disabled:opacity-30"
         >
-          <ChevronRight size={18} />
-        </button>
+          <IconChevronRight />
+        </Button>
       </div>
 
-      {/* Swipe target: cards stack. touch-pan-y żeby vertical scroll dalej
-          działał, ale horizontal swipe wchodzi w nasz handler. */}
-      <div
+      <ul
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
-        className="flex min-h-[200px] touch-pan-y flex-col gap-2"
+        className="flex touch-pan-y flex-col gap-2"
       >
         {stageDeals.length === 0 && (
-          <div className="grid place-items-center rounded-lg border border-dashed border-border/60 px-4 py-10 text-center text-[0.82rem] text-muted-foreground">
-            <span>Brak deal&apos;ów na tym etapie.</span>
-            <Link
-              href={`/w/${workspaceId}/sales/new?stageId=${stage.id}`}
-              className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 font-sans text-[0.82rem] font-semibold text-white"
-            >
-              <Plus size={13} /> Dodaj deal
-            </Link>
-          </div>
+          <li className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-input-border px-4 py-8 text-center text-xs text-muted-foreground">
+            Brak dealów na tym etapie.
+            <Button size="lg" className="h-11" render={<Link href={`/w/${workspaceId}/sales/new?stageId=${stage.id}`} />}>
+              <IconPlus width={14} height={14} /> Dodaj deal
+            </Button>
+          </li>
         )}
         {stageDeals.map((d) => (
-          <Link
-            key={d.id}
-            href={`/w/${workspaceId}/sales/${d.id}`}
-            className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3.5 transition-colors active:bg-accent/40"
-          >
-            <span className="font-display text-[0.94rem] font-semibold leading-tight">
-              {d.title}
-            </span>
-            <span className="font-mono text-[1.05rem] font-bold tabular-nums leading-tight text-emerald-600">
-              {d.valueAmount != null
-                ? formatMoney(d.valueAmount, d.valueCurrency)
-                : "—"}
-            </span>
-            <div className="flex items-center justify-between gap-2 pt-0.5">
-              <span className="truncate font-mono text-[0.66rem] uppercase tracking-[0.12em] text-muted-foreground">
-                {d.expectedCloseAt
-                  ? `do ${new Date(d.expectedCloseAt).toLocaleDateString("pl-PL")}`
-                  : (d.contact?.companyName ?? d.contact?.name ?? "—")}
-              </span>
-              {d.owner && (
-                <span
-                  className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-md bg-primary font-display text-[0.55rem] font-bold text-white"
-                  aria-label={d.owner.name ?? d.owner.email}
-                >
-                  {d.owner.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={d.owner.avatarUrl}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    (d.owner.name ?? d.owner.email).slice(0, 2).toUpperCase()
-                  )}
-                </span>
+          <li key={d.id}>
+            <Link
+              href={`/w/${workspaceId}/sales/${d.id}`}
+              className={cn(
+                "block rounded-lg border border-border bg-card px-3 py-3 outline-none active:bg-n-100",
+                won && "opacity-85",
               )}
-            </div>
-          </Link>
+            >
+              <p className="mb-1.5 text-sm font-medium leading-[18px]">{d.title}</p>
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono text-2xs text-n-700">
+                  {d.valueAmount != null ? formatAmount(d.valueAmount, d.valueCurrency) : "—"}
+                </span>
+                {won && <Chip hue="green" dot size="sm">Wygrany</Chip>}
+                {d.owner && (
+                  <span className="ml-auto">
+                    <Avatar name={d.owner.name} src={d.owner.avatarUrl} size={20} />
+                  </span>
+                )}
+              </div>
+              <p className="mt-1.5 truncate border-t border-n-100 pt-1.5 text-2xs text-fg-2">
+                {d.expectedCloseAt
+                  ? `zamknięcie ${new Date(d.expectedCloseAt).toLocaleDateString("pl-PL")}`
+                  : (d.contact?.name ?? "—")}
+              </p>
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
 
-      {/* Stage dots — current = wider pill, reszta = 6px circle. */}
-      <div className="flex items-center justify-center gap-1.5 pt-1">
-        {sortedStages.map((s, i) => (
+      <div className="flex items-center justify-center gap-1">
+        {stages.map((s, i) => (
           <button
             key={s.id}
             type="button"
             onClick={() => setIdx(i)}
             aria-label={`Przejdź do etapu ${s.name}`}
             aria-current={i === idx ? "true" : undefined}
-            className="rounded-full transition-[width,background-color]"
-            style={{
-              width: i === idx ? 18 : 6,
-              height: 6,
-              background:
-                i === idx ? "var(--primary)" : "var(--border)",
-            }}
-          />
+            className="grid h-6 w-6 place-items-center rounded-md outline-none active:bg-n-100"
+          >
+            <span
+              className={cn("h-1.5 rounded-full", i === idx ? "w-4 bg-orange-500" : "w-1.5 bg-n-300")}
+              aria-hidden
+            />
+          </button>
         ))}
       </div>
     </div>
   );
-}
-
-const PL_NUMBER = new Intl.NumberFormat("pl-PL", {
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
-
-function formatMoney(amount: number, currency: string): string {
-  return `${PL_NUMBER.format(amount)} ${currency}`;
 }
