@@ -1,13 +1,16 @@
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
+import { can } from "@/lib/permissions";
 import { SecretVault } from "@/components/passwords/secret-vault";
 import { changedLabel } from "@/components/passwords/vault-model";
 
 // E6 „Hasła" — sejf zespołu. Workspace-scoped: każdy członek widzi listę
 // wpisów, ale NIGDY plaintextu. `select` poniżej celowo nie pobiera
 // `passwordEnc`/`passwordIv`/`notesIv` — odszyfrowanie robi wyłącznie
-// `revealSecretAction` po jawnym kliknięciu 👁, per wpis, z ponownym
-// sprawdzeniem członkostwa. Nie dodawać tu pól z sekretami.
+// `revealSecretAction` po jawnym kliknięciu 👁, per wpis, po sprawdzeniu
+// uprawnienia `secret.read`. Nie dodawać tu pól z sekretami.
+//
+// Flagi poniżej tylko chowają kontrolki — decyduje serwer w actions.ts.
 export default async function PasswordVaultPage({
   params,
 }: {
@@ -44,6 +47,8 @@ export default async function PasswordVaultPage({
     <SecretVault
       workspaceId={workspaceId}
       currentUserId={ctx.userId}
+      canReveal={can(ctx.role, "secret.read")}
+      canManage={can(ctx.role, "secret.manage")}
       items={items.map((i) => ({
         id: i.id,
         name: i.name,

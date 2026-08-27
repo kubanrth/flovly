@@ -7,7 +7,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { requireWorkspaceMembership } from "@/lib/workspace-guard";
+import { requireWorkspaceAction, requireWorkspaceMembership } from "@/lib/workspace-guard";
 
 const CYCLES = ["MONTHLY", "YEARLY"] as const;
 
@@ -25,7 +25,7 @@ export async function createSubscriptionAction(formData: FormData): Promise<
   });
   if (!parsed.success) return { ok: false, error: "Bad request." };
 
-  await requireWorkspaceMembership(parsed.data.workspaceId);
+  await requireWorkspaceAction(parsed.data.workspaceId, "subscription.manage");
 
   const row = await db.subscription.create({
     data: {
@@ -69,7 +69,7 @@ export async function patchSubscriptionAction(formData: FormData) {
   });
   if (!row || row.deletedAt) return;
 
-  await requireWorkspaceMembership(row.workspaceId);
+  await requireWorkspaceAction(row.workspaceId, "subscription.manage");
 
   const data: Record<string, unknown> = {};
   if (parsed.data.name !== undefined) data.name = parsed.data.name.trim();
@@ -224,7 +224,7 @@ export async function deleteSubscriptionAction(formData: FormData) {
   });
   if (!row || row.deletedAt) return;
 
-  await requireWorkspaceMembership(row.workspaceId);
+  await requireWorkspaceAction(row.workspaceId, "subscription.manage");
 
   await db.subscription.update({
     where: { id: parsed.data.id },

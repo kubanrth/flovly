@@ -116,11 +116,17 @@ export function SecretVault({
   currentUserId,
   items,
   members,
+  canReveal,
+  canManage,
 }: {
   workspaceId: string;
   currentUserId: string;
   items: SecretListItem[];
   members: VaultMember[];
+  /** `secret.read` — bez tego 👁 i „Kopiuj hasło" nie mają po co istnieć. */
+  canReveal: boolean;
+  /** `secret.manage` — tworzenie i usuwanie wpisów. */
+  canManage: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [access, setAccess] = useState<AccessFilter>("all");
@@ -160,10 +166,12 @@ export function SecretVault({
           Szyfrowane w bazie
         </Chip>
         <span className="flex-1" />
-        <Button onClick={() => setAddOpen(true)}>
-          <IconPlus width={14} height={14} />
-          Nowy wpis
-        </Button>
+        {canManage && (
+          <Button onClick={() => setAddOpen(true)}>
+            <IconPlus width={14} height={14} />
+            Nowy wpis
+          </Button>
+        )}
       </header>
 
       <div className="flex shrink-0 items-center gap-2 border-b border-border px-8 pt-3 pb-2.5 max-md:px-4">
@@ -234,6 +242,8 @@ export function SecretVault({
                   people={people}
                   revealed={revealedIds.includes(item.id)}
                   onRevealChange={setRevealed}
+                  canReveal={canReveal}
+                  canManage={canManage}
                 />
               ))}
             </tbody>
@@ -255,11 +265,15 @@ function SecretRow({
   people,
   revealed,
   onRevealChange,
+  canReveal,
+  canManage,
 }: {
   item: SecretListItem;
   people: { name: string; src?: string | null }[];
   revealed: boolean;
   onRevealChange: (id: string, on: boolean) => void;
+  canReveal: boolean;
+  canManage: boolean;
 }) {
   // Plaintext wyłącznie tutaj i tylko gdy `revealed`.
   const [password, setPassword] = useState<string | null>(null);
@@ -416,17 +430,17 @@ function SecretRow({
               {password ?? "••••••••••••"}
             </span>
             <IconButton
-              label={password === null ? "Pokaż hasło" : "Ukryj hasło"}
+              label={!canReveal ? "Twoja rola nie pozwala odsłaniać haseł" : password === null ? "Pokaż hasło" : "Ukryj hasło"}
               pressed={password !== null}
-              disabled={busy}
+              disabled={busy || !canReveal}
               onClick={() => void toggleReveal()}
             >
               {password === null ? <IconEye width={12} height={12} /> : <IconEyeOff width={12} height={12} />}
             </IconButton>
             <IconButton
-              label={copied === "password" ? "Skopiowano hasło" : "Kopiuj hasło"}
+              label={!canReveal ? "Twoja rola nie pozwala odsłaniać haseł" : copied === "password" ? "Skopiowano hasło" : "Kopiuj hasło"}
               active={copied === "password"}
-              disabled={busy}
+              disabled={busy || !canReveal}
               onClick={() => void copyPassword()}
             >
               {copied === "password" ? <IconCheck width={12} height={12} /> : <IconCopy width={11} height={11} />}
@@ -468,9 +482,11 @@ function SecretRow({
                     Kopiuj login
                   </MenuItem>
                 )}
-                <MenuItem icon={<IconCopy />} onClick={() => void copyPassword()}>
-                  Kopiuj hasło
-                </MenuItem>
+                {canReveal && (
+                  <MenuItem icon={<IconCopy />} onClick={() => void copyPassword()}>
+                    Kopiuj hasło
+                  </MenuItem>
+                )}
                 {href && (
                   <MenuItem
                     icon={<IconExternal />}
@@ -479,15 +495,17 @@ function SecretRow({
                     Otwórz stronę
                   </MenuItem>
                 )}
-                {item.hasNotes && (
+                {item.hasNotes && canReveal && (
                   <MenuItem icon={<IconNotes />} onClick={() => void showNote()}>
                     Pokaż notatkę
                   </MenuItem>
                 )}
-                <MenuSeparator />
-                <MenuItem icon={<IconTrash />} destructive onClick={remove}>
-                  Usuń wpis
-                </MenuItem>
+                {canManage && <MenuSeparator />}
+                {canManage && (
+                  <MenuItem icon={<IconTrash />} destructive onClick={remove}>
+                    Usuń wpis
+                  </MenuItem>
+                )}
               </MenuContent>
             </Menu>
             <NoteDialog name={item.name} note={note} onClose={() => setNote(null)} />

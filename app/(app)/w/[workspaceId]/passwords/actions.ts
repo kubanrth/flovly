@@ -1,15 +1,18 @@
 "use server";
 
-// F12-K132: server actions dla team password vault. Każda mutacja
-// require'uje workspace membership (dowolna rola — vault jest workspace-
-// wide). Odczyt (list) = SSR w page.tsx. Reveal = wydzielona action bo
-// nie chcemy w SSR pobierać plaintext'u dla całej listy — user musi
-// kliknąć "Pokaż" per-item.
+// F12-K132: server actions dla team password vault. Odczyt (list) = SSR
+// w page.tsx. Reveal = wydzielona action, bo nie chcemy w SSR pobierać
+// plaintextu dla całej listy — user musi kliknąć „Pokaż" per-item.
+//
+// F13-F6: wcześniej wystarczało samo członkostwo („dowolna rola — vault jest
+// workspace-wide"), więc rola tylko-do-odczytu mogła odszyfrować wszystkie
+// hasła przestrzeni. Teraz odsłonięcie wymaga `secret.read`, a tworzenie
+// i usuwanie `secret.manage`; VIEWER nie ma żadnej z nich.
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { requireWorkspaceMembership } from "@/lib/workspace-guard";
+import { requireWorkspaceAction } from "@/lib/workspace-guard";
 import { encrypt, decrypt } from "@/lib/vault-crypto";
 
 const createSchema = z.object({
@@ -49,7 +52,7 @@ export async function createSecretAction(
     return { ok: false, fieldErrors: fe };
   }
 
-  const ctx = await requireWorkspaceMembership(parsed.data.workspaceId);
+  const ctx = await requireWorkspaceAction(parsed.data.workspaceId, "secret.manage");
 
   try {
     const pwd = encrypt(parsed.data.password);
@@ -107,7 +110,7 @@ export async function revealSecretAction(input: {
   });
   if (!item) return { ok: false, error: "Nie znaleziono." };
 
-  await requireWorkspaceMembership(item.workspaceId);
+  await requireWorkspaceAction(item.workspaceId, "secret.read");
 
   try {
     const password = decrypt(item.passwordEnc, item.passwordIv);
@@ -132,7 +135,7 @@ export async function deleteSecretAction(formData: FormData) {
   });
   if (!item || item.deletedAt) return;
 
-  await requireWorkspaceMembership(item.workspaceId);
+  await requireWorkspaceAction(item.workspaceId, "secret.manage");
 
   await db.secretItem.update({
     where: { id: parsed.data.id },

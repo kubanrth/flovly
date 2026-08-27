@@ -34,7 +34,7 @@ export async function createBriefAction(formData: FormData) {
     templateId: formData.get("templateId") || undefined,
   });
   if (!parsed.success) return;
-  const ctx = await requireWorkspaceMembership(parsed.data.workspaceId);
+  const ctx = await requireWorkspaceAction(parsed.data.workspaceId, "brief.create");
 
   // Falls back to design-brief template when no templateId is passed (legacy callers).
   const template = parsed.data.templateId

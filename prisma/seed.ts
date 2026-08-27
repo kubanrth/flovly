@@ -36,6 +36,19 @@ async function main() {
     },
   });
 
+  // Rola tylko-do-odczytu. Do F6 seed jej nie miał, więc uprawnień VIEWER-a
+  // nie dało się przetestować bez ręcznego dopisywania użytkownika do bazy.
+  const viewer = await db.user.upsert({
+    where: { email: "viewer@danielos.local" },
+    update: {},
+    create: {
+      email: "viewer@danielos.local",
+      name: "Wiktor Viewer",
+      passwordHash,
+      emailVerified: new Date(),
+    },
+  });
+
   const workspace = await db.workspace.upsert({
     where: { slug: "demo" },
     update: {},
@@ -57,6 +70,11 @@ async function main() {
     where: { workspaceId_userId: { workspaceId: workspace.id, userId: member.id } },
     update: { role: Role.MEMBER },
     create: { workspaceId: workspace.id, userId: member.id, role: Role.MEMBER },
+  });
+  await db.workspaceMembership.upsert({
+    where: { workspaceId_userId: { workspaceId: workspace.id, userId: viewer.id } },
+    update: { role: Role.VIEWER },
+    create: { workspaceId: workspace.id, userId: viewer.id, role: Role.VIEWER },
   });
 
   const board = await db.board.create({

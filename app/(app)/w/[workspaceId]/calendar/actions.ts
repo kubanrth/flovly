@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { requireWorkspaceMembership } from "@/lib/workspace-guard";
+import { requireWorkspaceAction, requireWorkspaceMembership } from "@/lib/workspace-guard";
 
 // Workspace-level calendar events. Any member can create; only creator can edit/delete own.
 
@@ -34,7 +34,7 @@ export async function createWorkspaceEventAction(formData: FormData) {
   if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) return;
   if (endAt.getTime() < startAt.getTime()) return;
 
-  const ctx = await requireWorkspaceMembership(parsed.data.workspaceId);
+  const ctx = await requireWorkspaceAction(parsed.data.workspaceId, "workspaceEvent.manage");
 
   await db.workspaceEvent.create({
     data: {

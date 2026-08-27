@@ -43,7 +43,16 @@ export type Action =
   | "deal.create"
   | "deal.update"
   | "deal.delete"
-  | "dealStage.manage";
+  | "dealStage.manage"
+  // Sejf haseł. Do F6 te akcje nie istniały, a `passwords/actions.ts` sprawdzało
+  // wyłącznie członkostwo — czyli VIEWER mógł odszyfrować wszystkie hasła
+  // przestrzeni. `secret.read` bramkuje odsłonięcie/kopiowanie, `secret.manage`
+  // tworzenie i usuwanie wpisów.
+  | "secret.read"
+  | "secret.manage"
+  | "subscription.manage"
+  | "workspaceEvent.manage"
+  | "brief.create";
 
 const MATRIX: Record<Role, Set<Action>> = {
   ADMIN: new Set<Action>([
@@ -90,6 +99,11 @@ const MATRIX: Record<Role, Set<Action>> = {
     "deal.update",
     "deal.delete",
     "dealStage.manage",
+    "secret.read",
+    "secret.manage",
+    "subscription.manage",
+    "workspaceEvent.manage",
+    "brief.create",
   ]),
   MEMBER: new Set<Action>([
     "board.create",
@@ -126,6 +140,11 @@ const MATRIX: Record<Role, Set<Action>> = {
     "deal.update",
     "deal.delete",
     "dealStage.manage",
+    "secret.read",
+    "secret.manage",
+    "subscription.manage",
+    "workspaceEvent.manage",
+    "brief.create",
   ]),
   VIEWER: new Set<Action>([
     "board.view",
