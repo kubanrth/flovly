@@ -2,8 +2,13 @@ import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
 import { SupportWorkspace } from "@/components/support/support-workspace";
+import { dueLabel, whenLabel } from "@/components/inbox/inbox-model";
+import { formatDuration } from "@/lib/format-duration";
 
-// Internal helpdesk per workspace. Any member can report; admins (task.update) handle.
+// E9 „Support" — wewnętrzny helpdesk przestrzeni. Każdy członek zgłasza,
+// admini (task.update) obsługują. Etykiety czasu liczymy tutaj, w stałej
+// strefie Europe/Warsaw, żeby SSR w kontenerze na UTC nie rozjeżdżał się
+// z hydracją.
 export default async function SupportPage({
   params,
 }: {
@@ -12,7 +17,7 @@ export default async function SupportPage({
   const { workspaceId } = await params;
   const ctx = await requireWorkspaceMembership(workspaceId);
 
-  const [tickets, members] = await Promise.all([
+  const [tickets, members, boards] = await Promise.all([
     db.supportTicket.findMany({
       where: { workspaceId },
       orderBy: [{ status: "asc" }, { createdAt: "desc" }],
@@ -28,7 +33,6 @@ export default async function SupportPage({
             sizeBytes: true,
             storageKey: true,
             uploaderId: true,
-            createdAt: true,
           },
         },
       },
@@ -38,13 +42,29 @@ export default async function SupportPage({
       include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
       orderBy: { joinedAt: "asc" },
     }),
+    // Tablice dla „Zrób zadanie" — te same reguły widoczności co w shellu.
+    db.board.findMany({
+      where: {
+        workspaceId,
+        deletedAt: null,
+        ...(ctx.role === "ADMIN"
+          ? {}
+          : { OR: [{ visibility: "PUBLIC" }, { memberships: { some: { userId: ctx.userId } } }] }),
+      },
+      orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+      select: { id: true, name: true },
+    }),
   ]);
+
+  const now = new Date();
 
   return (
     <SupportWorkspace
       workspaceId={workspaceId}
       currentUserId={ctx.userId}
       canManage={can(ctx.role, "task.update")}
+      canCreateTask={can(ctx.role, "task.create")}
+      nowMs={now.getTime()}
       tickets={tickets.map((t) => ({
         id: t.id,
         title: t.title,
@@ -55,30 +75,16 @@ export default async function SupportPage({
         isUrgent: t.isUrgent,
         createdAt: t.createdAt.toISOString(),
         resolvedAt: t.resolvedAt ? t.resolvedAt.toISOString() : null,
-        reporter: {
-          id: t.reporter.id,
-          name: t.reporter.name,
-          email: t.reporter.email,
-          avatarUrl: t.reporter.avatarUrl,
-        },
-        assignee: t.assignee
-          ? {
-              id: t.assignee.id,
-              name: t.assignee.name,
-              email: t.assignee.email,
-              avatarUrl: t.assignee.avatarUrl,
-            }
-          : null,
-        attachments: t.attachments.map((a) => ({
-          id: a.id,
-          filename: a.filename,
-          mimeType: a.mimeType,
-          sizeBytes: a.sizeBytes,
-          storageKey: a.storageKey,
-          uploaderId: a.uploaderId,
-        })),
+        reporter: t.reporter,
+        assignee: t.assignee,
+        attachments: t.attachments,
+        listTime: whenLabel(t.createdAt, now),
+        createdLabel: whenLabel(t.createdAt, now),
+        dueLabel: t.dueAt ? dueLabel(t.dueAt, now) : null,
+        resolvedIn: t.resolvedAt ? formatDuration(t.createdAt, t.resolvedAt) : null,
       }))}
       members={members.map((m) => m.user)}
+      boards={boards}
     />
   );
 }

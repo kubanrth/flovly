@@ -1,24 +1,68 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useState } from "react";
+// E6 „Hasła" — sejf zespołu. Tabela Usługa / Login / Hasło / Dostęp / Zmienione
+// na wspólnym prymitywie DataTable, wiersz 44 px, odsłonięty wiersz na
+// `--selected-bg` z licznikiem „odsłonięte 0:NN".
+//
+// Bezpieczeństwo (nie luzować bez przeglądu):
+//   • plaintext NIGDY nie jedzie z SSR — page.tsx nie czyta `passwordEnc`;
+//     odszyfrowanie robi `revealSecretAction` dopiero po kliknięciu „Pokaż",
+//     a serwer przy każdym wywołaniu sprawdza członkostwo w przestrzeni;
+//   • odsłonięte hasło żyje wyłącznie w stanie Reacta — nie trafia do
+//     `data-*`, atrybutów, URL-a, localStorage ani do console;
+//   • okno odsłonięcia to `REVEAL_MS` (30 s) i jest twarde — po nim stan
+//     jest czyszczony, także gdy karta była w tle;
+//   • „Kopiuj hasło" pobiera plaintext, wkłada do schowka i od razu go
+//     porzuca — nie renderuje go i nie zapala trybu odsłonięcia.
+
+import { startTransition, useActionState, useCallback, useEffect, useRef, useState } from "react";
+import { Avatar, AvatarStack } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import { DataTable, DataTd, DataTh, DataThead, DataTr } from "@/components/ui/data-table";
 import {
-  KeyRound,
-  Plus,
-  Search,
-  Copy,
-  Eye,
-  EyeOff,
-  Trash2,
-  ExternalLink,
-  User as UserIcon,
-  X,
-} from "lucide-react";
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuRadioGroup,
+  MenuRadioItem,
+  MenuSeparator,
+  MenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Input, InputGroup, Textarea } from "@/components/ui/input";
+import {
+  IconCheck,
+  IconChevronDown,
+  IconCopy,
+  IconExternal,
+  IconEye,
+  IconEyeOff,
+  IconMore,
+  IconNotes,
+  IconPasswords,
+  IconPlus,
+  IconSearch,
+  IconShieldCheck,
+  IconTrash,
+} from "@/components/ui/icons";
+import { plPlural } from "@/lib/pluralize";
+import { cn } from "@/lib/utils";
 import {
   createSecretAction,
   deleteSecretAction,
   revealSecretAction,
   type CreateSecretState,
 } from "@/app/(app)/w/[workspaceId]/passwords/actions";
+import { REVEAL_MS, revealState } from "./vault-model";
 
 export interface SecretListItem {
   id: string;
@@ -28,22 +72,70 @@ export interface SecretListItem {
   username: string | null;
   hasNotes: boolean;
   owner: { id: string; name: string | null; email: string };
-  updatedAt: string;
+  /** Preformatowane na serwerze („3 mies. temu") — bez rozjazdu SSR/hydracja. */
+  changedLabel: string;
+}
+
+export interface VaultMember {
+  id: string;
+  name: string | null;
+  email: string;
+  avatarUrl: string | null;
+}
+
+type AccessFilter = "all" | "mine" | "others";
+
+const ACCESS_LABEL: Record<AccessFilter, string> = {
+  all: "Wszystkie",
+  mine: "Moje wpisy",
+  others: "Pozostałe",
+};
+
+const personName = (p: { name: string | null; email: string }) =>
+  p.name ?? p.email.split("@")[0] ?? p.email;
+
+/**
+ * URL wpisu jest treścią od użytkownika, więc przepuszczamy tylko http(s).
+ * Brak schematu = doklejamy https://; `javascript:`, `data:` i „//host"
+ * odpadają, zamiast trafić do `href`.
+ */
+function safeUrl(raw: string | null): string | null {
+  if (!raw?.trim()) return null;
+  const value = raw.trim();
+  const candidate = /^https?:\/\//i.test(value) ? value : `https://${value.replace(/^\/+/, "")}`;
+  try {
+    const parsed = new URL(candidate);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 export function SecretVault({
   workspaceId,
+  currentUserId,
   items,
+  members,
 }: {
   workspaceId: string;
+  currentUserId: string;
   items: SecretListItem[];
+  members: VaultMember[];
 }) {
   const [query, setQuery] = useState("");
+  const [access, setAccess] = useState<AccessFilter>("all");
   const [addOpen, setAddOpen] = useState(false);
+  const [revealedIds, setRevealedIds] = useState<string[]>([]);
 
+  const setRevealed = useCallback((id: string, on: boolean) => {
+    setRevealedIds((prev) => (on ? (prev.includes(id) ? prev : [...prev, id]) : prev.filter((x) => x !== id)));
+  }, []);
+
+  const q = query.trim().toLowerCase();
   const filtered = items.filter((it) => {
-    if (!query.trim()) return true;
-    const q = query.toLowerCase();
+    if (access === "mine" && it.owner.id !== currentUserId) return false;
+    if (access === "others" && it.owner.id === currentUserId) return false;
+    if (!q) return true;
     return (
       it.name.toLowerCase().includes(q) ||
       (it.category?.toLowerCase().includes(q) ?? false) ||
@@ -52,397 +144,548 @@ export function SecretVault({
     );
   });
 
-  // Group by category (null = "Bez kategorii" gdy istnieją inne).
-  const grouped = new Map<string, SecretListItem[]>();
-  for (const it of filtered) {
-    const key = it.category ?? "—";
-    const arr = grouped.get(key) ?? [];
-    arr.push(it);
-    grouped.set(key, arr);
-  }
+  const people = members.map((m) => ({ name: personName(m), src: m.avatarUrl }));
+  const revealedCount = revealedIds.filter((id) => filtered.some((it) => it.id === id)).length;
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6 py-6 md:py-10">
-      <header className="flex flex-col gap-2">
-        <span className="eyebrow flex items-center gap-2">
-          <KeyRound size={12} /> Sejf zespołu
-        </span>
-        <h1 className="font-display text-[2rem] font-bold leading-tight tracking-[-0.025em] md:text-[2.4rem]">
-          Manager haseł
-        </h1>
-        <p className="max-w-[62ch] text-[0.94rem] leading-[1.55] text-muted-foreground">
-          Wspólny sejf workspace&apos;u. Hasła szyfrowane AES-256-GCM at-rest.
-          Widoczne po jawnym kliknięciu &quot;Pokaż&quot;.
-        </p>
+    <div data-ui="vault" className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <header className="flex shrink-0 items-center gap-2.5 px-8 pt-4 max-md:px-4">
+        <h1 className="text-xl font-semibold tracking-[-0.3px]">Hasła</h1>
+        <Chip hue="green" size="lg" className="mt-1 gap-1.5">
+          <IconShieldCheck width={11} height={11} />
+          Szyfrowane E2E
+        </Chip>
+        <span className="flex-1" />
+        <Button onClick={() => setAddOpen(true)}>
+          <IconPlus width={14} height={14} />
+          Nowy wpis
+        </Button>
       </header>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <label className="flex h-10 flex-1 items-center gap-2 rounded-lg border border-border bg-card/60 px-3 text-[0.88rem] focus-within:border-primary/50">
-          <Search size={14} className="shrink-0 text-muted-foreground" />
-          <input
-            type="search"
-            placeholder="Szukaj (nazwa, kategoria, URL, login)"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground/60"
+      <div className="flex shrink-0 items-center gap-2 border-b border-border px-8 pt-3 pb-2.5 max-md:px-4">
+        <InputGroup
+          size="sm"
+          type="search"
+          className="w-[220px] max-md:w-full"
+          leading={<IconSearch />}
+          placeholder="Szukaj wpisu…"
+          aria-label="Szukaj wpisu"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <Menu>
+          <MenuTrigger
+            render={
+              <Button variant="secondary" size="sm" className="border-border font-medium">
+                Dostęp
+                <IconChevronDown width={11} height={11} strokeWidth={1.8} />
+              </Button>
+            }
           />
-        </label>
-        <button
-          type="button"
-          onClick={() => setAddOpen(true)}
-          className="inline-flex h-10 items-center gap-2 self-start rounded-xl bg-primary px-4 font-sans text-[0.86rem] font-semibold text-white transition-transform hover:-translate-y-[1px]"
-        >
-          <Plus size={14} /> Nowy sekret
-        </button>
+          <MenuContent className="min-w-[180px]">
+            <MenuRadioGroup value={access} onValueChange={(v) => setAccess(v as AccessFilter)}>
+              {(Object.keys(ACCESS_LABEL) as AccessFilter[]).map((v) => (
+                <MenuRadioItem key={v} value={v}>
+                  {ACCESS_LABEL[v]}
+                </MenuRadioItem>
+              ))}
+            </MenuRadioGroup>
+          </MenuContent>
+        </Menu>
+        <span className="flex-1" />
+        <span className="font-mono text-2xs text-muted-foreground max-md:hidden">
+          sejf odblokowany · auto-ukrycie 30 s
+        </span>
       </div>
 
-      {items.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border p-10 text-center">
-          <KeyRound className="mx-auto mb-3 text-muted-foreground/60" size={32} />
-          <p className="text-[0.96rem] font-semibold">Brak sekretów</p>
-          <p className="mt-1 text-[0.86rem] text-muted-foreground">
-            Utwórz pierwszy — hasło zostanie zaszyfrowane zanim opuści serwer.
-          </p>
-        </div>
-      )}
+      <div className="flex min-h-0 flex-1 flex-col px-8 pt-3 pb-5 max-md:px-4">
+        {filtered.length === 0 ? (
+          <div>
+            <EmptyState
+              icon={<IconPasswords />}
+              title={items.length === 0 ? "Sejf jest pusty" : "Nic nie pasuje"}
+              description={
+                items.length === 0
+                  ? "Dodaj pierwszy wpis — hasło jest szyfrowane, zanim trafi do bazy."
+                  : "Zmień frazę albo filtr dostępu."
+              }
+            />
+          </div>
+        ) : (
+          <DataTable wrapperClassName="min-h-0 flex-1" className="min-w-[900px]">
+            <DataThead>
+              <tr>
+                <DataTh width={280}>Usługa</DataTh>
+                <DataTh width={220}>Login</DataTh>
+                <DataTh width={220}>Hasło</DataTh>
+                <DataTh width={160}>Dostęp</DataTh>
+                <DataTh>Zmienione</DataTh>
+              </tr>
+            </DataThead>
+            <tbody>
+              {filtered.map((item) => (
+                <SecretRow
+                  key={item.id}
+                  item={item}
+                  people={people}
+                  revealed={revealedIds.includes(item.id)}
+                  onRevealChange={setRevealed}
+                />
+              ))}
+            </tbody>
+          </DataTable>
+        )}
+      </div>
 
-      {filtered.length === 0 && items.length > 0 && (
-        <p className="text-[0.86rem] text-muted-foreground">
-          Nic nie pasuje do „{query}”.
-        </p>
-      )}
+      <footer className="flex h-8 shrink-0 items-center border-t border-border bg-canvas px-8 font-mono text-2xs text-muted-foreground max-md:px-4">
+        {items.length} {plPlural(items.length, "wpis", "wpisy", "wpisów")} · odsłonięte: {revealedCount}
+      </footer>
 
-      {[...grouped.entries()].map(([cat, list]) => (
-        <section key={cat} className="flex flex-col gap-2">
-          {items.some((i) => i.category !== null) && (
-            <h2 className="font-mono text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              {cat === "—" ? "Bez kategorii" : cat}
-            </h2>
-          )}
-          <ul className="flex flex-col divide-y divide-border/60 overflow-hidden rounded-xl border border-border bg-card/40">
-            {list.map((it) => (
-              <SecretRow key={it.id} item={it} />
-            ))}
-          </ul>
-        </section>
-      ))}
-
-      {addOpen && (
-        <CreateSecretDialog
-          workspaceId={workspaceId}
-          onClose={() => setAddOpen(false)}
-        />
-      )}
+      <CreateSecretDialog workspaceId={workspaceId} open={addOpen} onOpenChange={setAddOpen} />
     </div>
   );
 }
 
-function SecretRow({ item }: { item: SecretListItem }) {
-  const [revealed, setRevealed] = useState<{
-    password: string;
-    notes: string | null;
-  } | null>(null);
-  const [loading, setLoading] = useState(false);
+function SecretRow({
+  item,
+  people,
+  revealed,
+  onRevealChange,
+}: {
+  item: SecretListItem;
+  people: { name: string; src?: string | null }[];
+  revealed: boolean;
+  onRevealChange: (id: string, on: boolean) => void;
+}) {
+  // Plaintext wyłącznie tutaj i tylko gdy `revealed`.
+  const [password, setPassword] = useState<string | null>(null);
+  const [countdownLabel, setCountdownLabel] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState<"password" | "username" | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [copied, setCopied] = useState<"login" | "password" | null>(null);
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const doReveal = async () => {
-    if (revealed) {
-      setRevealed(null);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    const res = await revealSecretAction({ id: item.id });
-    setLoading(false);
-    if (res.ok) setRevealed({ password: res.password, notes: res.notes });
-    else setError(res.error);
+  const hide = useCallback(() => {
+    setPassword(null);
+    setCountdownLabel(null);
+    onRevealChange(item.id, false);
+  }, [item.id, onRevealChange]);
+
+  // Twarde okno 30 s. `revealedAt` trzymamy lokalnie w efekcie, żeby licznik
+  // startował dokładnie z chwilą pokazania hasła.
+  useEffect(() => {
+    if (password === null) return;
+    const revealedAt = Date.now();
+    const tick = () => {
+      const s = revealState(revealedAt, Date.now());
+      if (s.expired) {
+        hide();
+        return;
+      }
+      setCountdownLabel(s.label);
+    };
+    tick();
+    const iv = setInterval(tick, 500);
+    const hard = setTimeout(hide, REVEAL_MS);
+    return () => {
+      clearInterval(iv);
+      clearTimeout(hard);
+    };
+  }, [password, hide]);
+
+  useEffect(() => () => {
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+  }, []);
+
+  // Wiersz zniknięty z filtra gubi swój plaintext razem ze stanem — zdejmij
+  // też podświetlenie w rodzicu, inaczej po powrocie wiersz udaje odsłonięty.
+  useEffect(() => () => onRevealChange(item.id, false), [item.id, onRevealChange]);
+
+  const flashCopied = (what: "login" | "password") => {
+    setCopied(what);
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+    copyTimer.current = setTimeout(() => setCopied(null), 1400);
   };
 
-  const copy = async (what: "password" | "username", value: string) => {
+  const copy = async (what: "login" | "password", value: string) => {
     try {
       await navigator.clipboard.writeText(value);
-      setCopied(what);
-      setTimeout(() => setCopied(null), 1200);
+      flashCopied(what);
     } catch {
-      /* clipboard denied */
+      setError("Przeglądarka nie dała dostępu do schowka.");
     }
   };
 
-  const doDelete = () => {
-    if (!confirm(`Usunąć „${item.name}"?`)) return;
-    const fd = new FormData();
-    fd.set("id", item.id);
-    startTransition(() => {
-      void deleteSecretAction(fd);
-    });
+  const toggleReveal = async () => {
+    if (password !== null) {
+      hide();
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    const res = await revealSecretAction({ id: item.id });
+    setBusy(false);
+    if (!res.ok) {
+      setError(res.error);
+      return;
+    }
+    setPassword(res.password);
+    onRevealChange(item.id, true);
   };
 
+  // Kopiowanie bez odsłaniania: plaintext idzie prosto do schowka i wychodzi
+  // z zakresu funkcji — nigdy nie ląduje w stanie ani w DOM.
+  const copyPassword = async () => {
+    if (password !== null) {
+      void copy("password", password);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    const res = await revealSecretAction({ id: item.id });
+    setBusy(false);
+    if (!res.ok) {
+      setError(res.error);
+      return;
+    }
+    await copy("password", res.password);
+  };
+
+  const showNote = async () => {
+    setBusy(true);
+    setError(null);
+    const res = await revealSecretAction({ id: item.id });
+    setBusy(false);
+    if (!res.ok) {
+      setError(res.error);
+      return;
+    }
+    setNote(res.notes ?? "Ten wpis nie ma notatki.");
+  };
+
+  const remove = () => {
+    if (!confirm(`Usunąć wpis „${item.name}"?`)) return;
+    const fd = new FormData();
+    fd.set("id", item.id);
+    startTransition(() => void deleteSecretAction(fd));
+  };
+
+  const href = safeUrl(item.url);
+
   return (
-    <li className="flex flex-col gap-2 px-4 py-3">
-      <div className="flex items-start gap-3">
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary text-white">
-          <KeyRound size={14} />
-        </div>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex items-center gap-2">
-            <span className="truncate font-display text-[1rem] font-semibold">
-              {item.name}
+    <>
+      <DataTr selected={revealed} className="h-11">
+        <DataTd className="px-3">
+          <span className="flex items-center gap-2.5">
+            <Avatar name={item.name} size={26} className="rounded-md" />
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate text-sm leading-4 font-medium">{item.name}</span>
+              <span className="truncate text-2xs text-fg-3">{item.url ?? item.category ?? "—"}</span>
             </span>
-            {item.url && (
-              <a
-                href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground transition-colors hover:text-primary"
-                title="Otwórz URL"
+          </span>
+        </DataTd>
+
+        <DataTd>
+          <span className="flex items-center gap-1.5">
+            <span className="min-w-0 flex-1 truncate text-xs text-n-700">{item.username ?? "—"}</span>
+            {item.username && (
+              <IconButton
+                label={copied === "login" ? "Skopiowano login" : "Kopiuj login"}
+                active={copied === "login"}
+                onClick={() => void copy("login", item.username!)}
               >
-                <ExternalLink size={13} />
-              </a>
+                {copied === "login" ? <IconCheck width={12} height={12} /> : <IconCopy width={11} height={11} />}
+              </IconButton>
             )}
-          </div>
-          {item.username && (
-            <button
-              type="button"
-              onClick={() => copy("username", item.username!)}
-              className="group flex w-fit items-center gap-1.5 font-mono text-[0.76rem] text-muted-foreground transition-colors hover:text-foreground"
-              title="Kopiuj login"
+          </span>
+        </DataTd>
+
+        <DataTd>
+          <span className="flex items-center gap-1.5">
+            <span
+              className={cn(
+                "min-w-0 flex-1 truncate font-mono text-xs",
+                password === null ? "tracking-[2px] text-n-700" : "text-foreground",
+              )}
             >
-              <UserIcon size={11} /> {item.username}
-              <Copy
-                size={10}
-                className={`opacity-0 transition-opacity group-hover:opacity-100 ${copied === "username" ? "opacity-100 text-emerald-500" : ""}`}
-              />
-            </button>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={doReveal}
-            disabled={loading}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 font-mono text-[0.68rem] uppercase tracking-[0.1em] text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground disabled:opacity-60"
-            aria-label={revealed ? "Ukryj hasło" : "Pokaż hasło"}
-          >
-            {revealed ? <EyeOff size={11} /> : <Eye size={11} />}
-            {loading ? "…" : revealed ? "Ukryj" : "Pokaż"}
-          </button>
-          <button
-            type="button"
-            onClick={doDelete}
-            aria-label="Usuń sekret"
-            title="Usuń"
-            className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-          >
-            <Trash2 size={13} />
-          </button>
-        </div>
-      </div>
+              {password ?? "••••••••••••"}
+            </span>
+            <IconButton
+              label={password === null ? "Pokaż hasło" : "Ukryj hasło"}
+              pressed={password !== null}
+              disabled={busy}
+              onClick={() => void toggleReveal()}
+            >
+              {password === null ? <IconEye width={12} height={12} /> : <IconEyeOff width={12} height={12} />}
+            </IconButton>
+            <IconButton
+              label={copied === "password" ? "Skopiowano hasło" : "Kopiuj hasło"}
+              active={copied === "password"}
+              disabled={busy}
+              onClick={() => void copyPassword()}
+            >
+              {copied === "password" ? <IconCheck width={12} height={12} /> : <IconCopy width={11} height={11} />}
+            </IconButton>
+          </span>
+        </DataTd>
+
+        <DataTd>
+          <AvatarStack people={people} max={3} size={20} className="align-middle" />
+        </DataTd>
+
+        <DataTd>
+          <span className="flex items-center gap-1.5 text-xs text-fg-2">
+            <span className="truncate">
+              {item.changedLabel} · {personName(item.owner)}
+            </span>
+            {countdownLabel && (
+              <span className="ml-auto shrink-0 font-mono text-2xs text-fg-3">{countdownLabel}</span>
+            )}
+            <Menu>
+              <MenuTrigger
+                render={
+                  <button
+                    type="button"
+                    aria-label={`Więcej dla ${item.name}`}
+                    className={cn(
+                      "inline-flex size-6 shrink-0 items-center justify-center rounded-sm border border-border text-muted-foreground outline-none",
+                      "hover:bg-n-100 hover:text-foreground active:bg-n-200",
+                      countdownLabel ? "ml-1.5" : "ml-auto",
+                    )}
+                  />
+                }
+              >
+                <IconMore width={13} height={13} />
+              </MenuTrigger>
+              <MenuContent align="end" className="min-w-[200px]">
+                {item.username && (
+                  <MenuItem icon={<IconCopy />} onClick={() => void copy("login", item.username!)}>
+                    Kopiuj login
+                  </MenuItem>
+                )}
+                <MenuItem icon={<IconCopy />} onClick={() => void copyPassword()}>
+                  Kopiuj hasło
+                </MenuItem>
+                {href && (
+                  <MenuItem
+                    icon={<IconExternal />}
+                    render={<a href={href} target="_blank" rel="noopener noreferrer" />}
+                  >
+                    Otwórz stronę
+                  </MenuItem>
+                )}
+                {item.hasNotes && (
+                  <MenuItem icon={<IconNotes />} onClick={() => void showNote()}>
+                    Pokaż notatkę
+                  </MenuItem>
+                )}
+                <MenuSeparator />
+                <MenuItem icon={<IconTrash />} destructive onClick={remove}>
+                  Usuń wpis
+                </MenuItem>
+              </MenuContent>
+            </Menu>
+            <NoteDialog name={item.name} note={note} onClose={() => setNote(null)} />
+          </span>
+        </DataTd>
+      </DataTr>
 
       {error && (
-        <p className="rounded-md bg-destructive/10 px-3 py-1.5 font-mono text-[0.72rem] text-destructive">
-          {error}
-        </p>
+        <tr>
+          <td colSpan={5} className="border-b border-n-100 px-3 py-1.5 text-xs text-danger-text">
+            {error}
+          </td>
+        </tr>
       )}
+    </>
+  );
+}
 
-      {revealed && (
-        <div className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-background/60 p-3">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-              Hasło
-            </span>
-            <code className="flex-1 truncate rounded bg-muted/40 px-2 py-1 font-mono text-[0.86rem]">
-              {revealed.password}
-            </code>
-            <button
-              type="button"
-              onClick={() => copy("password", revealed.password)}
-              className="inline-flex h-7 items-center gap-1 rounded-md border border-border px-2 font-mono text-[0.66rem] uppercase tracking-[0.12em] transition-colors hover:border-primary/50"
-              aria-label="Kopiuj hasło"
-            >
-              <Copy size={10} />{" "}
-              {copied === "password" ? "Skopiowano" : "Kopiuj"}
-            </button>
-          </div>
-          {revealed.notes && (
-            <div className="flex flex-col gap-1">
-              <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-                Notatka
-              </span>
-              <pre className="whitespace-pre-wrap rounded-md bg-muted/40 px-3 py-2 font-mono text-[0.82rem]">
-                {revealed.notes}
-              </pre>
-            </div>
-          )}
-        </div>
+/** Notatka to też sekret — znika po tym samym oknie co hasło. */
+function NoteDialog({
+  name,
+  note,
+  onClose,
+}: {
+  name: string;
+  note: string | null;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    if (note === null) return;
+    const t = setTimeout(onClose, REVEAL_MS);
+    return () => clearTimeout(t);
+  }, [note, onClose]);
+
+  return (
+    <Dialog open={note !== null} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent size="sm">
+        <DialogHeader>
+          <DialogTitle>Notatka — {name}</DialogTitle>
+        </DialogHeader>
+        <DialogBody>
+          <pre className="rounded-md bg-n-100 px-3 py-2 font-mono text-xs leading-5 whitespace-pre-wrap">
+            {note}
+          </pre>
+          <p className="mt-2 text-2xs text-fg-3">Okno zamknie się samo po 30 sekundach.</p>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="secondary" onClick={onClose}>Zamknij</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function IconButton({
+  label,
+  active,
+  pressed,
+  disabled,
+  onClick,
+  children,
+}: {
+  label: string;
+  active?: boolean;
+  pressed?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      aria-pressed={pressed}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "inline-flex size-6 shrink-0 items-center justify-center rounded-sm border outline-none disabled:opacity-50",
+        active
+          ? "border-success bg-chip-green-bg text-chip-green-fg"
+          : "border-border text-muted-foreground hover:bg-n-100 hover:text-foreground active:bg-n-200",
+        pressed && !active && "border-input-border bg-n-100 text-foreground",
       )}
-    </li>
+    >
+      {children}
+    </button>
   );
 }
 
 function CreateSecretDialog({
   workspaceId,
-  onClose,
+  open,
+  onOpenChange,
 }: {
   workspaceId: string;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [state, formAction, pending] = useActionState<CreateSecretState, FormData>(
-    createSecretAction,
-    null,
-  );
+  const [state, formAction, pending] = useActionState<CreateSecretState, FormData>(createSecretAction, null);
   const [showPwd, setShowPwd] = useState(false);
 
   useEffect(() => {
-    if (state?.ok) onClose();
-  }, [state, onClose]);
+    if (state?.ok) onOpenChange(false);
+  }, [state, onOpenChange]);
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-background/70 sm:items-center"
-      onClick={onClose}
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) setShowPwd(false);
+        onOpenChange(next);
+      }}
     >
-      <div
-        role="dialog"
-        aria-label="Nowy sekret"
-        className="flex w-full max-w-[520px] flex-col gap-4 rounded-t-2xl border border-border bg-card p-6 shadow-2xl sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-[1.2rem] font-bold">Nowy sekret</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Zamknij"
-            className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-muted"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
+      <DialogContent size="lg">
+        <DialogHeader>
+          <DialogTitle>Nowy wpis</DialogTitle>
+        </DialogHeader>
         <form
           action={(fd) => startTransition(() => formAction(fd))}
-          className="flex flex-col gap-3"
+          autoComplete="off"
+          className="flex min-h-0 flex-1 flex-col"
         >
           <input type="hidden" name="workspaceId" value={workspaceId} />
-
-          <FieldRow label="Nazwa" error={!state?.ok ? state?.fieldErrors?.name : undefined}>
-            <input
-              name="name"
-              required
-              maxLength={120}
-              placeholder="np. Gmail firmowy"
-              autoFocus
-              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary/60"
-            />
-          </FieldRow>
-
-          <FieldRow label="Kategoria (opcjonalna)">
-            <input
-              name="category"
-              maxLength={60}
-              placeholder="email / vpn / wifi / …"
-              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary/60"
-            />
-          </FieldRow>
-
-          <FieldRow label="URL (opcjonalny)">
-            <input
-              name="url"
-              type="url"
-              maxLength={500}
-              placeholder="https://…"
-              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary/60"
-            />
-          </FieldRow>
-
-          <FieldRow label="Login / e-mail">
-            <input
-              name="username"
-              maxLength={200}
-              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary/60"
-            />
-          </FieldRow>
-
-          <FieldRow
-            label="Hasło"
-            error={!state?.ok ? state?.fieldErrors?.password : undefined}
-          >
-            <div className="flex items-center gap-1">
-              <input
-                name="password"
-                type={showPwd ? "text" : "password"}
+          <DialogBody className="flex flex-col gap-3">
+            <Field label="Nazwa">
+              <Input
+                name="name"
                 required
-                maxLength={4000}
-                className="h-10 w-full rounded-lg border border-border bg-background px-3 font-mono text-[0.9rem] outline-none focus:border-primary/60"
+                maxLength={120}
+                autoFocus
+                placeholder="np. Panel sklepu — admin"
+                error={state && !state.ok ? state.fieldErrors?.name : undefined}
               />
-              <button
-                type="button"
-                onClick={() => setShowPwd((v) => !v)}
-                aria-label={showPwd ? "Ukryj" : "Pokaż"}
-                className="grid h-10 w-10 place-items-center rounded-lg border border-border text-muted-foreground hover:text-foreground"
-              >
-                {showPwd ? <EyeOff size={14} /> : <Eye size={14} />}
-              </button>
-            </div>
-          </FieldRow>
-
-          <FieldRow label="Notatka (opcjonalna, szyfrowana)">
-            <textarea
-              name="notes"
-              rows={3}
-              maxLength={8000}
-              placeholder="Recovery codes, seed phrase, kontekst…"
-              className="w-full resize-y rounded-lg border border-border bg-background px-3 py-2 font-mono text-[0.82rem] outline-none focus:border-primary/60"
-            />
-          </FieldRow>
-
-          {!state?.ok && state?.error && (
-            <p className="rounded-md bg-destructive/10 px-3 py-2 text-[0.82rem] text-destructive">
-              {state.error}
-            </p>
-          )}
-
-          <div className="mt-2 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex h-10 items-center rounded-lg px-4 font-sans text-[0.86rem] text-muted-foreground hover:text-foreground"
-            >
+            </Field>
+            <Field label="Kategoria">
+              <Input name="category" maxLength={60} placeholder="e-mail / vpn / api…" />
+            </Field>
+            <Field label="URL">
+              <Input name="url" maxLength={500} placeholder="https://…" inputMode="url" />
+            </Field>
+            <Field label="Login">
+              <Input name="username" maxLength={200} placeholder="dev@nazwa.pl" autoComplete="off" />
+            </Field>
+            <Field label="Hasło">
+              <div className="flex items-center gap-1.5">
+                <Input
+                  name="password"
+                  type={showPwd ? "text" : "password"}
+                  required
+                  maxLength={4000}
+                  autoComplete="new-password"
+                  spellCheck={false}
+                  className="font-mono"
+                  error={state && !state.ok ? state.fieldErrors?.password : undefined}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  iconOnly
+                  aria-label={showPwd ? "Ukryj hasło" : "Pokaż hasło"}
+                  aria-pressed={showPwd}
+                  onClick={() => setShowPwd((v) => !v)}
+                >
+                  {showPwd ? <IconEyeOff /> : <IconEye />}
+                </Button>
+              </div>
+            </Field>
+            <Field label="Notatki">
+              <Textarea
+                name="notes"
+                rows={3}
+                maxLength={8000}
+                spellCheck={false}
+                placeholder="Kody odzyskiwania, kontekst, kto zakładał konto…"
+                className="font-mono text-xs"
+              />
+            </Field>
+            {state && !state.ok && state.error && (
+              <p className="rounded-sm bg-chip-red-bg px-3 py-2 text-xs text-danger-text">{state.error}</p>
+            )}
+          </DialogBody>
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
               Anuluj
-            </button>
-            <button
-              type="submit"
-              disabled={pending}
-              className="inline-flex h-10 items-center rounded-lg bg-primary px-4 font-sans text-[0.88rem] font-semibold text-white disabled:opacity-60"
-            >
-              {pending ? "Zapisuję…" : "Zapisz"}
-            </button>
-          </div>
+            </Button>
+            <Button type="submit" loading={pending} disabled={pending}>
+              Zapisz wpis
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-function FieldRow({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="font-mono text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-        {label}
-      </span>
+      <span className="eyebrow">{label}</span>
       {children}
-      {error && (
-        <span className="font-mono text-[0.72rem] text-destructive">{error}</span>
-      )}
     </label>
   );
 }

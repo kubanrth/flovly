@@ -2,16 +2,18 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
-import { WikiEditor } from "@/components/wiki/wiki-editor";
+import { WikiPage } from "@/components/wiki/wiki-page";
 import type { RichTextDoc } from "@/components/task/rich-text-editor";
-import { AppShell } from "@/components/layout/app-shell";
 
 // Backfills a WikiPage for legacy workspaces so first-visit never 404s.
 async function ensureWikiPage(workspaceId: string, workspaceName: string) {
-  const existing = await db.wikiPage.findUnique({ where: { workspaceId } });
+  const existing = await db.wikiPage.findUnique({
+    where: { workspaceId },
+    include: { updatedBy: { select: { name: true, email: true, avatarUrl: true } } },
+  });
   if (existing) return existing;
 
-  return db.wikiPage.create({
+  const created = await db.wikiPage.create({
     data: {
       workspaceId,
       title: "O projekcie",
@@ -20,7 +22,7 @@ async function ensureWikiPage(workspaceId: string, workspaceName: string) {
         content: [
           {
             type: "heading",
-            attrs: { level: 1 },
+            attrs: { level: 2 },
             content: [{ type: "text", text: workspaceName }],
           },
           {
@@ -36,7 +38,9 @@ async function ensureWikiPage(workspaceId: string, workspaceName: string) {
         ],
       },
     },
+    include: { updatedBy: { select: { name: true, email: true, avatarUrl: true } } },
   });
+  return created;
 }
 
 export default async function WorkspaceWikiPage({
@@ -54,28 +58,23 @@ export default async function WorkspaceWikiPage({
   if (!workspace) notFound();
 
   const wiki = await ensureWikiPage(workspaceId, workspace.name);
-  const canEdit = can(ctx.role, "wiki.edit");
 
   return (
-    <AppShell>
-      <div className="flex flex-col gap-8">
-        <div className="flex flex-col gap-2">
-          <span className="eyebrow">Wiki · {workspace.name}</span>
-          <p className="max-w-[56ch] text-[0.9rem] leading-[1.55] text-muted-foreground">
-            Jedna strona, w której zapisujecie wszystko, czego nie chcecie
-            szukać po komentarzach i Slacku. Niezbędnik projektu.
-          </p>
-        </div>
-
-        <WikiEditor
-          workspaceId={workspaceId}
-          initial={{
-            title: wiki.title,
-            contentJson: (wiki.contentJson ?? null) as RichTextDoc | null,
-          }}
-          canEdit={canEdit}
-        />
-      </div>
-    </AppShell>
+    <WikiPage
+      workspaceId={workspaceId}
+      workspaceName={workspace.name}
+      canEdit={can(ctx.role, "wiki.edit")}
+      page={{
+        title: wiki.title,
+        contentJson: (wiki.contentJson ?? null) as RichTextDoc | null,
+        editorName: wiki.updatedBy?.name ?? wiki.updatedBy?.email ?? null,
+        editorAvatar: wiki.updatedBy?.avatarUrl ?? null,
+        updatedLabel: wiki.updatedAt.toLocaleDateString("pl-PL", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
+      }}
+    />
   );
 }
