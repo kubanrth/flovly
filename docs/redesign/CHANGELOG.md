@@ -148,3 +148,29 @@ Dwa kolejne pełne przebiegi: 50/50.
   strona, nagłówek przyklejał się do elementu, który nigdy nie scrollował. Subskrypcje
   i kontakty oddają teraz scroll samej tabeli (`wrapperClassName="min-h-0 flex-1"`).
   Zmierzone: 1420px do przescrollowania, nagłówek trzyma pozycję, wiersze 44px.
+
+## F6 — hardening
+
+### Dostępność (AK190)
+- **`--fg-3` z makiet nie przechodził AA.** `#8A857D` daje 3,39:1 na tle „selected" i 3,48:1
+  na canvasie przy wymaganych 4,5:1 dla tekstu. Podniesione do `#747069` (4,92 / 4,68 / 4,56) —
+  najmniejsze przyciemnienie w tym samym odcieniu, które przechodzi na wszystkich trzech tłach.
+  `--n-500` zostaje bez zmian, bo napędza też ikony i obramowania, gdzie próg jest inny;
+  zamiast tego 78 plików używających `text-n-500` **jako koloru tekstu** przełączono na `text-fg-3`.
+- Zakładki widoków przestały udawać ARIA-tabs (nie ma `tabpanel`, każda zakładka to `<Link>`),
+  przez co `[+]`, „Więcej N" i `⋯` były niedozwolonymi dziećmi `tablist`. Teraz `<nav>` +
+  `aria-current="page"`.
+- Karty kanbana: `useSortable` nakładał `role="button"` na kontener zawierający link tytułu
+  (zagnieżdżone kontrolki). Rola zmieniona na `group`, przeciąganie klawiaturą nietknięte.
+- Cel dotykowy tytułu karty podniesiony do 24px przy zerowej zmianie geometrii.
+
+### Fałszywe naruszenia w teście axe
+Test kontrastu wywalał się za każdym przebiegiem na innym kroku i innej liczbie węzłów
+(7 / 28 / 51 / 59). To nie był kontrast: axe skanował w trakcie 200 ms przejścia widoku,
+gdy tła są półprzezroczyste, a czasem zanim arkusz w ogóle się zastosował. Skan czeka teraz
+na obecność tokenów i wyciszenie animacji — dwa kolejne pełne przebiegi 61/61.
+
+### Odmowa dostępu
+`/w/<ws>/settings` dla roli bez uprawnień wołało `notFound()`, więc odmowa wyglądała jak
+zepsuty link („404 — Tej strony już nie ma"). Teraz ekran „Brak dostępu"; kontrole serwerowe
+bez zmian.

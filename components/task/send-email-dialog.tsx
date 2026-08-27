@@ -59,7 +59,7 @@ export function SendEmailDialog({ taskId, taskTitle, attachments, iconOnly }: { 
                       <li key={a.id} className="flex h-8 items-center gap-2 border-b border-n-100 px-2 last:border-b-0">
                         <Checkbox checked={picked.has(a.id)} onCheckedChange={() => toggle(a.id)} ariaLabel={a.filename} />
                         <span className="min-w-0 flex-1 truncate text-sm">{a.filename}</span>
-                        <span className="font-mono text-[10px] text-n-500">{formatBytes(a.sizeBytes)}</span>
+                        <span className="font-mono text-[10px] text-fg-3">{formatBytes(a.sizeBytes)}</span>
                       </li>
                     ))}
                   </ul>

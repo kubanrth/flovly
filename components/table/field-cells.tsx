@@ -119,7 +119,7 @@ function TextLikeCell({ taskId, columnId, type, raw }: CellProps) {
         className={INPUT}
       />
       {href && (
-        <a href={href} target={type === "URL" ? "_blank" : undefined} rel={type === "URL" ? "noreferrer" : undefined} aria-label={type === "URL" ? "Otwórz link" : type === "EMAIL" ? "Wyślij email" : "Zadzwoń"} className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-n-500 hover:bg-n-100 hover:text-foreground" onClick={(e) => e.stopPropagation()}>
+        <a href={href} target={type === "URL" ? "_blank" : undefined} rel={type === "URL" ? "noreferrer" : undefined} aria-label={type === "URL" ? "Otwórz link" : type === "EMAIL" ? "Wyślij email" : "Zadzwoń"} className="inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-fg-3 hover:bg-n-100 hover:text-foreground" onClick={(e) => e.stopPropagation()}>
           {type === "URL" ? <IconExternal width={12} height={12} /> : type === "EMAIL" ? <IconMail width={12} height={12} /> : <IconPhone width={12} height={12} />}
         </a>
       )}
@@ -167,7 +167,7 @@ function NumberCell({ taskId, columnId, raw, options }: CellProps) {
         }}
         className={cn(INPUT, "text-right font-mono text-xs tabular-nums")}
       />
-      {suffix && raw && <span className="shrink-0 font-mono text-[10px] text-n-500">{suffix}</span>}
+      {suffix && raw && <span className="shrink-0 font-mono text-[10px] text-fg-3">{suffix}</span>}
     </div>
   );
 }
@@ -213,7 +213,7 @@ function SingleSelectCell({ taskId, columnId, raw, options }: CellProps) {
   return (
     <Menu>
       <MenuTrigger aria-label="Wybierz opcję" className={MENU_TRIGGER}>
-        {raw ? optionChip(current, raw) : <span className="inline-flex h-5 items-center rounded-sm border border-dashed border-n-300 px-[7px] text-2xs text-n-500">wybierz…</span>}
+        {raw ? optionChip(current, raw) : <span className="inline-flex h-5 items-center rounded-sm border border-dashed border-n-300 px-[7px] text-2xs text-fg-3">wybierz…</span>}
       </MenuTrigger>
       <MenuContent align="start" className="w-48">
         {opts.length === 0 && <MenuItem disabled>Brak opcji — skonfiguruj kolumnę</MenuItem>}
@@ -239,7 +239,7 @@ function MultiSelectCell({ taskId, columnId, raw, options }: CellProps) {
     <Menu>
       <MenuTrigger aria-label="Wybierz opcje" className={cn(MENU_TRIGGER, "w-full")}>
         {selected.length === 0 ? (
-          <span className="inline-flex h-5 items-center rounded-sm border border-dashed border-n-300 px-[7px] text-2xs text-n-500">wybierz…</span>
+          <span className="inline-flex h-5 items-center rounded-sm border border-dashed border-n-300 px-[7px] text-2xs text-fg-3">wybierz…</span>
         ) : (
           <span className="flex min-w-0 items-center gap-1 overflow-hidden whitespace-nowrap">
             {selected.map((v) => <span key={v}>{optionChip(opts.find((o) => o.value === v), v, "sm")}</span>)}

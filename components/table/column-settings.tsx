@@ -123,11 +123,11 @@ function SortableRow({ column, hidden, canManage, onToggle }: { column: ColumnDe
       >
         <GripVertical size={12} strokeWidth={1.5} />
       </button>
-      <span className="inline-flex size-4 shrink-0 items-center justify-center text-n-500">
+      <span className="inline-flex size-4 shrink-0 items-center justify-center text-fg-3">
         {column.fieldType ? <FieldTypeIcon type={column.fieldType} size={12} /> : <BuiltinColumnIcon id={column.id} size={12} />}
       </span>
       <span className={cn("min-w-0 flex-1 truncate", hidden && "text-n-400")}>{column.label}</span>
-      {column.custom && column.fieldType && <span className="shrink-0 text-2xs text-n-500">{FIELD_TYPE_META[column.fieldType].label}</span>}
+      {column.custom && column.fieldType && <span className="shrink-0 text-2xs text-fg-3">{FIELD_TYPE_META[column.fieldType].label}</span>}
       {column.custom && column.fieldType && canManage && (
         <ConfigureColumnButton columnId={column.id.replace(/^custom:/, "")} name={column.label} fieldType={column.fieldType} fieldOptions={column.fieldOptions ?? {}} />
       )}

@@ -143,7 +143,7 @@ function ViewsPicker() {
                 onChange={() => toggle(p.value)}
                 className="size-4 shrink-0 accent-[var(--control-on)]"
               />
-              <Icon width={14} height={14} className={on ? "text-orange-700" : "text-n-500"} />
+              <Icon width={14} height={14} className={on ? "text-orange-700" : "text-fg-3"} />
               <span className="truncate">{p.label}</span>
             </label>
           );

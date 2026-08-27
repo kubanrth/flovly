@@ -34,7 +34,7 @@ export function MoveTaskMenu({ taskId, currentBoardId, availableBoards, iconOnly
           <InputGroup leading={<IconSearch />} size="sm" autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Szukaj tablicy…" aria-label="Szukaj tablicy" />
         </div>
         {candidates.length === 0 ? (
-          <p className="px-3 py-4 text-center text-xs text-n-500">{q ? "Brak dopasowań." : "Brak innych tablic w przestrzeni."}</p>
+          <p className="px-3 py-4 text-center text-xs text-fg-3">{q ? "Brak dopasowań." : "Brak innych tablic w przestrzeni."}</p>
         ) : (
           <ul className="flex max-h-[300px] flex-col overflow-y-auto p-1">
             {candidates.map((b) => (
@@ -42,15 +42,15 @@ export function MoveTaskMenu({ taskId, currentBoardId, availableBoards, iconOnly
                 <button type="button" onClick={() => submit(b.id)} className="flex h-9 w-full items-center gap-2 rounded-md px-2 text-left outline-none hover:bg-n-100">
                   <span className="flex min-w-0 flex-1 flex-col leading-tight">
                     <span className="truncate text-sm font-medium">{b.name}</span>
-                    <span className="truncate text-2xs text-n-500">{b.workspaceName}</span>
+                    <span className="truncate text-2xs text-fg-3">{b.workspaceName}</span>
                   </span>
-                  <IconChevronRight width={12} height={12} className="text-n-500" />
+                  <IconChevronRight width={12} height={12} className="text-fg-3" />
                 </button>
               </li>
             ))}
           </ul>
         )}
-        <p className="border-t border-border px-3 py-2 text-2xs text-n-500">Status zostanie dopasowany po nazwie albo wyczyszczony.</p>
+        <p className="border-t border-border px-3 py-2 text-2xs text-fg-3">Status zostanie dopasowany po nazwie albo wyczyszczony.</p>
       </PopoverContent>
     </Popover>
   );

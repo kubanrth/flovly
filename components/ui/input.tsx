@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Kbd } from "./kbd";
 
 export const inputVariants = cva(
-  "w-full min-w-0 rounded-sm border border-input-border bg-card px-2.5 text-sm text-foreground outline-none placeholder:text-n-500 hover:border-input-border-hover focus:border-orange-500 disabled:pointer-events-none disabled:border-n-200 disabled:bg-n-100 disabled:text-n-400 aria-invalid:border-danger",
+  "w-full min-w-0 rounded-sm border border-input-border bg-card px-2.5 text-sm text-foreground outline-none placeholder:text-fg-3 hover:border-input-border-hover focus:border-orange-500 disabled:pointer-events-none disabled:border-n-200 disabled:bg-n-100 disabled:text-n-400 aria-invalid:border-danger",
   { variants: { size: { sm: "h-7", md: "h-8", lg: "h-11 px-3 text-base" } }, defaultVariants: { size: "md" } },
 );
 
@@ -36,10 +36,10 @@ export interface InputGroupProps extends InputProps {
 export function InputGroup({ leading, trailing, kbd, className, size, error, ...props }: InputGroupProps) {
   return withError(
     <label className={cn(inputVariants({ size }), "flex cursor-text items-center gap-2 focus-within:border-orange-500 focus-within:shadow-[var(--focus)] has-[:disabled]:pointer-events-none has-[:disabled]:bg-n-100 has-[:disabled]:text-n-400", error && "border-danger", className)}>
-      {leading && <span className="shrink-0 text-n-500 [&_svg]:size-3.5">{leading}</span>}
-      <input {...props} aria-invalid={error ? true : props["aria-invalid"]} className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-n-500 focus-visible:shadow-none" />
+      {leading && <span className="shrink-0 text-fg-3 [&_svg]:size-3.5">{leading}</span>}
+      <input {...props} aria-invalid={error ? true : props["aria-invalid"]} className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-fg-3 focus-visible:shadow-none" />
       {kbd && <Kbd>{kbd}</Kbd>}
-      {trailing && <span className="shrink-0 text-n-500 [&_svg]:size-3.5">{trailing}</span>}
+      {trailing && <span className="shrink-0 text-fg-3 [&_svg]:size-3.5">{trailing}</span>}
     </label>,
     error,
   );

@@ -509,7 +509,7 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
             placeholder={c.id === "startAt" ? "Data startu" : "Data końca"}
             disabled={!canEdit}
             onChange={(iso) => persistDate(t, c.id as "startAt" | "stopAt", iso)}
-            triggerClassName={cn("px-1.5 text-xs text-fg-2 [&_span[role=button]]:hidden hover:[&_span[role=button]]:inline-flex", overdue && "font-medium text-danger-text")}
+            triggerClassName={cn("px-1.5 text-xs text-fg-2 [&_span[aria-hidden]]:hidden hover:[&_span[aria-hidden]]:inline-flex", overdue && "font-medium text-danger-text")}
           />
         );
       }
@@ -518,7 +518,7 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
       case "milestone":
         return t.milestone ? (
           <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 text-xs text-n-700">
-            <IconRoadmap width={10} height={10} className="shrink-0 text-n-500" />
+            <IconRoadmap width={10} height={10} className="shrink-0 text-fg-3" />
             <span className="truncate">{t.milestone.title}</span>
           </span>
         ) : (

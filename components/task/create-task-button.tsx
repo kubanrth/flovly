@@ -206,7 +206,7 @@ export function CreateTaskDialog({ workspaceId, boardId, boards = [], viewId, op
 
   const footer = (
     <>
-      <span className="text-xs text-n-500 max-md:hidden">Utwórz i dodaj kolejne <Kbd className="px-1 text-[10px]">⇧Enter</Kbd></span>
+      <span className="text-xs text-fg-3 max-md:hidden">Utwórz i dodaj kolejne <Kbd className="px-1 text-[10px]">⇧Enter</Kbd></span>
       <span className="flex-1" />
       <Button variant="secondary" size={size} onClick={() => handleOpenChange(false)}>Anuluj</Button>
       <Button variant="primary" size={size} loading={pending} disabled={!board || pending} onClick={() => submit(false)}>Utwórz zadanie</Button>
@@ -253,17 +253,17 @@ export function CreateTaskDialog({ workspaceId, boardId, boards = [], viewId, op
                   <Avatar name={p.name} src={p.avatar} size={20} className="!size-[18px] !text-[9px]" />
                   {p.name}
                   <span role="button" tabIndex={-1} aria-label={`Usuń ${p.name}`} onPointerDown={stop} onClick={(e) => { stop(e); setAssignees(assignees.filter((x) => x !== id)); }}
-                    className="inline-flex size-3.5 items-center justify-center rounded-[2px] text-n-500 hover:text-foreground">
+                    className="inline-flex size-3.5 items-center justify-center rounded-[2px] text-fg-3 hover:text-foreground">
                     <IconClose width={10} height={10} strokeWidth={1.6} />
                   </span>
                 </span>
               );
             })}
-            <span className="truncate text-n-500">Dodaj osobę…</span>
+            <span className="truncate text-fg-3">Dodaj osobę…</span>
           </PersonPicker>
         </div>
         <div>
-          <Label className="mb-[5px]">Dodaj do widoku <span className="font-normal text-n-500">(opcjonalnie)</span></Label>
+          <Label className="mb-[5px]">Dodaj do widoku <span className="font-normal text-fg-3">(opcjonalnie)</span></Label>
           <Select aria-label="Dodaj do widoku" size={size} placeholder="Domyślny — Lista" value={view} onValueChange={setView}
             items={[{ value: DEFAULT_VIEW, label: "Domyślny — Lista" }, ...(meta?.views ?? []).map((v) => ({ value: v.id, label: v.name }))]} />
         </div>

@@ -25,7 +25,7 @@ export default function DevShellPage() {
   if (process.env.NODE_ENV === "production") notFound();
   return (
     <AppFrame {...MOCK}>
-      <div className="m-6 flex h-[calc(100%-48px)] items-center justify-center rounded-lg border border-dashed border-n-300 bg-canvas font-mono text-xs text-n-500">
+      <div className="m-6 flex h-[calc(100%-48px)] items-center justify-center rounded-lg border border-dashed border-n-300 bg-canvas font-mono text-xs text-fg-3">
         obszar widoku
       </div>
     </AppFrame>

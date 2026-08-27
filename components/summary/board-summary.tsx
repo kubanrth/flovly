@@ -50,14 +50,14 @@ function Kpi({ label, value, unit, danger, sub }: { label: string; value: string
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className="mt-1 flex items-baseline gap-1.5">
         <span className={cn("text-xl font-semibold tracking-[-0.3px]", danger && "text-danger-text")}>{value}</span>
-        <span className="text-xs text-n-500">{unit}</span>
+        <span className="text-xs text-fg-3">{unit}</span>
       </div>
       {sub && <div className="mt-0.5 text-2xs">{sub}</div>}
     </div>
   );
 }
 
-const Muted = ({ children }: { children: ReactNode }) => <p className="text-xs text-n-500">{children}</p>;
+const Muted = ({ children }: { children: ReactNode }) => <p className="text-xs text-fg-3">{children}</p>;
 
 export function BoardSummary({
   workspaceId,
@@ -96,7 +96,7 @@ export function BoardSummary({
                       </Link>
                     </span>
                   ))}
-                  {overdue.length > 6 && <span className="text-n-500"> +{overdue.length - 6}</span>}
+                  {overdue.length > 6 && <span className="text-fg-3"> +{overdue.length - 6}</span>}
                 </span>
               ) : null
             }
@@ -104,7 +104,7 @@ export function BoardSummary({
         </div>
 
         <div className="mb-3 grid grid-cols-2 gap-3 max-md:grid-cols-1">
-          <Card title="Statusy" meta={<span className="font-mono text-2xs text-n-500">{total} {taskPl(total)}</span>}>
+          <Card title="Statusy" meta={<span className="font-mono text-2xs text-fg-3">{total} {taskPl(total)}</span>}>
             {total === 0 ? (
               <Muted>Brak zadań na tablicy.</Muted>
             ) : (
@@ -127,7 +127,7 @@ export function BoardSummary({
             )}
           </Card>
 
-          <Card title="Obciążenie zespołu" meta={<span className="font-mono text-2xs text-n-500">zadania otwarte</span>}>
+          <Card title="Obciążenie zespołu" meta={<span className="font-mono text-2xs text-fg-3">zadania otwarte</span>}>
             {workload.length === 0 ? (
               <Muted>Brak członków przestrzeni.</Muted>
             ) : (

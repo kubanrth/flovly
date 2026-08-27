@@ -19,7 +19,7 @@ import { SortableKanbanCard, type CardHoverProps } from "@/components/kanban/kan
 import { useKanbanState } from "@/components/kanban/kanban-state";
 
 const ICON_BTN =
-  "inline-flex size-6 shrink-0 items-center justify-center rounded-sm text-n-500 outline-none hover:bg-n-200 hover:text-foreground active:bg-n-300 data-popup-open:bg-n-200";
+  "inline-flex size-6 shrink-0 items-center justify-center rounded-sm text-fg-3 outline-none hover:bg-n-200 hover:text-foreground active:bg-n-300 data-popup-open:bg-n-200";
 const WIP_TONE = { yellow: "bg-chip-yellow-bg text-chip-yellow-fg", red: "bg-chip-red-bg text-chip-red-fg" };
 
 export function KanbanColumn({
@@ -72,7 +72,7 @@ export function KanbanColumn({
         aria-label={`Rozwiń kolumnę ${name}`}
         className="flex h-[360px] w-10 shrink-0 flex-col items-center gap-2 rounded-lg border border-border bg-n-100 py-2 outline-none hover:bg-n-200 active:bg-n-300"
       >
-        <IconChevronRight width={12} height={12} className="text-n-500" />
+        <IconChevronRight width={12} height={12} className="text-fg-3" />
         <span className="eyebrow text-fg-2 [writing-mode:vertical-rl]">{name} · {tasks.length}</span>
       </button>
     );

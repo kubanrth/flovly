@@ -50,7 +50,7 @@ export function Select<V extends string = string>({
         id={id}
         aria-label={rest["aria-label"]}
         aria-invalid={invalid || undefined}
-        className={cn(inputVariants({ size }), "flex select-none items-center justify-between gap-2 text-left data-placeholder:text-n-500 data-popup-open:border-orange-500", className)}
+        className={cn(inputVariants({ size }), "flex select-none items-center justify-between gap-2 text-left data-placeholder:text-fg-3 data-popup-open:border-orange-500", className)}
       >
         <SelectPrimitive.Value placeholder={placeholder} className="flex min-w-0 flex-1 items-center gap-2 truncate">
           {(v: V | null) => {
@@ -63,7 +63,7 @@ export function Select<V extends string = string>({
       <SelectPrimitive.Portal>
         <SelectPrimitive.Positioner sideOffset={4} align="start" alignItemWithTrigger={false} className="z-[100] outline-none">
           <SelectPrimitive.Popup className={cn(POPUP_CLASS, "max-h-(--available-height) min-w-(--anchor-width) overflow-y-auto p-1", popupClassName)} style={popupStyle}>
-            {items.length === 0 && <div className="px-2 py-1.5 text-xs text-n-500">{emptyText ?? "Brak opcji"}</div>}
+            {items.length === 0 && <div className="px-2 py-1.5 text-xs text-fg-3">{emptyText ?? "Brak opcji"}</div>}
             <SelectPrimitive.List>
               {items.map((i) => (
                 <SelectPrimitive.Item key={i.value} value={i.value} disabled={i.disabled} className={cn(POPUP_ITEM_CLASS, "data-selected:font-medium")}>

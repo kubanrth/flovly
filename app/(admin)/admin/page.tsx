@@ -79,7 +79,7 @@ function StatCard({
       className="flex h-full flex-col gap-0.5 rounded-lg border border-border bg-canvas px-3.5 py-3"
     >
       <span className="flex items-center gap-1.5 text-2xs text-fg-3">
-        <span className="text-n-500">{icon}</span>
+        <span className="text-fg-3">{icon}</span>
         {label}
       </span>
       <span className="font-mono text-lg font-semibold">{value.toLocaleString("pl-PL")}</span>

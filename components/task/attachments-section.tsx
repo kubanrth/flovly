@@ -91,7 +91,7 @@ export function AttachmentsSection({ taskId, attachments, canUpload, canModerate
       {uploading.map((name) => (
         <div key={name} className="flex h-8 items-center gap-2 rounded-sm border border-n-100 px-2 text-xs">
           <span className="size-1.5 rounded-full bg-orange-500 skeleton-pulse" /> <span className="truncate">{name}</span>
-          <span className="ml-auto font-mono text-[10px] text-n-500">wysyłam…</span>
+          <span className="ml-auto font-mono text-[10px] text-fg-3">wysyłam…</span>
         </div>
       ))}
       {canUpload && (
@@ -99,7 +99,7 @@ export function AttachmentsSection({ taskId, attachments, canUpload, canModerate
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className={cn("flex h-11 w-full items-center justify-center gap-1 rounded-sm border border-dashed border-n-400 text-xs text-n-500 outline-none hover:border-n-500 hover:text-foreground", dragging && "border-orange-500 bg-orange-50 text-foreground")}
+            className={cn("flex h-11 w-full items-center justify-center gap-1 rounded-sm border border-dashed border-n-400 text-xs text-fg-3 outline-none hover:border-n-500 hover:text-foreground", dragging && "border-orange-500 bg-orange-50 text-foreground")}
           >
             Upuść pliki tutaj albo <span className="font-medium text-link">wybierz z dysku</span>
           </button>
@@ -165,9 +165,9 @@ function FileRow({ attachment, canDelete }: { attachment: AttachmentItem; canDel
   const svg = isSvg(attachment.mimeType);
   return (
     <li className="flex h-8 items-center gap-2 rounded-sm border border-n-100 px-2">
-      <IconFile className="shrink-0 text-n-500" width={14} height={14} />
+      <IconFile className="shrink-0 text-fg-3" width={14} height={14} />
       <a href="#" download={svg ? attachment.filename : undefined} onClick={(e) => { e.preventDefault(); if (!pending) open(); }} className="min-w-0 flex-1 truncate text-xs text-foreground no-underline hover:text-link hover:underline">{attachment.filename}</a>
-      <span className="font-mono text-[10px] text-n-500">{formatBytes(attachment.sizeBytes)}</span>
+      <span className="font-mono text-[10px] text-fg-3">{formatBytes(attachment.sizeBytes)}</span>
       <Button variant="ghost" size="sm" iconOnly aria-label={`Pobierz ${attachment.filename}`} onClick={open} disabled={pending} className="size-6"><IconDownload /></Button>
       {canDelete && (
         <form action={deleteAttachmentAction} className="m-0">

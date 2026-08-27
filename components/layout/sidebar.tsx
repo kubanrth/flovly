@@ -255,7 +255,7 @@ export function Sidebar({ user, workspaces, unreadNotificationCount, myTasksCoun
             <SavedGroup icon={IconStar} label="Oznaczone gwiazdką" items={starred} pathname={pathname} />
             <div className="mt-1.5 flex h-[30px] items-end justify-between px-2">
               <span className="eyebrow">Przestrzenie</span>
-              <Link href="/workspaces?new=1" aria-label="Nowa przestrzeń" className="grid size-5 place-items-center rounded-sm text-n-500 hover:bg-n-100 hover:text-foreground active:bg-n-200">
+              <Link href="/workspaces?new=1" aria-label="Nowa przestrzeń" className="grid size-5 place-items-center rounded-sm text-fg-3 hover:bg-n-100 hover:text-foreground active:bg-n-200">
                 <IconPlus />
               </Link>
             </div>
@@ -307,7 +307,7 @@ function WsTile({ name, size }: { name: string; size: 16 | 18 }) {
 function MoreButton({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
   // span, not <button>: AvatarMenu wraps the trigger in its own role=button.
   return (
-    <span aria-label="Więcej" className={cn("grid shrink-0 place-items-center rounded-md text-n-500 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200", className)} {...props}>
+    <span aria-label="Więcej" className={cn("grid shrink-0 place-items-center rounded-md text-fg-3 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200", className)} {...props}>
       <IconMore />
     </span>
   );
@@ -346,7 +346,7 @@ function NavRow({
   );
   const inner = (
     <>
-      <Icon width={iconSize} height={iconSize} className={cn("shrink-0", active ? "text-orange-700" : "text-n-500")} />
+      <Icon width={iconSize} height={iconSize} className={cn("shrink-0", active ? "text-orange-700" : "text-fg-3")} />
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {badge}
       {trailing}
@@ -367,7 +367,7 @@ function NavRow({
 }
 
 function Chevron({ open, className }: { open: boolean; className?: string }) {
-  return <IconChevronRight width={12} height={12} className={cn("shrink-0 text-n-500 transition-transform duration-150", open && "rotate-90", className)} />;
+  return <IconChevronRight width={12} height={12} className={cn("shrink-0 text-fg-3 transition-transform duration-150", open && "rotate-90", className)} />;
 }
 
 // Ostatnie / Oznaczone gwiazdką.
@@ -497,7 +497,7 @@ function WorkspaceRow({ ws, pathname, active, expanded, onToggle }: { ws: Sideba
         </Link>
         {(manage || create) && (
           <Menu>
-            <MenuTrigger aria-label="Menu przestrzeni" className="grid size-7 shrink-0 place-items-center rounded-sm text-n-500 opacity-0 outline-none group-hover:opacity-100 hover:bg-n-200 hover:text-foreground focus-visible:opacity-100 data-popup-open:opacity-100">
+            <MenuTrigger aria-label="Menu przestrzeni" className="grid size-7 shrink-0 place-items-center rounded-sm text-fg-3 opacity-0 outline-none group-hover:opacity-100 hover:bg-n-200 hover:text-foreground focus-visible:opacity-100 data-popup-open:opacity-100">
               <IconMore width={14} height={14} />
             </MenuTrigger>
             <MenuContent align="start" side="right">
@@ -559,7 +559,7 @@ function BoardRow({ wsId, board, canDrag, active }: { wsId: string; board: { id:
         active ? "bg-selected font-medium text-foreground shadow-[inset_2px_0_0_var(--orange-500)]" : "text-n-700 hover:bg-n-100 active:bg-n-200",
       )}
     >
-      <IconBoards width={14} height={14} className={cn("shrink-0", active ? "text-orange-700" : "text-n-500")} />
+      <IconBoards width={14} height={14} className={cn("shrink-0", active ? "text-orange-700" : "text-fg-3")} />
       <span className="min-w-0 flex-1 truncate">{board.name}</span>
     </Link>
   );
@@ -613,7 +613,7 @@ function MobileDrawer({
           ))}
           <div className="mt-1 flex h-[30px] items-end justify-between px-2.5">
             <span className="eyebrow">Przestrzenie</span>
-            <Link href="/workspaces?new=1" aria-label="Nowa przestrzeń" className="grid size-6 place-items-center rounded-sm text-n-500 hover:bg-n-100 active:bg-n-200">
+            <Link href="/workspaces?new=1" aria-label="Nowa przestrzeń" className="grid size-6 place-items-center rounded-sm text-fg-3 hover:bg-n-100 active:bg-n-200">
               <IconPlus />
             </Link>
           </div>

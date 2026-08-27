@@ -82,7 +82,7 @@ export function StatusPicker({
   const chip = shown ? (
     <StatusChip label={shown.name} hue={hueForColor(shown.colorHex)} size="md" />
   ) : (
-    <span className="inline-flex h-5 items-center rounded-sm border border-dashed border-n-300 px-[7px] text-2xs text-n-500">— brak —</span>
+    <span className="inline-flex h-5 items-center rounded-sm border border-dashed border-n-300 px-[7px] text-2xs text-fg-3">— brak —</span>
   );
   if (!canEdit) return chip;
 
@@ -282,7 +282,7 @@ function ReorderableList({ options, filtered, workspaceId, boardId, currentId, c
 
   return (
     <div role="listbox" aria-label="Status" className="flex max-h-[280px] flex-col overflow-y-auto overscroll-contain">
-      {visible.length === 0 && !adding && <p className="px-2 py-3 text-center text-xs text-n-500">Brak statusów</p>}
+      {visible.length === 0 && !adding && <p className="px-2 py-3 text-center text-xs text-fg-3">Brak statusów</p>}
       <DndContext id="status-columns" sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={visible.map((o) => o.id)} strategy={verticalListSortingStrategy}>
           {visible.map((o) =>

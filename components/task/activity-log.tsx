@@ -12,7 +12,7 @@ export interface ActivityEntry {
 
 // "Historia" tab — AuditLog timeline (B2: 24px icon tile, 12px n-600 text, mono stamp).
 export function ActivityLog({ entries }: { entries: ActivityEntry[] }) {
-  if (entries.length === 0) return <p className="text-xs text-n-500">Brak wpisów.</p>;
+  if (entries.length === 0) return <p className="text-xs text-fg-3">Brak wpisów.</p>;
   return (
     <ol className="flex flex-col gap-3">
       {entries.map((e) => <li key={e.id}><ActivityRow entry={e} /></li>)}
@@ -24,10 +24,10 @@ export function ActivityRow({ entry }: { entry: ActivityEntry }) {
   const actorName = entry.actor?.name ?? entry.actor?.email.split("@")[0] ?? "System";
   return (
     <div className="flex gap-2">
-      <span className="grid size-6 shrink-0 place-items-center rounded-md bg-n-100 text-n-500" aria-hidden>{iconFor(entry.action)}</span>
+      <span className="grid size-6 shrink-0 place-items-center rounded-md bg-n-100 text-fg-3" aria-hidden>{iconFor(entry.action)}</span>
       <p className="min-w-0 flex-1 text-xs leading-[19px] text-n-600">
         <span className="font-semibold text-foreground">{actorName}</span> {summarize(entry.action, entry.diff)}{" "}
-        <span className="font-mono text-[10px] text-n-500">· {formatWhen(entry.createdAt)}</span>
+        <span className="font-mono text-[10px] text-fg-3">· {formatWhen(entry.createdAt)}</span>
       </p>
     </div>
   );

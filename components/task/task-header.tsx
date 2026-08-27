@@ -43,7 +43,7 @@ export function TaskActions({ mode, workspaceId, boardId, workspaceBoards, task,
   };
   return (
     <div className="flex shrink-0 items-center gap-1" data-ui="task-actions">
-      {copied && <span className="mr-1 text-2xs text-n-500" aria-live="polite">Skopiowano</span>}
+      {copied && <span className="mr-1 text-2xs text-fg-3" aria-live="polite">Skopiowano</span>}
       {canEdit && <SendEmailDialog taskId={task.id} taskTitle={task.title} attachments={attachments} iconOnly={compact} />}
       {canEdit && workspaceBoards.length > 1 && <MoveTaskMenu taskId={task.id} currentBoardId={boardId} availableBoards={workspaceBoards} iconOnly={compact} />}
       {mode !== "page" && (

@@ -32,7 +32,7 @@ export function PortalDropdown<V extends string = string>({
         value: o.value,
         icon: o.prefix,
         disabled: o.disabled,
-        label: o.hint ? <>{o.label}<span className="ml-1 font-mono text-[10px] text-n-500">{o.hint}</span></> : o.label,
+        label: o.hint ? <>{o.label}<span className="ml-1 font-mono text-[10px] text-fg-3">{o.hint}</span></> : o.label,
       }))}
       value={value ?? null}
       onValueChange={onChange}

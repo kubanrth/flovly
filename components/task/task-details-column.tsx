@@ -101,8 +101,8 @@ export function TaskDetailsColumn(p: TaskDetailsProps) {
       <div className="eyebrow mb-3">Szczegóły</div>
       {ordered.map((r) => (
         <div key={r.key} className="group/row mb-3">
-          {r.key === firstCustom && !pinned.includes(r.key) && <div className="mb-2 border-t border-n-100 pt-2.5 text-2xs font-semibold text-n-500">Pola dodatkowe</div>}
-          <div className="mb-1 flex items-center gap-1 text-2xs text-n-500">
+          {r.key === firstCustom && !pinned.includes(r.key) && <div className="mb-2 border-t border-n-100 pt-2.5 text-2xs font-semibold text-fg-3">Pola dodatkowe</div>}
+          <div className="mb-1 flex items-center gap-1 text-2xs text-fg-3">
             {r.label}
             <button type="button" onClick={() => togglePin(r.key)} aria-label={pinned.includes(r.key) ? `Odepnij pole ${r.label}` : `Przypnij pole ${r.label}`}
               className={cn("ml-auto grid size-4 place-items-center rounded-[2px] text-n-400 outline-none hover:text-foreground", !pinned.includes(r.key) && "opacity-0 focus-visible:opacity-100 group-hover/row:opacity-100")}>
@@ -113,13 +113,13 @@ export function TaskDetailsColumn(p: TaskDetailsProps) {
         </div>
       ))}
       {customStart < 0 && !hideEmpty && (
-        <div className="mb-3"><div className="mb-2 border-t border-n-100 pt-2.5 text-2xs font-semibold text-n-500">Pola dodatkowe</div><span className="text-sm text-n-500">Brak</span></div>
+        <div className="mb-3"><div className="mb-2 border-t border-n-100 pt-2.5 text-2xs font-semibold text-fg-3">Pola dodatkowe</div><span className="text-sm text-fg-3">Brak</span></div>
       )}
       {p.meta && (
         <div className={cn("border-t pt-2.5", canvas ? "border-table-grid" : "border-n-100")}>
-          <div className="text-2xs text-n-500">Utworzono</div>
+          <div className="text-2xs text-fg-3">Utworzono</div>
           <div className="mb-1.5 font-mono text-2xs text-n-600">{formatStamp(p.meta.createdAt)} · {p.meta.creatorName}</div>
-          <div className="text-2xs text-n-500">Zaktualizowano</div>
+          <div className="text-2xs text-fg-3">Zaktualizowano</div>
           <div className="font-mono text-2xs text-n-600">{formatStamp(p.meta.updatedAt)}{p.lastActor ? ` · ${p.lastActor}` : ""}</div>
         </div>
       )}
@@ -138,7 +138,7 @@ export function TaskDetailsCard(p: TaskDetailsProps) {
     <div className="my-3 rounded-lg border border-border" data-ui="task-details">
       {rows.map((r) => (
         <div key={r.key} className="flex min-h-11 items-center gap-2 border-b border-n-100 px-3 py-1.5 last:border-b-0">
-          <span className="w-24 shrink-0 text-xs text-n-500">{r.label}</span>
+          <span className="w-24 shrink-0 text-xs text-fg-3">{r.label}</span>
           <div className="flex min-w-0 flex-1 items-center">{r.node}</div>
         </div>
       ))}
@@ -173,13 +173,13 @@ function AssigneesField({ task, allMembers, assigneeIds, canEdit, mode, mobile }
         {listNames ? (
           <span className="flex flex-wrap items-center gap-1.5">
             {active.map((m) => <span key={m.id} className="inline-flex items-center gap-1.5"><Avatar name={memberName(m)} src={m.avatarUrl} size={22} /><span className="text-sm">{memberName(m)}</span></span>)}
-            {active.length === 0 && <span className="text-sm text-n-500">Brak</span>}
+            {active.length === 0 && <span className="text-sm text-fg-3">Brak</span>}
           </span>
         ) : (
           <AvatarStack people={active.map((m) => ({ name: memberName(m), src: m.avatarUrl }))} size={22} max={3} />
         )}
         {canEdit && (
-          <span className={cn("grid size-[22px] place-items-center rounded-full border border-dashed border-n-400 text-n-500", active.length > 0 && !listNames && "ml-0.5")}>
+          <span className={cn("grid size-[22px] place-items-center rounded-full border border-dashed border-n-400 text-fg-3", active.length > 0 && !listNames && "ml-0.5")}>
             <IconPlus width={12} height={12} /><span className="sr-only">Dodaj osobę</span>
           </span>
         )}
@@ -204,7 +204,7 @@ function DatesField({ task, canEdit, onMutate, only, mobile }: TaskDetailsProps 
   return (
     <div className="-mx-2 flex items-center gap-0.5 text-sm">
       <div className="min-w-0 flex-1">{start}</div>
-      <span className="shrink-0 text-n-500">→</span>
+      <span className="shrink-0 text-fg-3">→</span>
       <div className="min-w-0 flex-1">{stop}</div>
     </div>
   );
@@ -237,7 +237,7 @@ function MilestoneField({ task, milestones, canEdit }: TaskDetailsProps) {
         emptyText="Utwórz milestone w roadmapie"
         className="h-7 border-transparent bg-transparent px-1 hover:border-input-border data-popup-open:border-orange-500"
         items={[
-          { value: NONE, label: <span className="text-n-500">— brak —</span> },
+          { value: NONE, label: <span className="text-fg-3">— brak —</span> },
           ...milestones.map((m) => ({ value: m.id, label: m.title, icon: <IconRoadmap width={13} height={13} className="shrink-0 text-n-600" /> })),
         ]}
       />
@@ -262,16 +262,16 @@ function TagsField({ workspaceId, task, allTags, tagIds, canEdit }: TaskDetailsP
   return (
     <div className="flex flex-wrap items-center gap-1">
       {active.map((t) => <Chip key={t.id} hue={hueForColor(t.colorHex)} size="sm" onRemove={canEdit ? () => toggle(t.id) : undefined}>{t.name}</Chip>)}
-      {active.length === 0 && !canEdit && <span className="text-sm text-n-500">Brak</span>}
+      {active.length === 0 && !canEdit && <span className="text-sm text-fg-3">Brak</span>}
       {canEdit && (
         <Popover onOpenChange={(o) => { if (!o) { setQuery(""); setCreating(false); } }}>
-          <PopoverTrigger aria-label="Dodaj tag" title="Dodaj tag" className="grid size-[18px] place-items-center rounded-sm border border-dashed border-n-400 text-n-500 outline-none hover:border-n-500 hover:text-foreground">
+          <PopoverTrigger aria-label="Dodaj tag" title="Dodaj tag" className="grid size-[18px] place-items-center rounded-sm border border-dashed border-n-400 text-fg-3 outline-none hover:border-n-500 hover:text-foreground">
             <IconPlus width={11} height={11} />
           </PopoverTrigger>
           <PopoverContent className="w-[240px] p-1.5">
             <InputGroup leading={<IconSearch />} size="sm" autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Szukaj tagu…" aria-label="Szukaj tagu" className="mb-1" />
             <ul className="flex max-h-[200px] flex-col overflow-y-auto">
-              {filtered.length === 0 && <li className="px-2 py-2 text-xs text-n-500">{allTags.length === 0 ? "Brak tagów w przestrzeni." : "Brak dopasowań"}</li>}
+              {filtered.length === 0 && <li className="px-2 py-2 text-xs text-fg-3">{allTags.length === 0 ? "Brak tagów w przestrzeni." : "Brak dopasowań"}</li>}
               {filtered.map((t) => {
                 const on = tagIds.has(t.id);
                 return (
@@ -330,7 +330,7 @@ function ReminderField({ task, canEdit, onMutate }: TaskDetailsProps) {
   const label = task.reminderAt ? formatDayTime(task.reminderAt) : value !== "none" ? `${REMINDER_PRESETS.find((p) => p.value === value)?.label} przed terminem` : "Brak";
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger disabled={!canEdit} aria-label="Przypomnienie" className={cn("-mx-1 rounded-sm px-1 text-left text-sm outline-none hover:bg-n-100 disabled:hover:bg-transparent", !task.reminderAt && value === "none" && "text-n-500")}>{label}</PopoverTrigger>
+      <PopoverTrigger disabled={!canEdit} aria-label="Przypomnienie" className={cn("-mx-1 rounded-sm px-1 text-left text-sm outline-none hover:bg-n-100 disabled:hover:bg-transparent", !task.reminderAt && value === "none" && "text-fg-3")}>{label}</PopoverTrigger>
       <PopoverContent className="w-[200px] p-1">
         <div className="eyebrow px-2 pt-1 pb-1">Przypomnij</div>
         <div role="radiogroup" aria-label="Czas przypomnienia" className="flex flex-col">
@@ -342,17 +342,17 @@ function ReminderField({ task, canEdit, onMutate }: TaskDetailsProps) {
             </button>
           ))}
         </div>
-        {!task.stopAt && <p className="px-2 pt-1 pb-1 text-2xs text-n-500">Ustaw datę końca, żeby przypomnienie miało termin.</p>}
+        {!task.stopAt && <p className="px-2 pt-1 pb-1 text-2xs text-fg-3">Ustaw datę końca, żeby przypomnienie miało termin.</p>}
       </PopoverContent>
     </Popover>
   );
 }
 
 function RecurrenceField({ task, canEdit }: TaskDetailsProps) {
-  if (task.recurrenceParentId) return <span className="text-sm text-n-500">Instancja zadania cyklicznego</span>;
+  if (task.recurrenceParentId) return <span className="text-sm text-fg-3">Instancja zadania cyklicznego</span>;
   return (
     <Popover>
-      <PopoverTrigger disabled={!canEdit} aria-label="Cykliczność" className={cn("-mx-1 rounded-sm px-1 text-left text-sm outline-none hover:bg-n-100 disabled:hover:bg-transparent", !task.recurrenceRule && "text-n-500")}>
+      <PopoverTrigger disabled={!canEdit} aria-label="Cykliczność" className={cn("-mx-1 rounded-sm px-1 text-left text-sm outline-none hover:bg-n-100 disabled:hover:bg-transparent", !task.recurrenceRule && "text-fg-3")}>
         {summarizeRule(task.recurrenceRule)}
       </PopoverTrigger>
       <PopoverContent className="p-1">
@@ -364,6 +364,6 @@ function RecurrenceField({ task, canEdit }: TaskDetailsProps) {
 }
 
 function ViewsField({ views }: { views: { id: string; name: string }[] }) {
-  if (views.length === 0) return <span className="text-sm text-n-500">Brak</span>;
+  if (views.length === 0) return <span className="text-sm text-fg-3">Brak</span>;
   return <div className="flex flex-wrap gap-1">{views.map((v) => <Chip key={v.id} hue="gray" size="sm">{v.name}</Chip>)}</div>;
 }

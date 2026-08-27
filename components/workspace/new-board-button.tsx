@@ -131,7 +131,7 @@ export function NewBoardButton({
                         >
                           <CheckMark size={10} />
                         </span>
-                        <span className="text-n-500 [&_svg]:size-3.5">{VIEW_ICON[v.name]}</span>
+                        <span className="text-fg-3 [&_svg]:size-3.5">{VIEW_ICON[v.name]}</span>
                         <span className="truncate">{VIEW_LABEL[v.name]}</span>
                       </label>
                     ))}

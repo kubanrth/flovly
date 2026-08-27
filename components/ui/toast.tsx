@@ -21,7 +21,7 @@ export function ToastCard({ title, description, icon, onClose, className, ...pro
         {description && <div className="text-xs text-muted-foreground">{description}</div>}
       </div>
       {onClose && (
-        <button type="button" aria-label="Zamknij" onClick={onClose} className="shrink-0 rounded-[2px] text-n-500 outline-none hover:text-foreground">
+        <button type="button" aria-label="Zamknij" onClick={onClose} className="shrink-0 rounded-[2px] text-fg-3 outline-none hover:text-foreground">
           <IconClose width={14} height={14} />
         </button>
       )}

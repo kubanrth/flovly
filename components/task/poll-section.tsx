@@ -83,10 +83,10 @@ function PollCreator({ taskId, onClose }: { taskId: string; onClose: () => void 
     <form action={(fd) => startTransition(async () => { await createPollAction(fd); onClose(); })} className="flex flex-col gap-2 rounded-lg border border-border p-3">
       <input type="hidden" name="taskId" value={taskId} />
       <label className="flex flex-col gap-1">
-        <span className="text-2xs text-n-500">Pytanie</span>
+        <span className="text-2xs text-fg-3">Pytanie</span>
         <Input name="question" required minLength={3} maxLength={280} placeholder="Który wariant wybieramy?" autoFocus />
       </label>
-      <span className="text-2xs text-n-500">Opcje ({options.length}/5)</span>
+      <span className="text-2xs text-fg-3">Opcje ({options.length}/5)</span>
       {options.map((v, i) => (
         <div key={i} className="flex items-center gap-1.5">
           <Input name="option" value={v} onChange={(e) => setOptions((p) => p.map((x, idx) => (idx === i ? e.target.value : x)))} required maxLength={120} placeholder={`Opcja ${i + 1}`} size="sm" aria-label={`Opcja ${i + 1}`} />

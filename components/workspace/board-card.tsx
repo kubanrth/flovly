@@ -62,7 +62,7 @@ export function BoardCard({ workspaceId, board, canDrag }: { workspaceId: string
       </Link>
 
       <div className="pointer-events-none relative flex items-center gap-2">
-        <IconBoards className={cn("shrink-0", on ? "text-orange-700" : "text-n-500")} />
+        <IconBoards className={cn("shrink-0", on ? "text-orange-700" : "text-fg-3")} />
         <span className="min-w-0 flex-1 truncate text-base font-semibold">{board.name}</span>
         <button
           type="button"
@@ -101,7 +101,7 @@ export function BoardCard({ workspaceId, board, canDrag }: { workspaceId: string
             {overdue} po terminie
           </span>
         ) : (
-          board.dueLabel && <span className="ml-auto font-mono text-[10px] text-n-500">{board.dueLabel}</span>
+          board.dueLabel && <span className="ml-auto font-mono text-[10px] text-fg-3">{board.dueLabel}</span>
         )}
       </div>
     </li>

@@ -275,7 +275,7 @@ export function TicketDetail({
         </div>
         <div className="flex flex-wrap gap-2">
           <ContextChip>
-            <IconUser width={12} height={12} className="text-n-500" />
+            <IconUser width={12} height={12} className="text-fg-3" />
             Zgłasza: {personLabel(ticket.reporter)}
           </ContextChip>
           <ContextChip>
@@ -554,7 +554,7 @@ function Attachments({
         const canDelete = a.uploaderId === currentUserId || canManage;
         return (
           <span key={a.id} className="flex items-center gap-1.5">
-            <IconAttachment width={11} height={11} className="shrink-0 text-n-500" />
+            <IconAttachment width={11} height={11} className="shrink-0 text-fg-3" />
             <a
               href={`/api/support-attachment/${a.storageKey}`}
               target="_blank"

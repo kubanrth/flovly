@@ -54,7 +54,7 @@ export function StatusChipMenu({ taskId, statusColumns, value, canEdit, onMutate
 
 const LEVEL: Record<Exclude<TaskPriorityValue, "NONE">, PriorityLevel> = { URGENT: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
 const VALUES: TaskPriorityValue[] = ["URGENT", "HIGH", "MEDIUM", "LOW", "NONE"];
-const TEXT: Record<PriorityLevel, string> = { 0: "text-danger-text", 1: "text-orange-700", 2: "text-warning-text", 3: "text-n-500" };
+const TEXT: Record<PriorityLevel, string> = { 0: "text-danger-text", 1: "text-orange-700", 2: "text-warning-text", 3: "text-fg-3" };
 
 export function priorityLabel(p: TaskPriorityValue, short = false): string {
   if (p === "NONE") return "Priorytet";
@@ -81,7 +81,7 @@ export function PriorityChipMenu({ taskId, value, canEdit, short, onMutate, clas
       <MenuTrigger
         disabled={!canEdit}
         title="Zmień priorytet"
-        className={cn("inline-flex h-[26px] items-center gap-[5px] rounded-sm border border-border bg-card px-2 text-xs font-medium outline-none hover:bg-n-50 disabled:cursor-default disabled:hover:bg-card", level === null ? "border-dashed text-n-500" : TEXT[level], className)}
+        className={cn("inline-flex h-[26px] items-center gap-[5px] rounded-sm border border-border bg-card px-2 text-xs font-medium outline-none hover:bg-n-50 disabled:cursor-default disabled:hover:bg-card", level === null ? "border-dashed text-fg-3" : TEXT[level], className)}
       >
         {level !== null && <PriorityIcon level={level} size={14} />}
         {priorityLabel(local, short)}
@@ -93,7 +93,7 @@ export function PriorityChipMenu({ taskId, value, canEdit, short, onMutate, clas
             return (
               <MenuRadioItem key={v} value={v}>
                 {l !== null ? <PriorityIcon level={l} size={14} /> : <span className="size-3.5" />}
-                <span className={cn("flex-1", l === null && "text-n-500")}>{l !== null ? PRIORITY_LABEL[l] : "Brak"}</span>
+                <span className={cn("flex-1", l === null && "text-fg-3")}>{l !== null ? PRIORITY_LABEL[l] : "Brak"}</span>
                 {l !== null && <Kbd className="mr-5">P{l}</Kbd>}
               </MenuRadioItem>
             );

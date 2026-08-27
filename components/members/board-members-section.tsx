@@ -215,7 +215,7 @@ function AddExistingMember({
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4">
       <div className="flex items-center gap-2">
-        <IconUsers width={14} height={14} className="text-n-500" />
+        <IconUsers width={14} height={14} className="text-fg-3" />
         <span className="eyebrow">Dodaj istniejącego członka przestrzeni</span>
       </div>
       <div className="flex flex-wrap items-center gap-2">

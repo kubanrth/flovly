@@ -51,7 +51,7 @@ export function AdminDesktopSidebar() {
               data-active={active || undefined}
               className="group flex h-8 shrink-0 items-center gap-2 rounded-md px-2 text-sm text-n-700 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200 data-active:bg-selected data-active:font-medium data-active:text-foreground data-active:shadow-[inset_2px_0_0_var(--orange-500)]"
             >
-              <Icon width={16} height={16} className="shrink-0 text-n-500 group-data-active:text-orange-700" />
+              <Icon width={16} height={16} className="shrink-0 text-fg-3 group-data-active:text-orange-700" />
               <span className="truncate">{n.label}</span>
             </Link>
           );
@@ -109,7 +109,7 @@ export function AdminMobileNav() {
                 data-active={on || undefined}
                 className="flex min-h-11 items-center gap-3 rounded-md px-3 text-sm outline-none hover:bg-n-100 active:bg-n-200 data-active:bg-selected data-active:font-medium"
               >
-                <Icon width={16} height={16} className="shrink-0 text-n-500" />
+                <Icon width={16} height={16} className="shrink-0 text-fg-3" />
                 <span className="truncate">{n.label}</span>
               </Link>
             );

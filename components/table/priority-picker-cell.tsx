@@ -70,7 +70,7 @@ export function PriorityPickerCell({ taskId, current, canEdit }: { taskId: strin
                 >
                   {o.level === null ? <span className="inline-block size-4 rounded-full border border-dashed border-n-400" /> : <PriorityIcon level={o.level} size={16} />}
                   <span className={cn("flex-1", o.level === null && "text-muted-foreground")}>{o.label}</span>
-                  <span className="font-mono text-2xs text-n-500">{o.code}</span>
+                  <span className="font-mono text-2xs text-fg-3">{o.code}</span>
                 </button>
               ))}
             </div>
@@ -91,7 +91,7 @@ export function PriorityPickerCell({ taskId, current, canEdit }: { taskId: strin
             <MenuRadioItem key={o.value} value={o.value} closeOnClick>
               {o.level === null ? <span className="inline-block size-3.5 rounded-full border border-dashed border-n-400" /> : <PriorityIcon level={o.level} size={14} />}
               <span className={cn(o.level === null && "text-muted-foreground")}>{o.label}</span>
-              <span className="ml-auto pl-2 font-mono text-[10px] text-n-500">{o.code}</span>
+              <span className="ml-auto pl-2 font-mono text-[10px] text-fg-3">{o.code}</span>
             </MenuRadioItem>
           ))}
         </MenuRadioGroup>

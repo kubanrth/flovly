@@ -13,7 +13,7 @@ function RevealButton({ shown, onToggle }: { shown: boolean; onToggle: () => voi
       type="button"
       onClick={onToggle}
       aria-label={shown ? "Ukryj hasło" : "Pokaż hasło"}
-      className="absolute top-0.5 right-1 grid size-7 place-items-center rounded-sm text-n-500 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
+      className="absolute top-0.5 right-1 grid size-7 place-items-center rounded-sm text-fg-3 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
     >
       {shown ? <IconEyeOff width={14} height={14} /> : <IconEye width={14} height={14} />}
     </button>

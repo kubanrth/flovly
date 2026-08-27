@@ -197,8 +197,8 @@ export function ListToolbar() {
           <MenuSeparator />
           {sortable.map((c) => (
             <span key={c.id} className="contents">
-              <MenuRadioItem value={`${c.id}:asc`} closeOnClick>{c.label} <span className="text-n-500">· rosnąco</span></MenuRadioItem>
-              <MenuRadioItem value={`${c.id}:desc`} closeOnClick>{c.label} <span className="text-n-500">· malejąco</span></MenuRadioItem>
+              <MenuRadioItem value={`${c.id}:asc`} closeOnClick>{c.label} <span className="text-fg-3">· rosnąco</span></MenuRadioItem>
+              <MenuRadioItem value={`${c.id}:desc`} closeOnClick>{c.label} <span className="text-fg-3">· malejąco</span></MenuRadioItem>
             </span>
           ))}
         </MenuRadioGroup>

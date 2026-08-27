@@ -214,7 +214,7 @@ export function ContactCardPanel({
                   {h.kind === "note" && h.actorName ? (
                     <Avatar name={h.actorName} size={22} />
                   ) : (
-                    <span className="flex size-[22px] shrink-0 items-center justify-center rounded-md bg-n-100 text-n-500 [&_svg]:size-[11px]">
+                    <span className="flex size-[22px] shrink-0 items-center justify-center rounded-md bg-n-100 text-fg-3 [&_svg]:size-[11px]">
                       {h.kind === "call" ? <IconPhone /> : <IconMail />}
                     </span>
                   )}

@@ -31,7 +31,7 @@ export function DataTh({ icon, align = "left", width, className, style, children
       className={cn("h-(--table-header-h) border-r border-b border-border border-r-table-grid px-2.5 align-middle text-2xs font-semibold tracking-[.06em] whitespace-nowrap text-muted-foreground uppercase last:border-r-0", ALIGN[align], className)}
       {...props}
     >
-      <span className="inline-flex items-center gap-1.5 [&_svg]:size-3.5 [&_svg]:text-n-500">{icon}{children}</span>
+      <span className="inline-flex items-center gap-1.5 [&_svg]:size-3.5 [&_svg]:text-fg-3">{icon}{children}</span>
     </th>
   );
 }

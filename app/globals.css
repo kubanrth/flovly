@@ -16,7 +16,12 @@
   --chip-blue-bg:#DDE9FC;--chip-blue-fg:#1D3F8A;--chip-indigo-bg:#E3E4FB;--chip-indigo-fg:#2F3A8F;--chip-purple-bg:#EDE3FA;--chip-purple-fg:#5A2E8A;
   --chip-pink-bg:#FBE2EE;--chip-pink-fg:#8A1F52;--chip-brown-bg:#EFE4DA;--chip-brown-fg:#5C3A1E;--chip-black-bg:#1C1A17;--chip-black-fg:#FFFFFF;
 
-  --bg:#FFFFFF;--canvas:#FAF9F7;--fg:#1C1A17;--fg-2:#66625B;--fg-3:#8A857D;--link:#B83F00;
+  /* --fg-3 to NIE jest --n-500. Makiety v5 dają tu #8A857D, ale ten odcień ma
+     3,39:1 na tle „selected" i 3,48:1 na canvasie — poniżej progu AA 4,5:1 dla
+     tekstu. #747069 to najmniejsze przyciemnienie w tym samym odcieniu, które
+     przechodzi na wszystkich trzech tłach (4,92 / 4,68 / 4,56). --n-500 zostaje
+     bez zmian, bo napędza też ikony i obramowania, gdzie próg jest inny. */
+  --bg:#FFFFFF;--canvas:#FAF9F7;--fg:#1C1A17;--fg-2:#66625B;--fg-3:#747069;--link:#B83F00;
   /* „dzisiaj" jako tło kolumny/wiersza (makiety D4, E2) — jaśniejsze od --selected. */
   --today:#FFF9F5;
   --input-border:#D2CEC7;--input-border-hover:#B0ABA3;

@@ -194,7 +194,7 @@ export function RoadmapView({
           />
         )}
         {mode === "markers" && (
-          <span className="ml-2 text-xs text-n-500 max-md:hidden">
+          <span className="ml-2 text-xs text-fg-3 max-md:hidden">
             Kropka = milestone, liczba = zadania; strzałki pokazują kolejność.
           </span>
         )}
@@ -527,7 +527,7 @@ function MarkersTrack({
           <span className="text-xs font-semibold">
             {milestoneLabel(i)} · {m.title}
           </span>
-          <span className="font-mono text-[10px] text-n-500">
+          <span className="font-mono text-[10px] text-fg-3">
             do {day(m.stopAt)} · {p.done}/{p.total}
           </span>
         </div>

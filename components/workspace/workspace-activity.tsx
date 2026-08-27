@@ -49,7 +49,7 @@ export function WorkspaceActivity({ entries }: { entries: WorkspaceActivityEntry
                     </>
                   )}
                 </span>
-                <span className="shrink-0 font-mono text-[10px] text-n-500">{e.time}</span>
+                <span className="shrink-0 font-mono text-[10px] text-fg-3">{e.time}</span>
               </li>
             ))}
           </ul>

@@ -91,13 +91,16 @@ export function DateTimePicker({ name, form, defaultValue, disabled, placeholder
     : cn(inputVariants({ size: "md" }), "flex items-center gap-2 text-left", open && "border-orange-500", triggerClassName);
   const triggerInner = (
     <>
-      <span className={cn("min-w-0 flex-1 truncate", date ? (format ? "" : "font-mono text-xs tabular-nums text-foreground") : "text-n-500")}>{date ? (format ? format(date) : formatDisplay(date, dateOnly)) : isCell ? "—" : placeholder}</span>
+      <span className={cn("min-w-0 flex-1 truncate", date ? (format ? "" : "font-mono text-xs tabular-nums text-foreground") : "text-fg-3")}>{date ? (format ? format(date) : formatDisplay(date, dateOnly)) : isCell ? "—" : placeholder}</span>
       {date && !disabled && (
-        <span role="button" tabIndex={-1} aria-label="Wyczyść datę" onClick={(e) => { e.stopPropagation(); update(null); }} className="inline-flex size-4 shrink-0 items-center justify-center rounded-[2px] text-n-500 hover:text-foreground">
+        // AK190: skrót myszy, nie kontrolka — `role=button` w środku triggera
+        // dawał axe nested-interactive (serious) i 16px celu. Klawiatura/AT
+        // czyści datę przyciskiem „Wyczyść" w popoverze.
+        <span aria-hidden="true" onClick={(e) => { e.stopPropagation(); update(null); }} className="inline-flex size-4 shrink-0 items-center justify-center rounded-[2px] text-fg-3 hover:text-foreground">
           <IconClose width={11} height={11} />
         </span>
       )}
-      {!isCell && <IconCalendar width={13} height={13} className="shrink-0 text-n-500" />}
+      {!isCell && <IconCalendar width={13} height={13} className="shrink-0 text-fg-3" />}
     </>
   );
   const hidden = <input type="hidden" name={name} value={date ? date.toISOString() : ""} form={form} />;
@@ -160,7 +163,7 @@ export function DateTimePicker({ name, form, defaultValue, disabled, placeholder
 
 function TimeStepper({ value, min, max, step = 1, ariaLabel, onChange }: { value: number; min: number; max: number; step?: number; ariaLabel: string; onChange: (v: number) => void }) {
   const wrap = (v: number) => (v < min ? max : v > max ? min : v);
-  const btn = "grid h-[15px] w-5 place-items-center text-n-500 outline-none hover:bg-n-100 hover:text-foreground";
+  const btn = "grid h-[15px] w-5 place-items-center text-fg-3 outline-none hover:bg-n-100 hover:text-foreground";
   return (
     <div className="flex items-stretch overflow-hidden rounded-sm border border-input-border bg-card">
       <input

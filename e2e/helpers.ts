@@ -51,7 +51,8 @@ export async function waitForTable(page: Page) {
 }
 
 export function boardTab(page: Page, name: ViewName) {
-  return page.locator('[data-ui="board-tabs"]').getByRole("tab", { name, exact: true });
+  // AK190: pasek widoków to nawigacja (nav + aria-current), nie ARIA tabs.
+  return page.locator('[data-ui="board-tabs"]').getByRole("link", { name, exact: true });
 }
 
 export async function openView(page: Page, name: ViewName) {

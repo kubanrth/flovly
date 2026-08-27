@@ -37,7 +37,7 @@ export function CommentRow({ comment, canDelete, canEdit, members }: { comment: 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-semibold">{displayName(comment.author)}</span>
-          <span className="font-mono text-[10px] text-n-500">{formatWhen(comment.createdAt)}{edited ? " · edytowane" : ""}</span>
+          <span className="font-mono text-[10px] text-fg-3">{formatWhen(comment.createdAt)}{edited ? " · edytowane" : ""}</span>
           {!editing && (canEdit || canDelete) && (
             <span className="ml-auto flex items-center gap-0.5 opacity-0 focus-within:opacity-100 group-hover:opacity-100">
               {canEdit && <Button variant="ghost" size="sm" iconOnly aria-label="Edytuj" title="Edytuj" onClick={() => setEditing(true)} className="size-6"><IconEdit /></Button>}

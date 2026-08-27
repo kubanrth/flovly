@@ -17,7 +17,7 @@ export function EmptyState({ icon, title, description, action, className }: Empt
   return (
     <div className={cn("flex flex-col items-center rounded-lg border border-dashed border-input-border p-5 text-center", className)}>
       {icon && (
-        <span className="mb-2 inline-flex size-9 items-center justify-center rounded-full bg-n-100 text-n-500 [&_svg]:size-4">
+        <span className="mb-2 inline-flex size-9 items-center justify-center rounded-full bg-n-100 text-fg-3 [&_svg]:size-4">
           {Icon ? <Icon size={16} strokeWidth={1.5} aria-hidden /> : (icon as ReactNode)}
         </span>
       )}

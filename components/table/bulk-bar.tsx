@@ -66,7 +66,7 @@ export function BulkBar({
     if (!confirm(`Usunąć ${n} ${plPlural(n, "zadanie", "zadania", "zadań")}? Tego nie da się cofnąć z UI.`)) return;
     run(() => bulkDeleteTasksAction(base()));
   };
-  const chevron = <IconChevronDown width={11} height={11} className="text-n-500" />;
+  const chevron = <IconChevronDown width={11} height={11} className="text-fg-3" />;
   const sep = <span aria-hidden="true" className="h-4 w-px shrink-0 bg-border" />;
 
   return (
@@ -98,7 +98,7 @@ export function BulkBar({
               <MenuItem key={p} onClick={() => setPriority(p)}>
                 {level === null ? <span className="inline-block size-3.5 rounded-full border border-dashed border-n-400" /> : <PriorityIcon level={level} size={14} />}
                 <span className={cn(level === null && "text-muted-foreground")}>{PRIORITY_META[p].label}</span>
-                <span className="ml-auto pl-2 font-mono text-[10px] text-n-500">{PRIORITY_META[p].shortCode}</span>
+                <span className="ml-auto pl-2 font-mono text-[10px] text-fg-3">{PRIORITY_META[p].shortCode}</span>
               </MenuItem>
             );
           })}

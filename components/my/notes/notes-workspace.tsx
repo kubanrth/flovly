@@ -178,7 +178,7 @@ function FoldersPane({
         active={selectedFolder === "pinned"}
         label="Przypięte"
         count={totalByFolder.pinned ?? 0}
-        icon={<IconStar width={14} height={14} className="shrink-0 text-n-500" />}
+        icon={<IconStar width={14} height={14} className="shrink-0 text-fg-3" />}
       />
 
       <div className="my-1.5 h-px shrink-0 bg-border" />
@@ -198,7 +198,7 @@ function FoldersPane({
           active={selectedFolder === "trash"}
           label="Kosz"
           count={totalByFolder.trash ?? 0}
-          icon={<IconTrash width={14} height={14} className="shrink-0 text-n-500" />}
+          icon={<IconTrash width={14} height={14} className="shrink-0 text-fg-3" />}
         />
         <NewFolderForm />
       </div>
@@ -226,7 +226,7 @@ function FolderLink({
 }) {
   return (
     <Link href={href} data-active={active || undefined} className={FOLDER_ROW}>
-      {icon ?? <IconFolder width={14} height={14} className="shrink-0 text-n-500" />}
+      {icon ?? <IconFolder width={14} height={14} className="shrink-0 text-fg-3" />}
       <span className="flex-1 truncate">{label}</span>
       <span className="font-mono text-[10px] text-fg-3">{count}</span>
     </Link>
@@ -256,7 +256,7 @@ function FolderRow({
         }
         className="flex h-[30px] items-center gap-2 px-2"
       >
-        <IconFolder width={14} height={14} className="shrink-0 text-n-500" />
+        <IconFolder width={14} height={14} className="shrink-0 text-fg-3" />
         <input type="hidden" name="id" value={folder.id} />
         <input
           name="name"
@@ -294,7 +294,7 @@ function FolderRow({
         onDoubleClick={() => setRenaming(true)}
         className={cn(FOLDER_ROW, "min-w-0 flex-1")}
       >
-        <IconFolder width={14} height={14} className="shrink-0 text-n-500" />
+        <IconFolder width={14} height={14} className="shrink-0 text-fg-3" />
         <span className="flex-1 truncate">{folder.name}</span>
         <span className="font-mono text-[10px] text-fg-3">{count}</span>
       </Link>
@@ -376,7 +376,7 @@ function NewFolderForm() {
         maxLength={80}
         placeholder="Nazwa folderu…"
         aria-label="Nazwa nowego folderu"
-        className="h-7 min-w-0 flex-1 rounded-sm border border-input-border bg-card px-2 text-sm outline-none placeholder:text-n-500 focus:border-orange-500"
+        className="h-7 min-w-0 flex-1 rounded-sm border border-input-border bg-card px-2 text-sm outline-none placeholder:text-fg-3 focus:border-orange-500"
       />
       <Button type="submit" size="sm" iconOnly disabled={!name.trim()} aria-label="Dodaj folder">
         <IconPlus />

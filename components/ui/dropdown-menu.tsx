@@ -39,7 +39,7 @@ export function MenuItem({ icon, shortcut, destructive, className, children, ...
     <MenuPrimitive.Item className={cn(ITEM, destructive && "text-danger-text [&_svg]:text-danger-text", className)} {...props}>
       {icon}
       {children}
-      {shortcut && <span className="ml-auto pl-4 font-mono text-[10px] text-n-500">{shortcut}</span>}
+      {shortcut && <span className="ml-auto pl-4 font-mono text-[10px] text-fg-3">{shortcut}</span>}
     </MenuPrimitive.Item>
   );
 }

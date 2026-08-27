@@ -36,7 +36,7 @@ import type { InboxItem } from "./inbox-model";
 const LINK =
   "rounded-[2px] font-medium text-link no-underline outline-none hover:text-orange-800 hover:underline active:text-orange-900";
 const ICON_BTN =
-  "grid size-6 place-items-center rounded-sm text-n-500 outline-none hover:bg-n-200 hover:text-foreground active:bg-n-300";
+  "grid size-6 place-items-center rounded-sm text-fg-3 outline-none hover:bg-n-200 hover:text-foreground active:bg-n-300";
 
 // System notifications (no human actor) get a square tile instead of an avatar.
 const TILE: Record<string, { hue: string; icon: ReactNode }> = {
@@ -280,7 +280,7 @@ export function InboxCard({
           {item.task?.dueText && (
             <span className="text-2xs text-danger-text">termin: {item.task.dueText}</span>
           )}
-          <span className="ml-auto shrink-0 font-mono text-[10px] leading-4 text-n-500">
+          <span className="ml-auto shrink-0 font-mono text-[10px] leading-4 text-fg-3">
             {item.when}
             {item.context ? ` · ${item.context}` : ""}
           </span>

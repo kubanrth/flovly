@@ -466,7 +466,7 @@ function QuickAdd({
       }}
       className="mb-4 flex h-10 items-center gap-2.5 rounded-md border border-input-border bg-card px-3 hover:border-input-border-hover focus-within:border-orange-500 focus-within:shadow-[var(--focus)]"
     >
-      <IconPlus width={14} height={14} strokeWidth={1.6} className="shrink-0 text-n-500" />
+      <IconPlus width={14} height={14} strokeWidth={1.6} className="shrink-0 text-fg-3" />
       <input
         ref={inputRef}
         value={content}
@@ -475,9 +475,9 @@ function QuickAdd({
         disabled={!list}
         placeholder={list ? "Dodaj pozycję…" : "Najpierw utwórz listę"}
         aria-label="Dodaj pozycję"
-        className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-n-500 focus-visible:shadow-none disabled:text-n-400"
+        className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-fg-3 focus-visible:shadow-none disabled:text-n-400"
       />
-      <span className="shrink-0 font-mono text-2xs text-n-500">Enter — dodaj</span>
+      <span className="shrink-0 font-mono text-2xs text-fg-3">Enter — dodaj</span>
     </form>
   );
 }

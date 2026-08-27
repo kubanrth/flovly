@@ -73,7 +73,7 @@ export function RecurrencePicker({ taskId, rule, disabled }: { taskId: string; r
           miesiąca
         </div>
       )}
-      {draft && <span className="px-2 pt-1 font-mono text-[10px] text-n-500">{summarizeRule(draft)} · cron 00:05 UTC</span>}
+      {draft && <span className="px-2 pt-1 font-mono text-[10px] text-fg-3">{summarizeRule(draft)} · cron 00:05 UTC</span>}
     </div>
   );
 }

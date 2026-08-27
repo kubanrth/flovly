@@ -14,9 +14,9 @@ test.describe("view switcher (F12-K88)", () => {
     test(`switch to ${name}`, async ({ page }) => {
       await openView(page, name);
       await expect(page).toHaveURL(VIEW_URL[name]);
-      await expect(page.locator('[data-ui="board-tabs"]').getByRole("tab", { name, exact: true })).toHaveAttribute(
-        "aria-selected",
-        "true",
+      await expect(page.locator('[data-ui="board-tabs"]').getByRole("link", { name, exact: true })).toHaveAttribute(
+        "aria-current",
+        "page",
       );
     });
   }

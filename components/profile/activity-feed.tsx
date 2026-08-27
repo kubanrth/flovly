@@ -61,7 +61,7 @@ function actionAccent(action: string): string {
   if (action.endsWith(".create")) return "text-success-text";
   if (action.endsWith(".delete")) return "text-danger-text";
   if (action.endsWith(".update")) return "text-warning-text";
-  return "text-n-500";
+  return "text-fg-3";
 }
 
 // Object link — gdy mamy Task lub Board, kierujemy na konkretny widok.

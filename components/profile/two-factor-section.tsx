@@ -33,7 +33,7 @@ export function TwoFactorSection({ enabled }: { enabled: boolean }) {
         </div>
         <span
           aria-hidden
-          className={`grid size-8 shrink-0 place-items-center rounded-full ${enabled ? "bg-chip-green-bg text-success-text" : "bg-n-100 text-n-500"}`}
+          className={`grid size-8 shrink-0 place-items-center rounded-full ${enabled ? "bg-chip-green-bg text-success-text" : "bg-n-100 text-fg-3"}`}
         >
           {enabled ? <IconShieldCheck width={15} height={15} /> : <IconShield width={15} height={15} />}
         </span>
@@ -306,7 +306,7 @@ function SecretDisplay({ secret }: { secret: string }) {
             })
             .catch(() => {});
         }}
-        className="grid size-7 shrink-0 place-items-center rounded-md text-n-500 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
+        className="grid size-7 shrink-0 place-items-center rounded-md text-fg-3 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
       >
         {copied ? <IconCheck width={13} height={13} /> : <IconCopy width={13} height={13} />}
       </button>

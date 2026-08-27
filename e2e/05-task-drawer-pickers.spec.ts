@@ -41,7 +41,7 @@ test.describe("task panel (B2)", () => {
     const main = eyebrows.filter((t) => /^(Opis|Podzadania|Załączniki|Powiązane zadania|Głosowanie)/.test(t)).map((t) => t.split(" ·")[0]);
     expect(main).toEqual(["Opis", "Podzadania", "Załączniki", "Powiązane zadania", "Głosowanie"]);
     await expect(panel.locator('[data-ui="task-activity"] [role="tab"]')).toHaveText(["Wszystko", "Komentarze", "Historia", "Czas pracy"]);
-    const labels = await panel.locator('[data-ui="task-details"] .text-2xs.text-n-500').evaluateAll((els) => els.map((e) => e.textContent!.trim()));
+    const labels = await panel.locator('[data-ui="task-details"] .text-2xs.text-fg-3').evaluateAll((els) => els.map((e) => e.textContent!.trim()));
     for (const l of ["Przypisani", "Milestone", "Tagi", "Przypomnienie", "Cykliczność", "Timer", "Pola dodatkowe", "Widoki", "Utworzono", "Zaktualizowano"]) expect(labels).toContain(l);
     // AK65: „Start · Koniec" (modal/page) or separate Start / Koniec rows (600 panel, as in B2-panel).
     expect(labels.includes("Start · Koniec") || (labels.includes("Start") && labels.includes("Koniec"))).toBe(true);

@@ -51,7 +51,7 @@ export default async function DevBoardHeaderPage({ searchParams }: { searchParam
           createViewButton={<CreateViewDialog workspaceId="ws1" boardId="b1" enabled={ALL} existingDefaultTypes={ALL} />}
           actions={<ShareBoardDialog workspaceId="ws1" boardId="b1" initialLinks={[]} />}
         />
-        <div className="flex min-h-[520px] items-center justify-center rounded-lg border border-dashed border-n-300 bg-canvas font-mono text-xs text-n-500">
+        <div className="flex min-h-[520px] items-center justify-center rounded-lg border border-dashed border-n-300 bg-canvas font-mono text-xs text-fg-3">
           obszar widoku — {active}
         </div>
       </BoardShell>

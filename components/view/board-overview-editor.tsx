@@ -112,7 +112,7 @@ export function BoardOverviewEditor({
       <div className="no-scrollbar flex min-h-10 items-center gap-0.5 overflow-x-auto border-b border-border bg-card px-6 py-1.5 max-md:px-4">
         {canEdit && editor && <Toolbar editor={editor} />}
         <span className="flex-1" />
-        <span className="ml-2 flex shrink-0 items-center gap-1.5 text-xs text-n-500">
+        <span className="ml-2 flex shrink-0 items-center gap-1.5 text-xs text-fg-3">
           {canEdit ? (
             saveLabel ? (
               <>
@@ -135,7 +135,7 @@ export function BoardOverviewEditor({
           {lastChange && (
             <div className="mb-6 flex items-center gap-2">
               <Avatar name={lastChange.name} src={lastChange.avatarUrl} size={20} />
-              <span className="text-xs text-n-500">{lastChange.name} · ostatnia zmiana {lastChange.label}</span>
+              <span className="text-xs text-fg-3">{lastChange.name} · ostatnia zmiana {lastChange.label}</span>
             </div>
           )}
           <EditorContent editor={editor} className="flex min-h-0 flex-1 flex-col [&>.ProseMirror]:min-h-full [&>.ProseMirror]:flex-1" />

@@ -89,8 +89,8 @@ function Stepper({ step }: { step: number }) {
         return (
           <Fragment key={label}>
             {i > 0 && <span className="h-px w-6 shrink-0 bg-border" />}
-            <span className={cn("inline-flex items-center gap-1.5 text-xs", cur ? "font-semibold text-foreground" : "text-n-500")}>
-              <span className={cn("inline-flex size-[18px] shrink-0 items-center justify-center rounded-full text-[10px] font-bold", done ? "bg-chip-green-bg text-chip-green-fg" : cur ? "bg-orange-500 text-ink" : "bg-n-100 text-n-500")}>
+            <span className={cn("inline-flex items-center gap-1.5 text-xs", cur ? "font-semibold text-foreground" : "text-fg-3")}>
+              <span className={cn("inline-flex size-[18px] shrink-0 items-center justify-center rounded-full text-[10px] font-bold", done ? "bg-chip-green-bg text-chip-green-fg" : cur ? "bg-orange-500 text-ink" : "bg-n-100 text-fg-3")}>
                 {done ? <IconCheck width={10} height={10} strokeWidth={2.5} /> : n}
               </span>
               {label}
@@ -187,7 +187,7 @@ export function ImportTasksDialog({ workspaceId, boardId }: { workspaceId: strin
   const footer = (
     <>
       {step === 3 && n > 0 && (
-        <span className="text-xs text-n-500 max-md:hidden">
+        <span className="text-xs text-fg-3 max-md:hidden">
           {n} {taskPl(n)} {plPlural(n, "trafi", "trafią", "trafi")} do tablicy <strong className="font-semibold text-n-700">{meta?.boardName ?? "…"}</strong>
         </span>
       )}
@@ -238,9 +238,9 @@ export function ImportTasksDialog({ workspaceId, boardId }: { workspaceId: strin
         {step > 1 && parsed && (
           <>
             <div className="mb-3 flex h-9 items-center gap-2 rounded-sm border border-border px-2.5">
-              <IconFile width={14} height={14} className="shrink-0 text-n-500" />
+              <IconFile width={14} height={14} className="shrink-0 text-fg-3" />
               <span className="min-w-0 flex-1 truncate text-sm">{parsed.fileName}</span>
-              <span className="shrink-0 font-mono text-2xs text-n-500">{parsed.rows.length} {rowPl(parsed.rows.length)}</span>
+              <span className="shrink-0 font-mono text-2xs text-fg-3">{parsed.rows.length} {rowPl(parsed.rows.length)}</span>
               <Button variant="link" size="sm" onClick={() => fileInputRef.current?.click()}>Zmień plik</Button>
             </div>
 
@@ -268,8 +268,8 @@ export function ImportTasksDialog({ workspaceId, boardId }: { workspaceId: strin
               const hint = mapping[i] === "statusName" ? statusHint(i) : null;
               return (
                 <div key={i} className="flex items-center gap-2.5">
-                  <span className={cn("w-[120px] shrink-0 truncate font-mono text-xs md:w-[170px]", skip ? "text-n-500" : "text-n-700")}>{h || `Kolumna ${i + 1}`}</span>
-                  <IconArrowRight width={14} height={14} className="shrink-0 text-n-500" />
+                  <span className={cn("w-[120px] shrink-0 truncate font-mono text-xs md:w-[170px]", skip ? "text-fg-3" : "text-n-700")}>{h || `Kolumna ${i + 1}`}</span>
+                  <IconArrowRight width={14} height={14} className="shrink-0 text-fg-3" />
                   <Select<TaskField>
                     aria-label={`Mapowanie kolumny ${h || i + 1}`}
                     size={size}
@@ -277,9 +277,9 @@ export function ImportTasksDialog({ workspaceId, boardId }: { workspaceId: strin
                     onValueChange={(v) => setMapping(mapping.map((x, j) => (j === i ? v : x)))}
                     items={FIELDS.map((f) => ({
                       value: f,
-                      label: f === "statusName" && hint ? <>Status <span className="ml-1 text-2xs text-n-500">({hint})</span></> : FIELD_LABEL[f],
+                      label: f === "statusName" && hint ? <>Status <span className="ml-1 text-2xs text-fg-3">({hint})</span></> : FIELD_LABEL[f],
                     }))}
-                    className={cn("flex-1", skip && "border-dashed border-n-400 text-n-500")}
+                    className={cn("flex-1", skip && "border-dashed border-n-400 text-fg-3")}
                   />
                 </div>
               );

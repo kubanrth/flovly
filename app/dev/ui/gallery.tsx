@@ -24,7 +24,7 @@ function Section({ title, span = 4, children }: { title: string; span?: number; 
   );
 }
 const Sub = ({ children, className = "" }: { children: ReactNode; className?: string }) => <div className={`mb-1.5 text-xs font-medium text-n-700 ${className}`}>{children}</div>;
-const Mono = ({ children, className = "" }: { children: ReactNode; className?: string }) => <div className={`font-mono text-[10px] text-n-500 ${className}`}>{children}</div>;
+const Mono = ({ children, className = "" }: { children: ReactNode; className?: string }) => <div className={`font-mono text-[10px] text-fg-3 ${className}`}>{children}</div>;
 
 export function Gallery() {
   return (
@@ -117,7 +117,7 @@ function Buttons() {
         <div className="flex flex-col items-start gap-1"><Button variant="secondary" iconOnly aria-label="Więcej"><IconMore /></Button><Mono>ikonowy 32</Mono></div>
         <div className="flex flex-col items-start gap-1"><Button variant="ghost" iconOnly aria-label="Więcej"><IconMore /></Button><Mono>ghost ikonowy</Mono></div>
         <div className="flex flex-col items-start gap-1"><Button variant="ghost" iconOnly size="sm" aria-label="Edytuj"><IconEdit /></Button><Mono>ikonowy 28</Mono></div>
-        <div className="ml-auto max-w-[300px] text-2xs text-n-500">Primary maks. 1× na widok. Reszta akcji: secondary / ghost.</div>
+        <div className="ml-auto max-w-[300px] text-2xs text-fg-3">Primary maks. 1× na widok. Reszta akcji: secondary / ghost.</div>
       </div>
     </Section>
   );
@@ -147,14 +147,14 @@ function Controls() {
           <label className="inline-flex items-center gap-2 text-sm"><Switch size="sm" defaultChecked />sm</label>
           <label className="inline-flex items-center gap-2 text-sm"><Switch disabled defaultChecked />disabled</label>
         </div>
-        <div className="text-2xs text-n-500">Zaznaczenia w atramencie — pomarańcz zarezerwowany dla nawigacji i CTA.</div>
+        <div className="text-2xs text-fg-3">Zaznaczenia w atramencie — pomarańcz zarezerwowany dla nawigacji i CTA.</div>
       </div>
       <div className="eyebrow mt-4 mb-2.5">Awatary</div>
       <div className="flex items-center gap-3.5">
         <Avatar name="Daniel" size={20} hue="blue" /><Avatar name="Kuba" size={24} hue="green" /><Avatar name="Gabryś" size={28} hue="purple" /><Avatar name="Marta" size={32} hue="pink" /><Avatar name="Ania" size={44} />
         <AvatarStack people={PEOPLE} max={4} className="ml-1.5" />
       </div>
-      <div className="mt-2 text-2xs text-n-500">20 / 24 / 28 px · inicjały 600 · stos z nakładką −7px</div>
+      <div className="mt-2 text-2xs text-fg-3">20 / 24 / 28 px · inicjały 600 · stos z nakładką −7px</div>
     </Section>
   );
 }
@@ -363,7 +363,7 @@ function Live() {
           <SheetContent side="bottom" showCloseButton={false}><div className="sheet-drag-handle" /><SheetHeader className="border-b-0"><SheetTitle>Arkusz mobilny</SheetTitle></SheetHeader><div className="px-4 pb-6 text-sm text-muted-foreground">sheet-mobile-surface + uchwyt.</div></SheetContent>
         </Sheet>
         <Button variant="secondary" onClick={() => toast.add({ title: "Zapisano zmiany", description: "Zadanie #250 zaktualizowane" })}>Pokaż toast</Button>
-        <span className="ml-auto text-2xs text-n-500">Hue awatara z hasha: {PEOPLE.slice(4).map((p) => `${p.name}→${CHIP_HUE[p.hue ?? "gray"].split(" ")[0]}`).join(" · ")}</span>
+        <span className="ml-auto text-2xs text-fg-3">Hue awatara z hasha: {PEOPLE.slice(4).map((p) => `${p.name}→${CHIP_HUE[p.hue ?? "gray"].split(" ")[0]}`).join(" · ")}</span>
         <CheckMark className="text-success" />
       </div>
     </Section>

@@ -214,7 +214,7 @@ function ToastCard({
         onClick={onDismiss}
         aria-label="Zamknij"
         title="Zamknij"
-        className="grid size-6 shrink-0 place-items-center rounded-sm text-n-500 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
+        className="grid size-6 shrink-0 place-items-center rounded-sm text-fg-3 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
       >
         <IconClose width={13} height={13} />
       </button>

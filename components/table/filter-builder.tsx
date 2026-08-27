@@ -182,7 +182,7 @@ function FilterValue({ column, filter, onChange }: { column: FilterColumn; filte
       );
     }
     return (
-      <select aria-label="Wartość" className={cn(inputVariants({ size: "sm" }), "text-xs", !filter.value && "text-n-500")} value={filter.value} onChange={(e) => onChange(e.target.value)}>
+      <select aria-label="Wartość" className={cn(inputVariants({ size: "sm" }), "text-xs", !filter.value && "text-fg-3")} value={filter.value} onChange={(e) => onChange(e.target.value)}>
         <option value="">— wybierz —</option>
         {column.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>

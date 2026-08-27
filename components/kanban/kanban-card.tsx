@@ -77,8 +77,10 @@ export function KanbanCard({
         onPointerDown={(e) => e.stopPropagation()}
         lang="pl"
         className={cn(
-          "block font-medium text-foreground hyphens-auto outline-none hover:text-orange-800 active:text-orange-900",
-          mobile ? "mb-2 text-base leading-[19px]" : "mb-2 text-sm leading-[18px]",
+          // AK190: py+ujemny mt daje 24px strefy trafienia (WCAG 2.5.8) bez
+          // zmiany geometrii karty — suma odstępów jak przy samym `mb-2`.
+          "-mt-[3px] mb-[5px] block py-[3px] font-medium text-foreground hyphens-auto outline-none hover:text-orange-800 active:text-orange-900",
+          mobile ? "text-base leading-[19px]" : "text-sm leading-[18px]",
         )}
       >
         {task.title}
@@ -120,7 +122,15 @@ export function SortableKanbanCard({
   disabled?: boolean;
   hoverProps?: CardHoverProps;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id, disabled });
+  // AK190: dnd-kit domyślnie daje wrapperowi `role="button"`, a karta zawiera
+  // fokusowalny link tytułu → axe nested-interactive (serious). `group` nie
+  // jest rolą widgetu, więc zagnieżdżenie jest legalne; tabIndex i handlery
+  // klawiatury (KeyboardSensor) zostają, więc przeciąganie klawiaturą działa.
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+    disabled,
+    attributes: { role: "group", roleDescription: "przeciągalna karta zadania" },
+  });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
   if (isDragging) {

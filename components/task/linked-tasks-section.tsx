@@ -33,7 +33,7 @@ export function LinkedTasksSection({ workspaceId, taskId, linkedTasks, candidate
         <span className="eyebrow">Powiązane zadania{linkedTasks.length > 0 ? ` · ${linkedTasks.length}` : ""}</span>
         {canEdit && !open && <Button variant="ghost" size="sm" onClick={() => setOpen(true)} className="ml-auto -my-1 h-6 px-1.5 text-xs text-n-600"><IconPlus /> Powiąż</Button>}
       </div>
-      {linkedTasks.length === 0 && !open && <p className="text-sm text-n-500">Brak powiązanych zadań.</p>}
+      {linkedTasks.length === 0 && !open && <p className="text-sm text-fg-3">Brak powiązanych zadań.</p>}
       {linkedTasks.length > 0 && (
         <ul className="flex flex-col gap-1.5">
           {linkedTasks.map((l) => {
@@ -61,7 +61,7 @@ export function LinkedTasksSection({ workspaceId, taskId, linkedTasks, candidate
             <Button variant="ghost" size="sm" onClick={() => { setOpen(false); setQuery(""); }}>Anuluj</Button>
           </div>
           {filtered.length === 0 ? (
-            <p className="px-1 py-2 text-xs text-n-500">{q ? "Brak dopasowań." : "Brak dostępnych zadań do powiązania."}</p>
+            <p className="px-1 py-2 text-xs text-fg-3">{q ? "Brak dopasowań." : "Brak dostępnych zadań do powiązania."}</p>
           ) : (
             <ul className="flex max-h-[240px] flex-col overflow-y-auto">
               {filtered.map((c) => (

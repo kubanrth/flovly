@@ -406,7 +406,7 @@ export function GanttView({
             )}
 
             {rows.length === 0 && (
-              <p className="absolute inset-x-0 top-24 text-center text-sm text-n-500">
+              <p className="absolute inset-x-0 top-24 text-center text-sm text-fg-3">
                 Brak zadań i milestone&apos;ów z datami. Ustaw Start + Koniec w zadaniu.
               </p>
             )}
@@ -463,7 +463,7 @@ export function GanttView({
         <span>
           {milestones.length} {milestonePl(milestones.length)} · {expanded.size === 0 ? "zwinięte" : "rozwinięte"} · {taskCount} {taskPl(taskCount)} · zoom: {GANTT_ZOOM_LABEL[zoom].toLowerCase()}
         </span>
-        <span className="ml-auto text-n-500">Dziś: {todayFmt.format(new Date(now))}</span>
+        <span className="ml-auto text-fg-3">Dziś: {todayFmt.format(new Date(now))}</span>
       </div>
 
       {canCreate && creating && (
@@ -515,7 +515,7 @@ function MilestoneRow({
         <span className="flex items-center gap-1.5">
           <IconRoadmap width={12} height={12} className="shrink-0 text-orange-700" />
           <span className="truncate text-sm font-semibold">{row.m.title}</span>
-          <span className="shrink-0 font-mono text-[10px] text-n-500">
+          <span className="shrink-0 font-mono text-[10px] text-fg-3">
             {row.done}/{row.total} · {formatGanttRange(row.m.startAt, row.m.stopAt)}
           </span>
         </span>
@@ -708,7 +708,7 @@ function MobileGantt({
                         <span className="truncate text-xs font-semibold">
                           {r.label} · {r.m.title}
                         </span>
-                        <span className="font-mono text-[9px] text-n-500">
+                        <span className="font-mono text-[9px] text-fg-3">
                           {r.done}/{r.total}
                         </span>
                       </>
@@ -739,7 +739,7 @@ function MobileGantt({
             })}
           </div>
         </div>
-        <p className="px-4 py-3 font-mono text-[10px] text-n-500">przewiń poziomo · pomarańczowa linia = dziś ({todayLabel})</p>
+        <p className="px-4 py-3 font-mono text-[10px] text-fg-3">przewiń poziomo · pomarańczowa linia = dziś ({todayLabel})</p>
       </div>
 
       <div className="flex shrink-0 justify-center border-t border-border bg-card px-4 py-2.5">

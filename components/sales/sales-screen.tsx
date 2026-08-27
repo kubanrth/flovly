@@ -541,7 +541,7 @@ function DealCard({
               highlighted ? "border-orange-100" : "border-n-100",
             )}
           >
-            <meta.Icon width={11} height={11} className={meta.danger ? "text-danger-text" : "text-n-500"} />
+            <meta.Icon width={11} height={11} className={meta.danger ? "text-danger-text" : "text-fg-3"} />
             <span className={cn("truncate text-2xs", meta.danger ? "font-medium text-danger-text" : "text-fg-2")}>
               {meta.label}
             </span>

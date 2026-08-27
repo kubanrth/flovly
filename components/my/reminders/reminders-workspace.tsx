@@ -344,7 +344,7 @@ function ReminderRowCard({
         aria-hidden
         className={cn(
           "grid size-7 shrink-0 place-items-center rounded-full",
-          dismissed ? "bg-n-100 text-n-500" : overdue ? "bg-chip-red-bg text-danger-text" : "bg-orange-100 text-orange-800",
+          dismissed ? "bg-n-100 text-fg-3" : overdue ? "bg-chip-red-bg text-danger-text" : "bg-orange-100 text-orange-800",
         )}
       >
         <IconBell width={14} height={14} />

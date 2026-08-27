@@ -153,7 +153,7 @@ function ReminderBubble({
           type="submit"
           aria-label="Schowaj"
           title="Schowaj (zostaje na liście)"
-          className="grid size-7 shrink-0 place-items-center rounded-md text-n-500 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
+          className="grid size-7 shrink-0 place-items-center rounded-md text-fg-3 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
         >
           <IconClose width={12} height={12} />
         </button>

@@ -117,7 +117,7 @@ export function AssigneePickerCell({ taskId, current, members, canEdit }: { task
     >
       <InputGroup size="sm" leading={<IconSearch />} autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Szukaj osoby…" aria-label="Szukaj osoby" className="mb-1 text-xs" />
       <div role="listbox" aria-label="Osoby" className="flex max-h-[280px] flex-col overflow-y-auto">
-        {filtered.length === 0 && <p className="px-2 py-3 text-center text-xs text-n-500">Brak dopasowań</p>}
+        {filtered.length === 0 && <p className="px-2 py-3 text-center text-xs text-fg-3">Brak dopasowań</p>}
         {filtered.map((m) => (
           <OptionRow key={m.id} active={assigned.has(m.id)} onClick={() => toggle(m.id)}>
             <Avatar name={memberName(m)} src={m.avatarUrl} size={20} />
@@ -197,7 +197,7 @@ export function TagPickerCell({ taskId, workspaceId, current, allTags, canEdit }
     >
       <InputGroup size="sm" leading={<IconSearch />} autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Szukaj tagu…" aria-label="Szukaj tagu" className="mb-1 text-xs" />
       <div role="listbox" aria-label="Tagi" className="flex max-h-[280px] flex-col overflow-y-auto">
-        {filtered.length === 0 && !canCreate && <p className="px-2 py-3 text-center text-xs text-n-500">{allTags.length === 0 ? "Brak tagów" : "Brak dopasowań"}</p>}
+        {filtered.length === 0 && !canCreate && <p className="px-2 py-3 text-center text-xs text-fg-3">{allTags.length === 0 ? "Brak tagów" : "Brak dopasowań"}</p>}
         {filtered.map((t) => (
           <OptionRow key={t.id} active={has.has(t.id)} onClick={() => toggle(t.id)}>
             <TagChip label={t.name} hue={hueForColor(t.colorHex)} size="sm" />

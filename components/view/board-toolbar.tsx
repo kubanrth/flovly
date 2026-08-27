@@ -73,7 +73,7 @@ export function BoardToolbar(p: BoardToolbarProps) {
     setStored(d);
     p.onDensity?.(d);
   };
-  const chevron = <IconChevronDown width={12} height={12} className="text-n-500" />;
+  const chevron = <IconChevronDown width={12} height={12} className="text-fg-3" />;
 
   const menuButton = (label: ReactNode, menu: ReactNode | undefined, opts: { className: string; active?: boolean; disabled?: boolean; onClick?: () => void; ariaLabel?: string; icon?: ReactNode }) =>
     menu ? (
@@ -128,7 +128,7 @@ export function BoardToolbar(p: BoardToolbarProps) {
       {p.people && p.people.length > 0 && (
         p.onTogglePerson ? (
           <span role="group" aria-label="Filtruj po osobie" className="mx-0.5 inline-flex shrink-0">
-            {p.people.slice(0, 3).map((m, i) => {
+            {p.people.slice(0, 3).map((m) => {
               const on = p.activePeople?.includes(m.id);
               return (
                 <button
@@ -138,8 +138,10 @@ export function BoardToolbar(p: BoardToolbarProps) {
                   title={m.name}
                   onClick={() => p.onTogglePerson?.(m.id)}
                   className={cn(
+                    // AK190: bez nakładki — nachodzące awatary zostawiały 17px
+                    // odsłoniętego celu, a WCAG 2.5.8 wymaga 24×24. Nienaciskalny
+                    // „+N" niżej nadal nachodzi, bo nie jest celem.
                     "rounded-full outline-none hover:shadow-[0_0_0_2px_var(--n-300)] active:shadow-[0_0_0_2px_var(--n-400)]",
-                    i > 0 && "-ml-[7px]",
                     on && "shadow-[0_0_0_2px_var(--orange-500)] hover:shadow-[0_0_0_2px_var(--orange-600)]",
                   )}
                 >
@@ -192,7 +194,7 @@ export function BoardToolbar(p: BoardToolbarProps) {
             {(Object.keys(DENSITY_LABEL) as Density[]).map((d) => (
               <MenuRadioItem key={d} value={d}>
                 {DENSITY_LABEL[d]}
-                <span className="ml-1.5 font-mono text-[10px] text-n-500">{DENSITY_PX[d]}px</span>
+                <span className="ml-1.5 font-mono text-[10px] text-fg-3">{DENSITY_PX[d]}px</span>
               </MenuRadioItem>
             ))}
           </MenuRadioGroup>

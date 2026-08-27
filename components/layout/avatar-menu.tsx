@@ -25,7 +25,7 @@ export function AvatarMenu({ user, trigger, align = "end" }: { user: ShellUser; 
           <Avatar name={name} src={user.avatarUrl} size={32} />
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold leading-[17px]">{name}</div>
-            <div className="truncate text-2xs leading-[15px] text-n-500">{user.email}</div>
+            <div className="truncate text-2xs leading-[15px] text-fg-3">{user.email}</div>
           </div>
         </div>
         <MenuItem icon={<IconSettings />} onClick={go("/profile")}>Ustawienia konta</MenuItem>
@@ -35,7 +35,7 @@ export function AvatarMenu({ user, trigger, align = "end" }: { user: ShellUser; 
         <MenuSeparator />
         <MenuSub>
           <MenuSubTrigger icon={<IconDensity />}>
-            Gęstość<span className="ml-auto text-xs text-n-500">{DENSITY_PX[density]} px</span>
+            Gęstość<span className="ml-auto text-xs text-fg-3">{DENSITY_PX[density]} px</span>
           </MenuSubTrigger>
           <MenuSubContent data-ui="density-menu" className="min-w-[180px]">
             <MenuRadioGroup
@@ -47,7 +47,7 @@ export function AvatarMenu({ user, trigger, align = "end" }: { user: ShellUser; 
             >
               {DENSITIES.map(([v, label]) => (
                 <MenuRadioItem key={v} value={v}>
-                  {label}<span className="ml-2 text-xs text-n-500">{DENSITY_PX[v]} px</span>
+                  {label}<span className="ml-2 text-xs text-fg-3">{DENSITY_PX[v]} px</span>
                 </MenuRadioItem>
               ))}
             </MenuRadioGroup>

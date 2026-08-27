@@ -30,7 +30,7 @@ export function TopBar({ user, unreadCount, boards, workspaces, onToggleSidebar 
       <button
         type="button"
         onClick={openCommandPalette}
-        className="hidden h-8 w-[480px] items-center gap-2 rounded-sm border border-input-border bg-card px-2.5 text-left text-sm text-n-500 outline-none hover:border-input-border-hover active:bg-n-50 md:flex"
+        className="hidden h-8 w-[480px] items-center gap-2 rounded-sm border border-input-border bg-card px-2.5 text-left text-sm text-fg-3 outline-none hover:border-input-border-hover active:bg-n-50 md:flex"
       >
         <IconSearch width={14} height={14} className="shrink-0" />
         <span className="flex-1">Szukaj zadań, tablic, osób…</span>
@@ -58,7 +58,7 @@ export function TopBar({ user, unreadCount, boards, workspaces, onToggleSidebar 
           <span className="inline-flex items-center gap-1 p-0.5 md:mr-0 mr-1">
             <Avatar name={name} src={user.avatarUrl} size={32} className="md:hidden" />
             <Avatar name={name} src={user.avatarUrl} size={28} className="hidden md:inline-flex" />
-            <IconChevronDown width={12} height={12} className="hidden text-n-500 md:block" />
+            <IconChevronDown width={12} height={12} className="hidden text-fg-3 md:block" />
           </span>
         }
       />

@@ -39,7 +39,7 @@ export function SubtasksSection({ taskId, subtasks, canManage, mobile, barClassN
               <input type="hidden" name="completed" value={s.completed ? "false" : "true"} />
               <Checkbox checked={s.completed} size={mobile ? "lg" : "sm"} disabled={!canManage} ariaLabel={s.completed ? `Odznacz: ${s.title}` : `Zaznacz: ${s.title}`} onClick={(e) => (e.currentTarget as HTMLElement).closest("form")?.requestSubmit()} />
             </form>
-            <span className={cn("min-w-0 flex-1 truncate", mobile ? "text-base" : "text-sm", s.completed && "text-n-500 line-through")}>{s.title}</span>
+            <span className={cn("min-w-0 flex-1 truncate", mobile ? "text-base" : "text-sm", s.completed && "text-fg-3 line-through")}>{s.title}</span>
             {canManage && (
               <form action={(fd) => startTransition(() => deleteSubtaskAction(fd))} className="m-0">
                 <input type="hidden" name="subtaskId" value={s.id} />
@@ -48,7 +48,7 @@ export function SubtasksSection({ taskId, subtasks, canManage, mobile, barClassN
             )}
           </li>
         ))}
-        {!canManage && subtasks.length === 0 && <li className="text-sm text-n-500">Brak podzadań.</li>}
+        {!canManage && subtasks.length === 0 && <li className="text-sm text-fg-3">Brak podzadań.</li>}
       </ul>
       {canManage && (adding ? (
         <form
@@ -62,7 +62,7 @@ export function SubtasksSection({ taskId, subtasks, canManage, mobile, barClassN
           <Button variant="ghost" size="sm" onClick={reset}>Anuluj</Button>
         </form>
       ) : (
-        <button type="button" onClick={() => setAdding(true)} className={cn("flex items-center gap-2 rounded-sm text-n-500 outline-none hover:text-foreground", mobile ? "min-h-11 gap-2.5 text-base" : "h-[30px] text-sm")}>
+        <button type="button" onClick={() => setAdding(true)} className={cn("flex items-center gap-2 rounded-sm text-fg-3 outline-none hover:text-foreground", mobile ? "min-h-11 gap-2.5 text-base" : "h-[30px] text-sm")}>
           <IconPlus width={mobile ? 18 : 14} height={mobile ? 18 : 14} /> Dodaj podzadanie
         </button>
       ))}

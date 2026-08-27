@@ -49,7 +49,7 @@ function Tile({
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-2xs text-fg-3">{label}</span>
-        <span className="grid size-6 shrink-0 place-items-center rounded-md bg-n-100 text-n-500 [&_svg]:size-3.5">
+        <span className="grid size-6 shrink-0 place-items-center rounded-md bg-n-100 text-fg-3 [&_svg]:size-3.5">
           {icon}
         </span>
       </div>

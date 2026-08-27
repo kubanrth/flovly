@@ -68,9 +68,9 @@ export function SearchableDropdown({
         className={cn(inputVariants({ size: "md" }), "flex items-center gap-2 text-left data-popup-open:border-orange-500")}
       >
         {selected?.leading && <span className="shrink-0">{selected.leading}</span>}
-        <span className={cn("min-w-0 flex-1 truncate", !selected && "text-n-500")}>{selected ? selected.label : placeholder}</span>
+        <span className={cn("min-w-0 flex-1 truncate", !selected && "text-fg-3")}>{selected ? selected.label : placeholder}</span>
         {selected && allowClear && !disabled && (
-          <span role="button" tabIndex={-1} aria-label="Wyczyść wybór" onClick={(e) => { e.stopPropagation(); setValue(null); }} className="inline-flex size-4 shrink-0 items-center justify-center rounded-[2px] text-n-500 hover:text-foreground">
+          <span role="button" tabIndex={-1} aria-label="Wyczyść wybór" onClick={(e) => { e.stopPropagation(); setValue(null); }} className="inline-flex size-4 shrink-0 items-center justify-center rounded-[2px] text-fg-3 hover:text-foreground">
             <IconClose width={11} height={11} />
           </span>
         )}
@@ -81,17 +81,17 @@ export function SearchableDropdown({
         <ComboboxPrimitive.Positioner sideOffset={4} align="start" className="z-[100] outline-none">
           <ComboboxPrimitive.Popup className={cn(POPUP_CLASS, "w-(--anchor-width) min-w-[260px] p-1")}>
             <div className="mb-1 flex h-[30px] items-center gap-1.5 rounded-sm border border-input-border px-2 focus-within:border-orange-500">
-              <IconSearch width={12} height={12} className="shrink-0 text-n-500" />
-              <ComboboxPrimitive.Input placeholder={searchPlaceholder} className="min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-n-500 focus-visible:shadow-none" />
+              <IconSearch width={12} height={12} className="shrink-0 text-fg-3" />
+              <ComboboxPrimitive.Input placeholder={searchPlaceholder} className="min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-fg-3 focus-visible:shadow-none" />
             </div>
-            <ComboboxPrimitive.Empty className="px-2 py-2 text-center text-xs text-n-500 empty:hidden">brak dopasowań</ComboboxPrimitive.Empty>
+            <ComboboxPrimitive.Empty className="px-2 py-2 text-center text-xs text-fg-3 empty:hidden">brak dopasowań</ComboboxPrimitive.Empty>
             <ComboboxPrimitive.List className="max-h-[280px] overflow-y-auto">
               {(o: SearchableDropdownOption) => (
                 <ComboboxPrimitive.Item key={o.id} value={o} className={cn(POPUP_ITEM_CLASS, "h-auto min-h-8 py-1", o.id === EMPTY_ID && "text-muted-foreground")}>
                   {o.leading && <span className="shrink-0">{o.leading}</span>}
                   <span className="flex min-w-0 flex-1 flex-col leading-tight">
                     <span className="truncate">{o.label}</span>
-                    {o.sublabel && <span className="truncate font-mono text-[10px] text-n-500">{o.sublabel}</span>}
+                    {o.sublabel && <span className="truncate font-mono text-[10px] text-fg-3">{o.sublabel}</span>}
                   </span>
                   <ComboboxPrimitive.ItemIndicator className="ml-auto text-success"><IconCheck width={14} height={14} /></ComboboxPrimitive.ItemIndicator>
                 </ComboboxPrimitive.Item>

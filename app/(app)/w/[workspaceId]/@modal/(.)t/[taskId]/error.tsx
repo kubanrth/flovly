@@ -25,7 +25,7 @@ export default function TaskModalError({ error, reset }: { error: Error & { dige
           <div className="flex flex-col gap-1">
             <h2 className="text-md font-semibold">Nie udało się załadować zadania</h2>
             <p className="max-w-[36ch] text-sm text-muted-foreground">Wystąpił błąd podczas pobierania danych. Spróbuj ponownie albo otwórz zadanie w pełnym widoku.</p>
-            {error.digest && <p className="font-mono text-2xs text-n-500">ID błędu: {error.digest}</p>}
+            {error.digest && <p className="font-mono text-2xs text-fg-3">ID błędu: {error.digest}</p>}
           </div>
           <div className="flex items-center gap-2">
             <Button onClick={reset}><IconUndo /> Spróbuj ponownie</Button>

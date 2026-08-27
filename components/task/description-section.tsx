@@ -75,7 +75,7 @@ export function DescriptionSection({ taskId, initial, canEdit, onMutate }: { tas
           <RichTextEditor key={`view-${editorKey}`} initial={draft} readOnly variant="display" />
         </div>
       ) : (
-        <p className="text-sm text-n-500">{canEdit ? "Brak opisu." : "Brak opisu."}</p>
+        <p className="text-sm text-fg-3">{canEdit ? "Brak opisu." : "Brak opisu."}</p>
       )}
     </section>
   );

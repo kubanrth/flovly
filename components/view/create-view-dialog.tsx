@@ -78,7 +78,7 @@ export function CreateViewDialog({
         onClick={() => setOpen(true)}
         aria-label="Nowy widok"
         title="Nowy widok"
-        className="inline-flex h-10 w-8 shrink-0 items-center justify-center text-n-500 outline-none hover:text-foreground active:text-foreground max-md:h-11"
+        className="inline-flex h-10 w-8 shrink-0 items-center justify-center text-fg-3 outline-none hover:text-foreground active:text-foreground max-md:h-11"
       >
         <IconPlus />
       </button>

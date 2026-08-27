@@ -93,7 +93,7 @@ export function AcceptInviteForm({
             onClick={() => setShowPassword((v) => !v)}
             aria-label={showPassword ? "Ukryj hasło" : "Pokaż hasło"}
             // 24×24 = minimalny cel dotykowy (WCAG 2.2 · 2.5.8).
-            className="absolute top-1 right-1 inline-flex size-6 items-center justify-center rounded-sm text-n-500 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
+            className="absolute top-1 right-1 inline-flex size-6 items-center justify-center rounded-sm text-fg-3 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
           >
             {showPassword ? <IconEyeOff width={14} height={14} /> : <IconEye width={14} height={14} />}
           </button>

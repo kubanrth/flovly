@@ -134,7 +134,7 @@ export function ViewSwitcher({
   ];
 
   // ── Overflow: measure once, fit as many tabs as the track allows ─────────
-  const trackRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLElement>(null);
   const widths = useRef(new Map<string, number>());
   const [visible, setVisible] = useState(Infinity);
   const keys = items.map((i) => i.key).join("|");
@@ -178,11 +178,14 @@ export function ViewSwitcher({
     }
   }
 
-  // ←/→/Home/End between tabs (WAI-ARIA tabs pattern).
-  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+  // ←/→/Home/End between tabs. AK190: to NIE jest wzorzec ARIA tabs — nie ma
+  // `tabpanel`, każda zakładka to nawigacja do innej trasy. `role=tablist`
+  // wymagał samych dzieci `role=tab`, a pasek zawiera też [+], „Więcej N" i ⋯
+  // widoku (axe aria-required-children, critical). Zostaje `nav` + `aria-current`.
+  const onKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
     const tabs = Array.from(
-      trackRef.current?.querySelectorAll<HTMLElement>('[role="tab"]:not([aria-disabled="true"])') ?? [],
+      trackRef.current?.querySelectorAll<HTMLElement>("[data-tab-key]:not([aria-disabled='true'])") ?? [],
     );
     const idx = tabs.indexOf(document.activeElement as HTMLElement);
     if (tabs.length === 0 || (idx === -1 && e.key.startsWith("Arrow"))) return;
@@ -204,7 +207,7 @@ export function ViewSwitcher({
     if (!t.href) {
       return (
         <Tooltip key={t.key} content="Wkrótce">
-          <span role="tab" aria-disabled="true" data-tab-key={t.key} className={cn(TAB, "cursor-default text-n-400 hover:text-n-400")}>
+          <span aria-disabled="true" data-tab-key={t.key} className={cn(TAB, "cursor-default text-n-400 hover:text-n-400")}>
             {t.icon}
             {t.label}
           </span>
@@ -215,8 +218,7 @@ export function ViewSwitcher({
       <Link
         href={t.href}
         prefetch
-        role="tab"
-        aria-selected={t.active}
+        aria-current={t.active ? "page" : undefined}
         data-active={t.active ? "" : undefined}
         data-tab-key={t.key}
         className={cn(TAB, t.deleteId && "pr-7")}
@@ -233,7 +235,7 @@ export function ViewSwitcher({
           <MenuTrigger
             aria-label={`Opcje widoku ${t.label}`}
             className={cn(
-              "absolute top-1/2 right-1 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-n-500 opacity-0 outline-none hover:bg-n-100 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 data-popup-open:opacity-100 [&_svg]:size-3.5",
+              "absolute top-1/2 right-1 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-fg-3 opacity-0 outline-none hover:bg-n-100 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 data-popup-open:opacity-100 [&_svg]:size-3.5",
               t.active && "opacity-100",
             )}
           >
@@ -251,9 +253,8 @@ export function ViewSwitcher({
 
   return (
     <div data-ui="board-tabs" className="flex h-10 items-stretch border-b border-border px-6 max-md:h-11 max-md:px-4">
-      <div
+      <nav
         ref={trackRef}
-        role="tablist"
         aria-label="Widoki tablicy"
         onKeyDown={onKeyDown}
         className="no-scrollbar flex min-w-0 flex-1 items-stretch gap-0.5 max-md:overflow-x-auto"
@@ -281,7 +282,7 @@ export function ViewSwitcher({
             </MenuContent>
           </Menu>
         )}
-      </div>
+      </nav>
     </div>
   );
 }

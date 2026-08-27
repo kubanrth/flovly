@@ -534,7 +534,7 @@ function ProjectsDialog({
             projects.map((p) => (
               <div key={p.id} className="flex flex-col gap-2 rounded-lg border border-border p-3">
                 <div className="flex items-center gap-2">
-                  <IconFolder width={14} height={14} className="shrink-0 text-n-500" />
+                  <IconFolder width={14} height={14} className="shrink-0 text-fg-3" />
                   <span className="min-w-0 flex-1 truncate text-sm font-semibold">{p.name}</span>
                   <span className="flex shrink-0 items-center gap-1 font-mono text-2xs text-fg-3">
                     <IconUsers width={11} height={11} />

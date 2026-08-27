@@ -91,12 +91,12 @@ export function TableHeaderCell({ columnId, label, icon, canManagePrefs, isSorte
         }}
         className="group/th flex h-full w-full min-w-0 items-center gap-[5px] px-2.5 text-left uppercase outline-none hover:bg-n-100 hover:text-foreground focus-visible:shadow-[inset_0_0_0_2px_var(--orange-500)] data-popup-open:bg-n-100 data-popup-open:text-foreground"
       >
-        {icon && <span className="inline-flex shrink-0 items-center text-n-500">{icon}</span>}
+        {icon && <span className="inline-flex shrink-0 items-center text-fg-3">{icon}</span>}
         <span className="truncate">{label}</span>
         {isSorted ? (
           <IconArrowDown width={11} height={11} aria-label={isSorted === "asc" ? "posortowano rosnąco" : "posortowano malejąco"} className={cn("ml-auto shrink-0 text-fg-2", isSorted === "asc" && "rotate-180")} />
         ) : (
-          <IconChevronDown width={11} height={11} className="ml-auto hidden shrink-0 text-n-500 group-hover/th:block group-data-popup-open/th:block" />
+          <IconChevronDown width={11} height={11} className="ml-auto hidden shrink-0 text-fg-3 group-hover/th:block group-data-popup-open/th:block" />
         )}
       </MenuTrigger>
       <MenuContent align="start" className="w-56">
@@ -135,7 +135,7 @@ export function TableHeaderCell({ columnId, label, icon, canManagePrefs, isSorte
             <MenuSub>
               <MenuSubTrigger icon={<FieldTypeIcon type={fieldType} size={14} />}>
                 Typ pola
-                <span className="ml-auto pl-3 text-2xs text-n-500">{FIELD_TYPE_META[fieldType].label}</span>
+                <span className="ml-auto pl-3 text-2xs text-fg-3">{FIELD_TYPE_META[fieldType].label}</span>
               </MenuSubTrigger>
               <MenuSubContent className="max-h-[60vh] w-56 overflow-y-auto">
                 <MenuRadioGroup value={fieldType} onValueChange={(v) => changeType(v as FieldType)}>

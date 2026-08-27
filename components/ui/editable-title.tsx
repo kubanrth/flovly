@@ -67,7 +67,7 @@ export function EditableTitle({
       className={cn(className, "group -mx-1 inline-flex max-w-full items-center gap-2 rounded-sm px-1 text-left outline-none disabled:cursor-default", canEdit && "cursor-pointer hover:bg-n-100")}
     >
       <span className="truncate">{value}</span>
-      {canEdit && <IconEdit width={14} height={14} className="shrink-0 text-n-500 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" />}
+      {canEdit && <IconEdit width={14} height={14} className="shrink-0 text-fg-3 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" />}
     </button>
   );
 }

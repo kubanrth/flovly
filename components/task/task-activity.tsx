@@ -45,7 +45,7 @@ export function TaskActivity({ comments, activity, timeEntries, members, canMode
 }
 
 function Feed({ items, empty }: { items: FeedItem[]; empty: string }) {
-  if (items.length === 0) return <p className="py-1 text-xs text-n-500">{empty}</p>;
+  if (items.length === 0) return <p className="py-1 text-xs text-fg-3">{empty}</p>;
   return <ol className="flex flex-col gap-3">{items.map((i) => <li key={i.key}>{i.node}</li>)}</ol>;
 }
 
@@ -57,7 +57,7 @@ function TimeEntryRow({ entry }: { entry: TimeEntry }) {
         <span className="font-semibold text-foreground">{entry.userName}</span> dodał(a) wpis czasu{" "}
         <span className="font-mono text-2xs text-n-700">{formatDuration(entry.durationSeconds)}</span>
         {entry.note ? <span> — {entry.note}</span> : null}{" "}
-        <span className="font-mono text-[10px] text-n-500">· {formatWhen(entry.startedAt)}</span>
+        <span className="font-mono text-[10px] text-fg-3">· {formatWhen(entry.startedAt)}</span>
       </p>
     </div>
   );

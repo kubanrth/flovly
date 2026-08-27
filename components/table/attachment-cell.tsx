@@ -100,7 +100,7 @@ export function AttachmentCell({ taskId, attachments, canEdit }: { taskId: strin
                 <button type="button" onClick={() => download(a.id)} title={a.filename} className="min-w-0 flex-1 truncate text-left outline-none hover:text-link">
                   {a.filename}
                 </button>
-                <span className="shrink-0 font-mono text-[10px] text-n-500">{formatSize(a.sizeBytes)}</span>
+                <span className="shrink-0 font-mono text-[10px] text-fg-3">{formatSize(a.sizeBytes)}</span>
                 {canEdit && (
                   <Button variant="ghost" size="sm" iconOnly aria-label="Usuń załącznik" className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100" onClick={() => remove(a.id)}>
                     <IconTrash />

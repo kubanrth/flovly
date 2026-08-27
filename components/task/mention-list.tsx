@@ -24,7 +24,7 @@ export const MentionList = forwardRef<MentionListHandle, MentionListProps>(funct
     },
   }));
 
-  if (items.length === 0) return <div className="mention-popover popover-surface px-3 py-2 text-xs text-n-500">Brak dopasowań</div>;
+  if (items.length === 0) return <div className="mention-popover popover-surface px-3 py-2 text-xs text-fg-3">Brak dopasowań</div>;
   return (
     <div className="mention-popover popover-surface flex min-w-[220px] flex-col p-1" role="listbox">
       {items.map((m, i) => {
@@ -34,7 +34,7 @@ export const MentionList = forwardRef<MentionListHandle, MentionListProps>(funct
             className={cn("flex h-8 items-center gap-2 rounded-md px-2 text-left text-sm outline-none", i === selected && "bg-n-100")}>
             <Avatar name={label} src={m.avatarUrl} size={20} />
             <span className="min-w-0 flex-1 truncate">{label}</span>
-            <span className="shrink-0 font-mono text-[10px] text-n-500">{m.email.split("@")[0]}</span>
+            <span className="shrink-0 font-mono text-[10px] text-fg-3">{m.email.split("@")[0]}</span>
           </button>
         );
       })}
