@@ -104,3 +104,10 @@ export function noteDateLabel(iso: string, today: string): string {
   }
   return `${label} ${y}`;
 }
+
+/** Pełna data pod tytułem: „wt 26 sie 2026, 11:07". */
+export function noteFullDate(iso: string): string {
+  const [y, m, d] = noteDay(iso).split("-").map(Number) as [number, number, number];
+  const weekday = WEEKDAY[new Date(Date.UTC(y, m - 1, d, 12)).getUTCDay()];
+  return `${weekday} ${d} ${MONTH[m - 1]} ${y}, ${noteTime(iso)}`;
+}

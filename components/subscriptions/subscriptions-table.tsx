@@ -1,15 +1,11 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useState } from "react";
-import {
-  CreditCard,
-  ExternalLink,
-  FolderKanban,
-  Plus,
-  Trash2,
-  Users,
-  X,
-} from "lucide-react";
+// E5 „Subskrypcje" — dwa kafle KPI (Miesięcznie / Rocznie prognoza), tabela na
+// wspólnym prymitywie DataTable (wiersz 44 px) i edycja inline: nazwa, notka,
+// kwota („129,99" → „129,99 zł"), cykl, projekt. Sumy liczy ./money.ts.
+// Widoczność wierszy gate'uje zapytanie na serwerze — klient tylko filtruje widok.
+
+import { startTransition, useEffect, useState } from "react";
 import {
   createSubscriptionAction,
   createSubscriptionProjectAction,
@@ -18,8 +14,35 @@ import {
   patchSubscriptionAction,
   toggleSubscriptionProjectMemberAction,
 } from "@/app/(app)/w/[workspaceId]/subscriptions/actions";
-
-type Cycle = "MONTHLY" | "YEARLY";
+import { Avatar, hueFor } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { CHIP_HUE, Chip } from "@/components/ui/chip";
+import { DataFooter, DataTable, DataTd, DataTh, DataThead, DataTr } from "@/components/ui/data-table";
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/components/ui/dropdown-menu";
+import { EmptyState } from "@/components/ui/empty-state";
+import {
+  IconExternal,
+  IconFolder,
+  IconMore,
+  IconPlus,
+  IconSubscriptions,
+  IconTrash,
+  IconUsers,
+} from "@/components/ui/icons";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { plPlural } from "@/lib/pluralize";
+import { cn } from "@/lib/utils";
+import { centsToInput, formatPln, formatPlnRounded, parseAmountPln, rollUp, type Cycle } from "./money";
 
 export interface SubscriptionRow {
   id: string;
@@ -42,9 +65,23 @@ export interface WorkspaceMemberItem {
   name: string;
 }
 
-// F12-K140/141: "Excel, ale ładnie narysowany" + projekty i dostępy.
-// Edycja inline (onBlur → patch), select cyklu/projektu zapisuje od razu,
-// sumy liczone lokalnie (optymistycznie).
+/** Sentinele filtra — pusty string jako wartość <Select> jest nieodróżnialny od „brak wyboru". */
+const ALL = "all";
+const NONE = "none";
+
+const CYCLE_ITEMS = [
+  { value: "MONTHLY" as const, label: "miesięczny" },
+  { value: "YEARLY" as const, label: "roczny" },
+];
+
+const activePl = (n: number) => plPlural(n, "aktywna", "aktywne", "aktywnych");
+const subPl = (n: number) => plPlural(n, "subskrypcja", "subskrypcje", "subskrypcji");
+
+// Komórki edytowalne wyglądają jak tekst, dopiero hover/focus pokazuje pole.
+const CELL_INPUT =
+  "h-7 w-full min-w-0 rounded-sm border border-transparent bg-transparent px-1.5 outline-none " +
+  "hover:border-input-border focus:border-orange-500 focus:bg-card focus:shadow-[var(--focus)]";
+
 export function SubscriptionsTable({
   workspaceId,
   isAdmin,
@@ -61,18 +98,19 @@ export function SubscriptionsTable({
   const [rows, setRows] = useState<SubscriptionRow[]>(serverRows);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setRows(serverRows), [serverRows]);
+  const [projectFilter, setProjectFilter] = useState<string>(ALL);
   const [projectsOpen, setProjectsOpen] = useState(false);
-  // Filtr widoku po projekcie ("" = wszystkie widoczne).
-  const [projectFilter, setProjectFilter] = useState("");
+  // Świeżo dodany wiersz dostaje kursor w nazwie — inaczej „pusty wiersz" wygląda jak błąd.
+  const [focusId, setFocusId] = useState<string | null>(null);
 
-  const projectName = useMemo(() => {
-    const map = new Map(projects.map((p) => [p.id, p.name]));
-    return (id: string | null) => (id ? (map.get(id) ?? "—") : null);
-  }, [projects]);
-
-  const visible = projectFilter
-    ? rows.filter((r) => r.projectId === projectFilter)
-    : rows;
+  const visible = rows.filter((r) =>
+    projectFilter === ALL
+      ? true
+      : projectFilter === NONE
+        ? r.projectId === null
+        : r.projectId === projectFilter,
+  );
+  const totals = rollUp(visible);
 
   const patchLocal = (id: string, patch: Partial<SubscriptionRow>) =>
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -87,7 +125,10 @@ export function SubscriptionsTable({
   const addRow = () => {
     const fd = new FormData();
     fd.set("workspaceId", workspaceId);
-    startTransition(() => void createSubscriptionAction(fd));
+    startTransition(async () => {
+      const res = await createSubscriptionAction(fd);
+      if (res.ok) setFocusId(res.id);
+    });
   };
 
   const removeRow = (id: string, name: string) => {
@@ -98,253 +139,330 @@ export function SubscriptionsTable({
     startTransition(() => void deleteSubscriptionAction(fd));
   };
 
-  // Sumy liczone z WIDOCZNYCH wierszy (filtr projektu = suma per projekt).
-  const totals = useMemo(() => {
-    let monthly = 0;
-    let yearly = 0;
-    for (const r of visible) {
-      if (r.cycle === "MONTHLY") {
-        monthly += r.amountCents;
-        yearly += r.amountCents * 12;
-      } else {
-        monthly += r.amountCents / 12;
-        yearly += r.amountCents;
-      }
-    }
-    return { monthly, yearly };
-  }, [visible]);
+  const projectItems = [
+    { value: NONE, label: "— wspólna —" },
+    ...projects.map((p) => ({ value: p.id, label: p.name })),
+  ];
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 py-6 md:py-10">
-      <header className="flex flex-col gap-2">
-        <span className="eyebrow flex items-center gap-2">
-          <CreditCard size={12} /> Subskrypcje
+    <div data-ui="subscriptions" className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <header className="flex shrink-0 items-center gap-2.5 px-8 pt-4 max-md:flex-wrap max-md:px-4">
+        <h1 className="text-xl font-semibold tracking-[-0.3px]">Subskrypcje</h1>
+        <span className="mt-1.5 text-xs text-fg-2">
+          {visible.length} {activePl(visible.length)}
         </span>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="font-display text-[2rem] font-bold leading-tight tracking-[-0.025em] md:text-[2.4rem]">
-            Subskrypcje firmy
-          </h1>
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => setProjectsOpen(true)}
-              className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card/60 px-3 text-[0.84rem] transition-colors hover:border-primary/50"
-            >
-              <FolderKanban size={14} /> Projekty i dostępy
-            </button>
-          )}
-        </div>
-        <p className="max-w-[62ch] text-[0.94rem] leading-[1.55] text-muted-foreground">
-          Kliknij w komórkę żeby edytować — zapisuje się samo.
-          {!isAdmin && " Widzisz subskrypcje wspólne + projektów do których masz dostęp."}
-        </p>
+        <span className="flex-1" />
+        <Select
+          size="sm"
+          aria-label="Filtr projektu"
+          className="w-[190px] max-md:w-full"
+          value={projectFilter}
+          onValueChange={setProjectFilter}
+          items={[
+            { value: ALL, label: "Wszystkie projekty" },
+            { value: NONE, label: "Bez projektu" },
+            ...projects.map((p) => ({ value: p.id, label: p.name })),
+          ]}
+        />
+        {isAdmin && (
+          <Button type="button" variant="secondary" onClick={() => setProjectsOpen(true)}>
+            <IconFolder width={14} height={14} />
+            Projekty i dostępy
+          </Button>
+        )}
+        <Button type="button" onClick={addRow}>
+          <IconPlus width={14} height={14} />
+          Dodaj subskrypcję
+        </Button>
       </header>
 
-      {/* KPI + filtr projektu */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-        <Kpi label="Miesięcznie" value={fmtPln(totals.monthly)} highlight />
-        <Kpi label="Rocznie" value={fmtPln(totals.yearly)} />
-        <Kpi label="Subskrypcje" value={String(visible.length)} />
-        <div className="flex flex-col gap-1 rounded-xl border border-border bg-card/40 p-4">
-          <span className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
-            Projekt
-          </span>
-          <select
-            value={projectFilter}
-            onChange={(e) => setProjectFilter(e.target.value)}
-            className="h-8 cursor-pointer rounded-md border border-border bg-background px-2 text-[0.86rem] outline-none focus:border-primary/50"
+      <div className="flex shrink-0 gap-3 px-8 py-3.5 max-md:flex-col max-md:px-4">
+        <Tile label="Miesięcznie" value={formatPlnRounded(totals.monthlyCents)} />
+        <Tile label="Rocznie (prognoza)" value={formatPlnRounded(totals.yearlyCents)} />
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-8 pb-5 max-md:px-4">
+        {visible.length === 0 ? (
+          <EmptyState
+            className="mt-3"
+            icon={<IconSubscriptions />}
+            title={projectFilter === ALL ? "Brak subskrypcji" : "Brak subskrypcji w tym filtrze"}
+            description={
+              projectFilter === ALL
+                ? "Dodaj pierwszą — wiersz wypełnisz w tabeli, zapisuje się sam."
+                : "Zmień filtr projektu albo przypisz subskrypcję do tego projektu."
+            }
+            action={
+              projectFilter === ALL ? (
+                <Button type="button" onClick={addRow}>
+                  <IconPlus width={14} height={14} />
+                  Dodaj subskrypcję
+                </Button>
+              ) : undefined
+            }
+          />
+        ) : (
+          <DataTable
+            className="min-w-[900px]"
+            footer={
+              <DataFooter>
+                pokazano {visible.length} z {rows.length}
+              </DataFooter>
+            }
           >
-            <option value="">Wszystkie</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="overflow-x-auto rounded-2xl border border-border bg-card/40">
-        <table className="w-full min-w-[860px] border-collapse text-[0.9rem]">
-          <thead>
-            <tr className="border-b border-border bg-card/70 font-mono text-[0.64rem] uppercase tracking-[0.14em] text-muted-foreground">
-              <th className="px-4 py-2.5 text-left font-semibold">Nazwa</th>
-              <th className="w-[160px] px-3 py-2.5 text-left font-semibold">Projekt</th>
-              <th className="w-[130px] px-3 py-2.5 text-right font-semibold">Kwota (PLN)</th>
-              <th className="w-[140px] px-3 py-2.5 text-left font-semibold">Cykl</th>
-              <th className="w-[120px] px-3 py-2.5 text-right font-semibold">Mies.</th>
-              <th className="w-[120px] px-3 py-2.5 text-right font-semibold">Rocznie</th>
-              <th className="w-[44px] px-2 py-2.5"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border/60">
-            {visible.length === 0 && (
+            <DataThead>
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
-                  {projectFilter
-                    ? "Brak subskrypcji w tym projekcie."
-                    : "Brak subskrypcji — dodaj pierwszą poniżej."}
-                </td>
+                <DataTh width={300}>Usługa</DataTh>
+                <DataTh width={180}>Projekt</DataTh>
+                <DataTh width={150}>Cykl</DataTh>
+                <DataTh width={140} align="right">
+                  Kwota
+                </DataTh>
+                <DataTh>Status</DataTh>
               </tr>
-            )}
-            {visible.map((r) => {
-              const monthly = r.cycle === "MONTHLY" ? r.amountCents : r.amountCents / 12;
-              const yearly = r.cycle === "MONTHLY" ? r.amountCents * 12 : r.amountCents;
-              return (
-                <tr key={r.id} className="group transition-colors hover:bg-accent/40">
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        defaultValue={r.name}
-                        placeholder="np. Figma, Slack…"
-                        maxLength={200}
-                        onBlur={(e) => {
-                          if (e.target.value === r.name) return;
-                          patchLocal(r.id, { name: e.target.value });
-                          send(r.id, { name: e.target.value });
-                        }}
-                        className="h-9 w-full rounded-md bg-transparent px-2 font-medium outline-none transition-colors hover:bg-background/60 focus:bg-background focus:ring-1 focus:ring-primary/40"
-                      />
-                      {r.url && (
-                        <a
-                          href={r.url.startsWith("http") ? r.url : `https://${r.url}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-primary group-hover:opacity-100"
-                          title={r.url}
-                        >
-                          <ExternalLink size={13} />
-                        </a>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <select
-                      value={r.projectId ?? ""}
-                      onChange={(e) => {
-                        const projectId = e.target.value || null;
-                        patchLocal(r.id, { projectId });
-                        send(r.id, { projectId: e.target.value });
-                      }}
-                      className="h-9 w-full cursor-pointer rounded-md border border-transparent bg-transparent px-1.5 text-[0.84rem] outline-none transition-colors hover:bg-background/60 focus:border-primary/40 focus:bg-background"
-                    >
-                      <option value="">— wspólna —</option>
-                      {projects.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                      {/* Projekt niewidoczny dla usera (przypięty przez admina) —
-                          pokaż nazwę pasywnie żeby select nie kłamał. */}
-                      {r.projectId && !projects.some((p) => p.id === r.projectId) && (
-                        <option value={r.projectId}>{projectName(r.projectId)}</option>
-                      )}
-                    </select>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <input
-                      inputMode="decimal"
-                      defaultValue={r.amountCents ? (r.amountCents / 100).toFixed(2) : ""}
-                      placeholder="0,00"
-                      onBlur={(e) => {
-                        const n = Number(e.target.value.replace(",", ".").replace(/\s/g, ""));
-                        const cents = Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : 0;
-                        if (cents === r.amountCents) return;
-                        patchLocal(r.id, { amountCents: cents });
-                        send(r.id, { amountPln: e.target.value });
-                      }}
-                      className="h-9 w-full rounded-md bg-transparent px-2 text-right font-mono outline-none transition-colors hover:bg-background/60 focus:bg-background focus:ring-1 focus:ring-primary/40"
-                    />
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <select
-                      value={r.cycle}
-                      onChange={(e) => {
-                        const cycle = e.target.value as Cycle;
-                        patchLocal(r.id, { cycle });
-                        send(r.id, { cycle });
-                      }}
-                      className="h-9 w-full cursor-pointer rounded-md border border-transparent bg-transparent px-1.5 text-[0.86rem] outline-none transition-colors hover:bg-background/60 focus:border-primary/40 focus:bg-background"
-                    >
-                      <option value="MONTHLY">Miesięcznie</option>
-                      <option value="YEARLY">Rocznie</option>
-                    </select>
-                  </td>
-                  <td className="px-3 py-1.5 text-right font-mono text-[0.84rem] text-muted-foreground">
-                    {fmtPln(monthly)}
-                  </td>
-                  <td className="px-3 py-1.5 text-right font-mono text-[0.84rem] text-muted-foreground">
-                    {fmtPln(yearly)}
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <button
-                      type="button"
-                      onClick={() => removeRow(r.id, r.name)}
-                      aria-label="Usuń subskrypcję"
-                      className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-          {visible.length > 0 && (
-            <tfoot>
-              <tr className="border-t-2 border-primary/30 bg-card/70 font-semibold">
-                <td className="px-4 py-3" colSpan={4}>
-                  <span className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
-                    Suma ({visible.length}
-                    {projectFilter ? ` · ${projectName(projectFilter)}` : ""})
-                  </span>
-                </td>
-                <td className="px-3 py-3 text-right font-mono text-primary">
-                  {fmtPln(totals.monthly)}
-                </td>
-                <td className="px-3 py-3 text-right font-mono text-primary">
-                  {fmtPln(totals.yearly)}
-                </td>
-                <td></td>
-              </tr>
-            </tfoot>
-          )}
-        </table>
+            </DataThead>
+            <tbody>
+              {visible.map((r) => (
+                <Row
+                  key={r.id}
+                  row={r}
+                  projectItems={projectItems}
+                  autoFocus={r.id === focusId}
+                  onPatchLocal={patchLocal}
+                  onSend={send}
+                  onRemove={removeRow}
+                />
+              ))}
+            </tbody>
+          </DataTable>
+        )}
+
+        <p className="mt-2.5 text-xs text-fg-3">
+          Kliknij w komórkę, żeby edytować — zapisuje się samo.
+          {!isAdmin && " Widzisz subskrypcje wspólne i projektów, do których masz dostęp."}
+        </p>
       </div>
 
-      <div>
-        <button
-          type="button"
-          onClick={addRow}
-          className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 font-sans text-[0.86rem] font-semibold text-white transition-transform hover:-translate-y-[1px]"
-        >
-          <Plus size={14} /> Dodaj subskrypcję
-        </button>
-      </div>
+      <footer className="flex h-8 shrink-0 items-center border-t border-border bg-canvas px-8 font-mono text-2xs text-muted-foreground max-md:px-4">
+        {visible.length} {subPl(visible.length)} · {formatPlnRounded(totals.monthlyCents)}/mies
+      </footer>
 
-      {projectsOpen && (
+      {isAdmin && (
         <ProjectsDialog
+          open={projectsOpen}
+          onOpenChange={setProjectsOpen}
           workspaceId={workspaceId}
           projects={projects}
           members={members}
-          onClose={() => setProjectsOpen(false)}
         />
       )}
     </div>
   );
 }
 
-// F12-K141: admin zarządza projektami + dostępami (checkbox per user).
+function Tile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex-1 rounded-lg border border-border bg-canvas px-3.5 py-3">
+      <div className="mb-0.5 text-2xs text-fg-3">{label}</div>
+      <div className="font-mono text-lg font-semibold">{value}</div>
+    </div>
+  );
+}
+
+function Row({
+  row,
+  projectItems,
+  autoFocus,
+  onPatchLocal,
+  onSend,
+  onRemove,
+}: {
+  row: SubscriptionRow;
+  projectItems: { value: string; label: string }[];
+  autoFocus: boolean;
+  onPatchLocal: (id: string, patch: Partial<SubscriptionRow>) => void;
+  onSend: (id: string, fields: Record<string, string>) => void;
+  onRemove: (id: string, name: string) => void;
+}) {
+  const hue = hueFor(row.name || "Subskrypcja");
+  const initial = (row.name.trim().charAt(0) || "?").toUpperCase();
+
+  return (
+    <DataTr className="h-11">
+      <DataTd className="px-2">
+        <div className="flex items-center gap-2.5">
+          <span
+            className={cn(
+              "grid size-[26px] shrink-0 place-items-center rounded-md text-2xs font-bold",
+              CHIP_HUE[hue],
+            )}
+            aria-hidden
+          >
+            {initial}
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <input
+              defaultValue={row.name}
+              autoFocus={autoFocus}
+              placeholder="np. Figma, Slack…"
+              maxLength={200}
+              aria-label="Nazwa usługi"
+              onBlur={(e) => {
+                if (e.target.value === row.name) return;
+                onPatchLocal(row.id, { name: e.target.value });
+                onSend(row.id, { name: e.target.value });
+              }}
+              className={cn(CELL_INPUT, "h-6 text-sm leading-4 font-medium")}
+            />
+            {row.notes && (
+              <span className="truncate px-1.5 text-2xs text-fg-3" title={row.notes}>
+                {row.notes}
+              </span>
+            )}
+          </div>
+        </div>
+      </DataTd>
+
+      <DataTd className="px-2">
+        <Select
+          size="sm"
+          aria-label="Projekt"
+          className="border-transparent bg-transparent hover:border-input-border"
+          value={row.projectId ?? NONE}
+          onValueChange={(v) => {
+            const projectId = v === NONE ? null : v;
+            onPatchLocal(row.id, { projectId });
+            onSend(row.id, { projectId: v === NONE ? "" : v });
+          }}
+          items={projectItems}
+        />
+      </DataTd>
+
+      <DataTd className="px-2">
+        <Select
+          size="sm"
+          aria-label="Cykl rozliczeniowy"
+          className="border-transparent bg-transparent hover:border-input-border"
+          value={row.cycle}
+          onValueChange={(cycle) => {
+            onPatchLocal(row.id, { cycle });
+            onSend(row.id, { cycle });
+          }}
+          items={CYCLE_ITEMS}
+        />
+      </DataTd>
+
+      <DataTd className="px-2">
+        <AmountCell
+          cents={row.amountCents}
+          onCommit={(raw) => {
+            const cents = parseAmountPln(raw);
+            if (cents === null || cents === row.amountCents) return;
+            onPatchLocal(row.id, { amountCents: cents });
+            onSend(row.id, { amountPln: raw });
+          }}
+        />
+      </DataTd>
+
+      <DataTd>
+        <div className="flex items-center gap-2">
+          <Chip hue="green" dot size="sm">
+            Aktywna
+          </Chip>
+          <span className="flex-1" />
+          <Menu>
+            <MenuTrigger
+              aria-label={`Opcje subskrypcji ${row.name || "bez nazwy"}`}
+              className="grid size-6 shrink-0 place-items-center rounded-sm border border-border bg-card text-muted-foreground outline-none hover:bg-n-100 hover:text-foreground focus-visible:shadow-[var(--focus)] active:bg-n-200 data-popup-open:bg-n-100"
+            >
+              <IconMore width={13} height={13} />
+            </MenuTrigger>
+            <MenuContent align="end">
+              {row.url && (
+                <>
+                  <MenuItem
+                    icon={<IconExternal />}
+                    onClick={() =>
+                      window.open(
+                        row.url!.startsWith("http") ? row.url! : `https://${row.url}`,
+                        "_blank",
+                        "noopener,noreferrer",
+                      )
+                    }
+                  >
+                    Otwórz stronę
+                  </MenuItem>
+                  <MenuSeparator />
+                </>
+              )}
+              <MenuItem
+                onClick={() => {
+                  const next = window.prompt("Notatka do subskrypcji:", row.notes ?? "");
+                  if (next === null || next === (row.notes ?? "")) return;
+                  onPatchLocal(row.id, { notes: next || null });
+                  onSend(row.id, { notes: next });
+                }}
+              >
+                Notatka…
+              </MenuItem>
+              <MenuSeparator />
+              <MenuItem destructive icon={<IconTrash />} onClick={() => onRemove(row.id, row.name)}>
+                Usuń subskrypcję
+              </MenuItem>
+            </MenuContent>
+          </Menu>
+        </div>
+      </DataTd>
+    </DataTr>
+  );
+}
+
+/**
+ * Poza edycją komórka pokazuje „129,99 zł"; po wejściu w pole zostaje samo
+ * „129,99", żeby dało się dopisać cyfrę bez kasowania jednostki.
+ */
+function AmountCell({ cents, onCommit }: { cents: number; onCommit: (raw: string) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const invalid = draft !== null && parseAmountPln(draft) === null;
+
+  return (
+    <input
+      inputMode="decimal"
+      aria-label="Kwota"
+      aria-invalid={invalid || undefined}
+      value={draft ?? formatPln(cents)}
+      onFocus={() => setDraft(centsToInput(cents))}
+      onChange={(e) => setDraft(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        if (e.key === "Escape") {
+          setDraft(null);
+          e.currentTarget.blur();
+        }
+      }}
+      onBlur={() => {
+        if (draft !== null) onCommit(draft);
+        setDraft(null);
+      }}
+      className={cn(CELL_INPUT, "text-right font-mono text-xs aria-invalid:border-danger")}
+    />
+  );
+}
+
+/* ───────────────── Projekty i dostępy (workspace ADMIN) ───────────────── */
+
 function ProjectsDialog({
+  open,
+  onOpenChange,
   workspaceId,
   projects,
   members,
-  onClose,
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   workspaceId: string;
   projects: SubscriptionProjectItem[];
   members: WorkspaceMemberItem[];
-  onClose: () => void;
 }) {
   const [newName, setNewName] = useState("");
 
@@ -366,149 +484,100 @@ function ProjectsDialog({
   };
 
   const removeProject = (projectId: string, name: string) => {
-    if (
-      !confirm(
-        `Usunąć projekt „${name}"? Subskrypcje wrócą do puli wspólnej (nie znikną).`,
-      )
-    )
-      return;
+    if (!confirm(`Usunąć projekt „${name}"? Subskrypcje wrócą do puli wspólnej (nie znikną).`)) return;
     const fd = new FormData();
     fd.set("projectId", projectId);
     startTransition(() => void deleteSubscriptionProjectAction(fd));
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-background/70 sm:items-center"
-      onClick={onClose}
-    >
-      <div
-        role="dialog"
-        aria-label="Projekty i dostępy"
-        className="flex max-h-[85dvh] w-full max-w-[560px] flex-col gap-4 overflow-y-auto rounded-t-2xl border border-border bg-card p-6 shadow-2xl sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-[1.2rem] font-bold">Projekty i dostępy</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Zamknij"
-            className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-muted"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        <p className="text-[0.84rem] leading-[1.5] text-muted-foreground">
-          Zaznaczeni użytkownicy widzą subskrypcje przypisane do projektu.
-          Administratorzy widzą zawsze wszystko.
-        </p>
-
-        {/* Nowy projekt */}
-        <div className="flex items-center gap-2">
-          <input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addProject()}
-            placeholder="Nazwa projektu, np. Kickback…"
-            maxLength={120}
-            className="h-10 flex-1 rounded-lg border border-border bg-background px-3 text-[0.9rem] outline-none focus:border-primary/60"
-          />
-          <button
-            type="button"
-            onClick={addProject}
-            disabled={!newName.trim()}
-            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-3 text-[0.86rem] font-semibold text-white disabled:opacity-60"
-          >
-            <Plus size={14} /> Dodaj
-          </button>
-        </div>
-
-        {projects.length === 0 && (
-          <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-[0.86rem] text-muted-foreground">
-            Brak projektów — dodaj pierwszy powyżej.
-          </p>
-        )}
-
-        {projects.map((p) => (
-          <div
-            key={p.id}
-            className="flex flex-col gap-2 rounded-xl border border-border bg-background/40 p-4"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-2 font-semibold">
-                <FolderKanban size={14} className="text-primary" /> {p.name}
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1 font-mono text-[0.66rem] uppercase tracking-[0.12em] text-muted-foreground">
-                  <Users size={11} /> {p.memberIds.length}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => removeProject(p.id, p.name)}
-                  aria-label="Usuń projekt"
-                  className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {members.map((m) => {
-                const active = p.memberIds.includes(m.id);
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => toggleMember(p.id, m.id)}
-                    aria-pressed={active}
-                    className={`inline-flex h-8 items-center rounded-full border px-3 text-[0.8rem] transition-colors ${
-                      active
-                        ? "border-primary/50 bg-primary/15 font-semibold text-primary"
-                        : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                    }`}
-                  >
-                    {m.name}
-                  </button>
-                );
-              })}
-            </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent size="lg">
+        <DialogHeader>
+          <DialogTitle>Projekty i dostępy</DialogTitle>
+          <DialogDescription>
+            Zaznaczone osoby widzą subskrypcje przypisane do projektu. Administratorzy widzą wszystko.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogBody className="flex max-h-[60vh] flex-col gap-3 overflow-y-auto">
+          <div className="flex items-center gap-2">
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addProject();
+                }
+              }}
+              placeholder="Nazwa projektu, np. Kickback…"
+              maxLength={120}
+              aria-label="Nazwa nowego projektu"
+            />
+            <Button type="button" onClick={addProject} disabled={!newName.trim()}>
+              <IconPlus width={14} height={14} />
+              Dodaj
+            </Button>
           </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
-function Kpi({
-  label,
-  value,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="flex flex-col gap-1 rounded-xl border border-border bg-card/40 p-4">
-      <span className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
-        {label}
-      </span>
-      <span
-        className={`font-display text-[1.6rem] font-bold ${highlight ? "bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent" : ""}`}
-      >
-        {value}
-      </span>
-    </div>
+          {projects.length === 0 ? (
+            <EmptyState
+              icon={<IconFolder />}
+              title="Brak projektów"
+              description="Dodaj pierwszy powyżej — potem przypniesz do niego subskrypcje."
+            />
+          ) : (
+            projects.map((p) => (
+              <div key={p.id} className="flex flex-col gap-2 rounded-lg border border-border p-3">
+                <div className="flex items-center gap-2">
+                  <IconFolder width={14} height={14} className="shrink-0 text-n-500" />
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">{p.name}</span>
+                  <span className="flex shrink-0 items-center gap-1 font-mono text-2xs text-fg-3">
+                    <IconUsers width={11} height={11} />
+                    {p.memberIds.length}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    iconOnly
+                    aria-label={`Usuń projekt ${p.name}`}
+                    onClick={() => removeProject(p.id, p.name)}
+                  >
+                    <IconTrash />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {members.map((m) => {
+                    const on = p.memberIds.includes(m.id);
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => toggleMember(p.id, m.id)}
+                        className={cn(
+                          "inline-flex h-6 items-center gap-1.5 rounded-sm border border-border bg-card pr-2 pl-1 text-2xs font-medium text-muted-foreground outline-none",
+                          "hover:border-input-border-hover hover:text-foreground focus-visible:shadow-[var(--focus)] active:bg-n-100",
+                          "aria-pressed:border-orange-300 aria-pressed:bg-orange-50 aria-pressed:text-orange-800",
+                        )}
+                      >
+                        <Avatar name={m.name} size={20} />
+                        {m.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          )}
+        </DialogBody>
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
+            Zamknij
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
-}
-
-function fmtPln(cents: number): string {
-  return new Intl.NumberFormat("pl-PL", {
-    style: "currency",
-    currency: "PLN",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(cents / 100);
 }

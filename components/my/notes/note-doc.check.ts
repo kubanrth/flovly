@@ -1,6 +1,6 @@
 // Self-check dla czystej logiki E3: `npx tsx components/my/notes/note-doc.check.ts`
 import assert from "node:assert/strict";
-import { countActions, countWords, folderCounts, noteDateLabel, noteDay, notePreview, noteTime } from "./note-doc";
+import { countActions, countWords, folderCounts, noteDateLabel, noteDay, noteFullDate, notePreview, noteTime } from "./note-doc";
 
 // ── notePreview ───────────────────────────────────────────────────────────
 assert.equal(notePreview(""), "");
@@ -86,5 +86,8 @@ assert.equal(noteDateLabel("2026-08-20T09:05:00.000Z", TODAY), "czw 20 sie");
 assert.equal(noteDateLabel("2025-12-31T09:05:00.000Z", TODAY), "31 gru 2025");
 // Granica doby: 23:30 UTC 26 sierpnia to już 27 sierpnia 01:30 w Warszawie.
 assert.equal(noteDay("2026-08-26T23:30:00.000Z"), "2026-08-27");
+
+// 26 sierpnia 2026 to środa.
+assert.ok(noteFullDate("2026-08-26T09:07:00.000Z").startsWith("śr 26 sie 2026, "));
 
 console.log("note-doc.check.ts OK");

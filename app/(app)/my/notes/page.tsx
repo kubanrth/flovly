@@ -2,12 +2,13 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { NotesWorkspace } from "@/components/my/notes/notes-workspace";
+import { folderCounts, noteDay, notePreview } from "@/components/my/notes/note-doc";
 
-// Apple-Notes-style 3-column layout (fullwidth, no AppShell).
-// URL params:
-//   folderId — concrete folder id, or smart-folder key: "all" | "pinned" | "recent" | "trash"
-//   noteId   — selected note id
-//   q        — search query (filters title/content)
+// E3 „Notatnik" — trzy panele (foldery / lista 320 / edytor 680), full-bleed.
+// Parametry URL:
+//   folderId — id folderu albo klucz smart-folderu: "all" | "pinned" | "trash"
+//   noteId   — zaznaczona notatka
+//   q        — szukanie po tytule i treści
 export default async function MyNotesPage({
   searchParams,
 }: {
@@ -22,7 +23,7 @@ export default async function MyNotesPage({
   const userId = session.user.id;
   const params = await searchParams;
 
-  // Fetch including deleted; filter per-view below.
+  // Pobieramy też skasowane — widok Kosza filtruje niżej.
   const [folders, allNotes] = await Promise.all([
     db.noteFolder.findMany({
       where: { userId },
@@ -36,16 +37,11 @@ export default async function MyNotesPage({
 
   const live = allNotes.filter((n) => n.deletedAt === null);
   const trashed = allNotes.filter((n) => n.deletedAt !== null);
-
-  // RSC: Date.now() is fine here. React Compiler purity heuristic flags it
-  // because it can't distinguish RSC from client components.
-  // eslint-disable-next-line react-hooks/purity
-  const recentCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const folderNameById = new Map(folders.map((f) => [f.id, f.name]));
 
   const selectedFolder = params.folderId ?? "all";
   const query = (params.q ?? "").trim().toLowerCase();
-  // Mobile drill-down (iOS-Notes parity): folders → notes → editor depending
-  // on which URL params are present. Desktop ignores these.
+  // Drill-down mobilny: który panel jest na wierzchu zależy od obecności parametrów.
   const hasFolderParam = params.folderId !== undefined;
   const hasNoteParam = params.noteId !== undefined;
 
@@ -53,9 +49,6 @@ export default async function MyNotesPage({
   switch (selectedFolder) {
     case "pinned":
       filteredNotes = live.filter((n) => n.pinned);
-      break;
-    case "recent":
-      filteredNotes = live.filter((n) => n.updatedAt.getTime() >= recentCutoff);
       break;
     case "trash":
       filteredNotes = trashed;
@@ -77,60 +70,53 @@ export default async function MyNotesPage({
 
   const selectedNoteId = params.noteId ?? filteredNotes[0]?.id ?? null;
   const activeNote = selectedNoteId
-    ? allNotes.find((n) => n.id === selectedNoteId) ?? null
+    ? (allNotes.find((n) => n.id === selectedNoteId) ?? null)
     : null;
 
   return (
-    <main className="flex-1 min-h-0">
-      <NotesWorkspace
-        folders={folders.map((f) => ({ id: f.id, name: f.name }))}
-        notes={filteredNotes.map((n) => ({
-          id: n.id,
-          title: n.title,
-          snippet: n.content.slice(0, 100),
-          updatedAt: n.updatedAt.toISOString(),
-          pinned: n.pinned,
-          folderId: n.folderId,
-          isTrashed: n.deletedAt !== null,
-        }))}
-        totalByFolder={{
-          all: live.length,
-          pinned: live.filter((n) => n.pinned).length,
-          recent: live.filter((n) => n.updatedAt.getTime() >= recentCutoff).length,
-          trash: trashed.length,
-          ...countNotesByFolder(live),
-        }}
-        selectedFolder={selectedFolder}
-        searchQuery={query}
-        hasFolderParam={hasFolderParam}
-        hasNoteParam={hasNoteParam}
-        activeNote={
-          activeNote
-            ? {
-                id: activeNote.id,
-                title: activeNote.title,
-                content: activeNote.content,
-                contentJson: (activeNote.contentJson as
-                  | { type: "doc"; content?: unknown[] }
-                  | null
-                  | undefined) ?? null,
-                folderId: activeNote.folderId,
-                pinned: activeNote.pinned,
-                isTrashed: activeNote.deletedAt !== null,
-                updatedAt: activeNote.updatedAt.toISOString(),
-              }
-            : null
-        }
-      />
-    </main>
+    <NotesWorkspace
+      folders={folders.map((f) => ({ id: f.id, name: f.name }))}
+      notes={filteredNotes.map((n) => ({
+        id: n.id,
+        title: n.title,
+        preview: notePreview(n.content),
+        updatedAt: n.updatedAt.toISOString(),
+        pinned: n.pinned,
+        folderId: n.folderId,
+        folderName: n.folderId ? (folderNameById.get(n.folderId) ?? null) : null,
+        isTrashed: n.deletedAt !== null,
+      }))}
+      totalByFolder={{
+        ...folderCounts(live),
+        all: live.length,
+        pinned: live.filter((n) => n.pinned).length,
+        trash: trashed.length,
+      }}
+      selectedFolder={selectedFolder}
+      searchQuery={query}
+      // RSC: „dzisiaj" liczone raz na serwerze, żeby etykiety listy nie rozjechały się przy hydracji.
+      // eslint-disable-next-line react-hooks/purity
+      today={noteDay(Date.now())}
+      hasFolderParam={hasFolderParam}
+      hasNoteParam={hasNoteParam}
+      activeNote={
+        activeNote
+          ? {
+              id: activeNote.id,
+              title: activeNote.title,
+              contentJson:
+                (activeNote.contentJson as { type: "doc"; content?: unknown[] } | null | undefined) ??
+                null,
+              folderId: activeNote.folderId,
+              folderName: activeNote.folderId
+                ? (folderNameById.get(activeNote.folderId) ?? null)
+                : null,
+              pinned: activeNote.pinned,
+              isTrashed: activeNote.deletedAt !== null,
+              updatedAt: activeNote.updatedAt.toISOString(),
+            }
+          : null
+      }
+    />
   );
-}
-
-function countNotesByFolder(notes: { folderId: string | null }[]): Record<string, number> {
-  const m: Record<string, number> = { none: 0 };
-  for (const n of notes) {
-    if (n.folderId === null) m.none = (m.none ?? 0) + 1;
-    else m[n.folderId] = (m[n.folderId] ?? 0) + 1;
-  }
-  return m;
 }
