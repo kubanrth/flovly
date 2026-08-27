@@ -13,6 +13,8 @@ export interface GanttTaskItem {
   statusColor: string;
   statusName: string | null;
   milestoneId: string | null;
+  /** Do filtra „kto" w pasku osi czasu i awatarów na wierszu. */
+  assigneeIds: string[];
   /** TaskLink targets — drawn as dependency arrows when both ends are on screen. */
   linksTo: string[];
 }
@@ -27,6 +29,7 @@ export interface GanttMilestoneItem {
 export const ganttTaskInclude = {
   statusColumn: { select: { name: true, colorHex: true } },
   linksOut: { select: { targetTaskId: true } },
+  assignees: { select: { userId: true } },
 } satisfies Prisma.TaskInclude;
 
 type TaskRow = Prisma.TaskGetPayload<{ include: typeof ganttTaskInclude }>;
@@ -42,6 +45,7 @@ export function toGanttTask(t: TaskRow): GanttTaskItem {
     statusName: t.statusColumn?.name ?? null,
     milestoneId: t.milestoneId,
     linksTo: t.linksOut.map((l) => l.targetTaskId),
+    assigneeIds: t.assignees.map((a) => a.userId),
   };
 }
 

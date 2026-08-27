@@ -38,6 +38,13 @@ export default async function BoardGanttPage({
   });
   if (!board) notFound();
 
+  // Osoby przestrzeni do filtra „kto" w pasku osi czasu.
+  const memberships = await db.workspaceMembership.findMany({
+    where: { workspaceId },
+    select: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+    orderBy: { joinedAt: "asc" },
+  });
+
   const canCreate = can(ctx.role, "task.create");
   const enabledViews = parseEnabledViews(board.workspace.enabledViews);
 
@@ -61,6 +68,11 @@ export default async function BoardGanttPage({
           canCreate={canCreate}
           milestones={board.milestones.map(toGanttMilestone)}
           tasks={board.tasks.map(toGanttTask)}
+          people={memberships.map((m) => ({
+            id: m.user.id,
+            name: m.user.name ?? m.user.email,
+            avatarUrl: m.user.avatarUrl,
+          }))}
         />
       </ViewTransition>
     </BoardShell>

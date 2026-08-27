@@ -6,6 +6,8 @@
 // All date maths lives in timeline-utils.ts (self-checked in timeline-utils.check.ts).
 
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { BoardToolbar } from "@/components/view/board-toolbar";
+import { MenuItem } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { patchTaskAction } from "@/app/(app)/w/[workspaceId]/t/actions";
@@ -70,6 +72,7 @@ export function GanttView({
   viewId,
   milestones,
   tasks,
+  people,
 }: {
   workspaceId: string;
   boardId: string;
@@ -78,6 +81,8 @@ export function GanttView({
   viewId?: string;
   milestones: GanttMilestoneItem[];
   tasks: GanttTaskItem[];
+  /** Osoby przestrzeni — do filtra „kto" w pasku narzędzi. */
+  people?: { id: string; name: string; avatarUrl?: string | null }[];
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -90,14 +95,38 @@ export function GanttView({
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [drag, setDrag] = useState<{ id: string; startX: number; days: number } | null>(null);
   const [creating, setCreating] = useState(false);
+  // Filtry osi czasu (Jira: szukaj + osoby + milestone + kategoria statusu).
+  // Stan sesyjny — zapis w BoardView.configJson wymagałby akcji świadomej osi (D16).
+  const [search, setSearch] = useState("");
+  const [people_, setPeople] = useState<string[]>([]);
+  const [milestoneFilter, setMilestoneFilter] = useState<string | null>(null);
+  const [doneFilter, setDoneFilter] = useState<"all" | "open" | "done">("all");
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Filtry działają na zadaniach; milestone zostaje widoczny, dopóki ma po
+  // filtrze choć jedno zadanie albo dopóki nie filtrujemy po milestonie.
+  const visibleTasks = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return tasks.filter((t) => {
+      if (q && !t.title.toLowerCase().includes(q) && String(t.displayId) !== q.replace(/^#/, "")) return false;
+      if (people_.length > 0 && !t.assigneeIds.some((id) => people_.includes(id))) return false;
+      if (milestoneFilter && t.milestoneId !== milestoneFilter) return false;
+      if (doneFilter !== "all") {
+        const done = isDoneStatus(t.statusName);
+        if (doneFilter === "done" ? !done : done) return false;
+      }
+      return true;
+    });
+  }, [tasks, search, people_, milestoneFilter, doneFilter]);
+
+  const filtering = search.trim() !== "" || people_.length > 0 || milestoneFilter !== null || doneFilter !== "all";
 
   // ─── rows: milestone (+ its tasks when expanded), then tasks with no milestone
   const rows = useMemo<Row[]>(() => {
     const known = new Set(milestones.map((m) => m.id));
     const grouped = new Map<string, GanttTaskItem[]>();
     const loose: GanttTaskItem[] = [];
-    for (const t of tasks) {
+    for (const t of visibleTasks) {
       if (t.milestoneId && known.has(t.milestoneId)) {
         const bucket = grouped.get(t.milestoneId);
         if (bucket) bucket.push(t);
@@ -107,6 +136,8 @@ export function GanttView({
     const out: Row[] = [];
     milestones.forEach((m, i) => {
       const own = grouped.get(m.id) ?? [];
+      // Przy aktywnym filtrze pusty milestone tylko zaśmieca listę.
+      if (filtering && own.length === 0) return;
       out.push({
         kind: "milestone",
         id: m.id,
@@ -119,7 +150,7 @@ export function GanttView({
     });
     for (const t of loose) out.push({ kind: "task", id: t.id, t, nested: false });
     return out;
-  }, [milestones, tasks, expanded]);
+  }, [milestones, visibleTasks, expanded, filtering]);
 
   const scale = useMemo(
     () => buildGanttScale([...milestones, ...tasks], now, zoom, isMobile ? M_GRID_W : undefined),
@@ -240,7 +271,7 @@ export function GanttView({
 
   const allSelected = rows.length > 0 && rows.every((r) => selected[r.id]);
   const bodyH = rows.length * ROW_H;
-  const taskCount = tasks.length;
+  const taskCount = visibleTasks.length;
 
   if (isMobile) {
     return (
@@ -258,6 +289,58 @@ export function GanttView({
 
   return (
     <div data-ui="gantt-view" className="relative -mx-6 -my-4 flex flex-col">
+      {/* Pasek filtrów — bez niego oś czasu przy kilkudziesięciu zadaniach
+          przestaje być czytelna (to główna przewaga Jiry w tym widoku). */}
+      <BoardToolbar
+        search={search}
+        onSearch={setSearch}
+        people={people}
+        activePeople={people_}
+        onTogglePerson={(id) =>
+          setPeople((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
+        }
+        filterButtons={[
+          {
+            label: milestoneFilter ? milestones.find((m) => m.id === milestoneFilter)?.title ?? "Milestone" : "Milestone",
+            active: milestoneFilter !== null,
+            disabled: milestones.length === 0,
+            menu: (
+              <>
+                <MenuItem onClick={() => setMilestoneFilter(null)}>Wszystkie</MenuItem>
+                {milestones.map((m) => (
+                  <MenuItem key={m.id} onClick={() => setMilestoneFilter(m.id)}>{m.title}</MenuItem>
+                ))}
+              </>
+            ),
+          },
+          {
+            label: doneFilter === "open" ? "Otwarte" : doneFilter === "done" ? "Ukończone" : "Kategoria statusu",
+            active: doneFilter !== "all",
+            menu: (
+              <>
+                <MenuItem onClick={() => setDoneFilter("all")}>Wszystkie</MenuItem>
+                <MenuItem onClick={() => setDoneFilter("open")}>Otwarte</MenuItem>
+                <MenuItem onClick={() => setDoneFilter("done")}>Ukończone</MenuItem>
+              </>
+            ),
+          },
+        ]}
+        chips={[
+          ...(milestoneFilter
+            ? [{ id: "ms", label: `Milestone: ${milestones.find((m) => m.id === milestoneFilter)?.title ?? ""}`, onRemove: () => setMilestoneFilter(null) }]
+            : []),
+          ...(doneFilter !== "all"
+            ? [{ id: "done", label: doneFilter === "done" ? "Ukończone" : "Otwarte", onRemove: () => setDoneFilter("all") }]
+            : []),
+          ...people_.map((id) => ({
+            id,
+            label: people?.find((x) => x.id === id)?.name ?? "Osoba",
+            onRemove: () => setPeople((prev) => prev.filter((x) => x !== id)),
+          })),
+        ]}
+        onClearChips={() => { setMilestoneFilter(null); setDoneFilter("all"); setPeople([]); setSearch(""); }}
+        hideListControls
+      />
       <div ref={scrollRef} className="relative flex min-h-0 overflow-auto bg-card" style={{ height: 600 }}>
         {/* ── left table ─────────────────────────────────────────────── */}
         <div
@@ -461,7 +544,9 @@ export function GanttView({
 
       <div data-ui="gantt-footer" className="flex h-8 shrink-0 items-center border-t border-border bg-canvas px-6 font-mono text-2xs text-n-600">
         <span>
-          {milestones.length} {milestonePl(milestones.length)} · {expanded.size === 0 ? "zwinięte" : "rozwinięte"} · {taskCount} {taskPl(taskCount)} · zoom: {GANTT_ZOOM_LABEL[zoom].toLowerCase()}
+          {milestones.length} {milestonePl(milestones.length)} · {expanded.size === 0 ? "zwinięte" : "rozwinięte"} ·{" "}
+          {taskCount} {taskPl(taskCount)}
+          {filtering ? ` z ${tasks.length}` : ""} · zoom: {GANTT_ZOOM_LABEL[zoom].toLowerCase()}
         </span>
         <span className="ml-auto text-fg-3">Dziś: {todayFmt.format(new Date(now))}</span>
       </div>

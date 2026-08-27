@@ -55,6 +55,12 @@ export interface BoardToolbarProps {
   onDensity?: (d: Density) => void;
   // Menu items for the trailing ⋯ (rendered inside <MenuContent>).
   more?: ReactNode;
+  /**
+   * Ukrywa kontrolki, których dany widok nie obsługuje (Grupuj / Sortuj /
+   * Kolumny / Gęstość / „+ Filtr"). Wyszarzony przycisk, który nic nie robi,
+   * to szum — Oś czasu nie ma kolumn ani gęstości wierszy.
+   */
+  hideListControls?: boolean;
 }
 
 const DENSITY_LABEL: Record<Density, string> = { compact: "Kompaktowa", comfortable: "Wygodna", spacious: "Przestronna" };
@@ -165,12 +171,13 @@ export function BoardToolbar(p: BoardToolbarProps) {
           {menuButton(b.label, b.menu, { className: BORDERED, active: b.active, disabled: b.disabled, onClick: b.onClick })}
         </span>
       ))}
-      {popoverButton("Filtr", p.addFilter, {
-        className: cn(BORDERED, "border-dashed border-n-400 text-muted-foreground"),
-        onClick: p.onAddFilter,
-        disabled: !p.onAddFilter && !p.addFilter,
-        icon: <IconPlus width={12} height={12} />,
-      })}
+      {!p.hideListControls &&
+        popoverButton("Filtr", p.addFilter, {
+          className: cn(BORDERED, "border-dashed border-n-400 text-muted-foreground"),
+          onClick: p.onAddFilter,
+          disabled: !p.onAddFilter && !p.addFilter,
+          icon: <IconPlus width={12} height={12} />,
+        })}
 
       {p.chips?.map((c) => <FilterChip key={c.id} label={c.label} onRemove={c.onRemove} className="text-xs" />)}
       {p.chips && p.chips.length > 0 && (
@@ -179,10 +186,11 @@ export function BoardToolbar(p: BoardToolbarProps) {
 
       <span className="flex-1 max-md:hidden" />
 
-      {menuButton(p.groupLabel ?? "Grupuj", p.groupMenu, { className: BTN, active: p.groupActive, onClick: p.onGroup, disabled: !p.onGroup && !p.groupMenu })}
-      {menuButton(p.sortLabel ?? "Sortuj", p.sortMenu, { className: BTN, active: p.sortActive, onClick: p.onSort, disabled: !p.onSort && !p.sortMenu })}
-      {popoverButton("Kolumny", p.columns, { className: BTN, onClick: p.onColumns, disabled: !p.onColumns && !p.columns, icon: <IconColumns width={14} height={14} />, align: "end" })}
+      {!p.hideListControls && menuButton(p.groupLabel ?? "Grupuj", p.groupMenu, { className: BTN, active: p.groupActive, onClick: p.onGroup, disabled: !p.onGroup && !p.groupMenu })}
+      {!p.hideListControls && menuButton(p.sortLabel ?? "Sortuj", p.sortMenu, { className: BTN, active: p.sortActive, onClick: p.onSort, disabled: !p.onSort && !p.sortMenu })}
+      {!p.hideListControls && popoverButton("Kolumny", p.columns, { className: BTN, onClick: p.onColumns, disabled: !p.onColumns && !p.columns, icon: <IconColumns width={14} height={14} />, align: "end" })}
 
+      {!p.hideListControls && (
       <Menu>
         <MenuTrigger data-ui="density-menu" aria-label={`Gęstość: ${DENSITY_LABEL[density]}`} className={BTN}>
           <IconDensity width={14} height={14} />
@@ -200,6 +208,7 @@ export function BoardToolbar(p: BoardToolbarProps) {
           </MenuRadioGroup>
         </MenuContent>
       </Menu>
+      )}
 
       <span aria-hidden="true" className="h-4 w-px shrink-0 bg-border" />
 
