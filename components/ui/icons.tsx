@@ -38,6 +38,8 @@ export function IconVacations(p: IconProps) { return <Svg {...p}><rect x="2.5" y
 export function IconRecent(p: IconProps) { return <Svg {...p}><circle cx="8" cy="8" r="5.5" {...s} strokeWidth={1.5} /><path d="M8 5v3l2 1.2" {...s} strokeWidth={1.5} /></Svg>; }
 export const IconTime = IconRecent;
 export function IconStar(p: IconProps) { return <Svg {...p}><path d="M8 2.2l1.8 3.7 4.1.6-3 2.9.7 4.1L8 11.6l-3.6 1.9.7-4.1-3-2.9 4.1-.6L8 2.2z" {...s} strokeWidth={1.4} /></Svg>; }
+// Iskry — asystent AI (Ateron). Duża iskra + dwie mniejsze, jak w topbarze.
+export function IconSparkles(p: IconProps) { return <Svg {...p}><path d="M6.2 2.6l.9 2.2 2.2.9-2.2.9-.9 2.2-.9-2.2L3.1 5.7l2.2-.9.9-2.2z" {...s} strokeWidth={1.3} strokeLinejoin="round" /><path d="M11.4 8.2l.55 1.35 1.35.55-1.35.55-.55 1.35-.55-1.35-1.35-.55 1.35-.55.55-1.35z" {...s} strokeWidth={1.2} strokeLinejoin="round" /><path d="M7.6 11.6l.4 1 1 .4-1 .4-.4 1-.4-1-1-.4 1-.4.4-1z" {...s} strokeWidth={1.1} strokeLinejoin="round" /></Svg>; }
 export function IconStarFilled(p: IconProps) { return <Svg {...p}><path d="M8 2.2l1.8 3.7 4.1.6-3 2.9.7 4.1L8 11.6l-3.6 1.9.7-4.1-3-2.9 4.1-.6L8 2.2z" {...f} stroke="currentColor" strokeWidth={1} /></Svg>; }
 export function IconBoards(p: IconProps) { return <Svg {...p}><rect x="2.5" y="3" width="3" height="10" rx="1" {...s} strokeWidth={1.4} /><rect x="6.5" y="3" width="3" height="6.5" rx="1" {...s} strokeWidth={1.4} /><rect x="10.5" y="3" width="3" height="8.5" rx="1" {...s} strokeWidth={1.4} /></Svg>; }
 export const IconBoard = IconBoards;

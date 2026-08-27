@@ -2,7 +2,8 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/mark";
-import { Avatar, Badge, Button, IconBell, IconChevronDown, IconHelp, IconMenu, IconSearch, IconSettings, Kbd } from "@/components/ui";
+import { Avatar, Badge, Button, IconBell, IconChevronDown, IconHelp, IconMenu, IconSearch, IconSettings, IconSparkles, Kbd } from "@/components/ui";
+import { ATERON_OPEN_EVENT } from "@/components/czesiek/czesiek-fab";
 import { AvatarMenu } from "@/components/layout/avatar-menu";
 import { CreateMenu } from "@/components/layout/create-menu";
 import { ShortcutsSheet } from "@/components/layout/shortcuts-sheet";
@@ -42,6 +43,19 @@ export function TopBar({ user, unreadCount, boards, workspaces, onToggleSidebar 
       <span className="hidden flex-1 md:block" />
 
       <button type="button" aria-label="Szukaj" onClick={openCommandPalette} className={`${ICON_BTN} md:hidden`}><IconSearch /></button>
+      {/* Wejście do asystenta. Pływający przycisk zniknął w F6, bo zasłaniał
+          kontrolki widoków, ale zostawienie samego ⌘K sprawiło, że agent
+          zniknął użytkownikom z oczu. Miejsce jak w Jirze („Zapytaj Rovo"). */}
+      <button
+        type="button"
+        aria-label="Zapytaj Ateron AI"
+        title="Ateron AI — asystent przestrzeni"
+        onClick={() => window.dispatchEvent(new Event(ATERON_OPEN_EVENT))}
+        className="hidden h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-n-700 outline-none hover:bg-n-100 active:bg-n-200 focus-visible:shadow-[var(--focus)] md:inline-flex"
+      >
+        <IconSparkles />
+        Zapytaj AI
+      </button>
       <Link href="/inbox" aria-label={`Powiadomienia${unreadCount ? ` (${unreadCount})` : ""}`} className={ICON_BTN}>
         <IconBell />
         {unreadCount > 0 && (
