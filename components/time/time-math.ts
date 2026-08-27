@@ -88,11 +88,6 @@ export function dayLong(d: Date): string {
   return `${WEEKDAYS_LONG[(d.getDay() + 6) % 7]} ${d.getDate()} ${MONTHS_ABBR[d.getMonth()]}`;
 }
 
-/** `YYYY-MM-DD` for a `<input type="date">`. */
-export function dateInputValue(iso: string): string {
-  return dayKey(new Date(iso));
-}
-
 // ─── czas ───────────────────────────────────────────────────────────────────
 
 /** „9h 22m" / „11h 00m" / „40m" / „0m". Minutes are zero-padded once hours show. */

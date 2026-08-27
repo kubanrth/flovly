@@ -6,8 +6,13 @@ const ALIGN: Record<Align, string> = { left: "text-left", center: "text-center",
 
 export function DataTable({ className, wrapperClassName, footer, children, ...props }: ComponentProps<"table"> & { wrapperClassName?: string; footer?: ReactNode }) {
   return (
-    <div className={cn("overflow-hidden rounded-sm border border-border", wrapperClassName)}>
-      <div className="overflow-auto">
+    // The wrapper is a flex column so a page can hand it a height
+    // (`wrapperClassName="min-h-0 flex-1"`) and make the inner div the real
+    // scroll container — without that, DataThead's `sticky top-0` never fires
+    // because nothing scrolls inside it. Unconstrained it still sizes to
+    // content, exactly as before.
+    <div className={cn("flex min-h-0 flex-col overflow-hidden rounded-sm border border-border", wrapperClassName)}>
+      <div className="min-h-0 flex-1 overflow-auto">
         <table data-ui="datatable" className={cn("w-full border-collapse text-sm", className)} {...props}>{children}</table>
       </div>
       {footer}

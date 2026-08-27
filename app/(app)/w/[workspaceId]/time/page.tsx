@@ -1,136 +1,139 @@
-import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
-import { auth } from "@/lib/auth";
-import { TimesheetView } from "@/components/time/timesheet-view";
+import { can } from "@/lib/permissions";
+import { coversDay } from "@/components/vacations/leave";
+import { TimesheetView, type TimesheetPerson, type RunningTimer } from "@/components/time/timesheet-view";
+import { addDays, dayKey, parseWeek, weekDays, type TimeEntryRow } from "@/components/time/time-math";
 
-// F12-K133: TimeCamp-like timesheet. Domyślnie pokazujemy AKTUALNY tydzień
-// (Mon–Sun) wpisów aktualnego usera. Weekly view — 7 kolumn dni, wiersze =
-// grouped by task. Total per row + per column + grand total. Manual add via
-// TimeEntryDialog wewnątrz komponentu.
+// E2 „Czas pracy" — tydzień Pon–Nd, siatka osoba × dzień. `?view=my` zawęża do
+// zalogowanego użytkownika, `?week=YYYY-MM-DD` wskazuje dowolny tydzień.
 export default async function TimeTrackingPage({
   params,
   searchParams,
 }: {
   params: Promise<{ workspaceId: string }>;
-  searchParams: Promise<{ week?: string; user?: string }>;
+  searchParams: Promise<{ week?: string; view?: string; new?: string }>;
 }) {
   const { workspaceId } = await params;
-  const { week, user: userFilter } = await searchParams;
-  await requireWorkspaceMembership(workspaceId);
-  const session = await auth();
-  const currentUserId = session!.user.id;
+  const { week, view: rawView, new: openNew } = await searchParams;
+  const ctx = await requireWorkspaceMembership(workspaceId);
+  const view = rawView === "my" ? "my" : "team";
 
-  // Week = ISO Monday start. Default: "current week" = Monday of current week.
-  const weekStart = parseWeekStart(week);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekEnd.getDate() + 7);
+  const weekStart = parseWeek(week, new Date());
+  const weekEnd = addDays(weekStart, 7);
+  const days = weekDays(weekStart);
 
-  // Filter by user (opcjonalnie — admin panel może filtrować, MVP: default =
-  // aktualny user, "all" = wszyscy).
-  const userWhere =
-    userFilter === "all" ? {} : { userId: userFilter || currentUserId };
-
-  const [entries, memberships, myRate] = await Promise.all([
+  const [entries, memberships, running] = await Promise.all([
     db.timeEntry.findMany({
       where: {
         workspaceId,
         deletedAt: null,
         startedAt: { gte: weekStart, lt: weekEnd },
-        ...userWhere,
+        ...(view === "my" ? { userId: ctx.userId } : {}),
       },
+      orderBy: { startedAt: "asc" },
       include: {
-        task: { select: { id: true, title: true, displayId: true, board: { select: { name: true } } } },
-        user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+        task: { select: { title: true, displayId: true, board: { select: { id: true, name: true } } } },
+        user: { select: { id: true, name: true, email: true } },
       },
-      orderBy: [{ startedAt: "asc" }],
     }),
     db.workspaceMembership.findMany({
-      where: { workspaceId },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatarUrl: true,
-            hourlyRateCents: true,
-          },
-        },
-      },
+      where: { workspaceId, ...(view === "my" ? { userId: ctx.userId } : {}) },
       orderBy: { joinedAt: "asc" },
+      select: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
     }),
-    db.user.findUnique({
-      where: { id: currentUserId },
-      select: { hourlyRateCents: true },
+    // Kafel „Timer aktywny" — pokazujemy najświeższy biegnący timer przestrzeni.
+    db.task.findFirst({
+      where: { workspaceId, deletedAt: null, timerStartedAt: { not: null } },
+      orderBy: { timerStartedAt: "desc" },
+      select: { id: true, title: true, displayId: true, timerStartedAt: true },
     }),
   ]);
 
+  const memberIds = memberships.map((m) => m.user.id);
+
+  // Urlopy → zielone komórki URLOP. Zatwierdzone wnioski osób z tej przestrzeni,
+  // przycięte do wyświetlanego tygodnia.
+  const leaves = memberIds.length
+    ? await db.vacationRequest.findMany({
+        where: {
+          status: "approved",
+          requesterId: { in: memberIds },
+          startDate: { lt: weekEnd },
+          endDate: { gte: weekStart },
+        },
+        select: { requesterId: true, startDate: true, endDate: true },
+      })
+    : [];
+
+  // Task nie zna właściciela timera — bierzemy aktora ostatniego `task.timerStarted`.
+  const timerActor = running
+    ? await db.auditLog.findFirst({
+        where: { workspaceId, objectType: "Task", objectId: running.id, action: "task.timerStarted" },
+        orderBy: { createdAt: "desc" },
+        select: { actorId: true, actor: { select: { name: true, email: true } } },
+      })
+    : null;
+
+  const people: TimesheetPerson[] = memberships.map((m) => ({
+    id: m.user.id,
+    name: m.user.name ?? m.user.email,
+    avatarUrl: m.user.avatarUrl,
+    leaveDays: days
+      .map(dayKey)
+      .filter((key) =>
+        leaves.some(
+          (l) =>
+            l.requesterId === m.user.id &&
+            coversDay(
+              { startDate: l.startDate.toISOString(), endDate: l.endDate.toISOString() },
+              `${key}T00:00:00.000Z`,
+            ),
+        ),
+      ),
+  }));
+
+  const timer: RunningTimer | null =
+    running && running.timerStartedAt
+      ? {
+          taskId: running.id,
+          taskDisplayId: running.displayId,
+          taskTitle: running.title,
+          ownerId: timerActor?.actorId ?? null,
+          ownerName: timerActor?.actor?.name ?? timerActor?.actor?.email ?? "—",
+          startedAt: running.timerStartedAt.toISOString(),
+        }
+      : null;
+
+  const rows: TimeEntryRow[] = entries.map((e) => ({
+    id: e.id,
+    userId: e.userId,
+    userName: e.user.name ?? e.user.email,
+    taskId: e.taskId,
+    taskDisplayId: e.task?.displayId ?? null,
+    taskTitle: e.task?.title ?? null,
+    boardId: e.task?.board?.id ?? null,
+    boardName: e.task?.board?.name ?? null,
+    note: e.note,
+    startedAt: e.startedAt.toISOString(),
+    durationSeconds: e.durationSeconds,
+    billable: e.billable,
+    approvedAt: e.approvedAt?.toISOString() ?? null,
+  }));
+
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 py-6 md:py-10">
-      <header className="flex flex-col gap-2">
-        <span className="eyebrow">Czas pracy · TimeCamp-style</span>
-        <div className="flex flex-wrap items-baseline gap-4">
-          <h1 className="font-display text-[2rem] font-bold leading-tight tracking-[-0.025em] md:text-[2.4rem]">
-            Twój tydzień
-          </h1>
-          <Link
-            href={`/w/${workspaceId}/time/reports`}
-            className="text-[0.86rem] text-muted-foreground underline decoration-dashed underline-offset-4 hover:text-primary"
-          >
-            → Raporty
-          </Link>
-        </div>
-      </header>
-
-      <TimesheetView
-        workspaceId={workspaceId}
-        currentUserId={currentUserId}
-        weekStartIso={weekStart.toISOString()}
-        entries={entries.map((e) => ({
-          id: e.id,
-          taskId: e.taskId,
-          taskTitle: e.task?.title ?? null,
-          taskDisplayId: e.task?.displayId ?? null,
-          boardName: e.task?.board?.name ?? null,
-          userId: e.userId,
-          userName: e.user.name ?? e.user.email,
-          userAvatar: e.user.avatarUrl,
-          startedAt: e.startedAt.toISOString(),
-          stoppedAt: e.stoppedAt.toISOString(),
-          durationSeconds: e.durationSeconds,
-          note: e.note,
-          billable: e.billable,
-          rateSnapshotCents: e.rateSnapshotCents,
-          approvedAt: e.approvedAt?.toISOString() ?? null,
-        }))}
-        members={memberships.map((m) => ({
-          id: m.user.id,
-          name: m.user.name ?? m.user.email,
-          email: m.user.email,
-          avatarUrl: m.user.avatarUrl,
-          hourlyRateCents: m.user.hourlyRateCents,
-          role: m.role,
-        }))}
-        myHourlyRateCents={myRate?.hourlyRateCents ?? null}
-        userFilter={userFilter ?? currentUserId}
-      />
-    </div>
+    <TimesheetView
+      workspaceId={workspaceId}
+      currentUserId={ctx.userId}
+      canApprove={can(ctx.role, "workspace.updateSettings")}
+      canPauseTimer={can(ctx.role, "task.update")}
+      view={view}
+      weekKey={dayKey(weekStart)}
+      todayKey={dayKey(new Date())}
+      entries={rows}
+      people={people}
+      timer={timer}
+      openNewEntry={openNew === "1"}
+    />
   );
-}
-
-// Return ISO Monday 00:00 for a given "?week=YYYY-MM-DD" or current time.
-function parseWeekStart(input: string | undefined): Date {
-  const raw = input ? new Date(input) : new Date();
-  if (Number.isNaN(raw.getTime())) return startOfIsoWeek(new Date());
-  return startOfIsoWeek(raw);
-}
-
-function startOfIsoWeek(d: Date): Date {
-  const copy = new Date(d);
-  const day = copy.getDay(); // 0=Sun..6=Sat
-  const diff = day === 0 ? -6 : 1 - day; // shift to Monday
-  copy.setDate(copy.getDate() + diff);
-  copy.setHours(0, 0, 0, 0);
-  return copy;
 }
