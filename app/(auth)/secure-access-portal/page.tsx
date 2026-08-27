@@ -1,14 +1,21 @@
 import type { Metadata } from "next";
 import { LoginForm } from "./login-form";
-import { Wordmark } from "@/components/brand/mark";
+import { APP_NAME, Wordmark } from "@/components/brand/mark";
 
 export const metadata: Metadata = {
-  title: "Wejście · FLOVLY",
+  title: `Wejście · ${APP_NAME}`,
 };
 
-// F12-K81 (v4 design): pełen refactor do plain card centered na .
-// Layout 1:1 z `flovly v2/Flovly Auth & Workspaces.dc.html` (sekcja LOGIN).
-// Header / footer usunięte — brand mark trzyma się wewnątrz karty.
+// F6 (redesign v5): wyśrodkowana karta 400px na `--canvas`, bez dekoracji.
+// Cała weryfikacja poświadczeń zostaje w `actions.ts` + `lib/auth.ts`.
+
+// `?redirect=` trafia do `signIn({ redirectTo })`. Przepuszczamy wyłącznie
+// ścieżki względne (nie `//host`, nie `https://…`) — inaczej link do logowania
+// staje się open redirectem. Serwer i tak ma własny callback, to druga warstwa.
+function safeRedirect(value: string | undefined): string {
+  return value && /^\/(?!\/)/.test(value) ? value : "/workspaces";
+}
+
 export default async function SecureAccessPortalPage({
   searchParams,
 }: {
@@ -18,50 +25,22 @@ export default async function SecureAccessPortalPage({
   const { redirect } = await searchParams;
 
   return (
-    <div className="relative isolate flex min-h-dvh items-stretch justify-center overflow-hidden px-0 py-0 md:items-center md:px-6 md:py-12">
-      {/* Dodatkowe radial blob'y nad  — wzmacniają hero feel z referencji.
-          Pointer-events none, czysty dekor. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[520px] w-[520px] -translate-x-1/2 rounded-full opacity-60 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(circle, color-mix(in oklch, var(--accent-brand) 35%, transparent), transparent 65%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-32 -right-20 -z-10 h-[420px] w-[420px] rounded-full opacity-50 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(circle, color-mix(in oklch, var(--accent-brand-2) 35%, transparent), transparent 65%)",
-        }}
-      />
-
-      {/* Mobile: full-bleed (no card chrome, min-h-dvh, safe-area padding).
-          Desktop (md+): centered plain card 420px. v4 spec B1 · Auth mobile. */}
-      <main className="surface relative flex w-full flex-col px-6 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] max-md:min-h-dvh max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:shadow-none max-md: md:max-w-[420px] md:rounded-2xl md:p-10">
-        {/* Brand mark + wordmark + tagline, jak na referencji v4 (logo nad heading'em) */}
-        <div className="mb-8 flex flex-col items-center text-center">
-          <Wordmark size="md" />
-          <p className="mt-3 text-[0.82rem] text-muted-foreground">
-            Workflow który płynie
-          </p>
+    <div data-ui="login-page" className="flex min-h-dvh items-center justify-center bg-canvas p-4">
+      <main data-ui="login-card" className="surface w-[400px] max-w-full p-6">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <Wordmark size="lg" />
+          <div>
+            <h1 className="text-md font-semibold text-foreground">Zaloguj się</h1>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Wpisz dane swojego konta, żeby wrócić do pracy.
+            </p>
+          </div>
         </div>
 
-        <div className="mb-7 flex flex-col items-start gap-2">
-          <span className="eyebrow">Witaj z powrotem</span>
-          <h1 className="font-display text-[2.1rem] font-bold leading-[1.05] tracking-[-0.03em] text-foreground">
-            Zaloguj się,
-            <br />
-            <span className="">do roboty.</span>
-          </h1>
-        </div>
+        <LoginForm redirectTo={safeRedirect(redirect)} />
 
-        <LoginForm redirectTo={redirect} />
-
-        <p className="mt-7 text-center font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground">
-          Problem z dostępem? Skontaktuj się z administratorem workspace’u.
+        <p className="mt-5 text-center text-2xs text-fg-3">
+          Problem z dostępem? Skontaktuj się z administratorem przestrzeni.
         </p>
       </main>
     </div>

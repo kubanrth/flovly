@@ -4,18 +4,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuSub, MenuSubContent, MenuSubTrigger, MenuTrigger } from "@/components/ui/dropdown-menu";
 import { IconEdit, IconLink, IconMore, IconImage } from "@/components/ui/icons";
-
-// Board background tints (A2). Warm, low-chroma — the header keeps its own
-// text colours, so these stay light enough for `--foreground` to pass AA.
-const TINTS: { label: string; value: string | null }[] = [
-  { label: "Brak", value: null },
-  { label: "Piaskowe", value: "#FAF7F2" },
-  { label: "Pomarańczowe", value: "#FFF4EE" },
-  { label: "Miętowe", value: "#F0F7F3" },
-  { label: "Błękitne", value: "#F0F4FA" },
-  { label: "Liliowe", value: "#F5F1FA" },
-  { label: "Różowe", value: "#FBF0F3" },
-];
+import { TINTS } from "./board-tints";
 
 // ponytail: per-device via localStorage — Board has no background column and
 // F3 may not touch the schema (MAP: „bez zmian schematu"). Upgrade path when a

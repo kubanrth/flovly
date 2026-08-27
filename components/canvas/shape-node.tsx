@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { BORDER_ON_WHITE, DEFAULT_NODE_FILL, INK_DEFAULT, INK_ON_DARK, INK_ON_PALE, V5_ACCENT } from "./palettes";
 import { Lock } from "lucide-react";
 import { Chip } from "@/components/ui/chip";
 import { IconExternal } from "@/components/ui/icons";
@@ -657,7 +658,7 @@ function TextShape({
     initialLabel: label,
     isEditing: editing,
   });
-  const ink = textColorHex ?? (isPaleHex(bgColorHex) ? "#4A4640" : "#FFFFFF");
+  const ink = textColorHex ?? (isPaleHex(bgColorHex) ? INK_ON_PALE : INK_ON_DARK);
   const fontSize = fontSizeOverride ?? Math.max(14, Math.min(48, height * 0.36));
   return (
     <>
@@ -884,24 +885,6 @@ function isPaleHex(hex: string): boolean {
 
 // --- Color helpers ---
 
-// Pastele z palety v5 → ich pełny odcień (chip-*-fg / kolor statusu).
-// Dzięki temu krawędź karteczki jest taka jak w B9 (#FBF0C8 → #E8A100).
-const V5_ACCENT: Record<string, string> = {
-  "#FBF0C8": "#E8A100",
-  "#DDF3E6": "#1E9E5A",
-  "#FFE8DB": "#E04E00",
-  "#DDE9FC": "#2F6FE8",
-  "#FDE3E1": "#D6382C",
-  "#EDE3FA": "#5A2E8A",
-  "#FBE2EE": "#8A1F52",
-  "#D8F1EF": "#0F5C57",
-  "#E3E4FB": "#2F3A8F",
-  "#EFE4DA": "#5C3A1E",
-  "#EDEBE7": "#8A857D",
-  "#FFFFFF": "#E6E3DE",
-  "#1C1A17": "#1C1A17",
-};
-
 function accentFor(hex: string): string {
   if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return "var(--orange-500)";
   const v5 = V5_ACCENT[hex.toUpperCase()];
@@ -910,19 +893,19 @@ function accentFor(hex: string): string {
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   const y = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-  if (y > 0.92) return "#E6E3DE";
+  if (y > 0.92) return BORDER_ON_WHITE;
   const darken = (n: number) => Math.max(0, Math.round(n * 0.75));
   const hx = (n: number) => darken(n).toString(16).padStart(2, "0");
   return `#${hx(r)}${hx(g)}${hx(b)}`;
 }
 
 function textColorFor(hex: string): string {
-  if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return "#1C1A17";
+  if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return INK_DEFAULT;
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   const y = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-  return y > 0.6 ? "#1C1A17" : "#FFFFFF";
+  return y > 0.6 ? INK_DEFAULT : INK_ON_DARK;
 }
 
 // Karta zadania na kanwie (B9): nagłówek #ID + chip statusu + „otwórz",
@@ -966,7 +949,7 @@ function TaskRefShape({
         style={{
           width,
           height,
-          background: colorHex || "#FFFFFF",
+          background: colorHex || DEFAULT_NODE_FILL,
           boxShadow: selected
             ? "0 0 0 2px var(--orange-500), var(--shadow-e1)"
             : "var(--shadow-e1)",

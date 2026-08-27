@@ -1,6 +1,7 @@
 "use client";
 
 import { useEditor, EditorContent, ReactRenderer, type Editor, type JSONContent } from "@tiptap/react";
+import { HIGHLIGHT_COLORS, TEXT_COLORS } from "./editor-colors";
 import StarterKit from "@tiptap/starter-kit";
 import { Link } from "@tiptap/extension-link";
 import { Placeholder } from "@tiptap/extension-placeholder";
@@ -128,27 +129,6 @@ function isDocEmpty(doc: RichTextDoc | null): boolean {
   return false;
 }
 
-const TEXT_COLORS = [
-  "#1F2937", // ink (default-ish)
-  "#EF4444", // red
-  "#F59E0B", // amber
-  "#10B981", // emerald
-  "#3B82F6", // blue
-  "#8B5CF6", // violet
-  "#EC4899", // pink
-  "#64748B", // slate
-];
-
-const HIGHLIGHT_COLORS = [
-  "#FEF3C7", // amber-100
-  "#FECACA", // red-200
-  "#BBF7D0", // green-200
-  "#BFDBFE", // blue-200
-  "#DDD6FE", // violet-200
-  "#FBCFE8", // pink-200
-  "#E0E7FF", // indigo-200
-  "#F3F4F6", // gray-100
-];
 
 export function RichTextEditor({
   initial,

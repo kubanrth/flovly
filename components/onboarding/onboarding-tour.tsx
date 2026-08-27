@@ -1,75 +1,54 @@
 "use client";
 
-// F12-K83: onboarding tour — 4-step modal carousel pokazywany przy pierwszym
-// loginie. (app) layout decyduje czy mount'ować ten komponent (czyta
-// User.onboardingCompletedAt). Po "Zaczynamy" lub "Pomiń" wywołuje
-// completeOnboardingAction() która ustawia flagę → revalidatePath → unmount.
+// F12-K83: onboarding — 4-krokowy dialog pokazywany przy pierwszym logowaniu.
+// (app) layout mountuje go tylko gdy `User.onboardingCompletedAt === null`.
+// „Zaczynamy", „Pomiń", Esc i klik w tło wywołują `completeOnboardingAction()`,
+// która ustawia flagę → revalidatePath → dialog nie wraca.
+//
+// F6 (redesign v5): prymitywy `components/ui/dialog` + tokeny, bez gradientów.
 
+import type { ReactNode } from "react";
 import { useState, useTransition } from "react";
-import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { Compass, LayoutDashboard, Sparkles, Wand2 } from "lucide-react";
-
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { IconBoards, IconCreative, IconGrid, IconStar } from "@/components/ui/icons";
+import { APP_NAME } from "@/components/brand/mark";
 import { completeOnboardingAction } from "@/app/(app)/onboarding/actions";
 import { cn } from "@/lib/utils";
 
-interface Step {
-  num: number;
-  title: string;
-  desc: string;
-  cta: string;
-  icon: React.ReactNode;
-  illBg: string;
-  aura: string;
-}
-
-const STEPS: Step[] = [
+const STEPS: { title: string; desc: string; cta: string; icon: ReactNode }[] = [
   {
-    num: 1,
-    title: "Witaj w Flovly",
-    desc: "Twoje miejsce do zarządzania projektami, zespołem i pomysłami — wszystko w jednej przestrzeni.",
+    title: `Witaj w ${APP_NAME}`,
+    desc: "Jedno miejsce na projekty, zespół i pomysły. Pokażemy Ci to w cztery kroki — zajmie pół minuty.",
     cta: "Dalej",
-    icon: <Sparkles size={28} strokeWidth={1.8} />,
-    illBg: "linear-gradient(140deg, rgba(124,92,255,0.25), rgba(225,49,143,0.18))",
-    aura: "rgba(124,92,255,0.45)",
+    icon: <IconStar width={18} height={18} />,
   },
   {
-    num: 2,
-    title: "Workspace'y",
-    desc: "Organizuj pracę w przestrzeniach — osobne dla klientów, projektów lub zespołów. Zapraszaj kolegów i nadawaj role.",
+    title: "Przestrzenie",
+    desc: "Dziel pracę na przestrzenie — osobne dla klientów, projektów albo zespołów. Zapraszasz ludzi i nadajesz role.",
     cta: "Dalej",
-    icon: <Compass size={28} strokeWidth={1.8} />,
-    illBg: "linear-gradient(140deg, rgba(52,190,248,0.25), rgba(124,92,255,0.18))",
-    aura: "rgba(52,190,248,0.4)",
+    icon: <IconGrid width={18} height={18} />,
   },
   {
-    num: 3,
     title: "Tablice i widoki",
-    desc: "Kanban, Tabela, Roadmapa, Whiteboard — wybierz widok pasujący do etapu projektu. Wszystko synchronizowane na żywo.",
+    desc: "Lista, Tablica, Oś czasu, Kalendarz, Whiteboard — ten sam zestaw zadań w widoku pasującym do etapu projektu.",
     cta: "Dalej",
-    icon: <LayoutDashboard size={28} strokeWidth={1.8} />,
-    illBg: "linear-gradient(140deg, rgba(245,158,11,0.22), rgba(225,49,143,0.18))",
-    aura: "rgba(245,158,11,0.4)",
+    icon: <IconBoards width={18} height={18} />,
   },
   {
-    num: 4,
-    title: "Ateron AI",
-    desc: "Wbudowany asystent rozumie kontekst twoich tablic — zadawaj pytania, generuj brief'y, twórz zadania głosem.",
+    title: "Asystent Ateron",
+    desc: "Wbudowany asystent zna kontekst Twoich tablic — zapytasz go o status, wygenerujesz brief albo utworzysz zadanie.",
     cta: "Zaczynamy",
-    icon: <Wand2 size={28} strokeWidth={1.8} />,
-    illBg: "linear-gradient(140deg, rgba(124,92,255,0.3), rgba(225,49,143,0.25))",
-    aura: "rgba(225,49,143,0.45)",
+    icon: <IconCreative width={18} height={18} />,
   },
 ];
 
 export function OnboardingTour() {
-  // Local open state — modal startuje otwarty i closeuje się po complete/skip.
-  // (app) layout mount'uje ten komponent tylko gdy onboardingCompletedAt === null,
-  // więc nie ma potrzeby gateować dodatkowo po stronie klienta.
   const [open, setOpen] = useState(true);
   const [step, setStep] = useState(0);
   const [pending, startTransition] = useTransition();
 
-  const current = STEPS[step];
+  const current = STEPS[step]!;
   const isLast = step === STEPS.length - 1;
 
   const close = () => {
@@ -79,126 +58,59 @@ export function OnboardingTour() {
     });
   };
 
-  const next = () => {
-    if (isLast) {
-      close();
-      return;
-    }
-    setStep((s) => s + 1);
-  };
-
   return (
-    <DialogPrimitive.Root
+    <Dialog
       open={open}
       onOpenChange={(o) => {
-        // Klik backdrop / Esc też powinien zapisać flagę (treat as skip).
+        // Esc i klik w tło też zapisują flagę (traktujemy jak „Pomiń").
         if (!o) close();
       }}
     >
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Backdrop
-          className={cn(
-            // z-[100] === Z.modalBackdrop (F12-K104).
-            "fixed inset-0 z-[100] bg-black/40 supports-backdrop-filter:",
-            "data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0 duration-150",
-          )}
-        />
-        <DialogPrimitive.Popup
-          className={cn(
-            // z-[110] === Z.modal (F12-K104).
-            "dialog-surface fixed left-1/2 top-1/2 z-[110] w-[350px] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[22px] outline-none",
-            "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 duration-150",
-          )}
-        >
-          <DialogPrimitive.Title className="sr-only">
-            {current.title}
-          </DialogPrimitive.Title>
-          <DialogPrimitive.Description className="sr-only">
+      <DialogContent data-ui="onboarding-dialog" size="sm" showCloseButton={false}>
+        <DialogHeader>
+          <span className="text-2xs font-semibold tracking-[.06em] text-fg-3 uppercase">
+            Krok {step + 1} z {STEPS.length}
+          </span>
+          <DialogTitle>{current.title}</DialogTitle>
+        </DialogHeader>
+
+        <DialogBody className="flex gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-orange-50 text-orange-700">
+            {current.icon}
+          </span>
+          <DialogDescription className="min-h-[60px] text-sm leading-5 text-muted-foreground">
             {current.desc}
-          </DialogPrimitive.Description>
+          </DialogDescription>
+        </DialogBody>
 
-          {/* Illustration */}
-          <div
-            className="relative flex h-[170px] items-center justify-center overflow-hidden"
-            style={{ background: current.illBg }}
-          >
-            <div
-              className="absolute inset-0"
-              style={{
-                background: `radial-gradient(circle at 50% 40%, ${current.aura}, transparent 60%)`,
-              }}
-            />
-            <div
-              className="relative grid size-16 place-items-center rounded-[20px] border border-white/20 text-white shadow-[0_12px_28px_-8px_rgba(0,0,0,0.5)]"
-              style={{ background: "rgba(20,17,30,0.6)" }}
-            >
-              {current.icon}
-            </div>
-          </div>
-
-          {/* Body */}
-          <div className="p-5">
-            <div className="font-mono text-[11px] text-[#9B8BE6]">
-              Krok {current.num} / {STEPS.length}
-            </div>
-            <h2 className="mt-1.5 text-[18px] font-bold tracking-[-0.01em] text-foreground">
-              {current.title}
-            </h2>
-            <p className="mt-1.5 min-h-[56px] text-[13.5px] leading-[1.55] text-muted-foreground">
-              {current.desc}
-            </p>
-
-            <div className="mt-3.5 flex items-center justify-between">
-              {/* Progress dots */}
-              <div className="flex gap-1.5">
-                {STEPS.map((_, i) => (
-                  <span
-                    key={i}
-                    className={cn(
-                      "h-1.5 rounded-full transition-[width,background-color] duration-200",
-                      i === step
-                        ? "w-[18px]"
-                        : "w-1.5 bg-muted-foreground/25",
-                    )}
-                    style={
-                      i === step
-                        ? {
-                            background:
-                              "#FF5C00",
-                          }
-                        : undefined
-                    }
-                  />
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2">
-                {!isLast && (
-                  <button
-                    type="button"
-                    onClick={close}
-                    disabled={pending}
-                    className="px-1 py-2 text-[13px] text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60"
-                  >
-                    Pomiń
-                  </button>
+        <DialogFooter className="justify-between">
+          <div className="flex items-center gap-1.5" aria-hidden="true">
+            {STEPS.map((s, i) => (
+              <span
+                key={s.title}
+                className={cn(
+                  "h-1.5 rounded-full transition-[width,background-color] duration-150 ease-[var(--ease-out)]",
+                  i === step ? "w-4 bg-orange-500" : "w-1.5 bg-n-300",
                 )}
-                <button
-                  type="button"
-                  onClick={next}
-                  disabled={pending}
-                  className="rounded-[10px] px-4 py-2 text-[13px] font-semibold text-white shadow-[0_8px_20px_-8px_rgba(124,92,255,0.6)] transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
-                  style={{
-                    background: "#FF5C00",
-                  }}
-                >
-                  {current.cta}
-                </button>
-              </div>
-            </div>
+              />
+            ))}
           </div>
-        </DialogPrimitive.Popup>
-      </DialogPrimitive.Portal>
-    </DialogPrimitive.Root>
+          <div className="flex items-center gap-2">
+            {!isLast && (
+              <Button variant="ghost" onClick={close} disabled={pending}>
+                Pomiń
+              </Button>
+            )}
+            <Button
+              onClick={() => (isLast ? close() : setStep((s) => s + 1))}
+              disabled={pending}
+              loading={pending}
+            >
+              {current.cta}
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

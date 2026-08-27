@@ -7,6 +7,7 @@ import {
   deleteBoardLinkAction,
 } from "@/app/(app)/w/[workspaceId]/b/[boardId]/board-link-actions";
 import type { BoardLinkKind } from "@/lib/generated/prisma/enums";
+import { KIND_VISUAL } from "./link-kinds";
 
 export interface BoardLinkRow {
   id: string;
@@ -14,20 +15,6 @@ export interface BoardLinkRow {
   label: string | null;
   kind: BoardLinkKind;
 }
-
-// Brand-accurate-ish glyphs. These are tiny decorative SVGs; for the real
-// Google logos add files in /public/integrations/ and swap <LinkIcon /> for
-// next/image refs there.
-const KIND_VISUAL: Record<
-  BoardLinkKind,
-  { label: string; color: string; bg: string; icon: string }
-> = {
-  DRIVE: { label: "Drive", color: "#1A73E8", bg: "#E8F0FE", icon: "▲" },
-  SHEETS: { label: "Sheets", color: "#188038", bg: "#E6F4EA", icon: "▦" },
-  DOCS: { label: "Docs", color: "#1967D2", bg: "#E8F0FE", icon: "▤" },
-  SLIDES: { label: "Slides", color: "#F29900", bg: "#FEF7E0", icon: "▥" },
-  OTHER: { label: "Link", color: "#475569", bg: "#F1F5F9", icon: "↗" },
-};
 
 export function BoardLinks({
   workspaceId,

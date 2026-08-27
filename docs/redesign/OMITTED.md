@@ -228,7 +228,7 @@ Stan po F1 (B4: nagłówek tablicy / tabsy / toolbar / dialog nowego widoku, 202
 - **SLA** — nie ma pól czasu reakcji ani terminu rozwiązania.
 
 ### E10 Wiki
-- **Drzewo stron** — backend trzyma jedną stronę per przestrzeń, więc panel pokazuje jeden
+- **Drzewo stron (drzewo)** — backend trzyma jedną stronę per przestrzeń, więc panel pokazuje jeden
   korzeń zamiast drzewa.
 - **Historia wersji** — brak wersjonowania (ta sama przyczyna co w B11 Opis).
 

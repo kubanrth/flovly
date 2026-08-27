@@ -1,6 +1,7 @@
 "use client";
 
 import "@xyflow/react/dist/style.css";
+import { CURSOR_COLORS, DEFAULT_NODE_FILL, MIXED_COLOR_SWATCH, PALETTE, PEN_COLORS, SHAPE_DEFAULTS, STICKY_COLORS, TEXT_PALETTE } from "./palettes";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -163,64 +164,10 @@ type RFNode = Node<ShapeNodeData>;
 type RFEdge = Edge<RFEdgeData>;
 
 // Paleta v5 — pastele chip-*-bg z tokens.css (A1), bez saturowanych 500-ek.
-const PALETTE = [
-  "#FFFFFF", // n-0
-  "#1C1A17", // n-900 (chip-black-bg)
-  "#FDE3E1", // chip-red-bg
-  "#FFE8DB", // chip-orange-bg
-  "#FBF0C8", // chip-yellow-bg
-  "#DDF3E6", // chip-green-bg
-  "#D8F1EF", // chip-teal-bg
-  "#DDE9FC", // chip-blue-bg
-  "#E3E4FB", // chip-indigo-bg
-  "#EDE3FA", // chip-purple-bg
-  "#FBE2EE", // chip-pink-bg
-  "#EFE4DA", // chip-brown-bg
-  "#EDEBE7", // chip-gray-bg
-];
-
-const SHAPE_DEFAULTS: Record<ShapeKind, { width: number; height: number; color: string }> = {
-  RECTANGLE: { width: 160, height: 80, color: "#FFFFFF" },
-  DIAMOND: { width: 160, height: 80, color: "#FFFFFF" },
-  CIRCLE: { width: 120, height: 120, color: "#FFFFFF" },
-  STICKY: { width: 220, height: 120, color: "#FBF0C8" },
-  FRAME: { width: 520, height: 320, color: "#FAF9F7" },
-  // Fallback only — real size set in handleImageUpload after the PUT.
-  IMAGE: { width: 280, height: 200, color: "#FFFFFF" },
-  // TEXT uses colorHex as background + separate textColorHex for text color.
-  TEXT: { width: 220, height: 60, color: "#FFFFFF" },
-  // F12-K73 TASK_REF — task card sizing. Renderowany tylko w view 'taskline',
-  // przez external drop z TaskLineSidebar.
-  TASK_REF: { width: 264, height: 116, color: "#FFFFFF" },
-};
-
-const STICKY_COLORS = [
-  "#FBF0C8", // chip-yellow-bg (domyślna karteczka z B9)
-  "#FBE2EE", // chip-pink-bg
-  "#FFE8DB", // chip-orange-bg
-  "#DDF3E6", // chip-green-bg
-  "#DDE9FC", // chip-blue-bg
-  "#EDE3FA", // chip-purple-bg
-  "#FDE3E1", // chip-red-bg
-  "#EDEBE7", // chip-gray-bg
-];
-
-// Kept parallel to STICKY_COLORS count so toolbar layout doesn't reflow when switching tools.
-const PEN_COLORS = [
-  "#1C1A17", // n-900
-  "#D6382C", // danger
-  "#E8A100", // warning
-  "#1E9E5A", // success
-  "#2F6FE8", // info
-  "#FF5C00", // orange-500
-  "#8A1F52", // chip-pink-fg
-  "#8A857D", // n-500
-];
-
 const PEN_SIZES = [2, 4, 8] as const;
 type PenSize = (typeof PEN_SIZES)[number];
 
-// B9: kanwa = kropki 1px `--n-300` co 24px na `--canvas` (#FAF9F7).
+// B9: kanwa = kropki 1px `--n-300` co 24px na tle `--canvas`.
 const CANVAS_SURFACE: React.CSSProperties = {
   backgroundColor: "var(--canvas)",
   backgroundImage: "radial-gradient(var(--n-300) 1px, transparent 1px)",
@@ -400,10 +347,9 @@ function CanvasEditorInner({
   const providerRef = useRef<CanvasProviderHandle | null>(null);
   // Lazy init keeps Math.random() out of render path (React Compiler flags impure calls during render).
   const [myCursorIdentity] = useState(() => {
-    const palette = ["#FF5C00", "#10B981", "#F59E0B", "#EF4444", "#3B82F6", "#EC4899"];
-    const idx = Math.floor(Math.random() * palette.length);
+    const idx = Math.floor(Math.random() * CURSOR_COLORS.length);
     return {
-      color: palette[idx],
+      color: CURSOR_COLORS[idx],
       name: `Gość ${Math.floor(Math.random() * 999)}`,
     };
   });
@@ -775,7 +721,7 @@ function CanvasEditorInner({
         data: {
           shape: "IMAGE",
           label: null,
-          colorHex: "#FFFFFF",
+          colorHex: DEFAULT_NODE_FILL,
           width: 280,
           height: 200,
           linkedTasks: [],
@@ -1238,7 +1184,7 @@ function CanvasEditorInner({
     const pad = 64;
     try {
       const dataUrl = await toPng(pane, {
-        backgroundColor: "#ffffff",
+        backgroundColor: DEFAULT_NODE_FILL,
         width: Math.max(bounds.width + pad * 2, 800),
         height: Math.max(bounds.height + pad * 2, 600),
         pixelRatio: 2,
@@ -2255,7 +2201,7 @@ function AlignmentGuides({ vx, hy }: { vx: number[]; hy: number[] }) {
             y1={-100000}
             x2={vxi}
             y2={100000}
-            stroke="#FF5C00"
+            stroke="var(--orange-500)"
             strokeWidth={1 / zoom}
             strokeDasharray={`${4 / zoom} ${3 / zoom}`}
           />
@@ -2267,7 +2213,7 @@ function AlignmentGuides({ vx, hy }: { vx: number[]; hy: number[] }) {
             y1={hyi}
             x2={100000}
             y2={hyi}
-            stroke="#FF5C00"
+            stroke="var(--orange-500)"
             strokeWidth={1 / zoom}
             strokeDasharray={`${4 / zoom} ${3 / zoom}`}
           />
@@ -2918,12 +2864,6 @@ function TextColorPicker({
   })();
 
   const disabled = selectedNodes.length === 0;
-  const TEXT_PALETTE = [
-    ...PALETTE,
-    "#000000",
-    "#FFFFFF",
-  ];
-
   return (
     <>
       <button
@@ -2939,7 +2879,7 @@ function TextColorPicker({
         <span
           className="block h-1 w-3 rounded-sm"
           style={{
-            background: currentColor ?? "linear-gradient(90deg, #FF3B30, #0A84FF)",
+            background: currentColor ?? MIXED_COLOR_SWATCH,
             border: currentColor
               ? "none"
               : "1px solid var(--border)",

@@ -1,72 +1,79 @@
+import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { Lock, Calendar as CalIcon, Eye, ExternalLink } from "lucide-react";
 import { db } from "@/lib/db";
-import {
-  PRIORITY_META,
-  type TaskPriorityValue,
-} from "@/lib/task-priority";
-import { Mark } from "@/components/brand/mark";
+import { SYSTEM_FLAGS } from "@/lib/system-flags";
+import type { TaskPriorityValue } from "@/lib/task-priority";
+import { APP_NAME, Mark } from "@/components/brand/mark";
+import { AvatarStack } from "@/components/ui/avatar";
+import { Chip } from "@/components/ui/chip";
+import { hueForColor } from "@/components/ui/status-hue";
+import { DataFooter, DataTable, DataTd, DataTh, DataThead, DataTr } from "@/components/ui/data-table";
+import { IconCalendar, IconEye, IconLock } from "@/components/ui/icons";
+import { PriorityIcon, PRIORITY_LABEL, type PriorityLevel } from "@/components/ui/priority-icon";
+import { taskPl } from "@/lib/pluralize";
 
-// F12-K79: PUBLIC route — bez auth. Token w URL → fetchujemy tablicę read-only.
-// Sprawdzamy: token istnieje, !revoked, !expired.
-// Pozytywne wyświetlenie inkrementuje accessCount + ustawia lastAccessedAt.
+// F12-K79: PUBLICZNA trasa — bez auth. Token z URL → tablica tylko do odczytu.
+// Warunki dostępu (wszystkie po stronie serwera): flaga `public_share_links`,
+// token istnieje, !revoked, !expired, tablica nieusunięta. Renderujemy wyłącznie
+// to, co link i tak udostępnia (zadania tablicy) — zero akcji, zero danych konta.
 //
-// Layout: minimalny header (board name + workspace name + "Powered by FLOVLY"),
-// grupowanie zadań po statusie (kanban-like), badge'e priorytetu, brak akcji.
+// F6 (redesign v5): kanban zastąpiony tabelą read-only (`DataTable`) + baner.
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type Params = Promise<{ token: string }>;
 
-// Bumping accessCount jest mutacją wewnątrz page() — to działa w Next.js
-// 16 bo page jest dynamic. await-ed po stronie response żeby user widział
-// zawsze świeże dane (next render = +1).
+const LEVEL: Record<TaskPriorityValue, PriorityLevel | null> = {
+  URGENT: 0, HIGH: 1, MEDIUM: 2, LOW: 3, NONE: null,
+};
+
+// Bumping accessCount jest mutacją wewnątrz page() — działa, bo page jest dynamic.
 async function trackAccess(linkId: string) {
   await db.boardShareLink.update({
     where: { id: linkId },
-    data: {
-      accessCount: { increment: 1 },
-      lastAccessedAt: new Date(),
-    },
+    data: { accessCount: { increment: 1 }, lastAccessedAt: new Date() },
   });
+}
+
+// Flaga systemowa czytana serwerowo; brak wiersza = wartość domyślna z katalogu.
+async function sharingEnabled(): Promise<boolean> {
+  const row = await db.systemFlag.findUnique({
+    where: { key: "public_share_links" },
+    select: { value: true },
+  });
+  if (row?.value === undefined || row.value === null) {
+    return SYSTEM_FLAGS.public_share_links.defaultValue;
+  }
+  return row.value === true || row.value === "true";
 }
 
 export default async function ShareViewerPage({ params }: { params: Params }) {
   const { token } = await params;
   if (!token || typeof token !== "string") notFound();
+  if (!(await sharingEnabled())) notFound();
 
   const link = await db.boardShareLink.findUnique({
     where: { token },
     include: {
       board: {
         select: {
-          id: true,
           name: true,
           description: true,
           deletedAt: true,
-          workspace: { select: { name: true, slug: true } },
-          statusColumns: { orderBy: { order: "asc" } },
+          workspace: { select: { name: true } },
+          statusColumns: { orderBy: { order: "asc" }, select: { id: true, name: true, colorHex: true } },
           tasks: {
             where: { deletedAt: null },
-            orderBy: [
-              { statusColumn: { order: "asc" } },
-              { rowOrder: "asc" },
-            ],
+            orderBy: [{ statusColumn: { order: "asc" } }, { rowOrder: "asc" }],
             select: {
               id: true,
               displayId: true,
               title: true,
               statusColumnId: true,
               priority: true,
-              startAt: true,
               stopAt: true,
-              assignees: {
-                select: {
-                  user: { select: { name: true, email: true, avatarUrl: true } },
-                },
-              },
+              assignees: { select: { user: { select: { name: true, email: true, avatarUrl: true } } } },
             },
           },
         },
@@ -76,286 +83,159 @@ export default async function ShareViewerPage({ params }: { params: Params }) {
 
   if (!link) notFound();
   if (link.revokedAt) {
-    return <RevokedPage />;
+    return (
+      <StateMessage
+        icon={<IconLock width={20} height={20} />}
+        title="Dostęp cofnięty"
+        body="Ten link już nie działa. Skontaktuj się z osobą, która Ci go udostępniła."
+      />
+    );
   }
   if (link.expiresAt && link.expiresAt < new Date()) {
-    return <ExpiredPage />;
+    return (
+      <StateMessage
+        icon={<IconCalendar width={20} height={20} />}
+        title="Link wygasł"
+        body="Ten podgląd przestał być aktualny. Poproś o nowy link."
+      />
+    );
   }
   if (link.board.deletedAt) notFound();
 
-  // Fire-and-forget access tracking (nie blokujemy render'u jeśli sypnie).
+  // Fire-and-forget — licznik odsłon nie może blokować renderu.
   void trackAccess(link.id);
 
   const board = link.board;
-  const tasksByStatus = new Map<string | null, typeof board.tasks>();
-  for (const t of board.tasks) {
-    const key = t.statusColumnId;
-    const bucket = tasksByStatus.get(key) ?? [];
-    bucket.push(t);
-    tasksByStatus.set(key, bucket);
-  }
+  const statusById = new Map(board.statusColumns.map((c) => [c.id, c]));
 
   return (
-    // Mobile v4 (B10 — Public viewer): pb-16 so sticky watermark doesn't overlap content.
-    <div className="min-h-screen bg-background pb-16 text-foreground md:pb-0">
-      {/* Minimal brand header. Mobile: sticky w/ view-only badge top per spec. */}
-      <header className="sticky top-0 z-10 border-b border-border bg-card/85 md:static md:bg-card/80">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 md:gap-4 md:px-6 md:py-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <Mark size={32} className="rounded-[10px] md:h-9 md:w-9" />
-            <div className="flex min-w-0 flex-col">
-              <span className="truncate font-mono text-[0.58rem] uppercase tracking-[0.14em] text-muted-foreground md:text-[0.62rem]">
-                {board.workspace.name}
-              </span>
-              <h1 className="truncate font-display text-[1rem] font-bold leading-tight tracking-[-0.02em] text-foreground md:text-[1.15rem] md:leading-none">
-                {board.name}
-              </h1>
-            </div>
-          </div>
-          {/* Read-only badge — pill on mobile (>=44px touch even though non-interactive). */}
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 font-mono text-[0.58rem] font-semibold uppercase tracking-[0.14em] text-primary md:border-transparent md:bg-transparent md:px-0 md:py-0 md:font-normal md:text-muted-foreground">
-            <Eye size={11} />
-            <span className="hidden sm:inline">Podgląd · read-only</span>
-            <span className="sm:hidden">Read-only</span>
-          </span>
+    <div className="flex min-h-dvh flex-col bg-canvas">
+      <header className="flex items-center gap-2.5 border-b border-border bg-card px-6 py-2.5 max-md:px-4">
+        <Mark size={22} />
+        <div className="min-w-0">
+          <div className="truncate text-2xs text-fg-3">{board.workspace.name}</div>
+          <h1 className="truncate text-sm font-semibold text-foreground">{board.name}</h1>
         </div>
-        {board.description && (
-          <div className="mx-auto max-w-7xl px-4 pb-3 md:px-6 md:pb-4">
-            <p className="max-w-[64ch] text-[0.86rem] leading-[1.55] text-muted-foreground md:text-[0.92rem]">
-              {board.description}
-            </p>
-          </div>
-        )}
+        <Chip hue="gray" size="lg" className="ml-auto">
+          <IconEye width={12} height={12} />
+          Tylko podgląd
+        </Chip>
       </header>
 
-      {/* Tasks grouped by status (kanban-like) */}
-      <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
+      <main className="flex min-h-0 flex-1 flex-col gap-3 px-6 py-4 max-md:px-4">
+        <div
+          data-ui="share-banner"
+          className="flex items-start gap-2 rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-800"
+        >
+          <IconEye width={14} height={14} className="mt-0.5 shrink-0" />
+          <p>
+            Publiczny podgląd tablicy — tylko do odczytu. Edycja, komentarze i szczegóły zadań są
+            niedostępne bez konta.
+          </p>
+        </div>
+
+        {board.description && (
+          <p className="max-w-[72ch] text-xs text-muted-foreground">{board.description}</p>
+        )}
+
         {board.tasks.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-card/50 px-6 py-12 text-center">
-            <p className="font-display text-[1.05rem] font-semibold text-foreground">
-              Tablica jest pusta
-            </p>
-            <p className="mt-1 text-[0.88rem] text-muted-foreground">
-              Brak zadań do wyświetlenia.
-            </p>
+          <div className="rounded-lg border border-dashed border-input-border px-6 py-10 text-center">
+            <p className="text-sm font-semibold text-foreground">Tablica jest pusta</p>
+            <p className="mt-1 text-xs text-muted-foreground">Brak zadań do wyświetlenia.</p>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {board.statusColumns.map((col) => {
-              const tasks = tasksByStatus.get(col.id) ?? [];
-              return (
-                <ReadOnlyColumn
-                  key={col.id}
-                  name={col.name}
-                  color={col.colorHex}
-                  tasks={tasks}
-                />
-              );
-            })}
-            {/* No-status bucket */}
-            {(tasksByStatus.get(null)?.length ?? 0) > 0 && (
-              <ReadOnlyColumn
-                name="Bez statusu"
-                color="#94A3B8"
-                tasks={tasksByStatus.get(null) ?? []}
-              />
-            )}
-          </div>
+          <DataTable
+            wrapperClassName="min-h-0 bg-card"
+            footer={
+              <DataFooter>
+                {board.tasks.length} {taskPl(board.tasks.length)}
+              </DataFooter>
+            }
+          >
+            <DataThead>
+              <tr>
+                <DataTh width={64}>#</DataTh>
+                <DataTh>Zadanie</DataTh>
+                <DataTh width={150}>Status</DataTh>
+                <DataTh width={130}>Priorytet</DataTh>
+                <DataTh width={110}>Osoby</DataTh>
+                <DataTh width={120}>Termin</DataTh>
+              </tr>
+            </DataThead>
+            <tbody>
+              {board.tasks.map((task) => {
+                const status = task.statusColumnId ? statusById.get(task.statusColumnId) : undefined;
+                const level = LEVEL[task.priority as TaskPriorityValue];
+                return (
+                  <DataTr key={task.id}>
+                    <DataTd className="font-mono text-2xs text-muted-foreground">
+                      {task.displayId}
+                    </DataTd>
+                    <DataTd className="font-medium text-foreground">{task.title}</DataTd>
+                    <DataTd>
+                      {status ? (
+                        <Chip hue={hueForColor(status.colorHex)} dot>
+                          {status.name}
+                        </Chip>
+                      ) : (
+                        <span className="text-n-400">—</span>
+                      )}
+                    </DataTd>
+                    <DataTd>
+                      {level === null ? (
+                        <span className="text-n-400">—</span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <PriorityIcon level={level} size={14} />
+                          {PRIORITY_LABEL[level]}
+                        </span>
+                      )}
+                    </DataTd>
+                    <DataTd>
+                      {task.assignees.length === 0 ? (
+                        <span className="text-n-400">—</span>
+                      ) : (
+                        <AvatarStack
+                          size={22}
+                          people={task.assignees.map((a) => ({
+                            name: a.user.name ?? a.user.email,
+                            src: a.user.avatarUrl,
+                          }))}
+                        />
+                      )}
+                    </DataTd>
+                    <DataTd className="font-mono text-2xs text-muted-foreground">
+                      {task.stopAt
+                        ? task.stopAt.toLocaleDateString("pl-PL", { day: "2-digit", month: "short" })
+                        : "—"}
+                    </DataTd>
+                  </DataTr>
+                );
+              })}
+            </tbody>
+          </DataTable>
         )}
       </main>
 
-      {/* Desktop: inline footer. Mobile: sticky bottom watermark per Mobile v4 (B10). */}
-      <footer className="mx-auto mt-8 hidden max-w-7xl px-6 py-6 text-center md:block">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Powered by <span className="font-semibold">FLOVLY</span>
-          <ExternalLink size={10} />
-        </Link>
+      <footer className="px-6 py-4 text-center text-2xs text-fg-3 max-md:px-4">
+        Udostępnione przez <span className="font-semibold">{APP_NAME}</span>
       </footer>
-
-      {/* Mobile sticky watermark — fixed bottom strip with brand mark. Read-only signal. */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/90 md:hidden">
-        <div
-          className="flex items-center justify-center gap-1.5 px-4"
-          style={{ minHeight: "48px", paddingBottom: "env(safe-area-inset-bottom)" }}
-        >
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Udostępnione przez{" "}
-            <span className="font-semibold">FLOVLY</span>
-            <ExternalLink size={10} />
-          </Link>
-        </div>
-      </div>
     </div>
   );
 }
 
-// ─────────── Read-only column ──────────────────────────────────────────────
-
-function ReadOnlyColumn({
-  name,
-  color,
-  tasks,
-}: {
-  name: string;
-  color: string;
-  tasks: {
-    id: string;
-    displayId: number;
-    title: string;
-    priority: TaskPriorityValue;
-    startAt: Date | null;
-    stopAt: Date | null;
-    assignees: {
-      user: { name: string | null; email: string; avatarUrl: string | null };
-    }[];
-  }[];
-}) {
+function StateMessage({ icon, title, body }: { icon: ReactNode; title: string; body: string }) {
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-border bg-card/40 p-3">
-      <div className="flex items-center gap-2">
-        <span
-          className="h-2.5 w-2.5 shrink-0 rounded-full"
-          style={{ background: color }}
-        />
-        <h3 className="flex-1 font-display text-[0.95rem] font-semibold text-foreground">
-          {name}
-        </h3>
-        <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-muted-foreground">
-          {tasks.length}
-        </span>
-      </div>
-      <ul className="flex flex-col gap-2">
-        {tasks.length === 0 ? (
-          <li className="rounded-md border border-dashed border-border/50 px-2 py-4 text-center text-[0.72rem] text-muted-foreground/70">
-            —
-          </li>
-        ) : (
-          tasks.map((task) => <ReadOnlyTaskCard key={task.id} task={task} />)
-        )}
-      </ul>
-    </div>
-  );
-}
-
-// ─────────── Read-only task card ───────────────────────────────────────────
-
-function ReadOnlyTaskCard({
-  task,
-}: {
-  task: {
-    displayId: number;
-    title: string;
-    priority: TaskPriorityValue;
-    startAt: Date | null;
-    stopAt: Date | null;
-    assignees: {
-      user: { name: string | null; email: string; avatarUrl: string | null };
-    }[];
-  };
-}) {
-  const priorityMeta =
-    task.priority !== "NONE" ? PRIORITY_META[task.priority] : null;
-
-  return (
-    <li className="flex flex-col gap-1.5 rounded-md border border-border bg-card p-2.5 shadow-sm">
-      <div className="flex items-center gap-1.5">
-        {priorityMeta && (
-          <span
-            className="h-1.5 w-1.5 shrink-0 rounded-full"
-            style={{ background: priorityMeta.dotColor }}
-            title={`Priorytet: ${priorityMeta.label}`}
-          />
-        )}
-        <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground">
-          #{task.displayId}
-        </span>
-        {priorityMeta && (
-          <span
-            className={`ml-auto inline-flex h-4 items-center rounded-full px-1.5 font-mono text-[0.54rem] uppercase tracking-[0.1em] ${priorityMeta.color} ${priorityMeta.bg}`}
-          >
-            {priorityMeta.shortCode}
-          </span>
-        )}
-      </div>
-      <p className="line-clamp-3 text-[0.86rem] font-medium leading-snug text-foreground">
-        {task.title}
-      </p>
-      <div className="flex items-center gap-2 pt-1">
-        {task.assignees.slice(0, 3).map((a, i) => (
-          <span
-            key={i}
-            className="grid h-5 w-5 shrink-0 place-items-center overflow-hidden rounded-full bg-primary text-[0.5rem] font-bold text-white"
-            title={a.user.name ?? a.user.email}
-          >
-            {a.user.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={a.user.avatarUrl}
-                alt=""
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              (a.user.name ?? a.user.email).slice(0, 2).toUpperCase()
-            )}
-          </span>
-        ))}
-        {task.stopAt && (
-          <span className="ml-auto inline-flex items-center gap-1 font-mono text-[0.62rem] text-muted-foreground">
-            <CalIcon size={9} />
-            {task.stopAt.toLocaleDateString("pl-PL", {
-              month: "short",
-              day: "numeric",
-            })}
-          </span>
-        )}
-      </div>
-    </li>
-  );
-}
-
-// ─────────── Error states ──────────────────────────────────────────────────
-
-function RevokedPage() {
-  return <StateMessage icon={<Lock size={32} />} title="Dostęp cofnięty" body="Ten link już nie działa. Skontaktuj się z osobą, która Ci go udostępniła." />;
-}
-
-function ExpiredPage() {
-  return <StateMessage icon={<CalIcon size={32} />} title="Link wygasł" body="Ten podgląd przestał być aktualny. Poproś o nowy link." />;
-}
-
-function StateMessage({
-  icon,
-  title,
-  body,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  body: string;
-}) {
-  return (
-    <div className="grid min-h-screen place-items-center bg-background px-6 text-center">
-      <div className="flex max-w-[480px] flex-col items-center gap-4">
-        <div className="grid h-16 w-16 place-items-center rounded-full bg-muted text-muted-foreground">
+    <div className="grid min-h-dvh place-items-center bg-canvas px-6 text-center">
+      <div className="surface flex w-[400px] max-w-full flex-col items-center gap-2 p-6">
+        <span className="grid size-9 place-items-center rounded-lg bg-n-100 text-muted-foreground">
           {icon}
-        </div>
-        <h1 className="font-display text-[1.6rem] font-bold leading-tight tracking-[-0.02em] text-foreground">
-          {title}
-        </h1>
-        <p className="text-[0.95rem] leading-[1.55] text-muted-foreground">
-          {body}
+        </span>
+        <h1 className="text-md font-semibold text-foreground">{title}</h1>
+        <p className="text-xs text-muted-foreground">{body}</p>
+        <p className="mt-2 text-2xs text-fg-3">
+          Udostępnione przez <span className="font-semibold">{APP_NAME}</span>
         </p>
-        <Link
-          href="/"
-          className="mt-2 inline-flex items-center gap-1.5 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Powered by <span className="font-semibold">FLOVLY</span>
-        </Link>
       </div>
     </div>
   );

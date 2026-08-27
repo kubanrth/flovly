@@ -1,31 +1,41 @@
+import type { ReactNode } from "react";
 import { db } from "@/lib/db";
 import { AcceptInviteForm } from "./accept-form";
-import { Wordmark } from "@/components/brand/mark";
+import { APP_NAME, Wordmark } from "@/components/brand/mark";
+import { Avatar } from "@/components/ui/avatar";
+import { Chip } from "@/components/ui/chip";
+import { IconBoards, IconGrid, IconWarning } from "@/components/ui/icons";
 
-// F12-K81 (v4 design): refactor do plain card centered na .
-// Layout 1:1 z `flovly v2/Flovly Auth & Workspaces.dc.html` (sekcja INVITE).
-// Zachowany cały Prisma flow + invalidState branching + acceptInviteAction.
+// F6 (redesign v5): karta 400px na `--canvas`, prymitywy z `components/ui/*`.
+// Prisma flow + branching stanów zaproszenia bez zmian; akceptacja nadal
+// przechodzi przez `acceptInviteAction` (weryfikacja tokenu na serwerze).
 
-// Inicjały z imienia/maila — używane w avatar zapraszającego.
-function getInitials(nameOrEmail: string): string {
-  const cleaned = nameOrEmail.trim();
-  const parts = cleaned.split(/\s+/);
-  if (parts.length >= 2) {
-    return (parts[0]![0]! + parts[1]![0]!).toUpperCase();
-  }
-  // single token (np. email lub jedno-słowowe name) → 2 pierwsze litery
-  return cleaned.slice(0, 2).toUpperCase();
+const ROLE_LABEL: Record<string, string> = {
+  ADMIN: "Administrator",
+  MEMBER: "Członek",
+  VIEWER: "Tylko podgląd",
+};
+
+function Shell({ children }: { children: ReactNode }) {
+  return (
+    <div data-ui="invite-page" className="flex min-h-dvh items-center justify-center bg-canvas p-4">
+      <main data-ui="invite-card" className="surface w-[400px] max-w-full p-6">
+        <div className="flex justify-center">
+          <Wordmark size="lg" />
+        </div>
+        {children}
+      </main>
+    </div>
+  );
 }
 
-// Mapowanie ENUM role z Prisma → human-readable PL label dla badge'a.
-function roleLabel(role: string): string {
-  const map: Record<string, string> = {
-    OWNER: "Owner",
-    ADMIN: "Admin",
-    MEMBER: "Member",
-    GUEST: "Gość",
-  };
-  return map[role] ?? role.toLowerCase();
+function Row({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-1.5">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="min-w-0 truncate text-xs font-medium text-foreground">{children}</span>
+    </div>
+  );
 }
 
 export default async function InvitePage({
@@ -40,6 +50,7 @@ export default async function InvitePage({
     where: { token },
     include: {
       workspace: { select: { name: true, deletedAt: true } },
+      board: { select: { name: true } },
       inviter: { select: { name: true, email: true } },
     },
   });
@@ -58,115 +69,81 @@ export default async function InvitePage({
           ? "expired"
           : null;
 
-  // ── Niepoprawny / wygasły / wykorzystany token — fallback plain card ──
+  // ── Niepoprawny / wygasły / wykorzystany token ──
   if (invalidState || !invitation) {
     const message = {
       "not-found": "Zaproszenie nie istnieje lub zostało cofnięte.",
-      "workspace-deleted":
-        "Przestrzeń, do której zostałaś/eś zaproszona/y, już nie istnieje.",
+      "workspace-deleted": "Przestrzeń, do której masz zaproszenie, już nie istnieje.",
       "already-used": "To zaproszenie zostało już wykorzystane.",
-      expired: "To zaproszenie wygasło. Poproś admina o nowe.",
+      expired: "To zaproszenie wygasło. Poproś administratora o nowe.",
     }[invalidState as "not-found" | "workspace-deleted" | "already-used" | "expired"];
 
     return (
-      <div className="relative isolate flex min-h-dvh items-stretch justify-center overflow-hidden px-0 py-0 md:items-center md:px-6 md:py-12">
-        <div className="surface relative flex w-full flex-col items-center justify-center px-6 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] text-center max-md:min-h-dvh max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:shadow-none max-md: md:max-w-[420px] md:rounded-2xl md:p-10">
-          <div className="mb-6 flex justify-center">
-            <Wordmark size="md" />
-          </div>
-          <span className="eyebrow text-destructive">Zaproszenie nieprawidłowe</span>
-          <h1 className="mt-3 font-display text-[1.6rem] font-bold leading-[1.15] tracking-[-0.02em] text-foreground">
-            Ups. Coś poszło nie tak.
-          </h1>
-          <p className="mt-3 text-[0.95rem] leading-[1.55] text-muted-foreground">
-            {message}
-          </p>
+      <Shell>
+        <div className="mt-5 flex flex-col items-center gap-2 text-center">
+          <span className="grid size-9 place-items-center rounded-lg bg-chip-red-bg text-danger-text">
+            <IconWarning width={18} height={18} />
+          </span>
+          <h1 className="text-md font-semibold text-foreground">Zaproszenie nieprawidłowe</h1>
+          <p className="text-xs text-muted-foreground">{message}</p>
         </div>
-      </div>
+      </Shell>
     );
   }
 
   const existingUser = await db.user.findUnique({
     where: { email: invitation.email },
-    select: { id: true, passwordHash: true },
+    select: { passwordHash: true },
   });
-
   const isExistingUser = Boolean(existingUser?.passwordHash);
 
   const inviterName = invitation.inviter.name ?? invitation.inviter.email;
-  const inviterInitials = getInitials(inviterName);
+  const isBoardScope = Boolean(invitation.boardId);
 
   return (
-    <div className="relative isolate flex min-h-dvh items-stretch justify-center overflow-hidden px-0 py-0 md:items-center md:px-6 md:py-12">
-      {/* Niebieski blob u góry-prawej — z referencji v4 (invite ma niebieską aurę) */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-32 -right-20 -z-10 h-[420px] w-[420px] rounded-full opacity-55 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(52, 190, 248, 0.35), transparent 65%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-32 left-1/2 -z-10 h-[420px] w-[420px] -translate-x-1/2 rounded-full opacity-50 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(circle, color-mix(in oklch, var(--accent-brand) 30%, transparent), transparent 65%)",
-        }}
-      />
-
-      {/* Mobile: full-bleed (no card chrome). Desktop: plain card 440px.
-          Role badge zostaje prominently na górze. CTA stack na dole. */}
-      <main className="surface relative flex w-full flex-col px-6 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] max-md:min-h-dvh max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:shadow-none max-md: md:max-w-[440px] md:rounded-2xl md:p-10">
-        {/* Top — brand mark + intro */}
-        <div className="mb-6 flex flex-col items-center text-center">
-          <Wordmark size="md" />
-          <p className="mt-4 text-[0.92rem] text-muted-foreground">
-            Zostałaś/eś zaproszona/y do
-          </p>
-          <h1 className="mt-1 font-display text-[1.8rem] font-bold leading-[1.1] tracking-[-0.02em] text-foreground">
-            <span className="">{invitation.workspace.name}</span>
-          </h1>
-        </div>
-
-        {/* Row z zapraszającą osobą + role badge — z referencji v4 */}
-        <div className="mb-7 flex items-center gap-3 rounded-2xl border border-border/60 bg-background/30 p-3.5">
-          <div
-            aria-hidden
-            className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-primary font-display text-[0.82rem] font-bold text-white"
-          >
-            {inviterInitials}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[0.92rem] font-semibold text-foreground">
-              {inviterName}
-            </div>
-            <div className="text-[0.76rem] text-muted-foreground">
-              zaprasza Cię jako
-            </div>
-          </div>
-          <span
-            className="rounded-full border border-[color-mix(in_oklch,var(--accent-brand)_30%,transparent)] bg-[color-mix(in_oklch,var(--accent-brand)_16%,transparent)] px-3 py-1 font-mono text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-primary"
-            // visual badge dla role — tylko display, prawdziwa wartość siedzi w invitation.role
-          >
-            {roleLabel(invitation.role)}
-          </span>
-        </div>
-
-        <p className="mb-5 text-[0.86rem] leading-[1.55] text-muted-foreground">
+    <Shell>
+      <div className="mt-5 text-center">
+        <h1 className="text-md font-semibold text-foreground">
+          Zaproszenie do „{invitation.workspace.name}”
+        </h1>
+        <p className="mt-0.5 text-xs text-muted-foreground">
           {isExistingUser
-            ? "Wygląda na to, że masz już konto w FLOVLY — wpisz hasło, żeby dołączyć."
+            ? `Masz już konto w ${APP_NAME} — wpisz hasło, żeby dołączyć.`
             : "Ustaw hasło, aby założyć konto i dołączyć."}
         </p>
+      </div>
 
-        <AcceptInviteForm
-          token={invitation.token}
-          email={invitation.email}
-          isExistingUser={isExistingUser}
-          workspaceId={invitation.workspaceId}
-        />
-      </main>
-    </div>
+      <div className="mt-4 flex items-center gap-2.5 rounded-md border border-border bg-canvas px-3 py-2.5">
+        <Avatar name={inviterName} size={28} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-xs font-medium text-foreground">{inviterName}</div>
+          <div className="text-2xs text-fg-3">zaprasza Cię do współpracy</div>
+        </div>
+      </div>
+
+      {/* Zakres zaproszenia — cała przestrzeń vs pojedyncza tablica. */}
+      <div data-ui="invite-scope" className="mt-3 rounded-md border border-border px-3 py-2">
+        <Row label="Zakres">
+          <Chip hue={isBoardScope ? "blue" : "orange"} size="lg">
+            {isBoardScope ? (
+              <IconBoards width={12} height={12} />
+            ) : (
+              <IconGrid width={12} height={12} />
+            )}
+            {isBoardScope ? "Tablica" : "Cała przestrzeń"}
+          </Chip>
+        </Row>
+        <Row label="Przestrzeń">{invitation.workspace.name}</Row>
+        {isBoardScope && <Row label="Tablica">{invitation.board?.name ?? "—"}</Row>}
+        <Row label="Rola">{ROLE_LABEL[invitation.role] ?? invitation.role}</Row>
+      </div>
+
+      <AcceptInviteForm
+        token={invitation.token}
+        email={invitation.email}
+        isExistingUser={isExistingUser}
+        workspaceId={invitation.workspaceId}
+      />
+    </Shell>
   );
 }
