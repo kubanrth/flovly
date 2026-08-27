@@ -185,3 +185,49 @@ Stan po F1 (B4: nagłówek tablicy / tabsy / toolbar / dialog nowego widoku, 202
 - **Pływający przycisk Ateron ma 58px**, poza listą 28/32/36/44. To celowe: check wyznacza
   podłogę dla stref trafienia, a FAB jest z założenia większy. Wszystkie pozostałe przyciski
   na sześciu ekranach D5 mieszczą się w dozwolonych wysokościach.
+
+## F5 — narzędzia
+
+### E2 Czas pracy
+- **„cel 40h" i chipy „plan:"** — nie ma pola z planem ani celem tygodniowym.
+- **`fakt.` jest tylko do odczytu** — `billable` da się ustawić wyłącznie przy tworzeniu wpisu;
+  nie ma `updateTimeEntryAction`, a faza nie dokłada server actions.
+- **Właściciel timera wnioskowany, nie zapisany** — `Task` ma `timerStartedAt`, ale nie ma
+  kolumny z osobą; kafel „Timer aktywny" czyta ostatni wpis `task.timerStarted` z `AuditLog`.
+- **Kolumny weekendu** pojawiają się tylko, gdy ktoś w nie zalogował czas — makieta rysuje
+  pon–pt, ale ukrywanie soboty gubiłoby zapisany czas.
+
+### E3 Notatnik
+- **Pasek formatowania** — makieta go nie ma, a `RichTextEditor` wystawia go tylko w wariancie
+  z ramką formularza. Formatowanie działa skrótami i regułami wejścia.
+- **„Udostępnij" kopiuje link, nie udostępnia** — `Note` nie ma modelu współdzielenia
+  (`BoardShareLink` dotyczy tylko tablic). Stopka mówi „notatka prywatna".
+- **Chip przy notatce to nazwa folderu** — notatki nie mają tagów, więc chipy `sprint`/`klient`
+  z makiety nie mają źródła danych. Z tego samego powodu nie ma stosu awatarów.
+- **„Foldery" to kolumna strony, nie sekcja paska bocznego** — tak samo jak filtry kalendarza
+  w D4 przed przeniesieniem; do zrobienia przez `sidebar-slot`, gdy będzie potrzeba.
+
+### E5 Subskrypcje
+- **Odnowienie, Płatnik, Karta, Nieużywane** — brak pól w schemacie.
+- **Status zawsze „Aktywna"** — jedyny stan, jaki `Subscription` ma, to `deletedAt`, a wiersze
+  skasowane nie są w ogóle pobierane.
+- **Notatka edytowana z menu wiersza**, nie drugim inputem — dwa inputy w wierszu 44px nie
+  zmieszczą się obok siebie z zachowaniem 24px strefy trafienia.
+
+### E6 Hasła
+- **„2FA wyłączone" i „Dziennik audytu"** — nie ma per-wpisowego 2FA ani widoku audytu sejfu.
+
+### E7 Plan sprzedaży
+- **„% szansy" i „Cel Q3"** — `Deal` nie ma pola prawdopodobieństwa, a przestrzeń nie ma celu
+  kwartalnego.
+
+### E8 Creative Board
+- **Głosowanie na pomysły** — brak modelu głosów.
+
+### E9 Support
+- **SLA** — nie ma pól czasu reakcji ani terminu rozwiązania.
+
+### E10 Wiki
+- **Drzewo stron** — backend trzyma jedną stronę per przestrzeń, więc panel pokazuje jeden
+  korzeń zamiast drzewa.
+- **Historia wersji** — brak wersjonowania (ta sama przyczyna co w B11 Opis).

@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
+import { Avatar } from "@/components/ui/avatar";
+import { IconChevronLeft, IconTrash } from "@/components/ui/icons";
+import { InitialsTile } from "@/components/contacts/initials-tile";
+import { contactKind, KIND_HUE, KIND_LABEL } from "@/components/contacts/contact-model";
+import { hueForColor } from "@/components/ui/status-hue";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
@@ -221,70 +227,41 @@ export default async function ContactDetailPage({
     .map((s) => s[0]?.toUpperCase() ?? "")
     .join("") || "?";
 
+  const kind = contactKind({ ...contact, dealCount: deals.length });
+
   return (
-    <main className="flex-1 px-4 py-6 md:px-14 md:py-14">
-      {/* Wyrównanie szerokości do listy kontaktów (max-w-6xl). Wcześniej
-          karta kontaktu była zacieśniona do max-w-3xl (768px) — przez to
-          dłuższe ContactsTable / pipeline'y / thread konwersacji wyglądały
-          klaustrofobicznie obok reszty modułów. */}
-      <div className="mx-auto flex max-w-6xl flex-col gap-6 md:gap-8">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-5 px-8 py-5 max-md:px-4">
         <div className="flex flex-col gap-3">
           <Link
             href={`/w/${workspaceId}/contacts`}
-            className="eyebrow inline-flex w-fit items-center gap-1.5 transition-colors hover:text-foreground"
+            className="inline-flex w-fit items-center gap-1 rounded-[2px] text-xs text-muted-foreground no-underline outline-none hover:text-orange-800 active:text-orange-900"
           >
-            <ArrowLeft size={11} /> Wszystkie kontakty
+            <IconChevronLeft width={12} height={12} /> Wszystkie kontakty
           </Link>
 
-          {/* Mobile-only avatar header (B6 spec): 80×80 brand-gradient block
-              + name + subtitle wyśrodkowane. Desktop: zostaje row layout
-              poniżej (hidden md:flex / flex md:hidden). */}
-          <div className="flex flex-col items-center gap-2 pt-2 text-center md:hidden">
-            <span
-              className="grid h-20 w-20 place-items-center overflow-hidden rounded-2xl bg-primary font-display text-[1.5rem] font-bold text-white"
-              aria-hidden
-            >
-              {mobileInitials}
-            </span>
-            <span className="eyebrow">Kontrahent</span>
-            <h1 className="font-display text-[1.4rem] font-bold leading-[1.15] tracking-[-0.02em]">
-              {headline || "—"}
-            </h1>
-            {contact.companyName &&
-              (contact.firstName || contact.lastName) && (
-                <p className="text-[0.88rem] text-muted-foreground">
-                  {[contact.firstName, contact.lastName].filter(Boolean).join(" ")}
-                  {contact.position ? ` · ${contact.position}` : ""}
-                </p>
-              )}
-          </div>
-
-          <div className="hidden flex-wrap items-start justify-between gap-3 md:flex">
-            <div className="flex min-w-0 flex-col gap-1">
-              <span className="eyebrow">Kontrahent</span>
-              <h1 className="truncate font-display text-[1.5rem] font-bold leading-[1.1] tracking-[-0.03em] md:text-[2rem]">
-                {headline || "—"}
-              </h1>
-              {contact.companyName &&
-                (contact.firstName || contact.lastName) && (
-                  <p className="text-[0.92rem] text-muted-foreground">
-                    {[contact.firstName, contact.lastName].filter(Boolean).join(" ")}
+          <div className="flex flex-wrap items-center gap-3">
+            <InitialsTile label={headline || mobileInitials} kind={kind} size={44} />
+            <div className="flex min-w-0 flex-col">
+              <h1 className="truncate text-xl font-semibold tracking-[-0.3px]">{headline || "—"}</h1>
+              <span className="flex items-center gap-2">
+                <Chip hue={KIND_HUE[kind]} size="sm">{KIND_LABEL[kind]}</Chip>
+                {contact.companyName && (contact.firstName || contact.lastName) && (
+                  <span className="truncate text-xs text-muted-foreground">
+                    {contact.companyName}
                     {contact.position ? ` · ${contact.position}` : ""}
-                  </p>
+                  </span>
                 )}
+              </span>
             </div>
+            <span className="flex-1" />
             {canDelete && (
               <form action={deleteContactAction} className="m-0">
                 <input type="hidden" name="workspaceId" value={workspaceId} />
                 <input type="hidden" name="contactId" value={contact.id} />
-                <button
-                  type="submit"
-                  aria-label="Usuń kontakt"
-                  title="Usuń kontakt"
-                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-card px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
-                >
-                  <Trash2 size={12} /> Usuń
-                </button>
+                <Button type="submit" variant="secondary" aria-label="Usuń kontakt">
+                  <IconTrash /> Usuń
+                </Button>
               </form>
             )}
           </div>
@@ -299,9 +276,9 @@ export default async function ContactDetailPage({
             section nie wjeżdżał pod sticky AppShell header + mobile tabs.
             Każda sekcja ma ID matching TABS w ContactMobileTabs. */}
         <div id="contact-deals" className="flex scroll-mt-32 flex-col gap-3">
-          <div className="flex items-baseline gap-3">
-            <span className="eyebrow">Plan sprzedaży tego kontaktu</span>
-            <span className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
+          <div className="flex items-baseline gap-2">
+            <h2 className="text-sm font-semibold">Plan sprzedaży tego kontaktu</h2>
+            <span className="font-mono text-2xs text-muted-foreground">
               {deals.length} {deals.length === 1 ? "deal" : "deal’i"}
             </span>
           </div>
@@ -379,7 +356,7 @@ export default async function ContactDetailPage({
           )}
         </div>
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -424,12 +401,10 @@ function ReadOnlyView({
 
 function Row({ label, value }: { label: string; value: string | null }) {
   return (
-    <div className="flex flex-col gap-1 rounded-md border border-border bg-card px-3 py-2.5">
-      <span className="eyebrow">{label}</span>
-      <span className="font-mono text-[0.86rem]">
-        {value && value.length > 0 ? value : (
-          <span className="text-muted-foreground/60">—</span>
-        )}
+    <div className="flex flex-col gap-0.5 rounded-md border border-border bg-card px-3 py-2">
+      <span className="text-2xs text-fg-3">{label}</span>
+      <span className="font-mono text-sm">
+        {value && value.length > 0 ? value : <span className="text-fg-3">—</span>}
       </span>
     </div>
   );
@@ -464,19 +439,19 @@ function ContactTasksTile({
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="eyebrow">Zadania powiązane</span>
-        <span className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-muted-foreground">
+        <h2 className="text-sm font-semibold">Zadania powiązane</h2>
+        <span className="font-mono text-2xs text-muted-foreground">
           {tasks.length} {tasks.length === 1 ? "zadanie" : "zadań"}
         </span>
       </div>
       <ContactTaskLinker contactId={contactId} candidates={linkableTasks} />
       {tasks.length === 0 ? (
-        <p className="rounded-md border border-dashed border-border bg-card px-4 py-6 text-center text-[0.86rem] text-muted-foreground">
+        <p className="rounded-lg border border-dashed border-input-border bg-card px-4 py-6 text-center text-xs text-muted-foreground">
           Brak zadań powiązanych z tym kontaktem. W karcie zadania wybierz tego
           klienta w polu „Kontakt”, żeby pojawiło się tutaj.
         </p>
       ) : (
-        <ul className="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
+        <ul className="flex flex-col overflow-hidden rounded-lg border border-border bg-card">
           {tasks.map((t) => {
             const a = t.assignees[0]?.user ?? null;
             return (
@@ -489,27 +464,15 @@ function ContactTasksTile({
                   className="flex items-center gap-3 px-3 py-2.5"
                 >
                   {a ? (
-                    <span
-                      title={a.name ?? a.email}
-                      className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.58rem] font-bold text-white"
-                    >
-                      {a.avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={a.avatarUrl} alt="" width={28} height={28} className="h-full w-full object-cover" />
-                      ) : (
-                        (a.name ?? a.email).slice(0, 2).toUpperCase()
-                      )}
-                    </span>
+                    <Avatar name={a.name ?? a.email} src={a.avatarUrl} size={24} />
                   ) : (
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-muted font-mono text-[0.55rem] uppercase text-muted-foreground/60">
+                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-n-100 font-mono text-2xs text-fg-3">
                       —
                     </span>
                   )}
                   <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate font-display text-[0.9rem] font-semibold tracking-[-0.01em]">
-                      {t.title}
-                    </span>
-                    <span className="flex items-center gap-1.5 truncate font-mono text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground">
+                    <span className="truncate text-sm font-medium">{t.title}</span>
+                    <span className="flex items-center gap-1.5 truncate font-mono text-2xs text-muted-foreground">
                       #{t.displayId} · {t.board.name}
                       {t.stopAt && (
                         <>
@@ -522,15 +485,9 @@ function ContactTasksTile({
                     </span>
                   </div>
                   {t.statusColumn && (
-                    <span
-                      className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 font-mono text-[0.6rem] font-semibold uppercase tracking-[0.12em]"
-                      style={{
-                        color: t.statusColumn.colorHex,
-                        background: `${t.statusColumn.colorHex}22`,
-                      }}
-                    >
+                    <Chip hue={hueForColor(t.statusColumn.colorHex)} dot size="sm" className="shrink-0">
                       {t.statusColumn.name}
-                    </span>
+                    </Chip>
                   )}
                 </Link>
               </li>

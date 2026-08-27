@@ -12,6 +12,7 @@ import {
   KIND_HUE,
   type ContactRow,
 } from "./contact-model";
+import { parseContactsCsv } from "./csv";
 
 const row = (over: Partial<ContactRow>): ContactRow => ({
   id: "c", companyName: null, firstName: null, lastName: null, position: null, email: null,
@@ -70,5 +71,23 @@ assert.equal(contactsCountLabel(38), "38 firm i osób");
 assert.equal(docText({ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "demo  sklepu" }] }] }), "demo sklepu");
 assert.equal(docText({ content: [{ text: "abcdef" }] }, 4), "abc…");
 assert.equal(docText(null), "");
+
+// CSV: header aliases, semicolon separator, quoted commas, rows without identity.
+const csv = parseContactsCsv(
+  'Firma;Imię;Nazwisko;E-mail;Telefon;NIP;Nieznana\n' +
+  'Legia Warszawa S.A.;;;esklep@legia.pl;+48 22 318 20 00;521-30-15-379;x\n' +
+  ';Anna;Sowińska;a.sowinska@ksiegowa.pl;;;\n' +
+  ';;;;+48 500 000 000;;\n',
+);
+assert.equal(csv.skipped, 1);
+assert.deepEqual(csv.rows, [
+  { companyName: "Legia Warszawa S.A.", email: "esklep@legia.pl", phone: "+48 22 318 20 00", nip: "521-30-15-379" },
+  { firstName: "Anna", lastName: "Sowińska", email: "a.sowinska@ksiegowa.pl" },
+]);
+assert.deepEqual(
+  parseContactsCsv('company,city\n"Kowalski, s.c.",Łódź\n').rows,
+  [{ companyName: "Kowalski, s.c.", city: "Łódź" }],
+);
+assert.deepEqual(parseContactsCsv("Firma\n").rows, []);
 
 console.log("contact helpers ok");

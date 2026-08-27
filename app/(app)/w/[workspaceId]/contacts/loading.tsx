@@ -1,54 +1,32 @@
-import { AppShell } from "@/components/layout/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Contacts skeleton — hero + filters + table (header row + 8 body rows).
+// Same frame as E1: header, filter bar, 32px table head, 44px rows, footer.
 export default function ContactsLoading() {
   return (
-    <AppShell>
-      <div className="flex flex-col gap-8">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-9 w-64 md:h-12" />
-            <Skeleton className="h-4 w-44" />
-          </div>
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-9 w-32 rounded-lg" />
-            <Skeleton className="h-9 w-9 rounded-lg" />
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-2">
-          <Skeleton className="h-9 w-72 rounded-lg" />
-          <Skeleton className="h-9 w-28 rounded-lg" />
-        </div>
-
-        {/* Table */}
-        <div className="overflow-hidden rounded-2xl border border-border bg-card">
-          <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.8fr)_80px] gap-3 border-b border-border px-4 py-3">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-3 w-12" />
-          </div>
-          <div className="divide-y divide-border">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.8fr)_80px] items-center gap-3 px-4 py-3.5"
-              >
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-4 w-2/3" />
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-4 w-12" />
-              </div>
-            ))}
-          </div>
-        </div>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex shrink-0 items-center gap-2.5 px-8 pt-4 max-md:px-4">
+        <Skeleton className="h-[30px] w-28" />
+        <Skeleton className="h-3 w-24" />
+        <span className="flex-1" />
+        <Skeleton className="h-8 w-28 rounded-md" />
+        <Skeleton className="h-8 w-32 rounded-md" />
       </div>
-    </AppShell>
+      <div className="flex shrink-0 items-center gap-2 border-b border-border px-8 pt-3 pb-2.5 max-md:px-4">
+        <Skeleton className="h-7 w-[220px] rounded-sm" />
+        <Skeleton className="h-7 w-16 rounded-md" />
+        <Skeleton className="h-7 w-24 rounded-md" />
+      </div>
+      <div className="min-h-0 flex-1">
+        <div className="h-8 border-b border-border bg-table-header" />
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="flex h-11 items-center gap-2.5 border-b border-table-grid px-2.5">
+            <Skeleton className="size-7 rounded-md" />
+            <Skeleton className="h-3.5 w-48" />
+            <Skeleton className="ml-auto h-3.5 w-40" />
+          </div>
+        ))}
+      </div>
+      <div className="h-8 shrink-0 border-t border-border bg-canvas" />
+    </div>
   );
 }

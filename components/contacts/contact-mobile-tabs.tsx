@@ -78,7 +78,7 @@ export function ContactMobileTabs() {
       aria-label="Sekcje kontaktu"
       // Sticky pod mobile AppShell header'em (≈56px). Top wartość iteracyjna —
       // 14 = 56px (h-14). Wyłącz na md+.
-      className="sticky top-14 z-20 -mx-4 border-b border-border bg-background/90 md:hidden"
+      className="sticky top-0 z-(--z-sticky) -mx-4 border-b border-border bg-background md:hidden"
     >
       <div className="flex gap-1.5 overflow-x-auto px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {TABS.map((t) => {
@@ -89,7 +89,7 @@ export function ContactMobileTabs() {
               href={`#${t.id}`}
               onClick={(e) => onClick(e, t.id)}
               aria-current={active ? "true" : undefined}
-              className="shrink-0 whitespace-nowrap rounded-full border border-border bg-card px-3.5 py-2 font-mono text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground transition-colors data-[on=true]:border-primary data-[on=true]:bg-primary/10 data-[on=true]:text-foreground"
+              className="shrink-0 rounded-md border border-border bg-card px-3 py-2 text-xs font-medium whitespace-nowrap text-muted-foreground no-underline outline-none data-[on=true]:border-orange-300 data-[on=true]:bg-selected data-[on=true]:text-foreground"
               data-on={active ? "true" : "false"}
             >
               {t.label}

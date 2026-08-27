@@ -1,3 +1,5 @@
+"use client";
+
 import { CHIP_HUE } from "@/components/ui/chip";
 import { hueFor } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";

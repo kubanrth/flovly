@@ -1,6 +1,10 @@
 "use client";
 
 import { useActionState, startTransition, useId, useMemo, useState } from "react";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   SearchableDropdown,
   type SearchableDropdownOption,
@@ -71,33 +75,20 @@ export function ContactForm({
   const [ownerId, setOwnerId] = useState(initial?.ownerId ?? "");
   const ownerOptions = useMemo<SearchableDropdownOption[]>(
     () =>
-      members.map((m) => {
-        const display = m.name ?? m.email.split("@")[0];
-        const initials = (m.name ?? m.email).slice(0, 2).toUpperCase();
-        return {
-          id: m.id,
-          label: display,
-          sublabel: m.email,
-          searchText: `${m.name ?? ""} ${m.email}`,
-          leading: (
-            <span className="grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.55rem] font-bold text-white">
-              {m.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={m.avatarUrl} alt="" width={24} height={24} className="h-full w-full object-cover" />
-              ) : (
-                initials
-              )}
-            </span>
-          ),
-        };
-      }),
+      members.map((m) => ({
+        id: m.id,
+        label: m.name ?? m.email,
+        sublabel: m.email,
+        searchText: `${m.name ?? ""} ${m.email}`,
+        leading: <Avatar name={m.name ?? m.email} src={m.avatarUrl} size={24} />,
+      })),
     [members],
   );
 
   return (
     <form
       action={(fd) => startTransition(() => formAction(fd))}
-      className="flex flex-col gap-10"
+      className="flex flex-col gap-6"
     >
       <Section title="Osoba" eyebrow="Kontaktowa">
         <Field label="Imię" name="firstName" defaultValue={initial?.firstName ?? ""} error={fieldErrors?.firstName} />
@@ -123,10 +114,10 @@ export function ContactForm({
       </Section>
 
       <Section title="Opiekun" eyebrow="Wewnętrzny">
-        <div className="flex flex-col gap-2">
-          {/* SearchableDropdown owns its own button + aria-label; eyebrow is
-              decorative copy only, so a plain span (no htmlFor target) is fine. */}
-          <span className="eyebrow">Przypisany do</span>
+        <div className="flex flex-col gap-1.5">
+          {/* SearchableDropdown owns its own button + aria-label; the copy is
+              decorative only, so a plain span (no htmlFor target) is fine. */}
+          <span className="text-xs font-medium text-n-700">Przypisany do</span>
           <SearchableDropdown
             name="ownerId"
             value={ownerId}
@@ -144,24 +135,20 @@ export function ContactForm({
       <input type="hidden" name="notesJson" value="" />
 
       {formError && (
-        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-[0.88rem] text-destructive">
+        <p className="rounded-sm border border-danger bg-chip-red-bg px-2.5 py-2 text-xs text-danger-text">
           {formError}
-        </div>
+        </p>
       )}
       {flash && (
-        <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[0.88rem] text-emerald-700">
+        <p className="rounded-sm border border-success bg-chip-green-bg px-2.5 py-2 text-xs text-success-text">
           {flash}
-        </div>
+        </p>
       )}
 
-      <div className="flex items-center justify-end gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex h-10 items-center rounded-lg bg-primary px-5 font-sans text-[0.9rem] font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-        >
+      <div className="flex items-center justify-end">
+        <Button type="submit" loading={pending} size="lg">
           {pending ? "Zapisuję…" : isEdit ? "Zapisz" : "Utwórz kontakt"}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -177,15 +164,13 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-1">
+    <section className="rounded-lg border border-border bg-card p-4">
+      <div className="mb-3">
         <span className="eyebrow">{eyebrow}</span>
-        <h2 className="font-display text-[1.2rem] font-bold leading-[1.15] tracking-[-0.02em]">
-          {title}
-        </h2>
+        <h2 className="text-md font-semibold">{title}</h2>
       </div>
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">{children}</div>
-    </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">{children}</div>
+    </section>
   );
 }
 
@@ -206,20 +191,17 @@ function Field({
 }) {
   const inputId = useId();
   return (
-    <div className="flex flex-col gap-2">
-      <label htmlFor={inputId} className="eyebrow">{label}</label>
-      <input
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor={inputId}>{label}</Label>
+      <Input
         id={inputId}
         name={name}
         type={type}
         defaultValue={defaultValue}
         placeholder={placeholder}
-        aria-invalid={!!error}
-        className="h-10 rounded-md border border-border bg-background px-3 text-[0.9rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 aria-[invalid=true]:border-destructive"
+        error={error}
+        className="max-md:h-11"
       />
-      {error && (
-        <span className="font-mono text-[0.66rem] text-destructive">{error}</span>
-      )}
     </div>
   );
 }

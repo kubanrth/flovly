@@ -1,159 +1,147 @@
-import Link from "next/link";
-import { Plus, Search } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
-import {
-  ContactsTable,
-  type ContactsTableRow,
-} from "@/components/contacts/contacts-table";
-import { ContactsMobileList } from "@/components/contacts/contacts-mobile-list";
+import { ContactsView } from "@/components/contacts/contacts-view";
+import type { ContactBoardRef, ContactHistoryEntry } from "@/components/contacts/contact-card-panel";
+import { docText, formatLastContact, type ContactRow } from "@/components/contacts/contact-model";
+
+const ROW_LIMIT = 500;
+// History/board lookups are fetched workspace-wide in one query each and then
+// bucketed per contact — cheaper than N queries, and the card panel only ever
+// shows the newest few entries.
+const HISTORY_LIMIT = 600;
+
+const ACTIVITY_TEXT: Record<string, string> = {
+  created: "Kontakt utworzony",
+  field_change: "Zmiana danych kontaktu",
+  owner_change: "Zmiana opiekuna",
+};
 
 export default async function ContactsListPage({
   params,
   searchParams,
 }: {
   params: Promise<{ workspaceId: string }>;
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ kosz?: string }>;
 }) {
   const { workspaceId } = await params;
-  const { q } = await searchParams;
+  const { kosz } = await searchParams;
   const ctx = await requireWorkspaceMembership(workspaceId);
   const canCreate = can(ctx.role, "contact.create");
+  const canEdit = can(ctx.role, "contact.update");
   const canDelete = can(ctx.role, "contact.delete");
+  const trash = kosz === "1" && canDelete;
 
-  const query = (q ?? "").trim();
-  const where = query
-    ? {
-        workspaceId,
-        deletedAt: null,
-        OR: [
-          { companyName: { contains: query, mode: "insensitive" as const } },
-          { firstName: { contains: query, mode: "insensitive" as const } },
-          { lastName: { contains: query, mode: "insensitive" as const } },
-          { email: { contains: query, mode: "insensitive" as const } },
-          { nip: { contains: query, mode: "insensitive" as const } },
-        ],
-      }
-    : { workspaceId, deletedAt: null };
+  const [contacts, trashCount, memberships, activities, messages, taskBoards] = await Promise.all([
+    db.contact.findMany({
+      where: { workspaceId, deletedAt: trash ? { not: null } : null },
+      orderBy: [{ updatedAt: "desc" }],
+      take: ROW_LIMIT,
+      select: {
+        id: true, companyName: true, firstName: true, lastName: true, position: true,
+        email: true, phone: true, nip: true, city: true, updatedAt: true,
+        owner: { select: { id: true, name: true, email: true, avatarUrl: true } },
+        _count: { select: { deals: true } },
+      },
+    }),
+    canDelete ? db.contact.count({ where: { workspaceId, deletedAt: { not: null } } }) : Promise.resolve(0),
+    db.workspaceMembership.findMany({
+      where: { workspaceId },
+      orderBy: { joinedAt: "asc" },
+      select: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+    }),
+    db.contactActivity.findMany({
+      where: { workspaceId },
+      orderBy: { createdAt: "desc" },
+      take: HISTORY_LIMIT,
+      select: {
+        id: true, contactId: true, type: true, bodyJson: true, createdAt: true,
+        actor: { select: { name: true, email: true } },
+      },
+    }),
+    db.contactMessage.findMany({
+      where: { workspaceId },
+      orderBy: { sentAt: "desc" },
+      take: HISTORY_LIMIT,
+      select: { id: true, contactId: true, subject: true, bodyText: true, sentAt: true },
+    }),
+    db.task.findMany({
+      where: { workspaceId, deletedAt: null, contactId: { not: null }, board: { deletedAt: null } },
+      select: { contactId: true, board: { select: { id: true, name: true } } },
+      take: 2000,
+    }),
+  ]);
 
-  const contacts = await db.contact.findMany({
-    where,
-    orderBy: [{ updatedAt: "desc" }],
-    take: 500,
-    select: {
-      id: true,
-      companyName: true,
-      firstName: true,
-      lastName: true,
-      position: true,
-      email: true,
-      phone: true,
-      nip: true,
-      regon: true,
-      vatNumber: true,
-      website: true,
-      street: true,
-      city: true,
-      postalCode: true,
-      country: true,
-      updatedAt: true,
-      owner: { select: { id: true, name: true, email: true, avatarUrl: true } },
-    },
-  });
+  // Notes, field changes and e-mails merged into one newest-first stream per
+  // contact; the panel shows the top few, the table the very first one.
+  const stream = [
+    ...activities.map((a) => ({
+      contactId: a.contactId,
+      ts: a.createdAt,
+      entry: {
+        id: a.id,
+        kind: a.type === "note" ? ("note" as const) : ("event" as const),
+        actorName: a.actor?.name ?? a.actor?.email ?? null,
+        text: (a.type === "note" ? docText(a.bodyJson) : "") || ACTIVITY_TEXT[a.type] || a.type,
+      },
+    })),
+    ...messages.map((m) => ({
+      contactId: m.contactId,
+      ts: m.sentAt,
+      entry: {
+        id: m.id,
+        kind: "mail" as const,
+        actorName: null,
+        text: m.subject || m.bodyText.slice(0, 120),
+      },
+    })),
+  ].sort((a, b) => b.ts.getTime() - a.ts.getTime());
 
-  const rows: ContactsTableRow[] = contacts.map((c) => ({
-    id: c.id,
-    companyName: c.companyName,
-    firstName: c.firstName,
-    lastName: c.lastName,
-    position: c.position,
-    email: c.email,
-    phone: c.phone,
-    nip: c.nip,
-    regon: c.regon,
-    vatNumber: c.vatNumber,
-    website: c.website,
-    street: c.street,
-    city: c.city,
-    postalCode: c.postalCode,
-    country: c.country,
-    updatedAt: c.updatedAt.toISOString(),
-    owner: c.owner
-      ? {
-          id: c.owner.id,
-          name: c.owner.name,
-          email: c.owner.email,
-          avatarUrl: c.owner.avatarUrl,
-        }
-      : null,
-  }));
+  const historyByContact: Record<string, ContactHistoryEntry[]> = {};
+  const newestAt: Record<string, Date> = {};
+  for (const s of stream) {
+    newestAt[s.contactId] ??= s.ts;
+    const list = (historyByContact[s.contactId] ??= []);
+    if (list.length < 6) list.push({ ...s.entry, at: formatLastContact(s.ts.toISOString()) });
+  }
 
-  // py-16 zamiast py-14 żeby wyrównać do AppShell ("inne moduły systemu").
+  const boardsByContact: Record<string, ContactBoardRef[]> = {};
+  for (const t of taskBoards) {
+    if (!t.contactId) continue;
+    const list = (boardsByContact[t.contactId] ??= []);
+    if (!list.some((b) => b.id === t.board.id)) list.push(t.board);
+  }
+
+  const rows: ContactRow[] = contacts
+    .map((c) => ({
+      id: c.id,
+      companyName: c.companyName,
+      firstName: c.firstName,
+      lastName: c.lastName,
+      position: c.position,
+      email: c.email,
+      phone: c.phone,
+      nip: c.nip,
+      city: c.city,
+      dealCount: c._count.deals,
+      owner: c.owner,
+      lastContactAt: (newestAt[c.id] ?? c.updatedAt).toISOString(),
+      lastContactNote: historyByContact[c.id]?.[0]?.text ?? null,
+    }))
+    .sort((a, b) => b.lastContactAt.localeCompare(a.lastContactAt));
+
   return (
-    <main className="flex-1 px-4 py-6 md:px-14 md:py-16">
-      <div className="mx-auto flex max-w-6xl flex-col gap-5 md:gap-6">
-        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end md:justify-between md:gap-4">
-          <div className="flex flex-col gap-2">
-            <span className="eyebrow">Kontakty B2B</span>
-            {/* text-[2.2rem] wyrównuje header do reszty modułów. */}
-            <h1 className="font-display text-[2.2rem] font-bold leading-[1.1] tracking-[-0.03em]">
-              {contacts.length} {pluralPl(contacts.length, "kontakt", "kontakty", "kontaktów")}
-            </h1>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <form action={`/w/${workspaceId}/contacts`} className="flex items-center gap-2">
-              <div className="relative">
-                <Search
-                  size={13}
-                  className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-                />
-                <input
-                  name="q"
-                  type="search"
-                  defaultValue={query}
-                  placeholder="szukaj po firmie / email / NIP…"
-                  className="h-9 w-full rounded-md border border-border bg-card pl-7 pr-3 text-[0.88rem] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/40 md:w-[260px]"
-                />
-              </div>
-              <button
-                type="submit"
-                className="inline-flex h-9 shrink-0 items-center rounded-md border border-border bg-card px-3 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Szukaj
-              </button>
-            </form>
-            {canCreate && (
-              <Link
-                href={`/w/${workspaceId}/contacts/new`}
-                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 font-sans text-[0.85rem] font-semibold text-white transition-opacity hover:opacity-90"
-              >
-                <Plus size={13} /> Nowy kontakt
-              </Link>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile: single-col 64px tile list (spec B6). Desktop: full table.
-            Renderujemy obydwa, widoczność toguje Tailwind (md:hidden / hidden md:block)
-            żeby uniknąć client-side viewport detection (CLS, hydration). */}
-        <ContactsMobileList workspaceId={workspaceId} rows={rows} />
-        <div className="hidden md:block">
-          <ContactsTable
-            workspaceId={workspaceId}
-            rows={rows}
-            canDelete={canDelete}
-          />
-        </div>
-      </div>
-    </main>
+    <ContactsView
+      workspaceId={workspaceId}
+      rows={rows}
+      members={memberships.map((m) => m.user)}
+      boardsByContact={boardsByContact}
+      historyByContact={historyByContact}
+      canCreate={canCreate}
+      canEdit={canEdit}
+      canDelete={canDelete}
+      trash={trash}
+      trashCount={trashCount}
+    />
   );
-}
-
-function pluralPl(n: number, one: string, few: string, many: string): string {
-  if (n === 1) return one;
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
-  return many;
 }

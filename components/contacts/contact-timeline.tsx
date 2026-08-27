@@ -1,13 +1,9 @@
 "use client";
 
 import { useActionState, useState, startTransition } from "react";
-import {
-  ArrowRight,
-  Circle,
-  Pencil,
-  StickyNote,
-  User as UserIcon,
-} from "lucide-react";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { IconArrowRight, IconInfo, IconNotes, IconPen, IconUser } from "@/components/ui/icons";
 import {
   createContactNoteAction,
   type ContactNoteState,
@@ -67,15 +63,13 @@ export function ContactTimeline({
     <section className="flex flex-col gap-5">
       <div className="flex flex-col gap-1">
         <span className="eyebrow">Aktywność</span>
-        <h2 className="font-display text-[1.2rem] font-bold leading-[1.15] tracking-[-0.02em]">
-          Historia kontaktu
-        </h2>
+        <h2 className="text-md font-semibold">Historia kontaktu</h2>
       </div>
 
       {canEdit && <NoteComposer workspaceId={workspaceId} contactId={contactId} />}
 
       {activities.length === 0 ? (
-        <p className="rounded-md border border-dashed border-border bg-card px-4 py-8 text-center text-[0.86rem] text-muted-foreground">
+        <p className="rounded-lg border border-dashed border-input-border bg-card px-4 py-8 text-center text-xs text-muted-foreground">
           Brak aktywności. Dodaj notatkę żeby zapisać co się działo.
         </p>
       ) : (
@@ -119,18 +113,12 @@ function NoteComposer({
         placeholder="Co się działo — telefon, mail, spotkanie, ustalenia…"
       />
       {state && !state.ok && (
-        <p className="font-mono text-[0.66rem] uppercase tracking-[0.14em] text-destructive">
-          {state.error}
-        </p>
+        <p className="text-xs text-danger-text">{state.error}</p>
       )}
       <div className="flex items-center justify-end">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex h-8 items-center rounded-md bg-primary px-3 font-mono text-[0.66rem] uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <Button type="submit" size="sm" loading={pending}>
           {pending ? "Dodaję…" : "Dodaj notatkę"}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -151,26 +139,16 @@ function ActivityRow({
     <li className="flex gap-3">
       <div className="flex shrink-0 flex-col items-center pt-1">
         {actor ? (
-          <span
-            title={actorLabel}
-            className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-primary font-display text-[0.62rem] font-bold text-white"
-          >
-            {actor.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={actor.avatarUrl} alt="" width={28} height={28} className="h-full w-full object-cover" />
-            ) : (
-              actorLabel.slice(0, 2).toUpperCase()
-            )}
-          </span>
+          <Avatar name={actorLabel} src={actor.avatarUrl} size={28} />
         ) : (
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-muted text-muted-foreground">
-            <UserIcon size={12} />
+          <span className="grid size-7 place-items-center rounded-full bg-n-100 text-muted-foreground">
+            <IconUser width={12} height={12} />
           </span>
         )}
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-1 rounded-md border border-border bg-card px-3 py-2">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-2xs text-muted-foreground">
           <span className="text-foreground">{actorLabel}</span>
           <span>·</span>
           <span>{date}</span>
@@ -202,8 +180,8 @@ function ActivityBody({
       );
     case "created":
       return (
-        <p className="flex items-center gap-1.5 text-[0.86rem]">
-          <Circle size={11} className="text-muted-foreground" />
+        <p className="flex items-center gap-1.5 text-sm">
+          <IconInfo width={12} height={12} className="text-muted-foreground" />
           Kontakt utworzony.
         </p>
       );
@@ -216,14 +194,14 @@ function ActivityBody({
         phone: "Telefon",
       };
       return (
-        <p className="flex flex-wrap items-center gap-1.5 text-[0.86rem]">
-          <Pencil size={12} className="text-muted-foreground" />
+        <p className="flex flex-wrap items-center gap-1.5 text-sm">
+          <IconPen width={12} height={12} className="text-muted-foreground" />
           {labels[field] ?? field}:
-          <code className="rounded bg-muted/40 px-1.5 py-0.5 font-mono text-[0.76rem]">
+          <code className="rounded-sm bg-n-100 px-1.5 py-0.5 font-mono text-xs">
             {typeof body.from === "string" && body.from ? body.from : "—"}
           </code>
-          <ArrowRight size={11} className="text-muted-foreground" />
-          <code className="rounded bg-muted/40 px-1.5 py-0.5 font-mono text-[0.76rem]">
+          <IconArrowRight width={12} height={12} className="text-muted-foreground" />
+          <code className="rounded-sm bg-n-100 px-1.5 py-0.5 font-mono text-xs">
             {typeof body.to === "string" && body.to ? body.to : "—"}
           </code>
         </p>
@@ -233,19 +211,19 @@ function ActivityBody({
       const from = typeof body.from === "string" ? users[body.from] : null;
       const to = typeof body.to === "string" ? users[body.to] : null;
       return (
-        <p className="flex flex-wrap items-center gap-1.5 text-[0.86rem]">
-          <UserIcon size={12} className="text-muted-foreground" />
+        <p className="flex flex-wrap items-center gap-1.5 text-sm">
+          <IconUser width={12} height={12} className="text-muted-foreground" />
           Opiekun:
           <span className="font-medium">{from ? (from.name ?? from.email) : "—"}</span>
-          <ArrowRight size={11} className="text-muted-foreground" />
+          <IconArrowRight width={12} height={12} className="text-muted-foreground" />
           <span className="font-medium">{to ? (to.name ?? to.email) : "—"}</span>
         </p>
       );
     }
     default:
       return (
-        <p className="flex items-center gap-1.5 text-[0.86rem] text-muted-foreground">
-          <StickyNote size={11} />
+        <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <IconNotes width={12} height={12} />
           {activity.type}
         </p>
       );

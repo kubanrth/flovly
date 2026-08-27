@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Plus } from "lucide-react";
+import { IconArrowRight, IconPlus } from "@/components/ui/icons";
 
 export interface ContactPipelineStage {
   id: string;
@@ -22,14 +22,16 @@ function formatMoney(amount: number, currency: string): string {
 }
 
 const CHEVRON_NOTCH = 12;
+// Stage colours are user-picked hex from the DB, so the readable text colour
+// is computed — but both outcomes are design tokens, never literals.
 function readableOn(hex: string): string {
   const clean = hex.replace("#", "");
-  if (clean.length !== 6) return "#fff";
+  if (clean.length !== 6) return "var(--n-0)";
   const r = parseInt(clean.slice(0, 2), 16);
   const g = parseInt(clean.slice(2, 4), 16);
   const b = parseInt(clean.slice(4, 6), 16);
   const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  return luma > 150 ? "#0F172A" : "#fff";
+  return luma > 150 ? "var(--n-900)" : "var(--n-0)";
 }
 function chevronClipPath(isFirst: boolean, isLast: boolean): string {
   const n = CHEVRON_NOTCH;
@@ -86,7 +88,7 @@ export function ContactPipeline({
         return (
           <div
             key={stage.id}
-            className="flex w-[240px] shrink-0 flex-col gap-2 rounded-xl bg-card/40 pb-3"
+            className="flex w-[240px] shrink-0 flex-col gap-2 rounded-lg bg-canvas pb-3"
           >
             <div
               className="flex h-9 items-center justify-between gap-2"
@@ -99,17 +101,17 @@ export function ContactPipeline({
                 borderRadius: isFirst && isLast ? 10 : 0,
               }}
             >
-              <span className="truncate font-display text-[0.82rem] font-semibold tracking-[-0.01em]">
+              <span className="truncate text-xs font-semibold">
                 {stage.name}
               </span>
               <Link
                 href={`/w/${workspaceId}/sales/new?stageId=${stage.id}&contactId=${contactId}`}
                 aria-label={`Nowy deal dla tego kontaktu w etapie ${stage.name}`}
                 title="Nowy deal dla tego kontaktu"
-                className="grid h-5 w-5 shrink-0 place-items-center rounded-md transition-colors hover:bg-black/10"
+                className="grid size-6 shrink-0 place-items-center rounded-md outline-none hover:bg-n-900/10 active:bg-n-900/20"
                 style={{ color: fg }}
               >
-                <Plus size={11} />
+                <IconPlus width={12} height={12} />
               </Link>
             </div>
 
@@ -119,15 +121,15 @@ export function ContactPipeline({
                   <li key={d.id}>
                     <Link
                       href={`/w/${workspaceId}/sales/${d.id}`}
-                      className="block overflow-hidden rounded-md border border-border bg-background transition-colors hover:border-primary/40"
+                      className="block overflow-hidden rounded-md border border-border bg-card no-underline outline-none hover:border-orange-300 active:border-orange-500"
                     >
                       <div className="flex flex-col gap-0.5 p-2.5">
-                        <span className="font-mono text-[0.8rem] font-bold tabular-nums leading-tight">
+                        <span className="font-mono text-xs font-semibold tabular-nums">
                           {d.valueAmount != null
                             ? formatMoney(d.valueAmount, d.valueCurrency)
                             : "—"}
                         </span>
-                        <span className="line-clamp-2 text-[0.78rem] leading-tight text-muted-foreground">
+                        <span className="line-clamp-2 text-xs text-muted-foreground">
                           {d.title}
                         </span>
                       </div>
@@ -141,17 +143,15 @@ export function ContactPipeline({
                 ))}
               </ul>
             ) : (
-              <p className="mx-2 grid h-10 place-items-center rounded-md border border-dashed border-border/60 text-[0.66rem] text-muted-foreground/60">
+              <p className="mx-2 grid h-10 place-items-center rounded-md border border-dashed border-input-border text-2xs text-fg-3">
                 —
               </p>
             )}
 
             {total > 0 && (
               <div className="flex items-center justify-between gap-2 px-3 pt-1">
-                <span className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-muted-foreground/80">
-                  Suma
-                </span>
-                <span className="font-mono text-[0.7rem] font-semibold tabular-nums">
+                <span className="font-mono text-2xs text-muted-foreground">Suma</span>
+                <span className="font-mono text-2xs font-semibold tabular-nums">
                   {formatMoney(total, colDeals[0]?.valueCurrency ?? "PLN")}
                 </span>
               </div>
@@ -161,8 +161,8 @@ export function ContactPipeline({
       })}
 
       {/* End-of-row arrow hint — purely decorative. */}
-      <div className="grid shrink-0 place-items-center px-2 text-muted-foreground/40">
-        <ArrowRight size={14} />
+      <div className="grid shrink-0 place-items-center px-2 text-n-400">
+        <IconArrowRight width={14} height={14} />
       </div>
     </div>
   );

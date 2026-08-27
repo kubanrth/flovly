@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useState } from "react";
-import { Link2, Plus } from "lucide-react";
+import { IconLink, IconPlus } from "@/components/ui/icons";
 import {
   SearchableDropdown,
   type SearchableDropdownOption,
@@ -46,15 +46,15 @@ export function ContactTaskLinker({
     sublabel: c.sublabel ?? null,
     searchText: `${c.label} ${c.sublabel ?? ""}`,
     leading: (
-      <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
-        <Plus size={10} />
+      <span className="grid size-5 shrink-0 place-items-center rounded-full bg-n-100 text-muted-foreground">
+        <IconPlus width={10} height={10} />
       </span>
     ),
   }));
 
   return (
     <div className="flex items-center gap-2">
-      <Link2 size={12} className="shrink-0 text-fuchsia-600" />
+      <IconLink width={12} height={12} className="shrink-0 text-n-500" />
       <div className="min-w-0 flex-1">
         <SearchableDropdown
           name="link-task"
