@@ -21,7 +21,11 @@
      tekstu. #747069 to najmniejsze przyciemnienie w tym samym odcieniu, które
      przechodzi na wszystkich trzech tłach (4,92 / 4,68 / 4,56). --n-500 zostaje
      bez zmian, bo napędza też ikony i obramowania, gdzie próg jest inny. */
-  --bg:#FFFFFF;--canvas:#FAF9F7;--fg:#1C1A17;--fg-2:#66625B;--fg-3:#747069;--link:#B83F00;
+  /* --canvas było #FAF9F7 (ciepła biel z makiet v5). Klient zgłosił, że pasek
+     boczny i tło czytają się jako „szaro-pomarańczowe" — #FCFCFC jest
+     neutralne i bliżej bieli, ale nadal odróżnia się od kart (#FFFFFF).
+     Zmiana dotyczy też nagłówków tabel, żeby nie rozjechały się z paskiem. */
+  --bg:#FFFFFF;--canvas:#FCFCFC;--fg:#1C1A17;--fg-2:#66625B;--fg-3:#747069;--link:#B83F00;
   /* „dzisiaj" jako tło kolumny/wiersza (makiety D4, E2) — jaśniejsze od --selected. */
   --today:#FFF9F5;
   --input-border:#D2CEC7;--input-border-hover:#B0ABA3;
@@ -35,7 +39,7 @@
   --control-on:#1C1A17;--control-off-border:#B0ABA3;
   --scrim:rgba(15,14,12,.4);
   --btn-sm:28px;--btn-md:32px;--btn-lg:36px;--touch-target:44px;
-  --table-header-bg:#FAF9F7;--table-grid:#ECE9E4;--table-header-h:32px;
+  --table-header-bg:#FCFCFC;--table-grid:#ECE9E4;--table-header-h:32px;
   --z-sticky:10;--z-panel:40;--z-dropdown:50;--z-dialog:60;--z-toast:70;--z-tooltip:80;
   --row-compact:28px;--row-comfortable:36px;--row-spacious:44px;--row-h:var(--row-comfortable);
   --topbar:48px;--sidebar:240px;--sidebar-rail:56px;--tabs:40px;--panel:600px;
