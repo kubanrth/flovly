@@ -28,7 +28,13 @@ export default async function WorkspaceLayout({
       {/* Board views keep the horizontal clip (wide tables/timelines); the
           overview page must not have it — it cancels the RouteFrame padding
           with negative margins to go full-bleed (header/tabs/footer strips). */}
-      <div className="flex min-w-0 flex-1 flex-col [&:has([data-ui=board-header])]:overflow-x-hidden">{children}</div>
+      {/* min-h-0 is load-bearing: a column flex item defaults to
+          min-height:auto and grows to its content, so every `min-h-0 flex-1`
+          below it inherits an unbounded height and page footers slide under
+          the fold. This used to be masked by an unconditional overflow-x-hidden
+          (overflow != visible zeroes the automatic minimum size); once that was
+          scoped to board routes, the tool screens lost their clamp. */}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col [&:has([data-ui=board-header])]:overflow-x-hidden">{children}</div>
       {modal}
       <CzesiekFab workspaceId={workspace.id} />
     </>

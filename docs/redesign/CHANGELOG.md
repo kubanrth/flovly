@@ -135,3 +135,16 @@ Dwa kolejne pełne przebiegi: 50/50.
   ukończenia zawsze trafiają do dzisiejszego kubełka. Zweryfikowana przez zaseedowanie pozycji
   ukończonej 36 h wcześniej: sekcja renderuje się zwinięta („UKOŃCZONE WCZEŚNIEJ · 1")
   i rozwija po kliknięciu.
+
+### F5 — poprawki po krytykach
+- **Sticky nagłówek tabel i stopki pod zgięciem — jedna przyczyna.** Opakowanie między
+  `<main>` a stroną (`app/(app)/w/[workspaceId]/layout.tsx`) było elementem flex bez `min-h-0`,
+  czyli z `min-height: auto`, więc rosło do treści zamiast się ograniczać. Wcześniej maskował
+  to bezwarunkowy `overflow-x-hidden` (dowolny `overflow` różny od `visible` zeruje automatyczny
+  minimalny rozmiar); gdy w F4 zawężono go do tras tablic, ekrany narzędzi straciły ograniczenie.
+  Skutek: `<main>` przejmował scroll, nagłówek 32px wyjeżdżał poza ekran, a stopka lądowała
+  na y≈1367 przy 27 kontaktach.
+- **`overflow-hidden` na `DataTable` czynił z niego kontener sticky.** Gdy scrollowała cała
+  strona, nagłówek przyklejał się do elementu, który nigdy nie scrollował. Subskrypcje
+  i kontakty oddają teraz scroll samej tabeli (`wrapperClassName="min-h-0 flex-1"`).
+  Zmierzone: 1420px do przescrollowania, nagłówek trzyma pozycję, wiersze 44px.

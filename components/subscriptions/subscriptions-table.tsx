@@ -181,7 +181,10 @@ export function SubscriptionsTable({
         <Tile label="Rocznie (prognoza)" value={formatPlnRounded(totals.yearlyCents)} />
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-8 pb-5 max-md:px-4">
+      {/* The DataTable owns the scroll (wrapperClassName below), not this
+          column — otherwise its overflow-hidden becomes the sticky containing
+          block and the 32px header scrolls away with the rows. */}
+      <div className="flex min-h-0 flex-1 flex-col px-8 pb-5 max-md:px-4">
         {visible.length === 0 ? (
           <EmptyState
             className="mt-3"
@@ -203,6 +206,7 @@ export function SubscriptionsTable({
           />
         ) : (
           <DataTable
+            wrapperClassName="min-h-0 flex-1"
             className="min-w-[900px]"
             footer={
               <DataFooter>
