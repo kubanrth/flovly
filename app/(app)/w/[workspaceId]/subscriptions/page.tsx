@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
+import { can } from "@/lib/permissions";
 import { SubscriptionsTable } from "@/components/subscriptions/subscriptions-table";
 
 // F12-K140/141: moduł zarządzania subskrypcjami z projektami i dostępami.
@@ -69,6 +70,7 @@ export default async function SubscriptionsPage({
     <SubscriptionsTable
       workspaceId={workspaceId}
       isAdmin={isAdmin}
+      canManage={can(ctx.role, "subscription.manage")}
       rows={rows}
       projects={projects.map((p) => ({
         id: p.id,

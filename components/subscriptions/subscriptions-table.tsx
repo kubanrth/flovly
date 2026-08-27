@@ -85,12 +85,15 @@ const CELL_INPUT =
 export function SubscriptionsTable({
   workspaceId,
   isAdmin,
+  canManage,
   rows: serverRows,
   projects,
   members,
 }: {
   workspaceId: string;
   isAdmin: boolean;
+  /** `subscription.manage` — bez tego wiersze są tylko do odczytu. */
+  canManage: boolean;
   rows: SubscriptionRow[];
   projects: SubscriptionProjectItem[];
   members: WorkspaceMemberItem[];
@@ -170,10 +173,12 @@ export function SubscriptionsTable({
             Projekty i dostępy
           </Button>
         )}
-        <Button type="button" onClick={addRow}>
-          <IconPlus width={14} height={14} />
-          Dodaj subskrypcję
-        </Button>
+        {canManage && (
+          <Button type="button" onClick={addRow}>
+            <IconPlus width={14} height={14} />
+            Dodaj subskrypcję
+          </Button>
+        )}
       </header>
 
       <div className="flex shrink-0 gap-3 px-8 py-3.5 max-md:flex-col max-md:px-4">
@@ -196,7 +201,7 @@ export function SubscriptionsTable({
                 : "Zmień filtr projektu albo przypisz subskrypcję do tego projektu."
             }
             action={
-              projectFilter === ALL ? (
+              projectFilter === ALL && canManage ? (
                 <Button type="button" onClick={addRow}>
                   <IconPlus width={14} height={14} />
                   Dodaj subskrypcję
