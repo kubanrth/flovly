@@ -8,8 +8,13 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    // Direct connection (port 5432) for Prisma CLI (migrations can't run through pooler).
-    // Runtime queries go through the pooler (port 6543) via the driver adapter in lib/db.ts.
-    url: process.env["DIRECT_URL"],
+    // Direct connection (port 5432) for Prisma CLI — migracje nie przechodzą
+    // przez pooler. Zapytania w runtime idą poolerem (6543) przez adapter
+    // w lib/db.ts.
+    //
+    // Fallback na DATABASE_URL jest istotny: środowiska bez poolera (Coolify)
+    // nie ustawiają DIRECT_URL i `prisma migrate deploy` wywalał się tam na
+    // „The datasource.url property is required", zamiast po prostu zadziałać.
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"],
   },
 });
