@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, startTransition, useEffect, useRef } from "react";
+import { EmojiPicker, insertAtCursor } from "@/components/ui/emoji-picker";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
@@ -208,7 +209,10 @@ function Composer({
       </div>
 
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-n-700">Wiadomość</span>
+        <span className="flex items-center gap-1.5 text-xs font-medium text-n-700">
+          Wiadomość
+          <EmojiPicker onPick={(e) => insertAtCursor(bodyRef.current, e)} />
+        </span>
         <Textarea ref={bodyRef} name="body" required maxLength={20000} rows={4} placeholder="Cześć, dziękuję za rozmowę…" className="min-h-[110px]" />
       </label>
 

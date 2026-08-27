@@ -1,6 +1,7 @@
 "use client";
 
 import { useEditor, EditorContent, ReactRenderer, type Editor, type JSONContent } from "@tiptap/react";
+import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { HIGHLIGHT_COLORS, TEXT_COLORS } from "./editor-colors";
 import StarterKit from "@tiptap/starter-kit";
 import { Link } from "@tiptap/extension-link";
@@ -39,6 +40,11 @@ export interface RichTextEditorProps {
    * i pozostałe edytory zostają niskie.
    */
   minHeightClass?: string;
+  /**
+   * Uchwyt do instancji edytora — potrzebny tam, gdzie warianty bez paska
+   * (komentarze) muszą same wstawić treść, np. emoji w miejscu kursora.
+   */
+  onReady?: (editor: Editor | null) => void;
   // Focus the editor on mount (edit mode entered by click).
   autoFocus?: boolean;
   // When provided, typing "@" opens an autocomplete of these members and
@@ -143,6 +149,7 @@ export function RichTextEditor({
   placeholder = "Kontekst, acceptance criteria, linki…",
   variant = "field",
   minHeightClass = "min-h-[80px]",
+  onReady,
   mentionMembers,
   onChange,
   extras = "default",
@@ -218,6 +225,11 @@ export function RichTextEditor({
       onChange?.(empty ? null : doc);
     },
   });
+
+  useEffect(() => {
+    onReady?.(editor);
+    return () => onReady?.(null);
+  }, [editor, onReady]);
 
   // Sync editable in case the prop changes (rare, but cheap).
   useEffect(() => {
@@ -514,6 +526,9 @@ function Toolbar({
           />
         </>
       )}
+
+      <span className="mx-0.5 h-4 w-px bg-n-200" aria-hidden />
+      <EmojiPicker onPick={(e) => editor.chain().focus().insertContent(e).run()} />
     </div>
   );
 }
@@ -603,6 +618,7 @@ function TablePopover({ editor, onAfter }: { editor: Editor; onAfter: () => void
           </MenuItem>
         </>
       )}
+
     </div>
   );
 }

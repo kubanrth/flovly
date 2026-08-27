@@ -1,6 +1,7 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useState } from "react";
+import { startTransition, useActionState, useEffect, useState, useRef } from "react";
+import { EmojiPicker, insertAtCursor } from "@/components/ui/emoji-picker";
 import {
   createMilestoneAction,
   deleteMilestoneAction,
@@ -112,6 +113,7 @@ export function MilestoneDialog({
   });
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.descriptionText ?? "");
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const [assigneeId, setAssigneeId] = useState(initial?.assignee?.id ?? "");
   const [startAt, setStartAt] = useState(initial?.startAt ?? defaults.start);
   const [stopAt, setStopAt] = useState(initial?.stopAt ?? defaults.stop);
@@ -214,8 +216,12 @@ export function MilestoneDialog({
             </div>
 
             <div>
-              <Label htmlFor="milestone-description">Opis</Label>
+              <span className="flex items-center gap-1.5">
+                <Label htmlFor="milestone-description">Opis</Label>
+                <EmojiPicker onPick={(e) => insertAtCursor(descriptionRef.current, e)} />
+              </span>
               <Textarea
+                ref={descriptionRef}
                 id="milestone-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}

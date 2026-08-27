@@ -5,6 +5,8 @@
 // Czysta logika (podgląd, liczniki, etykiety dat) siedzi w ./note-doc.ts.
 
 import { startTransition, useEffect, useRef, useState } from "react";
+import type { Editor } from "@tiptap/react";
+import { EmojiPicker } from "@/components/ui/emoji-picker";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -609,6 +611,7 @@ function NoteEditor({
   const [title, setTitle] = useState(note.title);
   const [doc, setDoc] = useState<RichTextDoc | null>(note.contentJson);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const noteEditorRef = useRef<Editor | null>(null);
   const isTrashed = note.isTrashed;
 
   // Autozapis (500 ms) — jak w B11 „Opis". Notatka w koszu jest tylko do odczytu.
@@ -660,6 +663,14 @@ function NoteEditor({
             Zapisano {savedAt ?? noteTime(note.updatedAt)}
           </span>
         )}
+        {/* Notatnik używa wariantu bez paska (makieta E3 go nie ma), więc emoji
+            dostaje własny przycisk w nagłówku i wstawia się w miejscu kursora. */}
+        {!isTrashed && (
+          <EmojiPicker
+            onPick={(e) => noteEditorRef.current?.chain().focus().insertContent(e).run()}
+            triggerClassName="size-7"
+          />
+        )}
         <ShareButton noteId={note.id} folderId={note.folderId} />
         <NoteMenu note={note} folders={folders} />
       </div>
@@ -686,6 +697,7 @@ function NoteEditor({
               variant="display"
               extras="brief"
               onChange={setDoc}
+              onReady={(ed) => { noteEditorRef.current = ed; }}
             />
           </div>
         </div>

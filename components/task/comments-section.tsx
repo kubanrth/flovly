@@ -1,6 +1,8 @@
 "use client";
 
-import { useActionState, startTransition, useEffect, useState } from "react";
+import { useActionState, startTransition, useEffect, useState, useRef } from "react";
+import type { Editor } from "@tiptap/react";
+import { EmojiPicker } from "@/components/ui/emoji-picker";
 import {
   createCommentAction,
   deleteCommentAction,
@@ -65,6 +67,9 @@ export function CommentComposer({ taskId, members, author, mobile }: { taskId: s
   const [state, formAction, pending] = useActionState<CreateCommentState, FormData>(createCommentAction, null);
   // Editor remounts (clears) when a new commentId arrives — no setState-in-render.
   const editorKey = state?.ok ? state.commentId : "pristine";
+  // Wariant „compact" nie ma paska narzędzi, więc emoji dostaje własny przycisk
+  // obok wysyłki i wstawia się przez uchwyt do edytora, w miejscu kursora.
+  const editorRef = useRef<Editor | null>(null);
   return (
     <form
       action={(fd) => startTransition(() => formAction(fd))}
@@ -83,9 +88,14 @@ export function CommentComposer({ taskId, members, author, mobile }: { taskId: s
           variant={mobile ? "compact-lg" : "compact"}
           placeholder={mobile ? "Napisz komentarz…" : "Napisz komentarz… użyj @ aby wspomnieć"}
           mentionMembers={members}
+          onReady={(ed) => { editorRef.current = ed; }}
         />
         {!state?.ok && state?.fieldErrors?.bodyJson && <span className="text-xs text-danger-text">{state.fieldErrors.bodyJson}</span>}
       </div>
+      <EmojiPicker
+        onPick={(e) => editorRef.current?.chain().focus().insertContent(e).run()}
+        triggerClassName={cn("mb-[3px] shrink-0 border border-input-border", mobile ? "size-11 text-base" : "size-8")}
+      />
       <Button type="submit" iconOnly size={mobile ? "lg" : "md"} loading={pending} aria-label="Wyślij komentarz" className={mobile ? "size-11" : undefined}>
         {!pending && <IconSend />}
       </Button>
