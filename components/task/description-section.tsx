@@ -54,7 +54,18 @@ export function DescriptionSection({ taskId, initial, canEdit, onMutate }: { tas
             if (dirty && !saving) save();
           }}
         >
-          <RichTextEditor key={editorKey} initial={draft} readOnly={false} autoFocus onChange={(doc) => setDraft(doc)} placeholder="Dodaj opis…" />
+          {/* Opis to główna treść zadania — pole edycji sięga połowy wysokości
+              panelu (48dvh ≈ 50% z 100dvh − 48px paska), żeby nie pisać w trzech
+              linijkach. Rośnie dalej z treścią. */}
+          <RichTextEditor
+            key={editorKey}
+            initial={draft}
+            readOnly={false}
+            autoFocus
+            minHeightClass="min-h-[48dvh]"
+            onChange={(doc) => setDraft(doc)}
+            placeholder="Dodaj opis…"
+          />
           {error && <span className="text-xs text-danger-text">{error}</span>}
           {dirty && (
             <div className="flex items-center justify-end gap-2">

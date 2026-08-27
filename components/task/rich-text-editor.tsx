@@ -33,6 +33,12 @@ export interface RichTextEditorProps {
   // reads as flowing prose, not a form field.
   // `compact` / `compact-lg` = single-line composer (32 / 44px), no toolbar (B2 comment box).
   variant?: "field" | "display" | "compact" | "compact-lg";
+  /**
+   * Nadpisuje minimalną wysokość pola edycji (domyślnie `min-h-[80px]`).
+   * Używa tego opis zadania, który ma sięgać połowy panelu — komentarze
+   * i pozostałe edytory zostają niskie.
+   */
+  minHeightClass?: string;
   // Focus the editor on mount (edit mode entered by click).
   autoFocus?: boolean;
   // When provided, typing "@" opens an autocomplete of these members and
@@ -136,6 +142,7 @@ export function RichTextEditor({
   name,
   placeholder = "Kontekst, acceptance criteria, linki…",
   variant = "field",
+  minHeightClass = "min-h-[80px]",
   mentionMembers,
   onChange,
   extras = "default",
@@ -201,7 +208,7 @@ export function RichTextEditor({
               ? "tiptap-content focus:outline-none text-sm leading-5"
               : variant === "compact-lg"
                 ? "tiptap-content focus:outline-none text-base leading-5"
-                : "tiptap-content min-h-[80px] focus:outline-none text-sm leading-5",
+                : `tiptap-content ${minHeightClass} focus:outline-none text-sm leading-5`,
       },
     },
     onUpdate: ({ editor }) => {
