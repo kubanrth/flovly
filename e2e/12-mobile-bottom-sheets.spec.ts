@@ -75,4 +75,24 @@ test.describe("mobile bottom sheets", () => {
       expect(b.h, `${b.label} ma ${b.h}px wysokosci`).toBeGreaterThanOrEqual(44);
     }
   });
+  // `.safe-bottom` nadpisuje `p-3` z utilities, a w Safari z widocznym dolnym
+  // paskiem wciecie bezpiecznego obszaru wynosi 0 — pomaranczowy przycisk
+  // dotykal krawedzi ekranu i zlewal sie z paskiem przegladarki.
+  test("pasek Dodaj zadanie odstaje od dolu ekranu", async ({ page }) => {
+    await gotoFirstBoard(page);
+
+    const button = page.getByRole("button", { name: "Dodaj zadanie" }).last();
+    await expect(button).toBeVisible();
+    const m = await button.evaluate((el) => {
+      const bar = el.parentElement!;
+      const cs = getComputedStyle(bar);
+      return {
+        odstep: Math.round(window.innerHeight - el.getBoundingClientRect().bottom),
+        borderTop: cs.borderTopWidth,
+        bg: cs.backgroundColor,
+      };
+    });
+    expect(m.odstep).toBeGreaterThanOrEqual(12);
+    expect(m.borderTop).not.toBe("0px"); // pasek oddzielony od listy
+  });
 });

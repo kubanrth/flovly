@@ -203,8 +203,10 @@
 }
 
 /* ─── Mobile safe-area ─── */
-.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-.safe-bottom-plus-3 { padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem); }
+/* Klasa nadpisuje `p-3`/`pb-3` z utilities, więc sama musi trzymać ten
+   odstęp. Bez `max()` w Safari z widocznym dolnym paskiem (wcięcie = 0)
+   przyciski dotykały krawędzi ekranu i zlewały się z paskiem przeglądarki. */
+.safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0.75rem); }
 
 /* ─── Browser autofill (K113/K114): no yellow fill ─── */
 input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus, input:-webkit-autofill:active,

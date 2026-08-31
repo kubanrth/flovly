@@ -128,7 +128,7 @@ export function MobileList({
         {selectedCount > 0 && ` · ${selectedCount} ${plPlural(selectedCount, "zaznaczone", "zaznaczone", "zaznaczonych")}`}
       </p>
       {canEdit && (
-        <div className="safe-bottom fixed inset-x-0 bottom-0 z-40 bg-canvas p-3">
+        <div className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card px-4 py-3">
           <Button size="lg" className="h-11 w-full" onClick={() => setCreateOpen(true)}>
             <IconPlus width={16} height={16} />
             Dodaj zadanie
