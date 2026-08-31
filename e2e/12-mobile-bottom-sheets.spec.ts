@@ -95,4 +95,21 @@ test.describe("mobile bottom sheets", () => {
     expect(m.odstep).toBeGreaterThanOrEqual(12);
     expect(m.borderTop).not.toBe("0px"); // pasek oddzielony od listy
   });
+  // "Anuluj" / "Utworz zadanie" stały tuz przy krawedzi ekranu, pod
+  // polprzezroczystym paskiem Safari (wciecie bezpiecznego obszaru = 0).
+  test("stopka arkusza Nowe zadanie odstaje od dolu ekranu", async ({ page }) => {
+    await gotoFirstBoard(page);
+    await page.getByRole("button", { name: "Dodaj zadanie" }).last().click();
+
+    const footer = page.locator('[data-slot="sheet-footer"]');
+    await expect(footer).toBeVisible();
+    // Mierzone wzgledem samej stopki, nie okna: arkusz wjezdza z dolu, wiec
+    // pozycja w oknie zmienia sie w trakcie animacji.
+    const odstep = await footer.evaluate((el) => {
+      const dol = el.getBoundingClientRect().bottom;
+      const najnizszy = Math.max(...[...el.querySelectorAll("button")].map((b) => b.getBoundingClientRect().bottom));
+      return Math.round(dol - najnizszy);
+    });
+    expect(odstep).toBeGreaterThanOrEqual(24);
+  });
 });

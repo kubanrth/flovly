@@ -67,7 +67,10 @@ export function ResponsiveDialog({ open, onOpenChange, title, size = "md", dataU
         <SheetContent side="bottom" data-ui={dataUi} className="h-dvh max-h-dvh" onKeyDown={onKeyDown}>
           <SheetHeader className="min-h-[52px] justify-center"><SheetTitle>{title}</SheetTitle></SheetHeader>
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">{children}</div>
-          <SheetFooter className="safe-bottom flex-wrap">{footer}</SheetFooter>
+          {/* Wiekszy odstep od dolu niz zwykly `.safe-bottom`: w Safari z widocznym
+              dolnym paskiem wciecie bezpiecznego obszaru wynosi 0, a przyciski
+              akcji stały wtedy tuz przy krawedzi, pod polprzezroczystym paskiem. */}
+          <SheetFooter className="flex-wrap pb-[max(env(safe-area-inset-bottom),1.5rem)]">{footer}</SheetFooter>
         </SheetContent>
       </Sheet>
     );
