@@ -48,12 +48,16 @@ export default async function WorkspacesPage({
   return (
     <AppShell>
       <div className="flex flex-col gap-4">
-        <header className="flex items-center gap-2.5">
-          <h1 className="text-xl font-semibold tracking-[-0.3px]">Przestrzenie</h1>
-          <span className="mt-1.5 text-xs text-fg-2">
-            {memberships.length} {workspacePl(memberships.length)}
-          </span>
-          <span className="flex-1" />
+        {/* Licznik pod tytułem, nie obok: obok szerokiego „Nowa przestrzeń"
+            zostawał mu na telefonie pasek kilkudziesięciu pikseli i łamał się
+            na trzy linie. Tytuł + podtytuł to i tak wzorzec z reszty aplikacji. */}
+        <header className="flex items-start gap-2.5">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-semibold tracking-[-0.3px]">Przestrzenie</h1>
+            <p className="mt-0.5 text-xs text-fg-2">
+              {memberships.length} {workspacePl(memberships.length)}
+            </p>
+          </div>
           <CreateWorkspaceDialog defaultOpen={openNew === "1"} />
         </header>
 
