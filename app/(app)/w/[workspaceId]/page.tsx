@@ -52,7 +52,6 @@ export default async function WorkspaceOverviewPage({
       select: {
         id: true,
         name: true,
-        description: true,
         statusColumns: { orderBy: { order: "asc" }, select: { id: true, name: true, order: true } },
         tasks: {
           where: { deletedAt: null },
@@ -102,7 +101,6 @@ export default async function WorkspaceOverviewPage({
     return {
       id: board.id,
       name: board.name,
-      description: board.description,
       stats,
       people: [...people.values()],
       dueLabel: stats.nextDue ? `termin ${dayMonth.format(new Date(stats.nextDue))}` : null,

@@ -1,6 +1,6 @@
 "use client";
 
-// C1 board card: icon · name · star · description · done/total progress ·
+// C1 board card: icon · name · star · done/total progress ·
 // avatars · „N po terminie”. The whole card is a stretched link; the star and
 // the drag listeners sit above it.
 
@@ -16,7 +16,6 @@ import { useStarred } from "./use-starred";
 export interface BoardCardData {
   id: string;
   name: string;
-  description: string | null;
   stats: BoardStats;
   people: { name: string; avatarUrl: string | null }[];
   /** „termin 1 paź” — nearest upcoming deadline, shown when nothing is overdue. */
@@ -79,9 +78,7 @@ export function BoardCard({ workspaceId, board, canDrag }: { workspaceId: string
         </button>
       </div>
 
-      <p className="pointer-events-none relative mt-2.5 line-clamp-2 min-h-9 text-xs text-muted-foreground">{board.description}</p>
-
-      <div className="pointer-events-none relative mt-0.5 flex items-center gap-1.5">
+      <div className="pointer-events-none relative mt-3 flex items-center gap-1.5">
         <span className="h-[5px] flex-1 overflow-hidden rounded-full bg-n-100">
           <span
             className={cn("block h-full", progressTone(share) === "success" ? "bg-success" : "bg-info")}
