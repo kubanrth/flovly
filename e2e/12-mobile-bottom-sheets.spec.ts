@@ -112,4 +112,35 @@ test.describe("mobile bottom sheets", () => {
     });
     expect(odstep).toBeGreaterThanOrEqual(24);
   });
+  // Pole "Szukaj w tablicy" mialo na telefonie 160px w przewijanym pasku.
+  // Teraz jest przyciskiem, ktory otwiera wyszukiwanie na cala szerokosc.
+  test("szukanie w tablicy otwiera sie na cala szerokosc", async ({ page }) => {
+    await gotoFirstBoard(page);
+
+    // W pasku jest przycisk, nie pole.
+    await expect(page.locator('[data-ui="board-search"]')).toBeHidden();
+    await page.locator('[data-ui="board-search-open"]').click();
+
+    const overlay = page.locator('[data-ui="board-search-overlay"]');
+    await expect(overlay).toBeVisible();
+    const m = await overlay.evaluate((el) => ({
+      szerokosc: Math.round(el.getBoundingClientRect().width),
+      okno: window.innerWidth,
+      focus: document.activeElement === el.querySelector("input"),
+    }));
+    expect(m.szerokosc).toBe(m.okno);
+    expect(m.focus).toBe(true);
+
+    // Filtruje liste i wraca po wyczyszczeniu.
+    const wiersze = page.locator('[data-ui="list-mobile"] a[href*="/t/"]');
+    const przed = await wiersze.count();
+    expect(przed).toBeGreaterThan(0);
+    await overlay.locator("input").fill("zzzz-nie-istnieje");
+    await expect(wiersze).toHaveCount(0);
+    await overlay.getByLabel("Wyczyść wyszukiwanie").click();
+    await expect(wiersze).toHaveCount(przed);
+
+    await overlay.getByRole("button", { name: "Zamknij" }).click();
+    await expect(overlay).toBeHidden();
+  });
 });

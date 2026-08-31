@@ -5,7 +5,7 @@
 // <html data-density>). Buttons can carry a menu/popover body so the caller
 // (list-toolbar, later kanban/timeline) plugs its own state in.
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { DENSITY_PX, useUiPref, type Density } from "@/hooks/use-ui-pref";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { Avatar, AvatarStack } from "@/components/ui/avatar";
 import { FilterChip } from "@/components/ui/chip";
 import { Menu, MenuContent, MenuRadioGroup, MenuRadioItem, MenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { IconChevronDown, IconColumns, IconDensity, IconMore, IconPlus, IconSearch } from "@/components/ui/icons";
+import { IconChevronDown, IconClose, IconColumns, IconDensity, IconMore, IconPlus, IconSearch } from "@/components/ui/icons";
 
 export interface ToolbarPerson {
   id: string;
@@ -81,6 +81,15 @@ export function BoardToolbar(p: BoardToolbarProps) {
   };
   const chevron = <IconChevronDown width={12} height={12} className="text-fg-3" />;
 
+  // Pełnoszerokie wyszukiwanie na telefonie (patrz przycisk niżej).
+  const [searchOpen, setSearchOpen] = useState(false);
+  useEffect(() => {
+    if (!searchOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setSearchOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [searchOpen]);
+
   const menuButton = (label: ReactNode, menu: ReactNode | undefined, opts: { className: string; active?: boolean; disabled?: boolean; onClick?: () => void; ariaLabel?: string; icon?: ReactNode }) =>
     menu ? (
       <Menu>
@@ -120,6 +129,20 @@ export function BoardToolbar(p: BoardToolbarProps) {
       data-ui="board-toolbar"
       className="no-scrollbar flex items-center gap-2 border-b border-border bg-card px-6 py-2 max-md:overflow-x-auto max-md:px-4"
     >
+      {/* Na telefonie 160-pikselowe pole w przewijanym pasku było nie do użycia,
+          więc zostaje z niego przycisk, a samo szukanie otwiera się na całą
+          szerokość ekranu. Na desktopie pole zostaje w pasku jak dotąd. */}
+      <button
+        type="button"
+        onClick={() => setSearchOpen(true)}
+        data-ui="board-search-open"
+        aria-label="Szukaj w tablicy"
+        className="flex h-9 max-w-[180px] shrink-0 items-center gap-2 rounded-sm border border-input-border bg-card px-3 text-sm text-fg-3 outline-none active:bg-n-100 md:hidden"
+      >
+        <IconSearch className="shrink-0 text-fg-3" />
+        <span className={cn("truncate", p.search && "text-foreground")}>{p.search || "Szukaj"}</span>
+      </button>
+
       <InputGroup
         size="sm"
         leading={<IconSearch />}
@@ -128,8 +151,37 @@ export function BoardToolbar(p: BoardToolbarProps) {
         data-ui="board-search"
         value={p.search ?? ""}
         onChange={(e) => p.onSearch?.(e.target.value)}
-        className="w-[200px] shrink-0 text-xs max-md:w-40"
+        className="w-[200px] shrink-0 text-xs max-md:hidden"
       />
+
+      {searchOpen && (
+        <div
+          data-ui="board-search-overlay"
+          className="fixed inset-x-0 top-0 z-[var(--z-panel)] flex items-center gap-2 border-b border-border bg-card px-3 py-2 md:hidden"
+          style={{ paddingTop: "max(env(safe-area-inset-top), 0.5rem)" }}
+        >
+          <InputGroup
+            size="lg"
+            autoFocus
+            leading={<IconSearch />}
+            placeholder="Szukaj w tablicy"
+            aria-label="Szukaj w tablicy"
+            data-ui="board-search"
+            value={p.search ?? ""}
+            onChange={(e) => p.onSearch?.(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+            trailing={
+              p.search ? (
+                <button type="button" aria-label="Wyczyść wyszukiwanie" onClick={() => p.onSearch?.("")} className="grid size-6 place-items-center rounded-sm outline-none">
+                  <IconClose />
+                </button>
+              ) : undefined
+            }
+            className="min-w-0 flex-1"
+          />
+          <Button variant="ghost" size="lg" onClick={() => setSearchOpen(false)}>Zamknij</Button>
+        </div>
+      )}
 
       {p.people && p.people.length > 0 && (
         p.onTogglePerson ? (
