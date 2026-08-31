@@ -596,9 +596,11 @@ function MobileDrawer({
   const [toolsOpen, setToolsOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   return (
+    // Pełny ekran, nie szuflada 300px: na telefonie menu jest osobnym ekranem,
+    // a nie panelem nad treścią. Przyciemnienia i klikania obok nie ma po co
+    // trzymać — nie ma już „obok"; zamyka ✕ (44px) albo Esc.
     <div className="fixed inset-0 z-(--z-panel) md:hidden">
-      <button type="button" aria-label="Zamknij menu" onClick={onClose} className="absolute inset-0 bg-scrim" />
-      <div data-ui="mobile-drawer" role="dialog" aria-modal="true" aria-label="Menu" className="absolute inset-y-0 left-0 flex w-[300px] flex-col bg-card shadow-e2">
+      <div data-ui="mobile-drawer" role="dialog" aria-modal="true" aria-label="Menu" className="absolute inset-0 flex w-full flex-col bg-card">
         <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border pr-2 pl-4">
           <Wordmark />
           <span className="flex-1" />
