@@ -40,7 +40,6 @@ export default async function WorkspacesPage({
     id: workspace.id,
     slug: workspace.slug,
     name: workspace.name,
-    description: workspace.description,
     role,
     boardCount: workspace._count.boards,
   }));

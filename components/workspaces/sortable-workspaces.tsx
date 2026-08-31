@@ -31,7 +31,6 @@ export interface WorkspaceRow {
   id: string;
   slug: string;
   name: string;
-  description: string | null;
   role: string;
   boardCount: number;
 }
@@ -134,7 +133,6 @@ function SortableWorkspaceCard({ workspace: w }: { workspace: WorkspaceRow }) {
         </button>
       </div>
 
-      {w.description && <p className="mt-2 line-clamp-2 text-xs text-fg-2">{w.description}</p>}
 
       <div className="mt-auto flex items-center gap-2 pt-3">
         <span className="truncate font-mono text-2xs text-fg-3">/{w.slug}</span>
@@ -191,10 +189,7 @@ function SortableWorkspaceRow({ workspace: w }: { workspace: WorkspaceRow }) {
         <LetterTile name={w.name} size={28} />
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-sm font-medium group-hover:text-orange-800">{w.name}</span>
-          <span className="truncate text-2xs text-fg-3">
-            /{w.slug}
-            {w.description ? ` · ${w.description}` : ""}
-          </span>
+          <span className="truncate text-2xs text-fg-3">/{w.slug}</span>
         </span>
         <span className="shrink-0 text-2xs text-fg-3">{w.role.toLowerCase()}</span>
         <span className="shrink-0 font-mono text-2xs text-fg-3">
