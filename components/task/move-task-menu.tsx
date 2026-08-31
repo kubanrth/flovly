@@ -11,7 +11,7 @@ export interface MoveTargetBoard { id: string; name: string; workspaceName: stri
 
 // „Przenieś" — pick a target board in the workspace; status is matched by column name
 // server-side (or cleared). After revalidate the task lands on top of the new board.
-export function MoveTaskMenu({ taskId, currentBoardId, availableBoards, iconOnly }: { taskId: string; currentBoardId: string; availableBoards: MoveTargetBoard[]; iconOnly?: boolean }) {
+export function MoveTaskMenu({ taskId, currentBoardId, availableBoards, iconOnly, touch }: { taskId: string; currentBoardId: string; availableBoards: MoveTargetBoard[]; iconOnly?: boolean; touch?: boolean }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
@@ -26,7 +26,7 @@ export function MoveTaskMenu({ taskId, currentBoardId, availableBoards, iconOnly
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger render={<Button variant={iconOnly ? "ghost" : "secondary"} size="sm" iconOnly={iconOnly} aria-label="Przenieś" title="Przenieś zadanie do innej tablicy" />}>
+      <PopoverTrigger render={<Button variant={iconOnly ? "ghost" : "secondary"} size={touch ? "lg" : "sm"} iconOnly={iconOnly} className={touch ? "size-11 [&_svg]:size-[18px]" : undefined} aria-label="Przenieś" title="Przenieś zadanie do innej tablicy" />}>
         <IconMove />{!iconOnly && "Przenieś"}
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[300px] p-0">

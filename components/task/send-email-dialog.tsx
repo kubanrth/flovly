@@ -12,7 +12,7 @@ import { formatBytes } from "@/components/task/attachments-section";
 
 interface AttachmentOption { id: string; filename: string; sizeBytes: number }
 
-export function SendEmailDialog({ taskId, taskTitle, attachments, iconOnly }: { taskId: string; taskTitle: string; attachments: AttachmentOption[]; iconOnly?: boolean }) {
+export function SendEmailDialog({ taskId, taskTitle, attachments, iconOnly, touch }: { taskId: string; taskTitle: string; attachments: AttachmentOption[]; iconOnly?: boolean; touch?: boolean }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState<SendEmailState, FormData>(sendTaskByEmailAction, null);
   const [picked, setPicked] = useState<Set<string>>(() => new Set(attachments.map((a) => a.id)));
@@ -32,7 +32,7 @@ export function SendEmailDialog({ taskId, taskTitle, attachments, iconOnly }: { 
 
   return (
     <>
-      <Button variant={iconOnly ? "ghost" : "secondary"} size="sm" iconOnly={iconOnly} aria-label="Wyślij mailem" title="Wyślij mailem" onClick={() => setOpen(true)}>
+      <Button variant={iconOnly ? "ghost" : "secondary"} size={touch ? "lg" : "sm"} iconOnly={iconOnly} className={touch ? "size-11 [&_svg]:size-[18px]" : undefined} aria-label="Wyślij mailem" title="Wyślij mailem" onClick={() => setOpen(true)}>
         <IconMail />{!iconOnly && "Wyślij mailem"}
       </Button>
       <Dialog open={open} onOpenChange={setOpen} key={open ? "open" : "closed"}>

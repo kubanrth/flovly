@@ -245,7 +245,7 @@ function MilestoneField({ task, milestones, canEdit }: TaskDetailsProps) {
   );
 }
 
-function TagsField({ workspaceId, task, allTags, tagIds, canEdit }: TaskDetailsProps) {
+function TagsField({ workspaceId, task, allTags, tagIds, canEdit, mobile }: TaskDetailsProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [creating, setCreating] = useState(false);
@@ -265,7 +265,9 @@ function TagsField({ workspaceId, task, allTags, tagIds, canEdit }: TaskDetailsP
       {active.length === 0 && !canEdit && <span className="text-sm text-fg-3">Brak</span>}
       {canEdit && (
         <Popover onOpenChange={(o) => { if (!o) { setQuery(""); setCreating(false); } }}>
-          <PopoverTrigger aria-label="Dodaj tag" title="Dodaj tag" className="grid size-[18px] place-items-center rounded-sm border border-dashed border-n-400 text-fg-3 outline-none hover:border-n-500 hover:text-foreground">
+          {/* Kwadracik ma 18px, więc na telefonie powiększamy samo pole dotyku
+              nakładką — wygląd zostaje zgodny z makietą. */}
+          <PopoverTrigger aria-label="Dodaj tag" title="Dodaj tag" className={cn("grid size-[18px] place-items-center rounded-sm border border-dashed border-n-400 text-fg-3 outline-none hover:border-n-500 hover:text-foreground", mobile && "relative before:absolute before:-inset-[13px] before:content-['']")}>
             <IconPlus width={11} height={11} />
           </PopoverTrigger>
           <PopoverContent className="w-[240px] p-1.5">
@@ -313,7 +315,7 @@ const REMINDER_PRESETS: { value: string; label: string }[] = [
   { value: "1h", label: "1 h" }, { value: "4h", label: "4 h" }, { value: "1d", label: "1 dzień" }, { value: "3d", label: "3 dni" }, { value: "none", label: "Brak" },
 ];
 
-function ReminderField({ task, canEdit, onMutate }: TaskDetailsProps) {
+function ReminderField({ task, canEdit, onMutate, mobile }: TaskDetailsProps) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(task.reminderOffset ?? "none");
   const [prev, setPrev] = useState(task.reminderOffset);
@@ -330,7 +332,9 @@ function ReminderField({ task, canEdit, onMutate }: TaskDetailsProps) {
   const label = task.reminderAt ? formatDayTime(task.reminderAt) : value !== "none" ? `${REMINDER_PRESETS.find((p) => p.value === value)?.label} przed terminem` : "Brak";
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger disabled={!canEdit} aria-label="Przypomnienie" className={cn("-mx-1 rounded-sm px-1 text-left text-sm outline-none hover:bg-n-100 disabled:hover:bg-transparent", !task.reminderAt && value === "none" && "text-fg-3")}>{label}</PopoverTrigger>
+      {/* Na telefonie przycisk wypełnia cały 44px wiersz karty — sam tekst
+          dawał pole dotyku wysokie na 20px. */}
+      <PopoverTrigger disabled={!canEdit} aria-label="Przypomnienie" className={cn("-mx-1 rounded-sm px-1 text-left text-sm outline-none hover:bg-n-100 disabled:hover:bg-transparent", mobile && "flex min-h-11 w-full items-center", !task.reminderAt && value === "none" && "text-fg-3")}>{label}</PopoverTrigger>
       <PopoverContent className="w-[200px] p-1">
         <div className="eyebrow px-2 pt-1 pb-1">Przypomnij</div>
         <div role="radiogroup" aria-label="Czas przypomnienia" className="flex flex-col">
@@ -348,11 +352,11 @@ function ReminderField({ task, canEdit, onMutate }: TaskDetailsProps) {
   );
 }
 
-function RecurrenceField({ task, canEdit }: TaskDetailsProps) {
+function RecurrenceField({ task, canEdit, mobile }: TaskDetailsProps) {
   if (task.recurrenceParentId) return <span className="text-sm text-fg-3">Instancja zadania cyklicznego</span>;
   return (
     <Popover>
-      <PopoverTrigger disabled={!canEdit} aria-label="Cykliczność" className={cn("-mx-1 rounded-sm px-1 text-left text-sm outline-none hover:bg-n-100 disabled:hover:bg-transparent", !task.recurrenceRule && "text-fg-3")}>
+      <PopoverTrigger disabled={!canEdit} aria-label="Cykliczność" className={cn("-mx-1 rounded-sm px-1 text-left text-sm outline-none hover:bg-n-100 disabled:hover:bg-transparent", mobile && "flex min-h-11 w-full items-center", !task.recurrenceRule && "text-fg-3")}>
         {summarizeRule(task.recurrenceRule)}
       </PopoverTrigger>
       <PopoverContent className="p-1">

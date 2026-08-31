@@ -27,11 +27,17 @@ export interface TaskHeaderProps {
   onMutate?: () => void;
 }
 
+// Pasek zadania na telefonie: 44px pole dotyku, ikona 18px (makieta B2-mobile).
+const TOUCH_BTN = "size-11 [&_svg]:size-[18px]";
+
 // Header actions: Wyślij mailem · Przenieś · ⤢ · ⋯ (Kopiuj link, Usuń) · ✕. Icon-only in the 600 panel (B2).
-export function TaskActions({ mode, workspaceId, boardId, workspaceBoards, task, attachments, canEdit, canDelete, iconOnly }: TaskHeaderProps & { iconOnly?: boolean }) {
+export function TaskActions({ mode, workspaceId, boardId, workspaceBoards, task, attachments, canEdit, canDelete, iconOnly, touch }: TaskHeaderProps & { iconOnly?: boolean; touch?: boolean }) {
   const shell = useTaskShell();
   const [copied, setCopied] = useState(false);
   const compact = iconOnly ?? mode === "panel";
+  // Na telefonie te ikony stoją obok 44-pikselowego „Wstecz"; przy domyślnym
+  // rozmiarze miały 28px i trudno w nie trafić kciukiem.
+  const btn = { size: touch ? ("lg" as const) : ("sm" as const), className: touch ? TOUCH_BTN : undefined };
   const copyLink = async () => {
     try { await navigator.clipboard.writeText(`${window.location.origin}/w/${workspaceId}/t/${task.id}`); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* clipboard blocked */ }
   };
@@ -44,20 +50,20 @@ export function TaskActions({ mode, workspaceId, boardId, workspaceBoards, task,
   return (
     <div className="flex shrink-0 items-center gap-1" data-ui="task-actions">
       {copied && <span className="mr-1 text-2xs text-fg-3" aria-live="polite">Skopiowano</span>}
-      {canEdit && <SendEmailDialog taskId={task.id} taskTitle={task.title} attachments={attachments} iconOnly={compact} />}
-      {canEdit && workspaceBoards.length > 1 && <MoveTaskMenu taskId={task.id} currentBoardId={boardId} availableBoards={workspaceBoards} iconOnly={compact} />}
+      {canEdit && <SendEmailDialog taskId={task.id} taskTitle={task.title} attachments={attachments} iconOnly={compact} touch={touch} />}
+      {canEdit && workspaceBoards.length > 1 && <MoveTaskMenu taskId={task.id} currentBoardId={boardId} availableBoards={workspaceBoards} iconOnly={compact} touch={touch} />}
       {mode !== "page" && (
         // window.location (not router.push): escapes the intercepting modal route so the real page.tsx resolves (F12-K119).
-        <Button variant="ghost" size="sm" iconOnly aria-label="Pełny widok" title="Pełny widok" onClick={() => window.location.assign(`/w/${workspaceId}/t/${task.id}`)}><IconExpand /></Button>
+        <Button variant="ghost" {...btn} iconOnly aria-label="Pełny widok" title="Pełny widok" onClick={() => window.location.assign(`/w/${workspaceId}/t/${task.id}`)}><IconExpand /></Button>
       )}
       <Menu>
-        <MenuTrigger render={<Button variant="ghost" size="sm" iconOnly aria-label="Więcej" title="Więcej" />}><IconMore /></MenuTrigger>
+        <MenuTrigger render={<Button variant="ghost" {...btn} iconOnly aria-label="Więcej" title="Więcej" />}><IconMore /></MenuTrigger>
         <MenuContent align="end">
           <MenuItem icon={<IconCopy />} onClick={copyLink}>Kopiuj link</MenuItem>
           {canDelete && <><MenuSeparator /><MenuItem destructive icon={<IconTrash />} onClick={remove}>Usuń</MenuItem></>}
         </MenuContent>
       </Menu>
-      {shell && <Button variant="ghost" size="sm" iconOnly aria-label="Zamknij" title="Zamknij" onClick={shell.close}><IconClose /></Button>}
+      {shell && <Button variant="ghost" {...btn} iconOnly aria-label="Zamknij" title="Zamknij" onClick={shell.close}><IconClose /></Button>}
     </div>
   );
 }
@@ -99,10 +105,10 @@ export function TaskMobileHeader(props: TaskHeaderProps) {
   const { task } = props;
   return (
     <div className="flex h-12 shrink-0 items-center gap-1 border-b border-border px-2" data-ui="task-header">
-      <Button variant="ghost" size="lg" iconOnly aria-label="Wstecz" onClick={() => (shell ? shell.close() : router.back())} className="size-11"><IconChevronLeft /></Button>
+      <Button variant="ghost" size="lg" iconOnly aria-label="Wstecz" onClick={() => (shell ? shell.close() : router.back())} className={TOUCH_BTN}><IconChevronLeft /></Button>
       <span className="font-mono text-sm text-n-600">#{task.displayId || "—"}</span>
       <span className="flex-1" />
-      <TaskActions {...props} iconOnly />
+      <TaskActions {...props} iconOnly touch />
     </div>
   );
 }

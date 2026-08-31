@@ -55,4 +55,24 @@ test.describe("mobile bottom sheets", () => {
     const ws = await empty.evaluate((el) => getComputedStyle(el, "::before").whiteSpace);
     expect(ws).toBe("nowrap");
   });
+  // Ikony w pasku zadania stały obok 44px "Wstecz" w rozmiarze 28px — trudno
+  // w nie trafić kciukiem. Makieta B2-mobile daje im 44px i ikonę 18px.
+  test("przyciski w pasku zadania maja 44px", async ({ page }) => {
+    await gotoFirstBoard(page);
+    await openFirstTask(page);
+
+    const header = page.locator('[data-ui="task-header"]');
+    await expect(header).toBeVisible();
+    const buttons = await header.locator("button").evaluateAll((els) =>
+      els.map((el) => {
+        const r = el.getBoundingClientRect();
+        return { label: el.getAttribute("aria-label"), w: Math.round(r.width), h: Math.round(r.height) };
+      }),
+    );
+    expect(buttons.length).toBeGreaterThan(1);
+    for (const b of buttons) {
+      expect(b.w, `${b.label} ma ${b.w}px szerokosci`).toBeGreaterThanOrEqual(44);
+      expect(b.h, `${b.label} ma ${b.h}px wysokosci`).toBeGreaterThanOrEqual(44);
+    }
+  });
 });
