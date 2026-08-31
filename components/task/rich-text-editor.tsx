@@ -159,6 +159,12 @@ export function RichTextEditor({
   const [json, setJson] = useState<string>(
     initial && !isDocEmpty(initial) ? JSON.stringify(initial) : "",
   );
+  // Rozszerzenie placeholdera czyta opcje z kopii zrobionej przy tworzeniu
+  // edytora, więc podana wprost wartość zostawała ta z pierwszego renderu.
+  // Widać to było w komentarzach: `useIsMobile` przełącza się dopiero po
+  // hydratacji, edytor powstawał wcześniej i trzymał dłuższy, desktopowy
+  // tekst — a ten nie mieścił się w jednoliniowym polu.
+  const placeholderRef = useRef(placeholder);
   const showToolbar = variant === "field" && !readOnly;
   const isCompact = variant === "compact" || variant === "compact-lg";
   const showFrame = variant === "field" || isCompact;
@@ -193,7 +199,9 @@ export function RichTextEditor({
           class: "text-primary underline underline-offset-2",
         },
       }),
-      Placeholder.configure({ placeholder }),
+      // ProseMirror woła to przy przeliczaniu dekoracji, nigdy w trakcie renderu.
+      // eslint-disable-next-line react-hooks/refs
+      Placeholder.configure({ placeholder: () => placeholderRef.current }),
       Mention.configure({
         HTMLAttributes: { class: "mention-chip" },
         renderText: ({ node }) => `@${node.attrs.label ?? node.attrs.id}`,
@@ -225,6 +233,14 @@ export function RichTextEditor({
       onChange?.(empty ? null : doc);
     },
   });
+
+  // Dekoracje przeliczamy pustą transakcją — same z siebie odświeżają się
+  // dopiero przy zmianie treści albo zaznaczenia.
+  useEffect(() => {
+    placeholderRef.current = placeholder;
+    if (!editor || editor.isDestroyed) return;
+    editor.view.dispatch(editor.state.tr);
+  }, [editor, placeholder]);
 
   useEffect(() => {
     onReady?.(editor);
@@ -279,6 +295,20 @@ export function RichTextEditor({
           float: left;
           pointer-events: none;
           height: 0;
+        }
+        /* Pole jednoliniowe: placeholder pływa i ma zerową wysokość, więc gdy tekst
+           nie mieścił się w jednej linii, druga wychodziła pod ramkę. Nakładka
+           przycięta do szerokości pola z wielokropkiem zamiast zawijania. */
+        [data-variant^="compact"] .tiptap-content { position: relative; }
+        [data-variant^="compact"] .tiptap-content p.is-editor-empty:first-child::before {
+          position: absolute;
+          left: 0;
+          right: 0;
+          float: none;
+          height: auto;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .tiptap-content .mention-chip { color: var(--orange-700); font-weight: 500; white-space: nowrap; }
         .tiptap-content .rt-table { border-collapse: collapse; margin: 0.6em 0; table-layout: fixed; width: 100%; overflow: hidden; }

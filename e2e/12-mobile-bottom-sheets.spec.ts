@@ -35,4 +35,24 @@ test.describe("mobile bottom sheets", () => {
     await expect.poll(async () => (await edges()).bottom).toBeLessThanOrEqual(viewport.height + 1);
     expect((await edges()).top).toBeGreaterThan(viewport.height / 3);
   });
+  // Otwarcie zadania z tablicy: edytor komentarza powstaje zanim `useIsMobile`
+  // przełączy się po hydratacji. Zostawał wtedy przy dłuższym, desktopowym
+  // placeholderze, który zawijał się na drugą linię i wychodził pod ramkę.
+  test("pole komentarza mieści placeholder w jednej linii", async ({ page }) => {
+    await gotoFirstBoard(page);
+    await openFirstTask(page);
+
+    const composer = page.locator('[data-ui="comment-composer"]');
+    await expect(composer).toBeVisible();
+    const empty = composer.locator("p.is-editor-empty");
+    await expect(empty).toHaveAttribute("data-placeholder", "Napisz komentarz…");
+
+    // Ramka zostaje jednoliniowa, a placeholder nigdy się nie zawija — nawet
+    // gdyby tekst był dłuższy niż pole.
+    const box = composer.locator("[data-variant] > div").first();
+    await expect(box).toHaveCSS("min-height", "44px");
+    expect(await box.evaluate((el) => Math.round(el.getBoundingClientRect().height))).toBe(44);
+    const ws = await empty.evaluate((el) => getComputedStyle(el, "::before").whiteSpace);
+    expect(ws).toBe("nowrap");
+  });
 });
