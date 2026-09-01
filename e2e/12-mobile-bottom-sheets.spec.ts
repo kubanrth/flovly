@@ -143,4 +143,32 @@ test.describe("mobile bottom sheets", () => {
     await overlay.getByRole("button", { name: "Zamknij" }).click();
     await expect(overlay).toBeHidden();
   });
+  // Paleta (lupka w gornym pasku) byla na telefonie plywajaca karta zaczynajaca
+  // sie w 18% wysokosci — klawiatura zaslaniala wyniki, a jedynym wyjsciem byl
+  // klawisz Esc, ktorego telefon nie ma.
+  test("paleta wyszukiwania jest na telefonie pelnoekranowa", async ({ page }) => {
+    await page.goto("/workspaces");
+    await page.getByRole("button", { name: "Szukaj", exact: true }).click();
+
+    const popup = page.locator("[data-fullscreen-mobile]");
+    await expect(popup).toBeVisible();
+    // Paleta wjezdza z zoom-in — mierzone w trakcie animacji daje przeskalowany box.
+    await popup.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
+    const m = await popup.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return {
+        x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width),
+        okno: window.innerWidth,
+        radius: getComputedStyle(el).borderRadius,
+        placeholder: el.querySelector("input")?.getAttribute("placeholder"),
+      };
+    });
+    expect({ x: m.x, y: m.y, w: m.w }).toEqual({ x: 0, y: 0, w: m.okno });
+    expect(m.radius).toBe("0px");
+    expect(m.placeholder).toBe("Szukaj przestrzeni, tablicy, zadania…");
+
+    // Wyjscie bez klawiatury sprzetowej.
+    await popup.getByRole("button", { name: "Zamknij" }).click();
+    await expect(popup).toBeHidden();
+  });
 });

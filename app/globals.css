@@ -151,6 +151,12 @@
 .surface { background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
 .popover-surface { background: var(--popover); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-e1); }
 .dialog-surface { background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-e2); }
+/* Paleta wyszukiwania jest na telefonie pelnoekranowa. Klasa wyzej nie siedzi
+   w warstwie utilities, wiec `max-md:rounded-none` z Tailwinda jej nie ruszal
+   i w narozach zostawaly sciete rogi z tlem strony pod spodem. */
+@media (max-width: 767px) {
+  .dialog-surface[data-fullscreen-mobile] { border-radius: 0; border: 0; box-shadow: none; }
+}
 .sheet-mobile-surface { background: var(--card); border-top: 1px solid var(--border); border-radius: 12px 12px 0 0; box-shadow: var(--shadow-e2); }
 .sheet-drag-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--n-300); margin: 8px auto 0; }
 

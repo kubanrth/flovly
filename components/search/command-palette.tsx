@@ -131,6 +131,20 @@ export function CommandPalette({ data }: { data: CommandPaletteData }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, data.workspaces, data.boards, navigate]);
 
+  // iOS nie zmniejsza layoutu po otwarciu klawiatury — tylko widoczny obszar.
+  // Bez tego dolna polowa palety (i wyniki) chowala sie pod klawiatura.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!open || !vv) return;
+    const apply = () => document.documentElement.style.setProperty("--vvh", `${vv.height}px`);
+    apply();
+    vv.addEventListener("resize", apply);
+    return () => {
+      vv.removeEventListener("resize", apply);
+      document.documentElement.style.removeProperty("--vvh");
+    };
+  }, [open]);
+
   const closePalette = useCallback(() => setOpenAndReset(false), [setOpenAndReset]);
   const sections = useMemo(
     () => buildSections(data, navigate, closePalette),
@@ -148,38 +162,51 @@ export function CommandPalette({ data }: { data: CommandPaletteData }) {
           )}
         />
         <DialogPrimitive.Popup
+          data-fullscreen-mobile=""
           // z-[110] === Z.modal (F12-K104) — nad sidebar (z-40) i toaster (z-[80]).
           // Margin-top żeby paleta wyświetlała się "z góry" jak Spotlight.
           className={cn(
             "dialog-surface fixed left-1/2 top-[18%] z-[110] w-[600px] max-w-[calc(100%-2rem)] -translate-x-1/2 overflow-hidden outline-none",
             "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 duration-100",
+            // Telefon: pelny ekran zamiast plywajacej karty. Wysokosc bierzemy z
+            // visualViewport, bo iOS nie zmniejsza layoutu po otwarciu klawiatury
+            // — bez tego wyniki chowaly sie pod nia.
+            "max-md:inset-x-0 max-md:top-0 max-md:h-[var(--vvh,100dvh)] max-md:w-full max-md:max-w-none max-md:translate-x-0",
           )}
         >
           <DialogPrimitive.Title className="sr-only">
             Szybkie wyszukiwanie
           </DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">
-            Wpisz frazę aby przeszukać workspaces, tablice, zadania i akcje.
+            Wpisz frazę, aby przeszukać przestrzenie, tablice, zadania i akcje.
           </DialogPrimitive.Description>
 
           <Command
             label="Command palette"
             // cmdk default: arrow keys + enter; nasz UI tylko stylowanie.
-            className="flex max-h-[480px] flex-col"
+            className="flex max-h-[480px] flex-col max-md:h-full max-md:max-h-none"
           >
             <div className="flex items-center gap-2.5 border-b border-black/5 px-4 py-3">
               <Search size={16} className="text-muted-foreground" />
               <Command.Input
                 value={query}
                 onValueChange={setQuery}
-                placeholder="Szukaj workspace, tablicy, zadania, akcji..."
-                aria-label="Wyszukaj workspace, tablicę, zadanie lub akcję"
-                className="flex-1 bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground/70 outline-none"
+                placeholder="Szukaj przestrzeni, tablicy, zadania…"
+                aria-label="Szukaj przestrzeni, tablicy, zadania lub akcji"
+                className="min-w-0 flex-1 bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground/70 outline-none"
                 autoFocus
               />
-              <kbd className="font-mono text-[11px] text-muted-foreground/90 rounded-md border border-black/10 px-1.5 py-0.5">
+              <kbd className="font-mono text-[11px] text-muted-foreground/90 rounded-md border border-black/10 px-1.5 py-0.5 max-md:hidden">
                 Esc
               </kbd>
+              {/* Telefon nie ma klawisza Esc — potrzebny realny przycisk wyjscia. */}
+              <button
+                type="button"
+                onClick={() => setOpenAndReset(false)}
+                className="shrink-0 rounded-md px-1.5 py-1 text-sm font-medium text-n-700 outline-none active:bg-n-100 md:hidden"
+              >
+                Zamknij
+              </button>
             </div>
 
             <Command.List className="flex-1 overflow-y-auto p-2">
@@ -221,7 +248,7 @@ export function CommandPalette({ data }: { data: CommandPaletteData }) {
               ))}
             </Command.List>
 
-            <div className="flex items-center justify-between gap-3 border-t border-black/5 px-4 py-2 text-[11px] text-muted-foreground/90">
+            <div className="flex items-center justify-between gap-3 border-t border-black/5 px-4 py-2 text-[11px] text-muted-foreground/90 max-md:hidden">
               <span>
                 <kbd className="font-mono">↑↓</kbd> nawiguj ·{" "}
                 <kbd className="font-mono">↵</kbd> wybierz
@@ -250,7 +277,7 @@ function buildSections(
   if (d.workspaces.length > 0) {
     out.push({
       id: "workspaces",
-      heading: "Workspace'y",
+      heading: "Przestrzenie",
       items: d.workspaces.map((w) => ({
         key: `ws-${w.id}`,
         icon: <Folder size={14} />,
