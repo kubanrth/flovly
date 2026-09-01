@@ -35,7 +35,9 @@ export function KanbanMobile({
 
   return (
     <div data-ui="kanban-mobile" className="flex min-h-[calc(100dvh-48px)] w-full flex-col bg-canvas pb-24">
-      <div className="no-scrollbar flex w-full gap-1.5 overflow-x-auto border-b border-border bg-card px-4 py-2.5">
+      {/* Pasek statusow zostaje na wierzchu: wczesniej zjezdzal razem z kartami
+          i po przewinieciu nie bylo widac, w ktorej kolumnie sie jest. */}
+      <div className="no-scrollbar sticky top-0 z-[var(--z-sticky)] flex w-full shrink-0 gap-1.5 overflow-x-auto border-b border-border bg-card px-4 py-2.5">
         {columnIds.map((id) => {
           const col = columnById.get(id);
           const hue = col ? hueForColor(col.colorHex) : "gray";

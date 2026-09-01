@@ -171,4 +171,33 @@ test.describe("mobile bottom sheets", () => {
     await popup.getByRole("button", { name: "Zamknij" }).click();
     await expect(popup).toBeHidden();
   });
+  // Pasek statusow zjezdzal razem z kartami — po przewinieciu nie bylo widac,
+  // w ktorej kolumnie sie jest. Byl przy tym sciesniony i chipy sie ucinaly.
+  test("pasek statusow Tablicy zostaje widoczny przy przewijaniu", async ({ page }) => {
+    await gotoFirstBoard(page);
+    await page.goto(page.url().replace(/\/table(\?.*)?$/, "/kanban"));
+    await expect(page.locator('[data-ui="kanban-mobile"]')).toBeVisible();
+
+    const bar = page.locator('[data-ui="kanban-status-chip"]').first().locator("xpath=..");
+    await expect(bar).toHaveCSS("position", "sticky");
+
+    const m = await bar.evaluate((el) => {
+      const sc = [...document.querySelectorAll("div")].find(
+        (d) => d.scrollHeight > d.clientHeight + 2 && /auto|scroll/.test(getComputedStyle(d).overflowY) && d.querySelector('[data-ui="kanban-mobile"]'),
+      );
+      sc!.scrollTop = sc!.scrollHeight;
+      const b = el.getBoundingClientRect();
+      const c = sc!.getBoundingClientRect();
+      return {
+        pasekTop: Math.round(b.top),
+        kontenerTop: Math.round(c.top),
+        klient: el.clientHeight,
+        tresc: el.scrollHeight,
+      };
+    });
+    // Po przewinieciu do konca pasek dalej stoi przy gornej krawedzi listy.
+    expect(m.pasekTop).toBeGreaterThanOrEqual(m.kontenerTop - 1);
+    // I nie jest scisniety — chipy nie moga byc ucinane.
+    expect(m.klient).toBe(m.tresc);
+  });
 });
