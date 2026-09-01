@@ -175,6 +175,8 @@ test.describe("mobile bottom sheets", () => {
   // w ktorej kolumnie sie jest. Byl przy tym sciesniony i chipy sie ucinaly.
   test("pasek statusow Tablicy zostaje widoczny przy przewijaniu", async ({ page }) => {
     await gotoFirstBoard(page);
+    // Bez tego WebKit zglasza przerwane prefetche RSC z poprzedniej nawigacji.
+    await page.waitForLoadState("networkidle").catch(() => {});
     await page.goto(page.url().replace(/\/table(\?.*)?$/, "/kanban"));
     await expect(page.locator('[data-ui="kanban-mobile"]')).toBeVisible();
 
@@ -199,5 +201,29 @@ test.describe("mobile bottom sheets", () => {
     expect(m.pasekTop).toBeGreaterThanOrEqual(m.kontenerTop - 1);
     // I nie jest scisniety — chipy nie moga byc ucinane.
     expect(m.klient).toBe(m.tresc);
+  });
+  // Po wdrozeniu otwarta karta prosi o nazwy plikow, ktorych juz nie ma. Panel
+  // zadania dociaga kod leniwie, wiec obrywal pierwszy: klikniecie zmienialo
+  // adres, ale zamiast zadania pokazywal sie blad i pomagalo tylko odswiezenie.
+  test("zadanie otwiera sie mimo nieaktualnych plikow po wdrozeniu", async ({ page, consoleErrors }) => {
+    await gotoFirstBoard(page);
+    await expect(page.locator('a[href*="/t/"]').first()).toBeVisible();
+
+    // Serwer "po wdrozeniu": stare nazwy chunkow znikaja.
+    await page.route("**/_next/static/chunks/**", (route) => route.fulfill({ status: 404, body: "" }));
+    await page.locator('a[href*="/t/"]').first().click();
+    await page.waitForTimeout(1500);
+    // Twarde przejscie dostaje juz swiezy kod, tak jak realny serwer.
+    await page.unroute("**/_next/static/chunks/**");
+
+    await expect(page.locator('[data-ui="task-detail"]')).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("Nie udało się załadować zadania")).toBeHidden();
+
+    // 404 na plikach i ChunkLoadError wywolalismy sami — reszta bledow ma dalej
+    // wywalac test.
+    const nasze = /404 \(Not Found\)|ChunkLoadError|\[TaskModal\] render failed|\[AppError\]/;
+    const obce = consoleErrors.filter((e) => !nasze.test(e));
+    consoleErrors.length = 0;
+    consoleErrors.push(...obce);
   });
 });

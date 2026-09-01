@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { AlertTriangle, RotateCcw, ArrowLeft } from "lucide-react";
+import { recoverFromStaleBundle } from "@/components/layout/stale-bundle";
 
 // (app) error boundary — łapie crashe z workspace/board/tasks bez wywalania
 // AppShellu. Render minimal-page (nie owijamy w AppShell — layout sam
@@ -16,6 +17,8 @@ export default function AppError({
 }) {
   useEffect(() => {
     console.error("[AppError]", error);
+    // Nieaktualne pliki po wdrozeniu — przeladuj biezacy adres na swiezym kodzie.
+    recoverFromStaleBundle(error, window.location.href);
   }, [error]);
 
   return (
