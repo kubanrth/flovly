@@ -27,6 +27,7 @@ import {
   patchTaskAction,
   toggleAssigneeAction,
 } from "@/app/(app)/w/[workspaceId]/t/actions";
+import { assignTaskToMilestoneAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/milestone-actions";
 import type { TaskPriorityValue } from "@/lib/task-priority";
 import type { ShellBoard } from "@/components/layout/shell-types";
 import { getBoardMetaAction, type BoardMeta } from "./create-task-meta";
@@ -97,6 +98,10 @@ const PRIORITY_ITEMS = [
   { value: "NONE" as TaskPriorityValue, label: "Brak" },
 ];
 const DEFAULT_VIEW = "default";
+const NO_MILESTONE = "none";
+
+const dzien = (iso: string) => new Date(iso).toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
+const zakres = (od: string, do_: string) => `${dzien(od)} – ${dzien(do_)}`;
 
 export function CreateTaskButton({ workspaceId, boardId, viewId }: {
   workspaceId: string;
@@ -142,6 +147,7 @@ export function CreateTaskDialog({ workspaceId, boardId, boards = [], viewId, op
   const [stopAt, setStopAt] = useState("");
   const [assignees, setAssignees] = useState<string[]>([]);
   const [view, setView] = useState<string | null>(viewId ?? null);
+  const [milestone, setMilestone] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const status = statusId && meta?.statuses.some((s) => s.id === statusId) ? statusId : (meta?.statuses[0]?.id ?? null);
@@ -150,14 +156,21 @@ export function CreateTaskDialog({ workspaceId, boardId, boards = [], viewId, op
     ? boards.map((b) => ({ value: b.id, label: `${b.workspaceName} / ${b.name}` }))
     : board && meta ? [{ value: board, label: meta.boardName }] : [];
 
+  // To samo, co sprawdza serwer przy przypisaniu: termin zadania musi miescic
+  // sie w zakresie milestone'a. Mowimy o tym od razu, a nie dopiero po probie.
+  const wybranyMilestone = milestone && milestone !== NO_MILESTONE ? (meta?.milestones ?? []).find((m) => m.id === milestone) : undefined;
+  const poza = Boolean(
+    wybranyMilestone && stopAt && new Date(stopAt) > new Date(wybranyMilestone.stopAt),
+  );
+
   const reset = () => {
-    setTitle(""); setStatusId(null); setPriority("MEDIUM"); setStopAt(""); setAssignees([]); setView(viewId ?? null); setError(null);
+    setTitle(""); setStatusId(null); setPriority("MEDIUM"); setStopAt(""); setAssignees([]); setView(viewId ?? null); setMilestone(null); setError(null);
     if (!boardId) setPickedBoard(null);
   };
   const handleOpenChange = (o: boolean) => { if (!o) reset(); onOpenChange(o); };
 
   const submit = (keepOpen: boolean) => {
-    if (pending || !board) return;
+    if (pending || !board || poza) return;
     setError(null);
     const fd = new FormData();
     fd.set("workspaceId", wsId);
@@ -181,7 +194,22 @@ export function CreateTaskDialog({ workspaceId, boardId, boards = [], viewId, op
         const a = new FormData(); a.set("taskId", res.taskId); a.set("userId", userId);
         extras.push(toggleAssigneeAction(a));
       }
-      await Promise.all(extras);
+      // Milestone leci razem z data i przypisaniami — osobna, sekwencyjna runda
+      // kosztowala kilka sekund (kazda akcja rewaliduje layout tablicy), a
+      // niedopasowane daty i tak blokujemy wczesniej po stronie formularza.
+      if (milestone && milestone !== NO_MILESTONE) {
+        const m = new FormData(); m.set("taskId", res.taskId); m.set("milestoneId", milestone);
+        extras.push(assignTaskToMilestoneAction(m).then((w) => { if (w && !w.ok) throw new Error(w.error); }));
+      }
+      try {
+        await Promise.all(extras);
+      } catch (e) {
+        // Zadanie juz istnieje — nie cofamy go, tylko mowimy, czego nie udalo
+        // sie ustawic, i zostawiamy dialog otwarty.
+        setError(e instanceof Error ? e.message : "Zadanie utworzone, ale nie udało się ustawić wszystkich pól.");
+        router.refresh();
+        return;
+      }
       if (keepOpen) {
         setTitle("");
         titleRef.current?.focus();
@@ -212,7 +240,7 @@ export function CreateTaskDialog({ workspaceId, boardId, boards = [], viewId, op
       <span className="text-xs text-fg-3 max-md:hidden">Utwórz i dodaj kolejne <Kbd className="px-1 text-[10px]">⇧Enter</Kbd></span>
       <span className="flex-1" />
       <Button variant="secondary" size={size} onClick={() => handleOpenChange(false)}>Anuluj</Button>
-      <Button variant="primary" size={size} loading={pending} disabled={!board || pending} onClick={() => submit(false)}>Utwórz zadanie</Button>
+      <Button variant="primary" size={size} loading={pending} disabled={!board || pending || poza} onClick={() => submit(false)}>Utwórz zadanie</Button>
     </>
   );
 
@@ -264,6 +292,15 @@ export function CreateTaskDialog({ workspaceId, boardId, boards = [], viewId, op
             })}
             <span className="truncate text-fg-3">Dodaj osobę…</span>
           </PersonPicker>
+        </div>
+        <div>
+          <Label className="mb-[5px]">Milestone <span className="font-normal text-fg-3">(opcjonalnie)</span></Label>
+          <Select aria-label="Milestone" size={size} placeholder="Bez milestone'u" value={milestone} onValueChange={setMilestone}
+            items={[
+              { value: NO_MILESTONE, label: "Bez milestone'u" },
+              ...(meta?.milestones ?? []).map((m) => ({ value: m.id, label: `${m.title} · ${zakres(m.startAt, m.stopAt)}` })),
+            ]} />
+          {poza && <p className="mt-1 text-xs text-danger-text">{"Termin zadania wypada poza zakresem milestone'a — popraw datę albo wybierz inny."}</p>}
         </div>
         <div>
           <Label className="mb-[5px]">Dodaj do widoku <span className="font-normal text-fg-3">(opcjonalnie)</span></Label>

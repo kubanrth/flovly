@@ -13,7 +13,7 @@ test.describe("task creation", () => {
     // Poll: the popup scales in from .98 (150ms), so a one-shot boundingBox can land mid-animation.
     await expect.poll(async () => Math.abs((await dialog.boundingBox())!.width - 480)).toBeLessThanOrEqual(2);
     await expect(dialog.locator("label")).toHaveText([
-      "Tytuł", "Tablica", "Status", "Priorytet", "Termin", "Przypisani", /^Dodaj do widoku/,
+      "Tytuł", "Tablica", "Status", "Priorytet", "Termin", "Przypisani", /^Milestone/, /^Dodaj do widoku/,
     ]);
     await expect(dialog.locator('input[name="title"]')).toBeFocused();
     await expect(dialog.getByText("Utwórz i dodaj kolejne")).toBeVisible();
@@ -56,5 +56,36 @@ test.describe("task creation", () => {
     await dialog.getByRole("button", { name: "Anuluj" }).click();
     await expect(dialog).toBeHidden();
     await expect(page.locator("table tbody").getByText(title).first()).toBeVisible({ timeout: 10_000 });
+  });
+  // Milestone dalo sie ustawic dopiero po utworzeniu zadania, w panelu.
+  test("dialog Nowe zadanie pozwala wybrac milestone", async ({ page }) => {
+    await gotoFirstBoard(page);
+    await page.getByRole("button", { name: "Nowe zadanie" }).first().click();
+    const dialog = page.locator('[data-ui="create-task-dialog"]');
+    await expect(dialog).toBeVisible();
+
+    // Lista milestone'ow dociaga sie razem z reszta danych tablicy — bez tego
+    // select otwiera sie pusty i test niczego nie sprawdza.
+    await expect(dialog.getByLabel("Tablica")).not.toContainText("Wybierz tablicę");
+    const pole = dialog.getByLabel("Milestone");
+    await expect(pole).toBeVisible();
+    await pole.click();
+    // Zawsze jest wyjscie „bez milestone'u"; reszta zalezy od danych tablicy.
+    await expect(page.getByRole("option", { name: /Bez milestone/ })).toBeVisible();
+    const opcje = page.getByRole("option");
+    // Tablica moze nie miec milestone'ow — wtedy zostaje samo „bez". Sprawdzamy
+    // wybor tylko wtedy, gdy jest co wybrac.
+    if ((await opcje.count()) > 1) {
+      const nazwa = (await opcje.nth(1).innerText()).split(" · ")[0]!;
+      await opcje.nth(1).click();
+      await expect(pole).toContainText(nazwa);
+    } else {
+      await opcje.first().click();
+    }
+
+    const tytul = `e2e-milestone-${Date.now()}`;
+    await dialog.getByLabel("Tytuł").fill(tytul);
+    await dialog.getByRole("button", { name: "Utwórz zadanie" }).click();
+    await expect(dialog).toBeHidden({ timeout: 20_000 });
   });
 });
