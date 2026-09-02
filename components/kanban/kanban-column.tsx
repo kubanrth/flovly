@@ -5,7 +5,8 @@
 
 import { startTransition, useEffect, useRef, useState } from "react";
 import { useDroppable } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { createTaskAction } from "@/app/(app)/w/[workspaceId]/t/actions";
 import { deleteStatusColumnAction, updateStatusColumnAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
 import { STATUS_PALETTE } from "@/lib/colors";
@@ -15,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Menu, MenuContent, MenuItem, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuSub, MenuSubContent, MenuSubTrigger, MenuTrigger } from "@/components/ui/dropdown-menu";
 import { IconChevronLeft, IconChevronRight, IconEdit, IconMore, IconPlus, IconTag, IconTrash } from "@/components/ui/icons";
 import { NO_STATUS, wipTone, type KanbanStatusColumn, type KanbanTask } from "@/components/kanban/kanban-model";
+import { COL_DRAG_PREFIX } from "@/components/kanban/column-order";
 import { SortableKanbanCard, type CardHoverProps } from "@/components/kanban/kanban-card";
 import { useKanbanState } from "@/components/kanban/kanban-state";
 
@@ -39,6 +41,17 @@ export function KanbanColumn({
   const [renaming, setRenaming] = useState(false);
   const { setNodeRef, isOver } = useDroppable({ id: `col:${id}` });
   const name = column?.name ?? "Bez statusu";
+  // Przestawianie kolumn: uchwytem jest nazwa. „Bez statusu” nie ma wiersza w
+  // bazie, wiec zostaje na swoim miejscu. Prefiks `colsort:` odroznia to
+  // przeciaganie od kart w tym samym DndContext.
+  const canReorder = s.canManageBoard && id !== NO_STATUS && !renaming;
+  const { attributes, listeners, setNodeRef: setSortRef, transform, transition, isDragging } = useSortable({
+    id: `${COL_DRAG_PREFIX}${id}`,
+    data: { type: "column", columnId: id },
+    disabled: !canReorder,
+  });
+  const sortableStyle = { transform: CSS.Translate.toString(transform), transition };
+  const handleProps = canReorder ? { ...attributes, ...listeners } : {};
   const collapsed = s.collapsed.includes(id);
   const limit = s.wip[id] ?? null;
   const tone = wipTone(tasks.length, limit);
@@ -68,9 +81,16 @@ export function KanbanColumn({
         data-ui="kanban-column"
         data-collapsed=""
         data-column-id={id}
+        ref={setSortRef}
+        style={sortableStyle}
+        {...handleProps}
         onClick={() => s.toggleCollapsed(id)}
         aria-label={`Rozwiń kolumnę ${name}`}
-        className="flex h-[360px] w-10 shrink-0 flex-col items-center gap-2 rounded-lg border border-border bg-n-100 py-2 outline-none hover:bg-n-200 active:bg-n-300"
+        className={cn(
+          "flex h-[360px] w-10 shrink-0 flex-col items-center gap-2 rounded-lg border border-border bg-n-100 py-2 outline-none hover:bg-n-200 active:bg-n-300",
+          canReorder && "cursor-grab active:cursor-grabbing",
+          isDragging && "opacity-40",
+        )}
       >
         <IconChevronRight width={12} height={12} className="text-fg-3" />
         <span className="eyebrow text-fg-2 [writing-mode:vertical-rl]">{name} · {tasks.length}</span>
@@ -79,7 +99,15 @@ export function KanbanColumn({
   }
 
   return (
-    <section role="group" data-ui="kanban-column" data-column-id={id} aria-label={`Kolumna ${name}, ${tasks.length} ${taskPl(tasks.length)}`} className="w-[280px] shrink-0">
+    <section
+      ref={setSortRef}
+      style={sortableStyle}
+      role="group"
+      data-ui="kanban-column"
+      data-column-id={id}
+      aria-label={`Kolumna ${name}, ${tasks.length} ${taskPl(tasks.length)}`}
+      className={cn("w-[280px] shrink-0", isDragging && "opacity-40")}
+    >
       <div className="flex h-8 items-center gap-1.5 px-1">
         {renaming && column ? (
           <ColumnNameInput
@@ -92,7 +120,14 @@ export function KanbanColumn({
           />
         ) : (
           <>
-            <span className="eyebrow min-w-0 truncate text-fg-2">{name}</span>
+            <span
+              {...handleProps}
+              data-ui="kanban-column-handle"
+              title={canReorder ? "Przeciągnij, aby zmienić kolejność kolumn" : undefined}
+              className={cn("eyebrow min-w-0 truncate text-fg-2 outline-none", canReorder && "cursor-grab active:cursor-grabbing")}
+            >
+              {name}
+            </span>
             <span className="shrink-0 font-mono text-2xs leading-none text-fg-3">· {tasks.length}</span>
             {tone && (
               <span className={cn("inline-flex h-4 shrink-0 items-center rounded-lg px-[5px] text-[10px] font-semibold leading-none", WIP_TONE[tone])}>

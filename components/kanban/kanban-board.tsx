@@ -11,9 +11,9 @@ import {
   pointerWithin, rectIntersection, useSensor, useSensors,
   type CollisionDetection, type DragEndEvent, type DragOverEvent, type DragStartEvent,
 } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { SortableContext, horizontalListSortingStrategy, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { patchTaskAction } from "@/app/(app)/w/[workspaceId]/t/actions";
-import { createStatusColumnAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
+import { createStatusColumnAction, reorderStatusColumnsAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
 import { useWorkspaceRealtime } from "@/hooks/use-workspace-realtime";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useAssignHotkey } from "@/components/task/assign-hotkey";
@@ -29,6 +29,7 @@ import {
   GROUP_LABEL, NO_STATUS, buildSwimlanes, columnBuckets, columnPl, filterTasks, lanePl, visibleColumnIds,
   type KanbanMember, type KanbanStatusColumn, type KanbanTask,
 } from "@/components/kanban/kanban-model";
+import { COL_DRAG_PREFIX, columnIdFromDragId, columnOfDropTarget, isColumnDragId, nextColumnOrder } from "@/components/kanban/column-order";
 import { KanbanCard } from "@/components/kanban/kanban-card";
 import { KanbanColumn } from "@/components/kanban/kanban-column";
 import { KanbanMobile } from "@/components/kanban/kanban-mobile";
@@ -61,9 +62,17 @@ export function KanbanBoardView({ initialTasks }: { initialTasks: KanbanTask[] }
     () => filterTasks(tasks, { query: s.search, people: s.people, priority: s.priority }),
     [tasks, s.search, s.people, s.priority],
   );
-  const buckets = useMemo(() => columnBuckets(visible, s.statusColumns, s.sort), [visible, s.statusColumns, s.sort]);
-  const columnIds = useMemo(() => visibleColumnIds(s.statusColumns, buckets), [s.statusColumns, buckets]);
-  const columnById = useMemo(() => new Map(s.statusColumns.map((c) => [c.id, c])), [s.statusColumns]);
+  // Kolejnosc kolumn trzymana lokalnie, zeby po upuszczeniu nie czekac na
+  // revalidate — inaczej kolumna wracalaby na chwile na stare miejsce.
+  const [columnOrder, setColumnOrder] = useState<KanbanStatusColumn[]>(s.statusColumns);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setColumnOrder(s.statusColumns);
+  }, [s.statusColumns]);
+  const buckets = useMemo(() => columnBuckets(visible, columnOrder, s.sort), [visible, columnOrder, s.sort]);
+  const columnIds = useMemo(() => visibleColumnIds(columnOrder, buckets), [columnOrder, buckets]);
+  const columnById = useMemo(() => new Map(columnOrder.map((c) => [c.id, c])), [columnOrder]);
+  const sortableColumnIds = useMemo(() => columnIds.filter((id) => id !== NO_STATUS).map((id) => `${COL_DRAG_PREFIX}${id}`), [columnIds]);
   const activeTask = activeId ? tasks.find((t) => t.id === activeId) ?? null : null;
   const hoverProps = (t: KanbanTask) => assign.rowProps(t.id, t.assignees.map((a) => a.id));
 
@@ -81,20 +90,37 @@ export function KanbanBoardView({ initialTasks }: { initialTasks: KanbanTask[] }
   };
 
   const columnOf = (taskId: string) => tasks.find((t) => t.id === taskId)?.statusColumnId ?? NO_STATUS;
-  const columnOfOver = (overId: string): string | null => {
-    if (overId.startsWith("col:")) return overId.slice(4);
-    const overTask = tasks.find((t) => t.id === overId);
-    return overTask ? overTask.statusColumnId ?? NO_STATUS : null;
-  };
+  const columnOfOver = (overId: string) =>
+    columnOfDropTarget(overId, (taskId) => {
+      const overTask = tasks.find((t) => t.id === taskId);
+      return overTask ? overTask.statusColumnId ?? NO_STATUS : null;
+    });
+
+  const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
 
   const onDragStart = (e: DragStartEvent) => {
     draggingRef.current = true;
-    setActiveId(String(e.active.id));
+    const id = String(e.active.id);
+    if (isColumnDragId(id)) { setActiveColumnId(columnIdFromDragId(id)); return; }
+    setActiveId(id);
+  };
+
+  // Przestawienie kolumn — akcja i uprawnienie juz istnialy (dotad siegal do
+  // nich tylko pikcer statusu w Tabeli), brakowalo gestu na samej Tablicy.
+  const onColumnDragEnd = (activeSortId: string, overSortId: string) => {
+    const next = nextColumnOrder(columnOrder, columnIdFromDragId(activeSortId), columnOfOver(overSortId));
+    if (!next) return;
+    setColumnOrder(next);
+    const fd = new FormData();
+    fd.set("workspaceId", s.workspaceId);
+    fd.set("boardId", s.boardId);
+    fd.set("ids", next.map((c) => c.id).join(","));
+    startPatch(() => { reorderStatusColumnsAction(fd); });
   };
 
   // Preview the move immediately; persistence happens on drag end.
   const onDragOver = (e: DragOverEvent) => {
-    if (!e.over) return;
+    if (!e.over || isColumnDragId(String(e.active.id))) return;
     const activeTaskId = String(e.active.id);
     const overCol = columnOfOver(String(e.over.id));
     if (!overCol) return;
@@ -108,10 +134,12 @@ export function KanbanBoardView({ initialTasks }: { initialTasks: KanbanTask[] }
   const onDragEnd = (e: DragEndEvent) => {
     const { active, over } = e;
     setActiveId(null);
+    setActiveColumnId(null);
     setDropHint(null);
     draggingRef.current = false;
     if (!over) return;
     const id = String(active.id);
+    if (isColumnDragId(id)) { onColumnDragEnd(id, String(over.id)); return; }
     const overId = String(over.id);
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
@@ -213,10 +241,20 @@ export function KanbanBoardView({ initialTasks }: { initialTasks: KanbanTask[] }
       onDragEnd={onDragEnd}
       accessibility={{
         announcements: {
-          onDragStart: ({ active }) => `Podniesiono zadanie ${active.id}`,
-          onDragOver: ({ active, over }) => (over ? `Zadanie ${active.id} nad ${over.id}` : undefined),
-          onDragEnd: ({ active, over }) => (over ? `Upuszczono zadanie ${active.id} na ${over.id}` : `Anulowano przeniesienie zadania ${active.id}`),
-          onDragCancel: ({ active }) => `Anulowano przeniesienie zadania ${active.id}`,
+          onDragStart: ({ active }) =>
+            isColumnDragId(String(active.id)) ? "Podniesiono kolumnę. Strzałkami zmień kolejność." : `Podniesiono zadanie ${active.id}`,
+          onDragOver: ({ active, over }) => {
+            if (!over) return undefined;
+            const nad = columnOfOver(String(over.id));
+            const nazwa = nad ? columnById.get(nad)?.name ?? "Bez statusu" : String(over.id);
+            return isColumnDragId(String(active.id)) ? `Kolumna nad ${nazwa}` : `Zadanie ${active.id} nad ${nazwa}`;
+          },
+          onDragEnd: ({ active, over }) =>
+            isColumnDragId(String(active.id))
+              ? (over ? "Zmieniono kolejność kolumn" : "Anulowano przenoszenie kolumny")
+              : over ? `Upuszczono zadanie ${active.id} na ${over.id}` : `Anulowano przeniesienie zadania ${active.id}`,
+          onDragCancel: ({ active }) =>
+            isColumnDragId(String(active.id)) ? "Anulowano przenoszenie kolumny" : `Anulowano przeniesienie zadania ${active.id}`,
         },
         screenReaderInstructions: {
           draggable: "Naciśnij Space lub Enter aby podnieść. Strzałki aby przenieść. Space aby upuścić. Esc aby anulować.",
@@ -226,22 +264,35 @@ export function KanbanBoardView({ initialTasks }: { initialTasks: KanbanTask[] }
       <div data-ui="kanban-view" className="-mx-6 -my-4 flex min-h-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 overflow-auto bg-canvas px-6 py-4">
           <div className="flex items-start gap-3">
-            {columnIds.map((id) => (
-              <KanbanColumn key={id} id={id} column={columnById.get(id) ?? null} tasks={buckets.get(id) ?? []} hoverProps={hoverProps} />
-            ))}
+            <SortableContext items={sortableColumnIds} strategy={horizontalListSortingStrategy}>
+              {columnIds.map((id) => (
+                <KanbanColumn key={id} id={id} column={columnById.get(id) ?? null} tasks={buckets.get(id) ?? []} hoverProps={hoverProps} />
+              ))}
+            </SortableContext>
             {s.canManageBoard && <AddColumnButton />}
           </div>
         </div>
         {footer(
           `${visible.length} ${taskPl(visible.length)} · ${columnIds.length} ${columnPl(columnIds.length)}`,
-          activeTask ? `przeciąganie: karta #${activeTask.displayId} → ${dropHint ? columnById.get(dropHint)?.name ?? "Bez statusu" : "—"}` : undefined,
+          activeTask ? `przeciąganie: karta #${activeTask.displayId} → ${dropHint ? columnById.get(dropHint)?.name ?? "Bez statusu" : "—"}`
+          : activeColumnId ? `przeciąganie kolumny: ${columnById.get(activeColumnId)?.name ?? "Bez statusu"}`
+          : undefined,
         )}
       </div>
       {typeof document !== "undefined" &&
         createPortal(
           // Portal pod <body>: DragOverlay jest position:fixed, więc każdy
           // transform w przodkach przesunąłby kartę względem kursora.
-          <DragOverlay>{activeTask ? <KanbanCard task={activeTask} workspaceId={s.workspaceId} dragging className="w-[280px]" /> : null}</DragOverlay>,
+          <DragOverlay>
+            {activeTask ? (
+              <KanbanCard task={activeTask} workspaceId={s.workspaceId} dragging className="w-[280px]" />
+            ) : activeColumnId ? (
+              <div className="flex h-8 w-[280px] items-center gap-1.5 rounded-lg border border-border bg-card px-2 shadow-[var(--shadow-e2)]">
+                <span className="eyebrow min-w-0 truncate text-fg-2">{columnById.get(activeColumnId)?.name ?? "Bez statusu"}</span>
+                <span className="shrink-0 font-mono text-2xs leading-none text-fg-3">· {(buckets.get(activeColumnId) ?? []).length}</span>
+              </div>
+            ) : null}
+          </DragOverlay>,
           document.body,
         )}
       {assign.menu}
