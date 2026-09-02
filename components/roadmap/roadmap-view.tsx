@@ -16,6 +16,8 @@ import {
 import {
   GRID_W,
   MARKER_STAGGER,
+  markerRows,
+  markerPitch,
   MARKER_TOP,
   MONTH_W,
   arcAngle,
@@ -457,24 +459,27 @@ function MarkersTrack({
   canUpdate: boolean;
   onOpen: (id: string) => void;
 }) {
-  const nodes = useMemo(
-    () =>
-      items.map((m, i) => {
-        const p = progressOf(m.tasks, doneIds);
-        const d = markerSize(m.taskCount);
-        return {
-          m,
-          p,
-          d,
-          cx: xForTs(new Date(m.stopAt).getTime(), months),
-          cy: MARKER_TOP + (i % 2 === 1 ? MARKER_STAGGER : 0),
-          hue: markerHue(p.pct),
-        };
-      }),
-    [items, months, doneIds],
-  );
+  const nodes = useMemo(() => {
+    const xs = items.map((m) => xForTs(new Date(m.stopAt).getTime(), months));
+    // Wiersz z `markerRows`, nie z parzystosci indeksu: milestone'y konczace
+    // sie tego samego dnia maja to samo `cx` i przy trzech takich trzeci
+    // lezal dokladnie pod pierwszym.
+    const rows = markerRows(xs);
+    const pitch = markerPitch(rows);
+    return items.map((m, i) => {
+      const p = progressOf(m.tasks, doneIds);
+      return {
+        m,
+        p,
+        d: markerSize(m.taskCount),
+        cx: xs[i]!,
+        cy: MARKER_TOP + rows[i]! * pitch,
+        hue: markerHue(p.pct),
+      };
+    });
+  }, [items, months, doneIds]);
 
-  const height = MARKER_TOP + MARKER_STAGGER + 26 + 76;
+  const height = MARKER_TOP + Math.max(MARKER_STAGGER, ...nodes.map((n) => n.cy - MARKER_TOP)) + 26 + 76;
   const arcs = nodes.slice(0, -1).map((a, i) => {
     const b = nodes[i + 1]!;
     const x1 = a.cx + a.d / 2 + 4;

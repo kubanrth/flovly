@@ -10,6 +10,10 @@ import {
   docToText,
   doneStatusIds,
   markerFontSize,
+  markerRows,
+  markerPitch,
+  MARKER_STAGGER,
+  MARKER_STACK_STAGGER,
   markerHue,
   markerSize,
   milestoneLabel,
@@ -124,3 +128,29 @@ assert.equal(
 );
 
 console.log("roadmap model ok");
+
+// ── wiersze markerow (te same daty) ──────────────────────────────────────────
+// Rozstawione markery zachowuja uklad z makiety: 0,1,0,1…
+assert.deepEqual(markerRows([0, 200, 400, 600]), [0, 1, 0, 1]);
+// Dwa na tej samej dacie: drugi i tak trafia do wiersza 1 (naprzemiennosc).
+assert.deepEqual(markerRows([100, 100]), [0, 1]);
+// Trzy na tej samej dacie — trzeci lezalby dokladnie pod pierwszym, wiec schodzi nizej.
+assert.deepEqual(markerRows([100, 100, 100]), [0, 1, 2]);
+assert.deepEqual(markerRows([100, 100, 100, 100]), [0, 1, 2, 3]);
+// Blisko, ale poza progiem sklejania — uklad bez zmian.
+assert.deepEqual(markerRows([0, 10, 20], 60), [0, 1, 2]);
+assert.deepEqual(markerRows([0, 70, 140], 60), [0, 1, 0]);
+// Powtorzone daty: kazdy marker ma wlasny wiersz w obrebie swojej daty,
+// ale wiersze sa dzielone miedzy roznymi datami — 0 i 500 wspoldziela wiersz 1.
+assert.deepEqual(markerRows([0, 500, 0, 500]), [0, 1, 1, 2]);
+assert.deepEqual(markerRows([0, 500, 1000, 1500]), [0, 1, 0, 1]);
+
+// Odstep wierszy: standardowa naprzemiennosc zostaje jak w makiecie, pietrzenie
+// dostaje tyle miejsca, zeby podpis nie wchodzil pod kolo z nastepnego wiersza.
+assert.equal(markerPitch([0, 1, 0, 1]), MARKER_STAGGER);
+assert.equal(markerPitch([0, 1]), MARKER_STAGGER);
+assert.equal(markerPitch([]), MARKER_STAGGER);
+assert.equal(markerPitch([0, 1, 2]), MARKER_STACK_STAGGER);
+assert.ok(MARKER_STACK_STAGGER >= 90, "podpis markera ma okolo 90px wysokosci");
+
+console.log("roadmap-model: OK");

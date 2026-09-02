@@ -10,6 +10,15 @@ export const GRID_W = 72;
 /** y of the first marker's dot centre, and the alternating offset below it. */
 export const MARKER_TOP = 150;
 export const MARKER_STAGGER = 44;
+/** Najmniejszy odstep w poziomie, przy ktorym dwa markery jeszcze sie nie zlewaja. */
+export const MARKER_MIN_GAP = 60;
+/**
+ * Odstep miedzy wierszami, gdy markery pietrza sie na tej samej dacie. Zwykle
+ * 44px wystarcza, bo sasiednie wiersze stoja w innym miejscu osi i podpisy sie
+ * mijaja. Nad soba podpis (kolo + tytul + data, ok. 90px) wchodzilby pod kolo
+ * z wiersza nizej.
+ */
+export const MARKER_STACK_STAGGER = 92;
 
 export interface Span {
   startAt: string;
@@ -218,4 +227,25 @@ export function textToDoc(text: string): string {
           : { type: "paragraph", content: [{ type: "text", text: line }] },
       ),
   });
+}
+
+/**
+ * Wiersz (poziom) kazdego markera. Bazowo naprzemiennie 0/1, jak w makiecie
+ * B6, ale gdy marker wypadalby blizej niz `minGap` od innego juz stojacego w
+ * tym wierszu, schodzi nizej. Bez tego milestone'y z ta sama data konca
+ * lezaly na sobie — przy trzech takich trzeci znikal calkiem pod pierwszym.
+ */
+export function markerRows(xs: number[], minGap = MARKER_MIN_GAP): number[] {
+  const zajete: number[][] = [];
+  return xs.map((x, i) => {
+    let row = i % 2;
+    while (!(zajete[row] ?? []).every((px) => Math.abs(px - x) >= minGap)) row += 1;
+    (zajete[row] ??= []).push(x);
+    return row;
+  });
+}
+
+/** Odstep miedzy wierszami dla danego ukladu: wiekszy, gdy cokolwiek sie pietrzy. */
+export function markerPitch(rows: number[]): number {
+  return Math.max(0, ...rows) >= 2 ? MARKER_STACK_STAGGER : MARKER_STAGGER;
 }
