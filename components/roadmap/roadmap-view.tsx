@@ -201,6 +201,13 @@ export function RoadmapView({
           </span>
         )}
         <span className="flex-1" />
+        {/* Dodanie milestone'a to glowna akcja tego widoku — siedzialo pod ⋯
+            i nikt go tam nie szukal. Pod kropkami zostaje reszta. */}
+        {canCreate && (
+          <Button size="sm" data-ui="roadmap-new-milestone" onClick={() => setDialog({ mode: "create" })}>
+            <IconPlus width={14} height={14} /> Nowy milestone
+          </Button>
+        )}
         <Menu>
           <MenuTrigger
             aria-label="Opcje roadmapy"
@@ -209,9 +216,6 @@ export function RoadmapView({
             <IconMore />
           </MenuTrigger>
           <MenuContent align="end">
-            <MenuItem icon={<IconPlus width={14} height={14} />} disabled={!canCreate} onClick={() => setDialog({ mode: "create" })}>
-              Nowy milestone
-            </MenuItem>
             <MenuItem
               icon={<IconChevronDown width={14} height={14} />}
               disabled={items.length === 0}
