@@ -193,4 +193,31 @@ test.describe("task panel (B2)", () => {
     await expect(taskDrawer(page)).toBeHidden();
     await expect(page).toHaveURL(/\/table(\?|$)/);
   });
+  // Edytor opisu mial dwie pomaranczowe ramki naraz: obwodke na ramce pola i
+  // globalna aureole :focus-visible na samym obszarze tekstu w srodku.
+  test("edytowany opis ma jedna pomaranczowa ramke, nie dwie", async ({ page }) => {
+    const opis = taskDrawer(page).locator('[data-ui="task-description"]');
+    await expect(opis).toBeVisible();
+    const edytuj = opis.getByRole("button", { name: /Edytuj opis/i });
+    if (await edytuj.count()) await edytuj.first().click();
+    const pole = opis.locator('[contenteditable="true"]');
+    await pole.click();
+
+    const pomaranczowe = await opis.evaluate((root) => {
+      const czy = (v: string) => /255,\s*92,\s*0/.test(v);
+      const trafienia: string[] = [];
+      for (const el of [root, ...root.querySelectorAll("*")]) {
+        const cs = getComputedStyle(el);
+        const obwodka = cs.borderTopWidth !== "0px" && czy(cs.borderColor);
+        const aureola = czy(cs.boxShadow);
+        if (obwodka || aureola) trafienia.push(`${el.tagName}.${(el.className || "").toString().split(" ")[0]}`);
+      }
+      return trafienia;
+    });
+    expect(pomaranczowe, `pomaranczowe elementy: ${pomaranczowe.join(", ")}`).toHaveLength(1);
+
+    // Kursor nad polem nie moze zjadac obwodki — to jedyny znacznik focusu.
+    await pole.hover();
+    await expect(opis.locator("[data-variant] > div").first()).toHaveCSS("border-top-color", "rgb(255, 92, 0)");
+  });
 });

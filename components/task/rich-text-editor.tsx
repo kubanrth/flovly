@@ -276,6 +276,14 @@ export function RichTextEditor({
       )}
       {name !== undefined && <input type="hidden" name={name} value={json} />}
       <style>{`
+        /* Ramka edytora sama pokazuje focus (pomaranczowa obwodka). Globalna
+           aureola z :focus-visible rysowala drugi pomaranczowy prostokat w
+           srodku pierwszego — wygladalo to jak podwojna ramka. */
+        .tiptap-content:focus-visible, .tiptap-content:focus { box-shadow: none; }
+        /* ...a skoro obwodka jest jedynym znacznikiem, nie moze jej zjadac
+           hover: obie klasy maja te sama waznosc i przy kursorze nad polem
+           wygrywala szara. */
+        [data-variant] > div:focus-within { border-color: var(--orange-500); }
         .tiptap-content p { margin: 0.25em 0; }
         .tiptap-content p:first-child { margin-top: 0; }
         .tiptap-content p:last-child { margin-bottom: 0; }
