@@ -391,7 +391,10 @@ function Toolbar({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b border-n-100 px-1.5 py-1">
+    // Na telefonie przyciski maja 24px i 2px przerwy — palcem trafialo sie w
+    // sasiada zamiast w punktor. Wieksze cele i odstepy tylko na malych
+    // ekranach; myszka na desktopie radzi sobie z gestym paskiem.
+    <div className="flex flex-wrap items-center gap-0.5 border-b border-n-100 px-1.5 py-1 max-md:gap-1.5 max-md:px-2 max-md:py-1.5">
       <Btn
         label="Nagłówek"
         active={editor.isActive("heading", { level: 2 })}
@@ -558,7 +561,7 @@ function Toolbar({
       )}
 
       <span className="mx-0.5 h-4 w-px bg-n-200" aria-hidden />
-      <EmojiPicker onPick={(e) => editor.chain().focus().insertContent(e).run()} />
+      <EmojiPicker onPick={(e) => editor.chain().focus().insertContent(e).run()} triggerClassName="max-md:size-9" />
     </div>
   );
 }
@@ -691,7 +694,7 @@ function Btn({
       aria-label={label}
       title={label}
       data-active={active ? "true" : "false"}
-      className="grid size-6 place-items-center rounded-sm text-n-600 outline-none hover:bg-n-100 hover:text-foreground data-[active=true]:bg-n-100 data-[active=true]:text-foreground"
+      className="grid size-6 place-items-center rounded-sm text-n-600 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200 data-[active=true]:bg-n-100 data-[active=true]:text-foreground max-md:size-9"
     >
       {children}
     </button>

@@ -226,4 +226,36 @@ test.describe("mobile bottom sheets", () => {
     consoleErrors.length = 0;
     consoleErrors.push(...obce);
   });
+  // Punktor w opisie dzialal, ale przycisk mial 24px i 2px przerwy do sasiadow —
+  // palcem trafialo sie w przekreslenie albo liste numerowana. Stad zgloszenie
+  // „nie dziala opcja punktora".
+  test("przyciski paska formatowania w opisie sa trafialne palcem", async ({ page }) => {
+    await gotoFirstBoard(page);
+    await openFirstTask(page);
+
+    const opis = page.locator('[data-ui="task-description"]');
+    await opis.getByRole("button", { name: /Edytuj opis/i }).first().click();
+    const punktor = opis.getByRole("button", { name: "Lista punktowa" });
+    await expect(punktor).toBeVisible();
+
+    const m = await opis.evaluate((el) => {
+      const b = [...el.querySelectorAll("button[aria-label]")];
+      const i = b.findIndex((x) => x.getAttribute("aria-label") === "Lista punktowa");
+      const r = (n?: Element) => n?.getBoundingClientRect();
+      const me = r(b[i])!, prev = r(b[i - 1]), next = r(b[i + 1]);
+      return {
+        w: Math.round(me.width),
+        h: Math.round(me.height),
+        odstepy: [prev ? Math.round(me.left - prev.right) : 99, next ? Math.round(next.left - me.right) : 99],
+      };
+    });
+    expect(m.w).toBeGreaterThanOrEqual(36);
+    expect(m.h).toBeGreaterThanOrEqual(36);
+    expect(Math.min(...m.odstepy)).toBeGreaterThanOrEqual(4);
+
+    // I nadal robi to, co ma robic.
+    await page.locator('[data-ui="task-description"] [contenteditable="true"]').click();
+    await punktor.click();
+    await expect(page.locator('[data-ui="task-description"] [contenteditable="true"] ul li')).toHaveCount(1);
+  });
 });
