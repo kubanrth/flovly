@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { startTransition, useEffect, useRef, useState, type ReactNode, type SVGProps } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type SVGProps } from "react";
 import {
   closestCenter,
   DndContext,
@@ -134,6 +134,26 @@ export function Sidebar({ user, workspaces, unreadNotificationCount, myTasksCoun
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const hidden = new Set(itemsPref.hidden);
 
+  // „Ostatnie" i „Oznaczone gwiazdką" siedza w localStorage, wiec przezywaja
+  // skasowanie tablicy — wpis zostawal na liscie i prowadzil na 404. Pokazujemy
+  // tylko te tablice, ktore user nadal widzi (skasowane i te bez dostepu
+  // znikaja z `workspaces`).
+  const zyweTablice = useMemo(
+    () => new Set(workspaces.flatMap((w) => w.boards.map((b) => b.id))),
+    [workspaces],
+  );
+  const zyjace = useCallback(
+    (items: SavedItem[]) => items.filter((i) => i.type !== "board" || zyweTablice.has(i.id)),
+    [zyweTablice],
+  );
+  // Nie tylko ukrywamy — czyscimy zapis, zeby lista nie puchla martwymi wpisami.
+  useEffect(() => {
+    if (zyweTablice.size === 0) return; // dane jeszcze nie doszly
+    const czyste = zyjace(recent);
+    if (czyste.length === recent.length) return;
+    setRecent(czyste);
+  }, [recent, zyjace, zyweTablice, setRecent]);
+
   // Record visited boards in ui:recent (max 5). Reads storage directly so the
   // first visit doesn't clobber history before useUiPref hydrates.
   useEffect(() => {
@@ -251,8 +271,8 @@ export function Sidebar({ user, workspaces, unreadNotificationCount, myTasksCoun
                 on every other route, so it costs nothing to leave mounted. */}
             <div data-ui="sidebar-slot" />
             <div className="h-2" />
-            <SavedGroup icon={IconRecent} label="Ostatnie" items={recent} pathname={pathname} />
-            <SavedGroup icon={IconStar} label="Oznaczone gwiazdką" items={starred} pathname={pathname} />
+            <SavedGroup icon={IconRecent} label="Ostatnie" items={zyjace(recent)} pathname={pathname} />
+            <SavedGroup icon={IconStar} label="Oznaczone gwiazdką" items={zyjace(starred)} pathname={pathname} />
             <div className="mt-1.5 flex h-[30px] items-end justify-between px-2">
               <span className="eyebrow">Przestrzenie</span>
               <Link href="/workspaces?new=1" aria-label="Nowa przestrzeń" className="grid size-5 place-items-center rounded-sm text-fg-3 hover:bg-n-100 hover:text-foreground active:bg-n-200">

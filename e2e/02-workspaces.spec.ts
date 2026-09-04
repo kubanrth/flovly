@@ -23,4 +23,21 @@ test.describe("workspaces list", () => {
     await expect(dialog).toBeVisible();
     await expect(page).toHaveURL(/\/workspaces/);
   });
+  // Skasowane tablice zostawaly w „Ostatnie" (localStorage przezywa kasowanie)
+  // i klikniecie prowadzilo na 404.
+  test("Ostatnie nie pokazuje tablic, ktorych juz nie ma", async ({ page }) => {
+    await page.goto("/workspaces");
+    const martwa = { type: "board", id: "nie-ma-takiej-tablicy", label: "Skasowana tablica", href: "/w/x/b/nie-ma-takiej-tablicy/table" };
+    await page.evaluate((w) => window.localStorage.setItem("ui:recent", JSON.stringify([w])), martwa);
+    await page.reload();
+
+    const pasek = page.locator('[data-ui="sidebar"]');
+    await expect(pasek).toBeVisible();
+    await expect(pasek.getByText("Skasowana tablica")).toHaveCount(0);
+
+    // Wpis znika tez z zapisu — inaczej lista puchlaby martwymi pozycjami.
+    await expect
+      .poll(async () => page.evaluate(() => window.localStorage.getItem("ui:recent")))
+      .not.toContain("nie-ma-takiej-tablicy");
+  });
 });
