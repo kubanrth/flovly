@@ -96,7 +96,21 @@ export function groupTasks(
     if (!map.has(k)) map.set(k, []);
     map.get(k)!.push(t);
   }
-  return [...map.entries()].map(([k, r]) => {
+  // Kolejnosc grup: dla pola wyboru (a wiec i dla sekcji) idziemy porzadkiem
+  // opcji zdefiniowanym na kolumnie, a nie kolejnoscia, w jakiej trafily
+  // zadania. „— brak —" zawsze na koncu.
+  const selectOrder =
+    custom?.type === "SINGLE_SELECT"
+      ? new Map((parseFieldOptions(custom.options).selectOptions ?? []).map((o, i) => [o.value, i]))
+      : null;
+  const entries = [...map.entries()];
+  if (selectOrder) {
+    const poz = (k: string) => (k === "_empty" ? Number.MAX_SAFE_INTEGER : selectOrder.get(k) ?? Number.MAX_SAFE_INTEGER - 1);
+    entries.sort((a, b) => poz(a[0]) - poz(b[0]) || a[0].localeCompare(b[0], "pl"));
+  } else {
+    entries.sort((a, b) => (a[0] === "_empty" ? 1 : 0) - (b[0] === "_empty" ? 1 : 0));
+  }
+  return entries.map(([k, r]) => {
     if (k === "_empty") return finish({ key: k, label: "— brak —", hue: "gray", rows: r });
     if (custom?.type === "SINGLE_SELECT") {
       const opt = (parseFieldOptions(custom.options).selectOptions ?? []).find((o) => o.value === k);

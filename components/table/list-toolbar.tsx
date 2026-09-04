@@ -3,12 +3,16 @@
 // BoardToolbar wired to the Lista state (search · person filter · quick filters ·
 // „+ Filtr” builder · chips · Grupuj · Sortuj · Kolumny · ⋯).
 
+import { startTransition, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { configureColumnAction, createTableColumnAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/actions";
 import { GROUP_PRESETS } from "@/lib/group-presets";
 import { PRIORITY_META, PRIORITY_VALUES } from "@/lib/task-priority";
 import { parseFieldOptions } from "@/lib/table-fields";
 import type { TableFilter } from "@/lib/table-filters";
 import { BoardToolbar } from "@/components/view/board-toolbar";
 import { MenuCheckboxItem, MenuGroup, MenuItem, MenuLabel, MenuRadioGroup, MenuRadioItem, MenuSeparator } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { IconCopy, IconDownload, IconUpload } from "@/components/ui/icons";
 import { PriorityIcon } from "@/components/ui/priority-icon";
@@ -17,6 +21,7 @@ import { useListState } from "@/components/table/list-state";
 import { BUILTIN_COLUMNS, customColId } from "@/components/table/columns";
 import { ColumnSettingsPanel } from "@/components/table/column-settings";
 import { FilterBuilder, describeFilter, isActiveFilter, newFilter } from "@/components/table/filter-builder";
+import { SelectOptionsEditor } from "@/components/table/field-config";
 import { PRIORITY_LEVEL } from "@/components/table/priority-picker-cell";
 import { hueForColor } from "@/components/ui/status-hue";
 import { memberName } from "@/components/table/types";
@@ -30,6 +35,13 @@ const GROUPABLE = [
   { id: "milestone", label: "Milestone" },
 ];
 
+/**
+ * „Sekcje" to zwykle pole wyboru o tej nazwie — nagłówki na liscie robi juz
+ * grupowanie, wiec nie ma po co dokladac osobnego bytu w bazie. Nazwa jest
+ * jednoczesnie kluczem: po niej odnajdujemy kolumne po utworzeniu.
+ */
+const SEKCJE = "Sekcje";
+
 function parseMulti(value: string): string[] {
   try {
     const j = JSON.parse(value);
@@ -42,8 +54,93 @@ function parseMulti(value: string): string[] {
 export function ListToolbar() {
   const s = useListState();
   const toast = useToast();
+  const router = useRouter();
   const { config, filterColumns, customColumns } = s;
   const filters = config.filters;
+
+  // ── Sekcje ────────────────────────────────────────────────────────────────
+  const sekcje = customColumns.find((c) => c.type === "SINGLE_SELECT" && c.name === SEKCJE);
+  const [tworzeSekcje, setTworzeSekcje] = useState(false);
+  // Akcja tworzaca kolumne nie zwraca id, wiec po odswiezeniu odnajdujemy ja po
+  // nazwie i dopiero wtedy wlaczamy grupowanie.
+  useEffect(() => {
+    if (!tworzeSekcje || !sekcje) return;
+    // Kolumna pojawia sie dopiero po odswiezeniu z serwera — to jedyny moment,
+    // w ktorym znamy jej id, wiec grupowanie wlaczamy wlasnie tutaj.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTworzeSekcje(false);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    s.setGroupBy(sekcje.id);
+  }, [tworzeSekcje, sekcje, s]);
+
+  const wlaczSekcje = () => {
+    if (sekcje) {
+      s.setGroupBy(config.groupBy === sekcje.id ? null : sekcje.id);
+      return;
+    }
+    if (!s.canManagePrefs || tworzeSekcje) return;
+    const fd = new FormData();
+    fd.set("workspaceId", s.workspaceId);
+    fd.set("boardId", s.boardId);
+    fd.set("name", SEKCJE);
+    fd.set("type", "SINGLE_SELECT");
+    fd.set("options", JSON.stringify({ selectOptions: [] }));
+    setTworzeSekcje(true);
+    startTransition(async () => {
+      await createTableColumnAction(fd);
+      router.refresh();
+      toast.add({ title: "Dodano pole Sekcje", description: "Nazwy sekcji dopiszesz w menu nagłówka kolumny." });
+    });
+  };
+
+  const sekcjeAktywne = Boolean(sekcje) && config.groupBy === sekcje?.id;
+  const sekcjeWidoczne = Boolean(sekcje) || s.canManagePrefs;
+  const [sekcjeOpen, setSekcjeOpen] = useState(false);
+  // Szkic listy sekcji na czas edycji. Bez niego kazda zmiana szla z danych
+  // serwera, ktore w trakcie pisania sa jeszcze stare — druga dopisana sekcja
+  // kasowala pierwsza.
+  const [szkicSekcji, setSzkicSekcji] = useState<{ value: string; color: string }[] | null>(null);
+  const nazwySekcji = szkicSekcji ?? (sekcje ? parseFieldOptions(sekcje.options).selectOptions ?? [] : []);
+
+  const zapiszSekcje = (opcje: { value: string; color: string }[]) => {
+    if (!sekcje) return;
+    setSzkicSekcji(opcje);
+    const fd = new FormData();
+    fd.set("id", sekcje.id);
+    fd.set("name", sekcje.name);
+    fd.set("type", "SINGLE_SELECT");
+    fd.set("options", JSON.stringify({ ...parseFieldOptions(sekcje.options), selectOptions: opcje }));
+    startTransition(() => { configureColumnAction(fd); });
+  };
+
+  // Panel pod przyciskiem „Sekcje": wlacz/wylacz nagłówki na liscie + nazwy
+  // sekcji w jednym miejscu. Bez tego nazwy trzeba bylo dopisywac w Kolumny →
+  // kolumna → zebatka, czyli dwa poziomy glebiej.
+  const sekcjePanel = (
+    <div className="flex w-[300px] flex-col gap-2.5">
+      <p className="text-xs font-semibold">Sekcje</p>
+      {sekcje ? (
+        <>
+          <Button
+            variant={sekcjeAktywne ? "secondary" : "primary"}
+            size="sm"
+            onClick={() => s.setGroupBy(sekcjeAktywne ? null : sekcje.id)}
+          >
+            {sekcjeAktywne ? "Wyłącz podział na sekcje" : "Pokaż listę w sekcjach"}
+          </Button>
+          <span className="eyebrow">Nazwy sekcji</span>
+          <SelectOptionsEditor value={nazwySekcji} onChange={zapiszSekcje} />
+          <p className="text-2xs text-fg-3">{"Zadanie przypiszesz do sekcji w kolumnie „Sekcje”."}</p>
+        </>
+      ) : (
+        <>
+          <p className="text-xs text-fg-2">Sekcje to własne nagłówki na liście — jak grupowanie po milestonach, tylko z Twoimi nazwami.</p>
+          <Button size="sm" loading={tworzeSekcje} onClick={wlaczSekcje}>Utwórz sekcje</Button>
+        </>
+      )}
+    </div>
+  );
+
 
   // Quick filters are single `hasAny`/`equals` rows keyed by column — toggled from menus.
   const multiIds = (columnId: string) => {
@@ -161,6 +258,22 @@ export function ListToolbar() {
         },
         content: <FilterBuilder filters={filters} columns={filterColumns} onChange={s.setFilters} />,
       }}
+      sections={
+        sekcjeWidoczne
+          ? {
+              open: sekcjeOpen,
+              onOpenChange: (o) => {
+                setSekcjeOpen(o);
+                // Po zamknieciu wracamy do danych z serwera i odswiezamy liste,
+                // zeby nagłówki zlapaly nowe nazwy i kolejnosc.
+                if (!o && szkicSekcji) { setSzkicSekcji(null); router.refresh(); }
+              },
+              content: sekcjePanel,
+            }
+          : undefined
+      }
+      sectionsLabel={sekcjeAktywne ? `Sekcje: ${nazwySekcji.length || "brak"}` : "Sekcje"}
+      sectionsActive={sekcjeAktywne}
       chips={chips}
       onClearChips={() => s.setFilters([])}
       groupLabel={groupLabel ? `Grupuj: ${groupLabel}` : undefined}

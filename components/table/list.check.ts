@@ -43,3 +43,42 @@ assert.deepEqual(nextSelection({ b: true }, ["a", "b", "c"], "b", null, false), 
 assert.deepEqual(nextSelection({}, ["a", "b"], "b", "gone", true), { b: true });
 
 console.log("list helpers ok");
+
+// ── sekcje: kolejnosc grup wg listy opcji, „— brak —" na koncu ───────────────
+// Sekcje to pole wyboru, wiec naglowki musza isc porzadkiem zdefiniowanym przez
+// uzytkownika, a nie kolejnoscia, w jakiej trafily zadania.
+const sekcje: CustomTableColumn = {
+  id: "sek", name: "Sekcje", type: "SINGLE_SELECT",
+  options: { selectOptions: [
+    { value: "Przygotowanie", color: "#FF9500" },
+    { value: "Wdrożenie", color: "#FF3B30" },
+    { value: "Testy", color: "#34C759" },
+  ] },
+};
+const wSekcji = (v: string | null) => task({ id: `t-${v ?? "brak"}`, customValues: v ? { sek: v } : {} });
+const grupy = groupTasks(
+  // celowo w odwrotnej kolejnosci niz definicja + jedno bez sekcji na poczatku
+  [wSekcji(null), wSekcji("Testy"), wSekcji("Wdrożenie"), wSekcji("Przygotowanie")],
+  "sek",
+  { statusColumns: [], customColumns: [sekcje] },
+);
+assert.deepEqual(grupy.map((x) => x.label), ["Przygotowanie", "Wdrożenie", "Testy", "— brak —"]);
+assert.equal(grupy.at(-1)!.key, "_empty", "brak sekcji zawsze na koncu");
+assert.equal(grupy[0]!.hue, hueForColor("#FF9500"), "naglowek bierze kolor sekcji");
+
+// Wartosc spoza listy opcji (np. po zmianie nazwy sekcji) ladnie na koncu,
+// ale przed „— brak —".
+const zSierota = groupTasks(
+  [wSekcji(null), task({ id: "x", customValues: { sek: "Stara nazwa" } }), wSekcji("Przygotowanie")],
+  "sek",
+  { statusColumns: [], customColumns: [sekcje] },
+);
+assert.deepEqual(zSierota.map((x) => x.label), ["Przygotowanie", "Stara nazwa", "— brak —"]);
+
+// Bez pola wyboru (grupowanie po tekscie) tez trzymamy „— brak —" na koncu.
+const poTytule = groupTasks([task({ id: "a", title: "B" }), task({ id: "b", title: "A" })], "title", {
+  statusColumns: [], customColumns: [],
+});
+assert.equal(poTytule.length, 2);
+
+console.log("list: OK");

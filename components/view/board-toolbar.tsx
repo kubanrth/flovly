@@ -39,6 +39,10 @@ export interface BoardToolbarProps {
   onAddFilter?: () => void;
   // Popover body for „+ Filtr” (filter builder). Wins over onAddFilter.
   addFilter?: ToolbarPopover;
+  // Sekcje na liscie — wlasny przycisk z popoverem (wlacz/wylacz + nazwy sekcji).
+  sections?: ToolbarPopover;
+  sectionsLabel?: string;
+  sectionsActive?: boolean;
   chips?: { id: string; label: string; onRemove: () => void }[];
   onClearChips?: () => void;
   groupLabel?: string;
@@ -217,6 +221,12 @@ export function BoardToolbar(p: BoardToolbarProps) {
           <AvatarStack people={p.people.map((m) => ({ name: m.name, src: m.avatarUrl }))} size={24} className="mx-0.5 shrink-0" />
         )
       )}
+
+      {p.sections &&
+        popoverButton(p.sectionsLabel ?? "Sekcje", p.sections, {
+          className: BORDERED,
+          active: p.sectionsActive,
+        })}
 
       {p.filterButtons?.map((b) => (
         <span key={b.label} className="contents">
