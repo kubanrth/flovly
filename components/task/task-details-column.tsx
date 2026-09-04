@@ -51,7 +51,22 @@ export interface TaskDetailsProps {
   onMutate?: () => void;
 }
 
-type Row = { key: string; label: string; empty: boolean; node: ReactNode };
+/**
+ * Szczegoly zadania sa podzielone tematycznie. Wczesniej byla to jedna, plaska
+ * kolumna kilkunastu identycznie wygladajacych wierszy — klient: „wszystkie
+ * funkcje dodatkowe sa zlane w jedno miejsce".
+ */
+type Grupa = "osoby" | "terminy" | "plan" | "czas" | "dodatkowe";
+
+const GRUPY: { id: Grupa; label: string }[] = [
+  { id: "osoby", label: "Osoby" },
+  { id: "terminy", label: "Terminy" },
+  { id: "plan", label: "Plan" },
+  { id: "czas", label: "Czas pracy" },
+  { id: "dodatkowe", label: "Pola dodatkowe" },
+];
+
+type Row = { key: string; label: string; empty: boolean; node: ReactNode; grupa: Grupa };
 
 const NONE = "__none__";
 const memberName = (m: Member) => m.name ?? m.email.split("@")[0]!;
@@ -60,25 +75,26 @@ function useRows(p: TaskDetailsProps): Row[] {
   const { task, mode, mobile } = p;
   const timerEmpty = task.timeTrackedSeconds === 0 && !task.timerStartedAt && !task.timerCompletedAt;
   const rows: Row[] = [
-    { key: "assignees", label: "Przypisani", empty: p.assigneeIds.size === 0, node: <AssigneesField {...p} /> },
+    { key: "assignees", label: "Przypisani", grupa: "osoby" as const, empty: p.assigneeIds.size === 0, node: <AssigneesField {...p} /> },
     ...(mode === "panel" && !mobile
       ? [
-          { key: "start", label: "Start", empty: !task.startAt, node: <DatesField {...p} only="startAt" /> },
-          { key: "stop", label: "Koniec", empty: !task.stopAt, node: <DatesField {...p} only="stopAt" /> },
+          { key: "start", label: "Start", grupa: "terminy" as const, empty: !task.startAt, node: <DatesField {...p} only="startAt" /> },
+          { key: "stop", label: "Koniec", grupa: "terminy" as const, empty: !task.stopAt, node: <DatesField {...p} only="stopAt" /> },
         ]
-      : [{ key: "dates", label: "Start · Koniec", empty: !task.startAt && !task.stopAt, node: <DatesField {...p} /> }]),
-    { key: "milestone", label: "Milestone", empty: !task.milestoneId, node: <MilestoneField {...p} /> },
-    { key: "tags", label: "Tagi", empty: p.tagIds.size === 0, node: <TagsField {...p} /> },
-    { key: "reminder", label: "Przypomnienie", empty: !task.reminderAt, node: <ReminderField {...p} /> },
-    { key: "recurrence", label: "Cykliczność", empty: !task.recurrenceRule && !task.recurrenceParentId, node: <RecurrenceField {...p} /> },
-    { key: "timer", label: "Timer", empty: timerEmpty, node: <TaskTimer taskId={task.id} accumulatedSeconds={task.timeTrackedSeconds} startedAt={task.timerStartedAt} completedAt={task.timerCompletedAt} canEdit={p.canEdit} variant={mobile ? "mobile" : "details"} /> },
+      : [{ key: "dates", label: "Start · Koniec", grupa: "terminy" as const, empty: !task.startAt && !task.stopAt, node: <DatesField {...p} /> }]),
+    { key: "milestone", label: "Milestone", grupa: "plan" as const, empty: !task.milestoneId, node: <MilestoneField {...p} /> },
+    { key: "tags", label: "Tagi", grupa: "plan" as const, empty: p.tagIds.size === 0, node: <TagsField {...p} /> },
+    { key: "reminder", label: "Przypomnienie", grupa: "terminy" as const, empty: !task.reminderAt, node: <ReminderField {...p} /> },
+    { key: "recurrence", label: "Cykliczność", grupa: "terminy" as const, empty: !task.recurrenceRule && !task.recurrenceParentId, node: <RecurrenceField {...p} /> },
+    { key: "timer", label: "Timer", grupa: "czas" as const, empty: timerEmpty, node: <TaskTimer taskId={task.id} accumulatedSeconds={task.timeTrackedSeconds} startedAt={task.timerStartedAt} completedAt={task.timerCompletedAt} canEdit={p.canEdit} variant={mobile ? "mobile" : "details"} /> },
     ...p.customColumns.map((col) => ({
       key: `custom-${col.id}`,
       label: col.name,
+      grupa: "dodatkowe" as const,
       empty: !(p.customValues[col.id] ?? ""),
       node: <div className="-mx-1 min-h-7 text-sm"><FieldCell taskId={task.id} columnId={col.id} type={col.type} raw={p.customValues[col.id] ?? ""} options={parseFieldOptions(col.options)} disabled={!p.canEdit} /></div>,
     })),
-    { key: "views", label: "Widoki", empty: (p.meta?.views.length ?? 0) === 0, node: <ViewsField views={p.meta?.views ?? []} /> },
+    { key: "views", label: "Widoki", grupa: "plan" as const, empty: (p.meta?.views.length ?? 0) === 0, node: <ViewsField views={p.meta?.views ?? []} /> },
   ];
   return rows;
 }
@@ -89,32 +105,41 @@ export function TaskDetailsColumn(p: TaskDetailsProps) {
   const [hideEmpty, setHideEmpty] = useUiPref<boolean>("ui:hide-empty", false);
   const [pinned, setPinned] = useUiPref<string[]>("ui:pinned-fields", []);
   const togglePin = (key: string) => setPinned(pinned.includes(key) ? pinned.filter((k) => k !== key) : [...pinned, key]);
-  const customStart = rows.findIndex((r) => r.key.startsWith("custom-"));
   const visible = rows.filter((r) => !(hideEmpty && r.empty) || pinned.includes(r.key));
-  const ordered = [...visible.filter((r) => pinned.includes(r.key)), ...visible.filter((r) => !pinned.includes(r.key))];
-  const firstCustom = customStart >= 0 ? rows[customStart]!.key : null;
+  // Przypiete idą na gorę we wlasnej grupie — inaczej wypadaly ze swojej sekcji
+  // i znowu robil sie jeden ciag.
+  const przypiete = visible.filter((r) => pinned.includes(r.key));
+  const sekcje = [
+    ...(przypiete.length > 0 ? [{ id: "przypiete", label: "Przypięte", rows: przypiete }] : []),
+    ...GRUPY.map((g) => ({
+      id: g.id,
+      label: g.label,
+      rows: visible.filter((r) => r.grupa === g.id && !pinned.includes(r.key)),
+    })).filter((g) => g.rows.length > 0),
+  ];
   const w = p.mode === "page" ? "w-[280px] p-5" : p.mode === "modal" ? "w-[300px] p-4" : "w-[204px] p-3";
   const canvas = p.mode !== "panel";
 
   return (
     <aside className={cn("shrink-0 overflow-y-auto border-l", canvas ? "border-border bg-canvas" : "border-n-100 bg-card", w)} data-ui="task-details">
       <div className="eyebrow mb-3">Szczegóły</div>
-      {ordered.map((r) => (
-        <div key={r.key} className="group/row mb-3">
-          {r.key === firstCustom && !pinned.includes(r.key) && <div className="mb-2 border-t border-n-100 pt-2.5 text-2xs font-semibold text-fg-3">Pola dodatkowe</div>}
-          <div className="mb-1 flex items-center gap-1 text-2xs text-fg-3">
-            {r.label}
-            <button type="button" onClick={() => togglePin(r.key)} aria-label={pinned.includes(r.key) ? `Odepnij pole ${r.label}` : `Przypnij pole ${r.label}`}
-              className={cn("ml-auto grid size-4 place-items-center rounded-[2px] text-n-400 outline-none hover:text-foreground", !pinned.includes(r.key) && "opacity-0 focus-visible:opacity-100 group-hover/row:opacity-100")}>
-              {pinned.includes(r.key) ? <IconStarFilled width={11} height={11} className="text-orange-500" /> : <IconStar width={11} height={11} />}
-            </button>
-          </div>
-          {r.node}
+      {sekcje.map((g, gi) => (
+        <div key={g.id} data-ui="task-details-group" data-group={g.id} className={cn("mb-3", gi > 0 && "mt-4 border-t border-n-100 pt-3")}>
+          <div className="mb-2 text-2xs font-semibold tracking-[.06em] text-fg-3 uppercase">{g.label}</div>
+          {g.rows.map((r) => (
+            <div key={r.key} className="group/row mb-3 last:mb-0">
+              <div className="mb-1 flex items-center gap-1 text-2xs text-fg-3">
+                {r.label}
+                <button type="button" onClick={() => togglePin(r.key)} aria-label={pinned.includes(r.key) ? `Odepnij pole ${r.label}` : `Przypnij pole ${r.label}`}
+                  className={cn("ml-auto grid size-4 place-items-center rounded-[2px] text-n-400 outline-none hover:text-foreground", !pinned.includes(r.key) && "opacity-0 focus-visible:opacity-100 group-hover/row:opacity-100")}>
+                  {pinned.includes(r.key) ? <IconStarFilled width={11} height={11} className="text-orange-500" /> : <IconStar width={11} height={11} />}
+                </button>
+              </div>
+              {r.node}
+            </div>
+          ))}
         </div>
       ))}
-      {customStart < 0 && !hideEmpty && (
-        <div className="mb-3"><div className="mb-2 border-t border-n-100 pt-2.5 text-2xs font-semibold text-fg-3">Pola dodatkowe</div><span className="text-sm text-fg-3">Brak</span></div>
-      )}
       {p.meta && (
         <div className={cn("border-t pt-2.5", canvas ? "border-table-grid" : "border-n-100")}>
           <div className="text-2xs text-fg-3">Utworzono</div>
@@ -134,12 +159,22 @@ export function TaskDetailsColumn(p: TaskDetailsProps) {
 // Mobile: bordered 8px card, 44px rows (B2-mobile).
 export function TaskDetailsCard(p: TaskDetailsProps) {
   const rows = useRows({ ...p, mobile: true });
+  // Ten sam podzial co w kolumnie na desktopie — osobna karta na grupe, zeby
+  // nie bylo jednego dlugiego ciagu wierszy.
+  const sekcje = GRUPY.map((g) => ({ ...g, rows: rows.filter((r) => r.grupa === g.id) })).filter((g) => g.rows.length > 0);
   return (
-    <div className="my-3 rounded-lg border border-border" data-ui="task-details">
-      {rows.map((r) => (
-        <div key={r.key} className="flex min-h-11 items-center gap-2 border-b border-n-100 px-3 py-1.5 last:border-b-0">
-          <span className="w-24 shrink-0 text-xs text-fg-3">{r.label}</span>
-          <div className="flex min-w-0 flex-1 items-center">{r.node}</div>
+    <div className="my-3 flex flex-col gap-3" data-ui="task-details">
+      {sekcje.map((g) => (
+        <div key={g.id} data-ui="task-details-group" data-group={g.id}>
+          <div className="eyebrow mb-1.5">{g.label}</div>
+          <div className="rounded-lg border border-border">
+            {g.rows.map((r) => (
+              <div key={r.key} className="flex min-h-11 items-center gap-2 border-b border-n-100 px-3 py-1.5 last:border-b-0">
+                <span className="w-24 shrink-0 text-xs text-fg-3">{r.label}</span>
+                <div className="flex min-w-0 flex-1 items-center">{r.node}</div>
+              </div>
+            ))}
+          </div>
         </div>
       ))}
     </div>

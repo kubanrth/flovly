@@ -220,4 +220,27 @@ test.describe("task panel (B2)", () => {
     await pole.hover();
     await expect(opis.locator("[data-variant] > div").first()).toHaveCSS("border-top-color", "rgb(255, 92, 0)");
   });
+  // Szczegoly byly jedna plaska lista kilkunastu identycznych wierszy — klient:
+  // „wszystkie funkcje dodatkowe sa zlane w jedno miejsce".
+  test("szczegoly zadania sa podzielone na sekcje", async ({ page }) => {
+    const det = taskDrawer(page).locator('[data-ui="task-details"]');
+    await expect(det).toBeVisible();
+
+    const grupy = page.locator('[data-ui="task-details-group"]');
+    const kolejnosc = await grupy.evaluateAll((els) => els.map((e) => e.getAttribute("data-group")));
+    expect(kolejnosc).toEqual(["osoby", "terminy", "plan", "czas", "dodatkowe"]);
+
+    // Kazda sekcja ma widoczny nagłówek — bez niego podzialu nie widac.
+    for (const etykieta of ["Osoby", "Terminy", "Plan", "Czas pracy", "Pola dodatkowe"]) {
+      await expect(det.getByText(etykieta, { exact: true })).toBeVisible();
+    }
+
+    // Przypiete pole wychodzi na gorę do wlasnej sekcji, a nie gubi sie w ciagu.
+    await det.getByLabel("Przypnij pole Milestone").click({ force: true });
+    await expect.poll(async () => (await grupy.evaluateAll((els) => els.map((e) => e.getAttribute("data-group"))))[0]).toBe("przypiete");
+    await expect(grupy.first()).toContainText("Milestone");
+
+    await det.getByLabel("Odepnij pole Milestone").click({ force: true });
+    await expect.poll(async () => (await grupy.evaluateAll((els) => els.map((e) => e.getAttribute("data-group"))))[0]).toBe("osoby");
+  });
 });
