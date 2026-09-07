@@ -258,4 +258,35 @@ test.describe("mobile bottom sheets", () => {
     await punktor.click();
     await expect(page.locator('[data-ui="task-description"] [contenteditable="true"] ul li')).toHaveCount(1);
   });
+  // Karta powiadomienia rozpychala liste w bok: wiersz akcji („Otworz zadanie",
+  // „Przesun termin", termin, stempel) nie mial jak sie zawinac, a ikony akcji
+  // — na telefonie widoczne zawsze — lezaly na pierwszej linii tekstu.
+  test("powiadomienia mieszcza sie w szerokosci ekranu", async ({ page }) => {
+    await page.goto("/inbox");
+    const karta = page.locator('[data-ui="inbox-card"]').first();
+    await expect(karta).toBeVisible();
+
+    const m = await karta.evaluate((k) => {
+      const wiersz = [...k.querySelectorAll("div")].filter((d) => d.textContent?.includes("Otwórz zadanie")).pop();
+      const ikony = [...k.querySelectorAll("button[aria-label]")]
+        .find((x) => /notat/i.test(x.getAttribute("aria-label") ?? ""))?.parentElement;
+      const tekst = k.querySelector("p")!.getBoundingClientRect();
+      return {
+        karta: { w: Math.round(k.getBoundingClientRect().width), sw: k.scrollWidth },
+        wiersz: wiersz ? { w: Math.round(wiersz.getBoundingClientRect().width), sw: wiersz.scrollWidth, wrap: getComputedStyle(wiersz).flexWrap } : null,
+        ikonyWTresci: ikony ? getComputedStyle(ikony).position : null,
+        zachodzenie: ikony ? Math.round(tekst.right - ikony.getBoundingClientRect().left) : null,
+      };
+    });
+
+    // Nic w karcie nie wystaje poza jej szerokosc.
+    expect(m.karta.sw).toBeLessThanOrEqual(m.karta.w + 1);
+    if (m.wiersz) {
+      expect(m.wiersz.wrap).toBe("wrap");
+      expect(m.wiersz.sw).toBeLessThanOrEqual(m.wiersz.w + 1);
+    }
+    // Ikony akcji stoja w rzedzie, nie na tekscie.
+    expect(m.ikonyWTresci).toBe("static");
+    expect(m.zachodzenie).toBeLessThanOrEqual(0);
+  });
 });

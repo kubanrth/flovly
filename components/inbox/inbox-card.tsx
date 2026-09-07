@@ -257,7 +257,11 @@ export function InboxCard({
           </div>
         )}
 
-        <div className="mt-1.5 flex items-center gap-2">
+        {/* Wiersz akcji musi sie zawijac: „Otworz zadanie" + „Przesun termin" +
+            termin + stempel czasu nie mieszcza sie w jednej linii na telefonie,
+            a jako elementy nieskurczalne rozpychaly karte i cala lista jechala
+            w bok. */}
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
           {item.task && (
             <Button variant="secondary" size="sm" className="h-6 px-[9px] text-2xs" render={<Link href={item.href} />}>
               Otwórz zadanie
@@ -278,18 +282,20 @@ export function InboxCard({
             </Menu>
           )}
           {item.task?.dueText && (
-            <span className="text-2xs text-danger-text">termin: {item.task.dueText}</span>
+            <span className="min-w-0 text-2xs text-danger-text">termin: {item.task.dueText}</span>
           )}
-          <span className="ml-auto shrink-0 font-mono text-[10px] leading-4 text-fg-3">
+          <span className="ml-auto min-w-0 truncate font-mono text-[10px] leading-4 text-fg-3">
             {item.when}
             {item.context ? ` · ${item.context}` : ""}
           </span>
         </div>
       </div>
 
-      {/* Overlay, not a flex child: the mockup has no action column, so keeping them
-          out of flow leaves the timestamp flush right exactly like D1. */}
-      <div className="absolute top-2 right-2 flex items-center gap-0.5 rounded-sm bg-inherit pl-1 opacity-0 transition-opacity duration-100 ease-out focus-within:opacity-100 group-hover:opacity-100 max-md:opacity-100">
+      {/* Desktop: nakladka nad trescia (makieta D1 nie ma kolumny akcji), pokazywana
+          przy najechaniu. Telefon: ikony sa widoczne zawsze, wiec jako nakladka
+          kladly sie na pierwszej linii tekstu — tam staja w rzedzie karty jako
+          zwykla kolumna. */}
+      <div className="flex shrink-0 items-center gap-0.5 self-start rounded-sm bg-inherit pl-1 opacity-0 transition-opacity duration-100 ease-out focus-within:opacity-100 group-hover:opacity-100 max-md:opacity-100 md:absolute md:top-2 md:right-2 md:self-auto">
         {!editing && (
           <button
             type="button"
