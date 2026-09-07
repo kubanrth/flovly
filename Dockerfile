@@ -54,8 +54,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 # runtime deps (bcrypt, @prisma/adapter-pg, prisma client) już są w obrazie.
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
+# Prisma CLI do `migrate deploy` przy starcie (scripts/start.sh). Osobny
+# prefix, żeby nie mieszać z node_modules standalone'a; wersja = package.json.
+RUN npm install --prefix /opt/prisma --no-save --no-audit --no-fund prisma@7.7.0 \
+ && chown -R nextjs:nodejs /opt/prisma
+
 USER nextjs
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["sh", "scripts/start.sh"]
