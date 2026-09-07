@@ -105,3 +105,4 @@ export function IconPause(p: IconProps) { return <Svg {...p}><rect x="4" y="3.5"
 export function IconStop(p: IconProps) { return <Svg {...p}><rect x="4" y="4" width="8" height="8" rx="1" {...f} /></Svg>; }
 export function IconCursor(p: IconProps) { return <Svg {...p}><path d="M3 2.5l4.5 10 1.4-4.1 4.1-1.4-10-4.5z" {...s} strokeWidth={1.4} /></Svg>; }
 export function IconPen(p: IconProps) { return <Svg {...p}><path d="M2.5 12.5c2-4 4.5-8 6-9.5a1.6 1.6 0 0 1 2.3 2.3c-1.5 1.5-5.5 4-8.3 7.2z" {...s} strokeWidth={1.4} /></Svg>; }
+export function IconCart(p: IconProps) { return <Svg {...p}><path d="M2 3h2l1.6 7.5h6.9L14 5.5H5" {...s} strokeWidth={1.5} /><circle cx="6.5" cy="13" r="1" {...s} strokeWidth={1.5} /><circle cx="11.5" cy="13" r="1" {...s} strokeWidth={1.5} /></Svg>; }

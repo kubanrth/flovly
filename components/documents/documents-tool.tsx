@@ -72,13 +72,14 @@ export function DocumentsTool({ workspaceId, currentUserId, canManage, members, 
   return (
     <div data-ui="documents" className="flex min-h-0 min-w-0 flex-1 flex-col">
       <header className="flex shrink-0 items-center gap-2.5 px-8 pt-4 max-md:px-4">
-        <h1 className="text-xl font-semibold tracking-[-0.3px]">Dokumenty</h1>
-        <span className="mt-1 font-mono text-2xs text-fg-3">{documents.length} {plPlural(documents.length, "plik", "pliki", "plików")}</span>
-        <span className="flex-1" />
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl font-semibold tracking-[-0.3px]">Dokumenty</h1>
+          <p className="font-mono text-2xs text-fg-3">{documents.length} {plPlural(documents.length, "plik", "pliki", "plików")}</p>
+        </div>
         {canManage && (
           <>
             <input ref={fileRef} type="file" multiple className="hidden" aria-label="Dodaj dokument" onChange={(e) => { if (e.target.files?.length) void upload(e.target.files); e.target.value = ""; }} />
-            <Button onClick={() => fileRef.current?.click()} loading={uploading.length > 0}>
+            <Button className="shrink-0" onClick={() => fileRef.current?.click()} loading={uploading.length > 0}>
               <IconPlus width={14} height={14} />
               Dodaj dokument
             </Button>

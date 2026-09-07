@@ -106,6 +106,8 @@ model User {
   documentAccess     DocumentAccess[]      @relation("DocumentAccessUser")
   // F13: „Umowy" utworzone przez uzytkownika.
   contracts          Contract[]            @relation("ContractCreator")
+  // F13: „Zapotrzebowanie" — zgloszenia zakupow.
+  purchaseRequests   PurchaseRequest[]     @relation("PurchaseRequester")
   // F12-K133: TimeCamp-like time entries + approvals.
   timeEntries        TimeEntry[]           @relation("TimeEntryUser")
   // F12-K141: członkostwa w projektach subskrypcji.
@@ -235,6 +237,8 @@ model Workspace {
   documents            Document[]
   // F13: „Umowy" przestrzeni.
   contracts            Contract[]
+  // F13: „Zapotrzebowanie" przestrzeni.
+  purchaseRequests     PurchaseRequest[]
   // F12-K133: TimeCamp-like time entries.
   timeEntries          TimeEntry[]
   // F12-K140: subskrypcje firmy.
@@ -326,6 +330,25 @@ model Contract {
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   creator   User      @relation("ContractCreator", fields: [creatorId], references: [id])
+
+  @@index([workspaceId, deletedAt])
+}
+
+// F13: „Zapotrzebowanie" — zgloszenia rzeczy do kupienia: projekt (tekst),
+// link do produktu, koszt w groszach PLN, zglaszajacy (= kto dodal).
+model PurchaseRequest {
+  id          String    @id @default(cuid())
+  workspaceId String
+  requesterId String
+  project     String
+  link        String?
+  costCents   Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  requester User      @relation("PurchaseRequester", fields: [requesterId], references: [id])
 
   @@index([workspaceId, deletedAt])
 }

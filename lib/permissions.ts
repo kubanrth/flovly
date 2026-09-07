@@ -57,7 +57,9 @@ export type Action =
   // nie ma osobnej akcji: decyduje widoczność (ADMIN / wgrywający / lista dostępu).
   | "document.manage"
   // F13: „Umowy" — tworzenie, edycja i kasowanie; odczyt = czlonkostwo.
-  | "contract.manage";
+  | "contract.manage"
+  // F13: „Zapotrzebowanie" — zglaszanie, edycja i kasowanie; odczyt = czlonkostwo.
+  | "purchase.manage";
 
 const MATRIX: Record<Role, Set<Action>> = {
   ADMIN: new Set<Action>([
@@ -111,6 +113,7 @@ const MATRIX: Record<Role, Set<Action>> = {
     "brief.create",
     "document.manage",
     "contract.manage",
+    "purchase.manage",
   ]),
   MEMBER: new Set<Action>([
     "board.create",
@@ -154,6 +157,7 @@ const MATRIX: Record<Role, Set<Action>> = {
     "brief.create",
     "document.manage",
     "contract.manage",
+    "purchase.manage",
   ]),
   VIEWER: new Set<Action>([
     "board.view",

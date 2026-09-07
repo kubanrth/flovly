@@ -38,11 +38,12 @@ export function ContractsTool({ workspaceId, canManage, contracts }: { workspace
   return (
     <div data-ui="contracts" className="flex min-h-0 min-w-0 flex-1 flex-col">
       <header className="flex shrink-0 items-center gap-2.5 px-8 pt-4 max-md:px-4">
-        <h1 className="text-xl font-semibold tracking-[-0.3px]">Umowy</h1>
-        <span className="mt-1 font-mono text-2xs text-fg-3">{contracts.length} {plPlural(contracts.length, "umowa", "umowy", "umów")}</span>
-        <span className="flex-1" />
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl font-semibold tracking-[-0.3px]">Umowy</h1>
+          <p className="font-mono text-2xs text-fg-3">{contracts.length} {plPlural(contracts.length, "umowa", "umowy", "umów")}</p>
+        </div>
         {canManage && (
-          <Button onClick={() => setDialog("new")}>
+          <Button className="shrink-0" onClick={() => setDialog("new")}>
             <IconPlus width={14} height={14} />
             Nowa umowa
           </Button>

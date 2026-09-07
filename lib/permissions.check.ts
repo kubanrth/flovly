@@ -16,6 +16,7 @@ const VIEWER_MUST_NOT = [
   "brief.create",
   "document.manage",
   "contract.manage",
+  "purchase.manage",
   "task.create",
   "task.update",
   "task.delete",
@@ -53,5 +54,6 @@ console.log("permissions matrix ok");
 for (const role of ["ADMIN", "MEMBER"] as const) {
   assert.equal(can(role, "document.manage"), true, `${role} zarządza dokumentami`);
   assert.equal(can(role, "contract.manage"), true, `${role} zarządza umowami`);
+  assert.equal(can(role, "purchase.manage"), true, `${role} zgłasza zapotrzebowanie`);
 }
 console.log("permissions: OK");

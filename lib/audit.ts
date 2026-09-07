@@ -20,6 +20,8 @@ export type AuditObjectType =
   | "Document"
   // F13: „Umowy".
   | "Contract"
+  // F13: „Zapotrzebowanie".
+  | "PurchaseRequest"
   | "TaskLink"
   | "ContactActivity"
   | "TaskLineRow"
