@@ -15,6 +15,7 @@ const VIEWER_MUST_NOT = [
   "workspaceEvent.manage",
   "brief.create",
   "document.manage",
+  "contract.manage",
   "task.create",
   "task.update",
   "task.delete",
@@ -51,5 +52,6 @@ console.log("permissions matrix ok");
 // co mu udostępniono (sprawdzane w akcji po widoczności, nie po roli).
 for (const role of ["ADMIN", "MEMBER"] as const) {
   assert.equal(can(role, "document.manage"), true, `${role} zarządza dokumentami`);
+  assert.equal(can(role, "contract.manage"), true, `${role} zarządza umowami`);
 }
 console.log("permissions: OK");

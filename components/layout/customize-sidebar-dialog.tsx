@@ -28,6 +28,7 @@ export const TOOL_ITEMS = [
   { key: "wiki", label: "Wiki" },
   { key: "canvases", label: "Whiteboardy" },
   { key: "documents", label: "Dokumenty" },
+  { key: "contracts", label: "Umowy" },
 ] as const;
 
 export type ForYouKey = (typeof FOR_YOU_ITEMS)[number]["key"];

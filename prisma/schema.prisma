@@ -104,6 +104,8 @@ model User {
   // F13: „Dokumenty" — wgrane pliki i nadane dostępy.
   uploadedDocuments  Document[]            @relation("DocumentUploader")
   documentAccess     DocumentAccess[]      @relation("DocumentAccessUser")
+  // F13: „Umowy" utworzone przez uzytkownika.
+  contracts          Contract[]            @relation("ContractCreator")
   // F12-K133: TimeCamp-like time entries + approvals.
   timeEntries        TimeEntry[]           @relation("TimeEntryUser")
   // F12-K141: członkostwa w projektach subskrypcji.
@@ -231,6 +233,8 @@ model Workspace {
   secretItems          SecretItem[]
   // F13: „Dokumenty" przestrzeni.
   documents            Document[]
+  // F13: „Umowy" przestrzeni.
+  contracts            Contract[]
   // F12-K133: TimeCamp-like time entries.
   timeEntries          TimeEntry[]
   // F12-K140: subskrypcje firmy.
@@ -304,6 +308,26 @@ model DocumentAccess {
 
   @@id([documentId, userId])
   @@index([userId])
+}
+
+// F13: „Umowy" — wpis umowy z polami definiowanymi przez uzytkownika
+// („Czas trwania umowy: 2 lata", „Staly rabat hurtowy: 6%"). Pola to JSON
+// [{label, value}] w kolejnosci wpisania — osobna tabela nie ma tu sensu,
+// bo pola sa czytane zawsze razem z umowa i nigdy nie filtrujemy po nich.
+model Contract {
+  id          String    @id @default(cuid())
+  workspaceId String
+  creatorId   String
+  title       String
+  details     Json      @default("[]")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creator   User      @relation("ContractCreator", fields: [creatorId], references: [id])
+
+  @@index([workspaceId, deletedAt])
 }
 
 // F12-K133: TimeCamp-like time tracking.

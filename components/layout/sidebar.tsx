@@ -52,7 +52,7 @@ import {
   IconUsers,
   IconVacations,
   IconWhiteboard,
-  IconWiki, IconFolder } from "@/components/ui/icons";
+  IconWiki, IconFolder, IconDoc } from "@/components/ui/icons";
 import { useUiPref } from "@/hooks/use-ui-pref";
 import { cn } from "@/lib/utils";
 import { AvatarMenu } from "./avatar-menu";
@@ -98,6 +98,7 @@ const TOOL_META: Record<ToolKey, { path: string; icon: IconType }> = {
   wiki: { path: "wiki", icon: IconWiki },
   canvases: { path: "canvases", icon: IconWhiteboard },
   documents: { path: "documents", icon: IconFolder },
+  contracts: { path: "contracts", icon: IconDoc },
 };
 
 const ROLE_LABEL: Record<Role, string> = { ADMIN: "Administrator", MEMBER: "Członek", VIEWER: "Obserwator" };
