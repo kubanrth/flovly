@@ -11,6 +11,8 @@ export const createTaskSchema = z.object({
   // omitted, server falls back to the board's first column.
   statusColumnId: z.string().min(1).optional(),
   priority: taskPriorityZ.optional(),
+  // F13: tworzenie zadania podrzednego z panelu rodzica.
+  parentId: z.string().min(1).optional(),
 });
 
 // Loose ProseMirror doc shape. We don't deeply validate content nodes —

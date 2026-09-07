@@ -796,6 +796,9 @@ model Task {
   recurrenceRule        Json?
   recurrenceParentId    String?
   recurrenceLastSpawnAt DateTime?
+  // F13: zadanie nadrzedne (jak epik w Jirze). Podrzedne to pelnoprawne
+  // zadania z wlasnym numerem i statusem; checklista `Subtask` zostaje osobno.
+  parentId              String?
   // F12-K40: per-task time tracking. Klient: 'do każdego zadania muszę
   // dodać start/stop'. Trzy stany:
   //   - Idle:      timerStartedAt=null, timerCompletedAt=null  → "Rozpocznij"
@@ -828,6 +831,10 @@ model Task {
   // linksIn = rows where I'm the target. UI merges both to show "linked".
   linksOut     TaskLink[]            @relation("TaskLinkSource")
   linksIn      TaskLink[]            @relation("TaskLinkTarget")
+  // F13: drzewo zadan. Skasowanie rodzica odpina dzieci (zostaja zadaniami).
+  parent       Task?                 @relation("TaskParent", fields: [parentId], references: [id], onDelete: SetNull)
+  children     Task[]                @relation("TaskParent")
+  @@index([parentId])
   // F12-K67: powiązanie z kontaktem CRM.
   contact      Contact?              @relation("TaskContact", fields: [contactId], references: [id], onDelete: SetNull)
   // F12-K131: przypisania do named view'ów (many-to-many).

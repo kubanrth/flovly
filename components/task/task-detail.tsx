@@ -1,12 +1,14 @@
 "use client";
 
 import { startTransition, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Role } from "@/lib/generated/prisma/enums";
 import { patchTaskAction } from "@/app/(app)/w/[workspaceId]/t/actions";
 import type { RichTextDoc } from "@/components/task/rich-text-editor";
 import { DescriptionSection } from "@/components/task/description-section";
 import { SubtasksSection, type SubtaskItem } from "@/components/task/subtasks-section";
+import { ChildTasksSection, type ChildTaskItem } from "@/components/task/child-tasks-section";
 import { AttachmentsSection, type AttachmentItem } from "@/components/task/attachments-section";
 import { LinkedTasksSection } from "@/components/task/linked-tasks-section";
 import { PollSection, type PollData } from "@/components/task/poll-section";
@@ -64,6 +66,10 @@ export interface TaskDetailProps {
   canModerateAttachments: boolean;
   subtasks: SubtaskItem[];
   canManageSubtasks: boolean;
+  // F13: zadania podrzedne (osobne zadania) i rodzic.
+  childTasks: ChildTaskItem[];
+  parentTask: { id: string; displayId: number; title: string } | null;
+  canCreateTasks: boolean;
   poll: PollData | null;
   canManagePoll: boolean;
   canVote: boolean;
@@ -169,6 +175,11 @@ export function TaskDetail(props: TaskDetailProps) {
   const mentionMembers = allMembers;
   const timeEntries = meta?.timeEntries ?? [];
 
+  const parentLink = props.parentTask && (
+    <Link href={`/w/${workspaceId}/t/${props.parentTask.id}`} data-ui="task-parent-link" className="mb-1 inline-flex items-center gap-1 text-xs text-fg-2 no-underline hover:text-orange-800 hover:underline">
+      <span aria-hidden>↳</span> w <span className="font-mono">#{props.parentTask.displayId}</span> <span className="truncate">{props.parentTask.title}</span>
+    </Link>
+  );
   const title = (size: "lg" | "xl" | "mobile") => (
     <TitleField key={`title-${formKey}`} value={task.title} canEdit={canEdit} onSave={saveTitle}
       className={size === "xl" ? "max-w-[720px] text-xl" : size === "mobile" ? "text-[19px] leading-[25px]" : "text-lg"} />
@@ -177,6 +188,7 @@ export function TaskDetail(props: TaskDetailProps) {
     <>
       <DescriptionSection key={`desc-${formKey}`} taskId={task.id} initial={task.descriptionJson} canEdit={canEdit} onMutate={onMutate} />
       <SubtasksSection taskId={task.id} subtasks={props.subtasks} canManage={props.canManageSubtasks} mobile={mobile} barClassName={mode === "page" && !mobile ? "max-w-[200px]" : undefined} />
+      <ChildTasksSection workspaceId={workspaceId} boardId={props.boardId} taskId={task.id} childTasks={props.childTasks} canCreate={props.canCreateTasks} mobile={mobile} />
       <AttachmentsSection taskId={task.id} attachments={props.attachments} canUpload={props.canUpload} canModerate={props.canModerateAttachments} />
       {(props.linkedTasks.length > 0 || canEdit) && <LinkedTasksSection workspaceId={workspaceId} taskId={task.id} linkedTasks={props.linkedTasks} candidates={props.linkCandidates} canEdit={canEdit} />}
       {(props.poll || props.canManagePoll) && <PollSection taskId={task.id} poll={props.poll} canManage={props.canManagePoll} canVote={props.canVote} currentUserId={currentUserId} />}
@@ -204,7 +216,7 @@ export function TaskDetail(props: TaskDetailProps) {
             <PriorityChipMenu taskId={task.id} value={task.priority} canEdit={canEdit} short onMutate={onMutate} className="h-7 px-[9px]" />
             {assignees.length > 0 && <AvatarStack people={assignees} size={26} max={3} className="ml-auto" />}
           </div>
-          <div className="mb-3.5">{title("mobile")}</div>
+          <div className="mb-3.5">{parentLink}{title("mobile")}</div>
           <div className="flex flex-col gap-4">{sections(true)}</div>
           <TaskDetailsCard {...detailsProps} mobile />
           {activityBlock(true)}
@@ -225,7 +237,7 @@ export function TaskDetail(props: TaskDetailProps) {
               <StatusChipMenu taskId={task.id} statusColumns={props.statusColumns} value={task.statusColumnId} canEdit={canEdit} onMutate={onMutate} />
               <PriorityChipMenu taskId={task.id} value={task.priority} canEdit={canEdit} onMutate={onMutate} />
             </div>
-            <div className="mb-5">{title("xl")}</div>
+            <div className="mb-5">{parentLink}{title("xl")}</div>
             <div className="flex max-w-[720px] flex-col gap-5">
               {sections(false)}
               {activityBlock(false)}
@@ -245,7 +257,7 @@ export function TaskDetail(props: TaskDetailProps) {
       <TaskHeader {...headerProps} />
       <div className="flex min-h-0 flex-1">
         <div className={cn("min-w-0 flex-1 overflow-y-auto pb-3", mode === "modal" ? "px-5 pt-5" : "px-4 pt-4")}>
-          <div className={mode === "modal" ? "mb-4" : "mb-3.5"}>{title("lg")}</div>
+          <div className={mode === "modal" ? "mb-4" : "mb-3.5"}>{parentLink}{title("lg")}</div>
           <div className="flex flex-col gap-4">{sections(false)}</div>
           {activityBlock(false)}
         </div>

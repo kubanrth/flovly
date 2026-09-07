@@ -17,6 +17,8 @@ export interface GanttTaskItem {
   assigneeIds: string[];
   /** TaskLink targets — drawn as dependency arrows when both ends are on screen. */
   linksTo: string[];
+  /** F13: rodzic — dziecko rysuje sie pod nim po rozwinieciu. */
+  parentId: string | null;
 }
 
 export interface GanttMilestoneItem {
@@ -46,6 +48,7 @@ export function toGanttTask(t: TaskRow): GanttTaskItem {
     milestoneId: t.milestoneId,
     linksTo: t.linksOut.map((l) => l.targetTaskId),
     assigneeIds: t.assignees.map((a) => a.userId),
+    parentId: t.parentId,
   };
 }
 

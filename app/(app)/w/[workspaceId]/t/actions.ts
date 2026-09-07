@@ -73,6 +73,7 @@ export async function createTaskAction(
     title: formData.get("title"),
     statusColumnId: formData.get("statusColumnId") || undefined,
     priority: formData.get("priority") || undefined,
+    parentId: formData.get("parentId") || undefined,
   });
   // F12-K131: viewId (opcjonalne) — jeśli task tworzony w custom named
   // view context, dodajemy TaskView entry po create. Default view (bez
@@ -93,6 +94,17 @@ export async function createTaskAction(
 
   const limit = await checkLimit("task.create", ctx.userId);
   if (!limit.ok) return { ok: false, error: limit.error };
+
+  // F13: rodzic musi byc zywym zadaniem z tej samej tablicy. Dziecko dziedziczy
+  // jego milestone, zeby w Osi czasu siedzialo pod tym samym naglowkiem.
+  let parent: { id: string; milestoneId: string | null } | null = null;
+  if (parsed.data.parentId) {
+    parent = await db.task.findFirst({
+      where: { id: parsed.data.parentId, boardId: parsed.data.boardId, deletedAt: null },
+      select: { id: true, milestoneId: true },
+    });
+    if (!parent) return { ok: false, error: "Zadanie nadrzędne nie istnieje na tej tablicy." };
+  }
 
   // Prefer caller-supplied column (Kanban inline-add); fall back to board's first column.
   let pickedColumn: { id: string } | null = null;
@@ -144,6 +156,7 @@ export async function createTaskAction(
       // F12-K75: priorytet domyślnie NONE; jeśli user wybrał w dialogu,
       // ustawiamy od razu — bez konieczności edycji po utworzeniu.
       ...(parsed.data.priority ? { priority: parsed.data.priority } : {}),
+      ...(parent ? { parentId: parent.id, milestoneId: parent.milestoneId } : {}),
     },
   });
 

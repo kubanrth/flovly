@@ -36,6 +36,7 @@ import {
   type GanttZoom,
 } from "@/components/roadmap/timeline-utils";
 import type { GanttMilestoneItem, GanttTaskItem } from "@/components/gantt/gantt-reads";
+import { flattenTree, nestTasks } from "@/components/gantt/gantt-nesting";
 
 export type { GanttMilestoneItem, GanttTaskItem } from "@/components/gantt/gantt-reads";
 
@@ -56,7 +57,8 @@ const todayFmt = new Intl.DateTimeFormat("pl-PL", { weekday: "short", day: "nume
 
 type Row =
   | { kind: "milestone"; id: string; label: string; m: GanttMilestoneItem; done: number; total: number }
-  | { kind: "task"; id: string; t: GanttTaskItem; nested: boolean };
+  // F13: `depth` = wciecie (1 pod milestone'em, +1 per poziom rodzica); `childCount` > 0 daje chevron.
+  | { kind: "task"; id: string; t: GanttTaskItem; depth: number; childCount: number };
 
 interface Box {
   x: number;
@@ -126,7 +128,12 @@ export function GanttView({
     const known = new Set(milestones.map((m) => m.id));
     const grouped = new Map<string, GanttTaskItem[]>();
     const loose: GanttTaskItem[] = [];
-    for (const t of visibleTasks) {
+    // F13: drzewo liczone raz na calym zbiorze — dziecko z innym milestone'em
+    // niz rodzic i tak wisi pod rodzicem, wiec do kubelkow ida tylko korzenie.
+    const tree = nestTasks(visibleTasks);
+    const taskRows = (roots: GanttTaskItem[], base: number): Row[] =>
+      flattenTree(roots, tree.childrenOf, expanded).map((r) => ({ kind: "task", id: r.t.id, t: r.t, depth: base + r.depth, childCount: r.childCount }));
+    for (const t of tree.roots) {
       if (t.milestoneId && known.has(t.milestoneId)) {
         const bucket = grouped.get(t.milestoneId);
         if (bucket) bucket.push(t);
@@ -146,9 +153,9 @@ export function GanttView({
         done: own.filter((t) => isDoneStatus(t.statusName)).length,
         total: own.length,
       });
-      if (expanded.has(m.id)) for (const t of own) out.push({ kind: "task", id: t.id, t, nested: true });
+      if (expanded.has(m.id)) out.push(...taskRows(own, 1));
     });
-    for (const t of loose) out.push({ kind: "task", id: t.id, t, nested: false });
+    out.push(...taskRows(loose, 0));
     return out;
   }, [milestones, visibleTasks, expanded, filtering]);
 
@@ -283,6 +290,8 @@ export function GanttView({
         onZoom={setZoom}
         workspaceId={workspaceId}
         now={now}
+        expanded={expanded}
+        onToggle={toggle}
       />
     );
   }
@@ -380,6 +389,8 @@ export function GanttView({
                 workspaceId={workspaceId}
                 checked={!!selected[r.id]}
                 onCheck={(v) => setSelected((s) => ({ ...s, [r.id]: v }))}
+                open={expanded.has(r.id)}
+                onToggle={() => toggle(r.id)}
               />
             ),
           )}
@@ -617,11 +628,15 @@ function TaskRow({
   workspaceId,
   checked,
   onCheck,
+  open,
+  onToggle,
 }: {
   row: Extract<Row, { kind: "task" }>;
   workspaceId: string;
   checked: boolean;
   onCheck: (v: boolean) => void;
+  open: boolean;
+  onToggle: () => void;
 }) {
   const t = row.t;
   const done = isDoneStatus(t.statusName);
@@ -632,12 +647,26 @@ function TaskRow({
         checked && "bg-selected shadow-[inset_2px_0_0_var(--orange-500)] hover:bg-selected",
       )}
       style={{ height: ROW_H }}
+      data-ui="gantt-task-row"
+      data-depth={row.depth}
     >
       <span className={cn("flex w-8 items-center justify-center", !checked && "opacity-0 focus-within:opacity-100 group-hover/row:opacity-100")}>
         <Checkbox size="sm" ariaLabel={`Zaznacz ${t.title}`} checked={checked} onCheckedChange={onCheck} />
       </span>
-      <span className="w-6" />
-      {row.nested && <span className="w-6" />}
+      {row.childCount > 0 ? (
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          aria-label={`${open ? "Zwiń" : "Rozwiń"} zadania podrzędne (${row.childCount})`}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-n-600 outline-none hover:bg-n-100 hover:text-foreground focus-visible:ring-2 focus-visible:ring-orange-500"
+        >
+          <IconChevronRight width={12} height={12} className={cn("transition-transform duration-150", open && "rotate-90")} />
+        </button>
+      ) : (
+        <span className="w-6" />
+      )}
+      {row.depth > 0 && <span style={{ width: 24 * row.depth }} className="shrink-0" />}
       <span className={cn("w-12 font-mono text-xs", done ? "text-n-400 line-through" : "text-n-600")}>{t.displayId}</span>
       <span className="flex min-w-0 flex-1 items-center gap-1.5 pr-2">
         <StatusMark color={t.statusColor} done={done} />
@@ -737,6 +766,8 @@ function MobileGantt({
   onZoom,
   workspaceId,
   now,
+  expanded,
+  onToggle,
 }: {
   scale: GanttScale;
   rows: Row[];
@@ -745,6 +776,8 @@ function MobileGantt({
   onZoom: (z: GanttZoom) => void;
   workspaceId: string;
   now: number;
+  expanded: ReadonlySet<string>;
+  onToggle: (id: string) => void;
 }) {
   const todayLabel = new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "short" }).format(new Date(now));
   return (
@@ -798,9 +831,23 @@ function MobileGantt({
                         </span>
                       </>
                     ) : (
-                      <Link href={`/w/${workspaceId}/t/${r.t.id}`} className="truncate text-xs outline-none hover:text-orange-800">
-                        {r.t.title}
-                      </Link>
+                      // F13: dzieci wciete o 12px/poziom; chevron tylko gdy sa dzieci.
+                      <span className="flex min-w-0 items-center gap-1" data-ui="gantt-task-row" data-depth={r.depth} style={{ paddingLeft: 12 * r.depth }}>
+                        {r.childCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => onToggle(r.id)}
+                            aria-expanded={expanded.has(r.id)}
+                            aria-label={`${expanded.has(r.id) ? "Zwiń" : "Rozwiń"} zadania podrzędne (${r.childCount})`}
+                            className="flex size-6 shrink-0 items-center justify-center rounded-sm text-n-600 outline-none hover:bg-n-100"
+                          >
+                            <IconChevronRight width={12} height={12} className={cn("transition-transform duration-150", expanded.has(r.id) && "rotate-90")} />
+                          </button>
+                        )}
+                        <Link href={`/w/${workspaceId}/t/${r.t.id}`} className="truncate text-xs outline-none hover:text-orange-800">
+                          {r.t.title}
+                        </Link>
+                      </span>
                     )}
                   </span>
                   <span className="relative flex-1">

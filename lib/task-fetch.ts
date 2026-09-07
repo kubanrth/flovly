@@ -61,6 +61,13 @@ export async function fetchTaskDetail(
       assignees: { select: { userId: true } },
       tags: { select: { tagId: true } },
       subtasks: { orderBy: { order: "asc" } },
+      // F13: drzewo zadan — dzieci (osobne zadania) i rodzic do naglowka.
+      children: {
+        where: { deletedAt: null },
+        orderBy: [{ rowOrder: "asc" }, { createdAt: "asc" }],
+        select: { id: true, displayId: true, title: true, statusColumn: { select: { name: true, colorHex: true } } },
+      },
+      parent: { select: { id: true, displayId: true, title: true } },
       customValues: true,
       // F12-K63: both directions of TaskLink — UI merges them into a single
       // "Powiązane" section so the relationship reads symmetrically.
@@ -310,6 +317,12 @@ export async function fetchTaskDetail(
       completed: s.completed,
     })),
     canManageSubtasks: can(ctx.role, "subtask.manage"),
+    childTasks: task.children.map((c) => ({
+      id: c.id, displayId: c.displayId, title: c.title,
+      statusName: c.statusColumn?.name ?? null, statusColor: c.statusColumn?.colorHex ?? null,
+    })),
+    parentTask: task.parent ? { id: task.parent.id, displayId: task.parent.displayId, title: task.parent.title } : null,
+    canCreateTasks: can(ctx.role, "task.create"),
     poll: task.poll
       ? {
           id: task.poll.id,
