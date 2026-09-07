@@ -12,7 +12,9 @@
 //     channel, so drag on Kanban updates the table instantly.
 
 import "server-only";
+import { cookies } from "next/headers";
 import { createSupabaseAdminClient } from "@/lib/supabase";
+import { CLIENT_ID_COOKIE } from "@/components/layout/client-id";
 
 export type RealtimePayload = {
   type: "task.changed" | "board.changed";
@@ -26,35 +28,53 @@ export type RealtimePayload = {
 // subskrybenta lub Supabase nie odpowiada — wcześniej blokowało to
 // `createTaskAction` w `await` chain (user widział "Tworzę…" forever).
 // Po 2s odpuszczamy — broadcast to nice-to-have, nie krytyczna ścieżka.
+// Timer jest odwolywany po rozstrzygnieciu — wczesniej ostrzezenie „timed out"
+// lecialo do logu po kazdym broadcaście, takze udanym (sugerowalo zwisy,
+// ktorych nie bylo).
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T | null> {
-  return Promise.race<T | null>([
-    p,
-    new Promise<null>((resolve) => {
-      setTimeout(() => {
-        console.warn(`[realtime] ${label} timed out after ${ms}ms`);
-        resolve(null);
-      }, ms);
-    }),
-  ]);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<null>((resolve) => {
+    timer = setTimeout(() => {
+      console.warn(`[realtime] ${label} timed out after ${ms}ms`);
+      resolve(null);
+    }, ms);
+  });
+  return Promise.race<T | null>([p, timeout]).finally(() => clearTimeout(timer));
+}
+
+// Perf 2026-09-07: broadcast nie blokuje odpowiedzi akcji. Wczesniej akcja
+// czekala na REST Supabase (90–250 ms, a przy zwisie do 2 s timeoutu) zanim
+// wrocila do klienta. Wysylka startuje tu i dokancza sie w tle procesu Node
+// (dlugozyjacy kontener, nie serverless); bledy tylko do logu — realtime to
+// nice-to-have, nie sciezka krytyczna.
+function fireBroadcast(channelName: string, payload: object, label: string): void {
+  try {
+    const sb = createSupabaseAdminClient();
+    const channel = sb.channel(channelName);
+    // httpSend = jawny REST (send() robil to samo fallbackiem z ostrzezeniem
+    // o deprecacji); kanal nie jest dolaczany, wiec nie ma czego usuwac.
+    void withTimeout(channel.httpSend("change", payload), 2000, label)
+      .then((r) => { if (r && !r.success) console.warn(`[realtime] ${label} failed:`, r.error); })
+      .catch((e) => console.warn(`[realtime] ${label} failed:`, e));
+  } catch (e) {
+    console.warn(`[realtime] ${label} failed:`, e);
+  }
 }
 
 export async function broadcastWorkspaceChange(
   workspaceId: string,
   payload: RealtimePayload,
 ): Promise<void> {
-  try {
-    const sb = createSupabaseAdminClient();
-    const channel = sb.channel(`workspace:${workspaceId}`);
-    await withTimeout(
-      channel.send({ type: "broadcast", event: "change", payload }),
-      2000,
-      `workspace broadcast (${workspaceId})`,
-    );
-    await withTimeout(sb.removeChannel(channel), 500, "removeChannel");
-  } catch (e) {
-    // Don't fail the user action if realtime broadcast fails.
-    console.warn("[realtime] broadcast failed:", e);
+  // `source` = id karty, ktora wykonala akcje (ciasteczko ustawiane przez
+  // RouteTracker przy fokusie). Ta karta ma juz swieze dane z odpowiedzi
+  // akcji i pomija echo w useWorkspaceRealtime; inne karty i urzadzenia
+  // odswiezaja jak dotad. Poza request scope (cron) cookies() rzuca — wtedy
+  // bez source, wszyscy odswiezaja.
+  let source = payload.source;
+  if (!source) {
+    try { source = (await cookies()).get(CLIENT_ID_COOKIE)?.value; } catch { /* brak requestu */ }
   }
+  fireBroadcast(`workspace:${workspaceId}`, { ...payload, ...(source ? { source } : {}) }, `workspace broadcast (${workspaceId})`);
 }
 
 // Per-user broadcast — kanał `user:<userId>`. Live powiadomienia
@@ -68,16 +88,5 @@ export async function broadcastUserChange(
   userId: string,
   payload: UserRealtimePayload,
 ): Promise<void> {
-  try {
-    const sb = createSupabaseAdminClient();
-    const channel = sb.channel(`user:${userId}`);
-    await withTimeout(
-      channel.send({ type: "broadcast", event: "change", payload }),
-      2000,
-      `user broadcast (${userId})`,
-    );
-    await withTimeout(sb.removeChannel(channel), 500, "removeChannel");
-  } catch (e) {
-    console.warn("[realtime] user broadcast failed:", e);
-  }
+  fireBroadcast(`user:${userId}`, payload, `user broadcast (${userId})`);
 }

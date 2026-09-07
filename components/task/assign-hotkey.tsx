@@ -9,7 +9,6 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
 import { Search, UserPlus } from "lucide-react";
 import { toggleAssigneeAction } from "@/app/(app)/w/[workspaceId]/t/actions";
 
@@ -110,7 +109,6 @@ function AssignMenu({
   at: { x: number; y: number; taskId: string; assignedIds: Set<string> };
   onClose: () => void;
 }) {
-  const router = useRouter();
   const [query, setQuery] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -207,11 +205,9 @@ function AssignMenu({
               <form
                 action={(fd) =>
                   startTransition(async () => {
+                    // Akcja robi revalidatePath — odpowiedz niesie juz swieze
+                    // drzewo, wiec lista pod spodem odswieza sie bez refresh().
                     await toggleAssigneeAction(fd);
-                    // Realtime broadcast can fail silently — force
-                    // a router refresh so the hovered list view picks up
-                    // the new assignee even when the channel doesn't fire.
-                    router.refresh();
                     onClose();
                   })
                 }

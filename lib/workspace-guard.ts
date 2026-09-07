@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -15,7 +16,10 @@ export interface WorkspaceSession {
 // Require an authenticated session + workspace membership.
 // Redirects to login if unauthenticated; calls notFound() if no membership
 // (matches GitHub/Linear behavior — don't leak workspace existence).
-export async function requireWorkspaceMembership(
+// React.cache: w jednym requescie layouty, strona, panel zadania i akcje
+// wolaja to kilkukrotnie dla tego samego workspaceId — auth + zapytanie
+// o czlonkostwo ida raz. Wynik nadal jest liczony na serwerze per request.
+export const requireWorkspaceMembership = cache(async function requireWorkspaceMembership(
   workspaceId: string,
 ): Promise<WorkspaceSession> {
   const session = await auth();
@@ -38,7 +42,7 @@ export async function requireWorkspaceMembership(
     workspaceId,
     role: membership.role,
   };
-}
+});
 
 export async function requireWorkspaceAction(
   workspaceId: string,
@@ -63,17 +67,13 @@ export async function userCanAccessBoard(
   workspaceRole: Role,
 ): Promise<boolean> {
   if (workspaceRole === "ADMIN") return true;
+  // Jedno zapytanie zamiast dwoch sekwencyjnych (widocznosc + czlonkostwo).
   const board = await db.board.findUnique({
     where: { id: boardId },
-    select: { visibility: true },
+    select: { visibility: true, memberships: { where: { userId }, select: { id: true } } },
   });
   if (!board) return false;
-  if (board.visibility === "PUBLIC") return true;
-  const membership = await db.boardMembership.findUnique({
-    where: { boardId_userId: { boardId, userId } },
-    select: { id: true },
-  });
-  return membership !== null;
+  return board.visibility === "PUBLIC" || board.memberships.length > 0;
 }
 
 // Like `requireWorkspaceMembership`, but additionally enforces board

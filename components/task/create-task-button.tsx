@@ -207,13 +207,11 @@ export function CreateTaskDialog({ workspaceId, boardId, boards = [], viewId, op
         // Zadanie juz istnieje — nie cofamy go, tylko mowimy, czego nie udalo
         // sie ustawic, i zostawiamy dialog otwarty.
         setError(e instanceof Error ? e.message : "Zadanie utworzone, ale nie udało się ustawić wszystkich pól.");
-        router.refresh();
         return;
       }
       if (keepOpen) {
         setTitle("");
         titleRef.current?.focus();
-        router.refresh();
         return;
       }
       reset();

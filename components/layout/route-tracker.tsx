@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { claimClientIdCookie } from "@/components/layout/client-id";
 
 // F12-K135: śledzi ostatnią "listową" ścieżkę (nie-taskową) w sessionStorage.
 // TaskModalShell.close() używa jej jako returnTo — dokąd wrócić po zamknięciu
@@ -23,6 +24,14 @@ export function RouteTracker() {
   const searchParams = useSearchParams();
 
   const isTaskRoute = /\/t\/[^/]+/.test(pathname);
+
+  // Perf 2026-09-07: karta z fokusem wpisuje swoj id do ciasteczka, zeby
+  // serwer oznaczyl nim broadcast po jej akcji (patrz client-id.ts).
+  useEffect(() => {
+    claimClientIdCookie();
+    window.addEventListener("focus", claimClientIdCookie);
+    return () => window.removeEventListener("focus", claimClientIdCookie);
+  }, []);
 
   useEffect(() => {
     // Pomijamy task routes (/t/<id> — to drawer/pełny widok zadania,

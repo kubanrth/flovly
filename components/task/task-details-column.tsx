@@ -1,7 +1,6 @@
 "use client";
 
 import { startTransition, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
 import { createTagAction, patchTaskAction, toggleAssigneeAction, toggleTagAction } from "@/app/(app)/w/[workspaceId]/t/actions";
 import { assignTaskToMilestoneAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/milestone-actions";
 import { FieldCell } from "@/components/table/field-cells";
@@ -184,7 +183,6 @@ export function TaskDetailsCard(p: TaskDetailsProps) {
 /* ───────────── fields ───────────── */
 
 function AssigneesField({ task, allMembers, assigneeIds, canEdit, mode, mobile }: TaskDetailsProps) {
-  const router = useRouter();
   const people = allMembers.map((m) => ({ id: m.id, name: memberName(m), avatar: m.avatarUrl }));
   const active = allMembers.filter((m) => assigneeIds.has(m.id));
   const onChange = (ids: string[]) => {
@@ -198,7 +196,7 @@ function AssigneesField({ task, allMembers, assigneeIds, canEdit, mode, mobile }
         fd.set("userId", m.id);
         await toggleAssigneeAction(fd);
       }
-      router.refresh(); // realtime broadcast can fail silently
+      // Bez router.refresh(): akcja robi revalidatePath, odpowiedz niesie swieze drzewo.
     });
   };
   const listNames = mode === "page" && !mobile;
@@ -246,7 +244,6 @@ function DatesField({ task, canEdit, onMutate, only, mobile }: TaskDetailsProps 
 }
 
 function MilestoneField({ task, milestones, canEdit }: TaskDetailsProps) {
-  const router = useRouter();
   const [value, setValue] = useState(task.milestoneId ?? NONE);
   const [prev, setPrev] = useState(task.milestoneId);
   if (task.milestoneId !== prev) { setPrev(task.milestoneId); setValue(task.milestoneId ?? NONE); }
@@ -259,7 +256,6 @@ function MilestoneField({ task, milestones, canEdit }: TaskDetailsProps) {
     startTransition(async () => {
       const result = await assignTaskToMilestoneAction(fd);
       if (result && !result.ok) { setValue(previous); alert(result.error); return; } // task dates outside milestone range
-      router.refresh();
     });
   };
   return (
@@ -281,7 +277,6 @@ function MilestoneField({ task, milestones, canEdit }: TaskDetailsProps) {
 }
 
 function TagsField({ workspaceId, task, allTags, tagIds, canEdit, mobile }: TaskDetailsProps) {
-  const router = useRouter();
   const [query, setQuery] = useState("");
   const [creating, setCreating] = useState(false);
   const [color, setColor] = useState(TAG_PALETTE[0]!);
@@ -292,7 +287,7 @@ function TagsField({ workspaceId, task, allTags, tagIds, canEdit, mobile }: Task
     const fd = new FormData();
     fd.set("taskId", task.id);
     fd.set("tagId", tagId);
-    startTransition(async () => { await toggleTagAction(fd); router.refresh(); });
+    startTransition(async () => { await toggleTagAction(fd); });
   };
   return (
     <div className="flex flex-wrap items-center gap-1">

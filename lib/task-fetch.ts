@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership, userCanAccessBoard } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
-import { createSignedDownloadUrl, isImageMime } from "@/lib/storage";
+import { createSignedDownloadUrls, isImageMime } from "@/lib/storage";
 import type { TaskDetailProps } from "@/components/task/task-detail";
 import type { RichTextDoc } from "@/components/task/rich-text-editor";
 
@@ -121,16 +121,18 @@ export async function fetchTaskDetail(
   });
   if (!task) notFound();
 
-  // Gate by per-board access — workspace MEMBER who knows a task ID on
-  // a PRIVATE board could otherwise still load the task page.
-  if (!(await userCanAccessBoard(task.boardId, ctx.userId, ctx.role))) notFound();
 
   // F12-K105 perf: usunięty workspaceContact fetch (1000 contacts) —
   // ContactField wyciągnięty z task-detail w F12-K67, nigdy nie renderowany.
   // Plus candidateRows 500 → 100 (linked-tasks picker rzadko klikany,
   // jeśli user chce więcej → fetch lazy), auditLog 50 → 20 (drawer
   // pokazuje top widoczne, więcej dostępne na pełnej stronie task'a).
-  const [members, tags, comments, auditEntries, attachmentRows, candidateRows, workspaceBoardRows] = await Promise.all([
+  // Gate by per-board access — workspace MEMBER who knows a task ID on
+  // a PRIVATE board could otherwise still load the task page. Sprawdzenie
+  // idzie rownolegle z resztą odczytow (jeden round-trip mniej); wynik nadal
+  // decyduje przed zwroceniem czegokolwiek.
+  const [canAccess, members, tags, comments, auditEntries, attachmentRows, candidateRows, workspaceBoardRows] = await Promise.all([
+    userCanAccessBoard(task.boardId, ctx.userId, ctx.role),
     db.workspaceMembership.findMany({
       where: { workspaceId },
       include: {
@@ -188,14 +190,14 @@ export async function fetchTaskDetail(
     }),
   ]);
 
+  if (!canAccess) notFound();
+
   // Pre-sign image thumbnails so browser renders them without round-trip.
   // Non-image URLs minted on demand — don't waste signatures on files
-  // that aren't rendered inline.
-  const attachmentPayload = await Promise.all(
-    attachmentRows.map(async (a) => {
-      const thumbnailUrl = isImageMime(a.mimeType)
-        ? await createSignedDownloadUrl(a.storageKey).catch(() => null)
-        : null;
+  // that aren't rendered inline. Jedno wywolanie Storage dla wszystkich.
+  const signed = await createSignedDownloadUrls(attachmentRows.filter((a) => isImageMime(a.mimeType)).map((a) => a.storageKey));
+  const attachmentPayload = attachmentRows.map((a) => {
+      const thumbnailUrl = signed.get(a.storageKey) ?? null;
       return {
         id: a.id,
         filename: a.filename,
@@ -206,8 +208,7 @@ export async function fetchTaskDetail(
         isUploader: a.uploaderId === ctx.userId,
         thumbnailUrl,
       };
-    }),
-  );
+    });
 
   // Merge outgoing + incoming links so the section reads symmetrically. Skip
   // any link whose other end is soft-deleted so dead rows don't show up.
