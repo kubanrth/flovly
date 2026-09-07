@@ -100,7 +100,7 @@ export default async function CustomBoardViewPage({
   return (
     <BoardShell bgCss={bgCss}>
       {header()}
-      <ViewTransition>
+      <ViewTransition key={viewId}>
       {view.type === "KANBAN" && (
         <KanbanRenderer
           workspaceId={workspaceId}
@@ -220,7 +220,7 @@ async function TableRenderer({
       initialConfig={parseListConfig(configJson)}
     >
       {header}
-      <ViewTransition>
+      <ViewTransition key={viewId}>
         <BoardTable tasks={board.tasks.map((t) => toTableTask(t, docHasText(t.descriptionJson)))} />
       </ViewTransition>
     </ListStateProvider>
