@@ -234,7 +234,10 @@ test.describe("mobile bottom sheets", () => {
     await openFirstTask(page);
 
     const opis = page.locator('[data-ui="task-description"]');
-    await opis.getByRole("button", { name: /Edytuj opis/i }).first().click();
+    // Zadanie z pustym opisem otwiera edytor od razu, bez przycisku „Edytuj opis"
+    // — test nie moze zalezec od tego, ktore zadanie jest pierwsze na liscie.
+    const edytuj = opis.getByRole("button", { name: /Edytuj opis/i });
+    if (await edytuj.count()) await edytuj.first().click();
     const punktor = opis.getByRole("button", { name: "Lista punktowa" });
     await expect(punktor).toBeVisible();
 
