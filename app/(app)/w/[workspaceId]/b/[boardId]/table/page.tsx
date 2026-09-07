@@ -55,6 +55,15 @@ export default async function BoardTablePage({
   });
   if (!board) notFound();
 
+  // Tablice przestrzeni dla „Przenies" w akcjach masowych — jak w lib/task-fetch.ts.
+  const workspaceBoards = (
+    await db.board.findMany({
+      where: { workspaceId, deletedAt: null },
+      orderBy: { order: "asc" },
+      select: { id: true, name: true, workspace: { select: { name: true } } },
+    })
+  ).map((b) => ({ id: b.id, name: b.name, workspaceName: b.workspace.name }));
+
   const canEdit = can(ctx.role, "task.update");
   const canCreate = can(ctx.role, "task.create");
   const canManageBoard = can(ctx.role, "board.update");
@@ -75,6 +84,7 @@ export default async function BoardTablePage({
           customColumns: board.customColumns.map((c) => ({ id: c.id, name: c.name, type: c.type as CustomTableColumn["type"], options: c.options })),
           members: memberships.map((m) => m.user),
           allTags,
+          workspaceBoards,
         }}
         initialConfig={parseListConfig(tableView?.configJson)}
       >

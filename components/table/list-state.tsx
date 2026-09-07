@@ -16,6 +16,7 @@ import type { ListConfig } from "@/components/table/list-config";
 
 export type { ListConfig } from "@/components/table/list-config";
 import { memberName, type BoardTableColumn, type CustomTableColumn, type ListMember } from "@/components/table/types";
+import type { MoveTargetBoard } from "@/components/task/move-task-menu";
 
 export interface ListMeta {
   workspaceId: string;
@@ -27,6 +28,8 @@ export interface ListMeta {
   customColumns: CustomTableColumn[];
   members: ListMember[];
   allTags: { id: string; name: string; colorHex: string }[];
+  // Cele dla „Przenies" w akcjach masowych — ta sama lista co w panelu zadania.
+  workspaceBoards?: MoveTargetBoard[];
 }
 
 export interface ListState extends ListMeta {

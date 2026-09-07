@@ -51,7 +51,7 @@ export function TaskActions({ mode, workspaceId, boardId, workspaceBoards, task,
     <div className="flex shrink-0 items-center gap-1" data-ui="task-actions">
       {copied && <span className="mr-1 text-2xs text-fg-3" aria-live="polite">Skopiowano</span>}
       {canEdit && <SendEmailDialog taskId={task.id} taskTitle={task.title} attachments={attachments} iconOnly={compact} touch={touch} />}
-      {canEdit && workspaceBoards.length > 1 && <MoveTaskMenu taskId={task.id} currentBoardId={boardId} availableBoards={workspaceBoards} iconOnly={compact} touch={touch} />}
+      {canEdit && workspaceBoards.length > 1 && <MoveTaskMenu taskIds={[task.id]} currentBoardId={boardId} availableBoards={workspaceBoards} iconOnly={compact} touch={touch} />}
       {mode !== "page" && (
         // window.location (not router.push): escapes the intercepting modal route so the real page.tsx resolves (F12-K119).
         <Button variant="ghost" {...btn} iconOnly aria-label="Pełny widok" title="Pełny widok" onClick={() => window.location.assign(`/w/${workspaceId}/t/${task.id}`)}><IconExpand /></Button>

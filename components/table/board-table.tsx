@@ -532,7 +532,7 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
   const sortLabel = config.sort ? columns.find((c) => sortIdFor(c) === config.sort!.columnId)?.label ?? customColumns.find((c) => c.id === config.sort!.columnId)?.name : null;
   const live = <div aria-live="polite" aria-atomic="true" className="sr-only">{s.live}</div>;
   const bulk = selectedTasks.length > 0 && canEdit && (
-    <BulkBar workspaceId={workspaceId} selected={selectedTasks} statusColumns={statusColumns} members={members} allTags={allTags} onClear={() => setSelection({})} />
+    <BulkBar workspaceId={workspaceId} boardId={boardId} workspaceBoards={s.workspaceBoards} selected={selectedTasks} statusColumns={statusColumns} members={members} allTags={allTags} onClear={() => setSelection({})} />
   );
 
   if (isMobile) {

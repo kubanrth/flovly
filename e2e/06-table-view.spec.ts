@@ -163,4 +163,47 @@ test.describe("table view", () => {
     const etykiety = (await naglowki.allInnerTexts()).map((t) => t.split("\n")[0]!.trim());
     expect(etykiety.at(-1)).toBe("— brak —");
   });
+  // „Przenies" bylo tylko w naglowku pojedynczego zadania. W akcjach masowych
+  // przenosimy cale zaznaczenie do innej tablicy — i tu z powrotem, zeby
+  // fixture zostal jak byl. Cel i zrodlo po id: w fixture sa trzy tablice o tej
+  // samej nazwie „Sprint 1", wiec szukanie po nazwie trafialo w zla.
+  test("akcje masowe: Przenies przenosi zaznaczone zadania do innej tablicy", async ({ page }) => {
+    const zrodloId = page.url().match(/\/b\/([^/]+)\//)![1]!;
+    const ws = page.url().match(/\/w\/([^/]+)\//)![1]!;
+    const tablica = (id: string) => `/w/${ws}/b/${id}/table`;
+    const wiersze = page.locator('[data-ui="list-row"]');
+    await expect(wiersze.nth(1)).toBeVisible();
+    const [a, b] = await Promise.all([0, 1].map(async (i) => (await wiersze.nth(i).locator('a[href*="/t/"]').first().innerText()).trim()));
+
+    const przenies = async (celId?: string) => {
+      for (const t of [a, b]) await wiersze.filter({ hasText: t }).locator('[role="checkbox"]').first().click();
+      const bar = page.locator('[data-ui="bulk-bar"]');
+      await expect(bar).toContainText("2 zaznaczone");
+      await bar.locator('[data-ui="bulk-move"]').click();
+      const lista = page.locator('[data-slot="popover-content"]').last();
+      await expect(lista).toContainText("Przeniesione zostaną 2 zadania");
+      const przycisk = celId ? lista.locator(`button[data-board-id="${celId}"]`) : lista.locator("button[data-board-id]").first();
+      const id = (await przycisk.getAttribute("data-board-id"))!;
+      await przycisk.click();
+      await expect(bar).toBeHidden({ timeout: 20_000 });
+      return id;
+    };
+
+    const celId = await przenies();
+    expect(celId).not.toBe(zrodloId);
+    // Zniknely ze zrodlowej…
+    await expect(wiersze.filter({ hasText: a })).toHaveCount(0, { timeout: 20_000 });
+    await expect(wiersze.filter({ hasText: b })).toHaveCount(0);
+
+    // …i sa na docelowej.
+    await page.goto(tablica(celId));
+    await expect(wiersze.filter({ hasText: a })).toHaveCount(1, { timeout: 20_000 });
+    await expect(wiersze.filter({ hasText: b })).toHaveCount(1);
+
+    // Z powrotem na zrodlowa, zeby kolejne testy zastaly ja jak byla.
+    await przenies(zrodloId);
+    await page.goto(tablica(zrodloId));
+    await expect(wiersze.filter({ hasText: a })).toHaveCount(1, { timeout: 20_000 });
+    await expect(wiersze.filter({ hasText: b })).toHaveCount(1);
+  });
 });

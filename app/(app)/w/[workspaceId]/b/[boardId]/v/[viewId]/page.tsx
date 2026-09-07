@@ -168,6 +168,14 @@ async function TableRenderer({
   });
 
   // Same workspace-wide tag list as the default /table route.
+  // Tablice przestrzeni dla „Przenies" w akcjach masowych — jak w lib/task-fetch.ts.
+  const workspaceBoards = (
+    await db.board.findMany({
+      where: { workspaceId, deletedAt: null },
+      orderBy: { order: "asc" },
+      select: { id: true, name: true, workspace: { select: { name: true } } },
+    })
+  ).map((b) => ({ id: b.id, name: b.name, workspaceName: b.workspace.name }));
   const allTags = await db.tag.findMany({
     where: { OR: [{ workspaceId }, { workspaceId: null }] },
     orderBy: [{ workspaceId: { sort: "desc", nulls: "last" } }, { name: "asc" }],
@@ -207,6 +215,7 @@ async function TableRenderer({
         customColumns: board.customColumns.map((c) => ({ id: c.id, name: c.name, type: c.type as CustomTableColumn["type"], options: c.options })),
         members: memberships.map((m) => m.user),
         allTags,
+        workspaceBoards,
       }}
       initialConfig={parseListConfig(configJson)}
     >

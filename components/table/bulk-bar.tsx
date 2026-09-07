@@ -13,7 +13,8 @@ import { memberName, type BoardTableColumn, type BoardTableTask, type ListMember
 import { Avatar } from "@/components/ui/avatar";
 import { Chip } from "@/components/ui/chip";
 import { Menu, MenuCheckboxItem, MenuContent, MenuItem, MenuTrigger } from "@/components/ui/dropdown-menu";
-import { IconChevronDown, IconClose, IconContacts, IconTag, IconTrash } from "@/components/ui/icons";
+import { IconChevronDown, IconClose, IconContacts, IconMove, IconTag, IconTrash } from "@/components/ui/icons";
+import { MoveTaskMenu, type MoveTargetBoard } from "@/components/task/move-task-menu";
 import { PriorityIcon } from "@/components/ui/priority-icon";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,8 @@ const BTN = "inline-flex h-7 shrink-0 items-center gap-[5px] whitespace-nowrap r
 
 export function BulkBar({
   workspaceId,
+  boardId,
+  workspaceBoards = [],
   selected,
   statusColumns,
   members,
@@ -28,6 +31,8 @@ export function BulkBar({
   onClear,
 }: {
   workspaceId: string;
+  boardId: string;
+  workspaceBoards?: MoveTargetBoard[];
   selected: BoardTableTask[];
   statusColumns: BoardTableColumn[];
   members: ListMember[];
@@ -132,6 +137,15 @@ export function BulkBar({
           })}
         </MenuContent>
       </Menu>
+      {workspaceBoards.some((b) => b.id !== boardId) && (
+        <MoveTaskMenu
+          taskIds={ids}
+          currentBoardId={boardId}
+          availableBoards={workspaceBoards}
+          trigger={<button type="button" className={BTN} data-ui="bulk-move" />}
+          onDone={() => { router.refresh(); onClear(); }}
+        />
+      )}
       {sep}
       <button type="button" onClick={remove} className={cn(BTN, "text-danger-text hover:bg-chip-red-bg active:bg-chip-red-bg")}>
         <IconTrash width={12} height={12} />
