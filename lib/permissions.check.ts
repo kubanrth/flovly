@@ -14,6 +14,7 @@ const VIEWER_MUST_NOT = [
   "subscription.manage",
   "workspaceEvent.manage",
   "brief.create",
+  "document.manage",
   "task.create",
   "task.update",
   "task.delete",
@@ -45,3 +46,10 @@ for (const action of ["workspace.delete", "workspace.changeRole", "workspace.rem
 }
 
 console.log("permissions matrix ok");
+
+// Dokumenty: wgrywa i nadaje dostęp każdy pełny członek, VIEWER tylko pobiera to,
+// co mu udostępniono (sprawdzane w akcji po widoczności, nie po roli).
+for (const role of ["ADMIN", "MEMBER"] as const) {
+  assert.equal(can(role, "document.manage"), true, `${role} zarządza dokumentami`);
+}
+console.log("permissions: OK");

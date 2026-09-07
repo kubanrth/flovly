@@ -52,7 +52,10 @@ export type Action =
   | "secret.manage"
   | "subscription.manage"
   | "workspaceEvent.manage"
-  | "brief.create";
+  | "brief.create"
+  // F13: „Dokumenty" — wgrywanie, kasowanie i nadawanie dostępu. Pobranie
+  // nie ma osobnej akcji: decyduje widoczność (ADMIN / wgrywający / lista dostępu).
+  | "document.manage";
 
 const MATRIX: Record<Role, Set<Action>> = {
   ADMIN: new Set<Action>([
@@ -104,6 +107,7 @@ const MATRIX: Record<Role, Set<Action>> = {
     "subscription.manage",
     "workspaceEvent.manage",
     "brief.create",
+    "document.manage",
   ]),
   MEMBER: new Set<Action>([
     "board.create",
@@ -145,6 +149,7 @@ const MATRIX: Record<Role, Set<Action>> = {
     "subscription.manage",
     "workspaceEvent.manage",
     "brief.create",
+    "document.manage",
   ]),
   VIEWER: new Set<Action>([
     "board.view",

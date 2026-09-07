@@ -16,6 +16,8 @@ export type AuditObjectType =
   | "Deal"
   | "DealStage"
   | "DealActivity"
+  // F13: „Dokumenty" — wgranie, zmiana dostępu, usunięcie.
+  | "Document"
   | "TaskLink"
   | "ContactActivity"
   | "TaskLineRow"

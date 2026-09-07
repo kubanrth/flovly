@@ -101,6 +101,9 @@ model User {
   createdShareLinks  BoardShareLink[]      @relation("BoardShareCreator")
   // F12-K132: sekrety w team password vault.
   secretItems        SecretItem[]          @relation("SecretItemOwner")
+  // F13: „Dokumenty" — wgrane pliki i nadane dostępy.
+  uploadedDocuments  Document[]            @relation("DocumentUploader")
+  documentAccess     DocumentAccess[]      @relation("DocumentAccessUser")
   // F12-K133: TimeCamp-like time entries + approvals.
   timeEntries        TimeEntry[]           @relation("TimeEntryUser")
   // F12-K141: członkostwa w projektach subskrypcji.
@@ -226,6 +229,8 @@ model Workspace {
   shareLinks           BoardShareLink[]
   // F12-K132: team password vault — sekrety przypisane do workspace.
   secretItems          SecretItem[]
+  // F13: „Dokumenty" przestrzeni.
+  documents            Document[]
   // F12-K133: TimeCamp-like time entries.
   timeEntries          TimeEntry[]
   // F12-K140: subskrypcje firmy.
@@ -266,6 +271,39 @@ model SecretItem {
 
   @@index([workspaceId, deletedAt])
   @@index([ownerId])
+}
+
+// F13: „Dokumenty" — pliki przestrzeni z dostępem nadawanym per osoba.
+// Plik leży w tym samym buckecie co załączniki (klucz w/{ws}/doc/…); tu tylko
+// metadane i lista osób, które go widzą. ADMIN i osoba wgrywająca widzą zawsze.
+model Document {
+  id          String    @id @default(cuid())
+  workspaceId String
+  uploaderId  String
+  filename    String
+  mimeType    String
+  sizeBytes   Int
+  storageKey  String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  workspace Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  uploader  User             @relation("DocumentUploader", fields: [uploaderId], references: [id])
+  access    DocumentAccess[]
+
+  @@index([workspaceId, deletedAt])
+}
+
+model DocumentAccess {
+  documentId String
+  userId     String
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User     @relation("DocumentAccessUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([documentId, userId])
+  @@index([userId])
 }
 
 // F12-K133: TimeCamp-like time tracking.
