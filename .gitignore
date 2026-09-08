@@ -57,3 +57,7 @@ docs/redesign/claude-design-pack/*.svg
 
 # redesign helper scripts (per-agent screenshot tooling)
 .tmp-*
+docs/funkcje/img/
+docs/funkcje/*.html
+docs/*.pdf
+docs/funkcje/*.pdf
