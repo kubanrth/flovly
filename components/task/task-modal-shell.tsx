@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useUiPref } from "@/hooks/use-ui-pref";
@@ -18,18 +18,36 @@ export const PANEL_MAX = 800;
 // scrolls `[data-ui=main]`, not `window`).
 export function TaskModalShell({ taskId, mode = "panel", children }: { taskId: string; mode?: "panel" | "modal"; children: React.ReactNode }) {
   const router = useRouter();
-  const [open, setOpen] = useState(true);
+  const pathname = usePathname();
+  // Po zamknieciu (router.push na liste) Next zostawia w slocie @modal ten
+  // sam, "zamkniety" panel — miekka nawigacja nie wraca do default.tsx.
+  // Klik w TO SAMO zadanie trafia w ten sam segment i te sama instancje, wiec
+  // `useState(true)` nie odpala sie ponownie i nic sie nie otwiera (inne
+  // zadanie = nowy segment = swieza instancja, stad "raz dziala, raz nie").
+  // Stan otwarcia wynika z URL-a: panel jest otwarty, gdy sciezka wskazuje to
+  // zadanie i user go nie zamknal; zamkniecie resetuje sie, gdy sciezka znow
+  // na nie wskaze.
+  const matches = pathname.includes(`/t/${taskId}`);
+  const [dismissed, setDismissed] = useState(false);
+  const [seenMatch, setSeenMatch] = useState(matches);
+  if (matches !== seenMatch) {
+    setSeenMatch(matches);
+    if (matches) setDismissed(false);
+  }
+  const open = matches && !dismissed;
   // Idempotency guard — close() fired twice per X click (onClick + onOpenChange).
   const closingRef = useRef(false);
   const restoreRef = useRef<{ main: number; win: number } | null>(null);
   useEffect(() => {
+    if (!matches) return;
+    closingRef.current = false;
     restoreRef.current = { main: mainEl()?.scrollTop ?? 0, win: window.scrollY };
-  }, []);
+  }, [matches]);
 
   const close = () => {
     if (closingRef.current) return;
     closingRef.current = true;
-    setOpen(false);
+    setDismissed(true);
     let returnTo: string | null = null;
     try {
       const raw = sessionStorage.getItem("taskModalReturnTo");
