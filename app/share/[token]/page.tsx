@@ -105,7 +105,15 @@ export default async function ShareViewerPage({ params }: { params: Params }) {
   // Fire-and-forget — licznik odsłon nie może blokować renderu.
   void trackAccess(link.id);
 
-  const board = link.board;
+  // F14: zadanie zawężone do wskazanych osób nie może wyjść na publiczny link —
+  // po drugiej stronie nie ma komu sprawdzić listy dostępu.
+  const restricted = await db.resourceAccess.findMany({
+    where: { kind: "TASK", resourceId: { in: link.board.tasks.map((t) => t.id) } },
+    select: { resourceId: true },
+    distinct: ["resourceId"],
+  });
+  const restrictedIds = new Set(restricted.map((r) => r.resourceId));
+  const board = { ...link.board, tasks: link.board.tasks.filter((t) => !restrictedIds.has(t.id)) };
   const statusById = new Map(board.statusColumns.map((c) => [c.id, c]));
 
   return (

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { viewerCanSee } from "@/lib/access-queries";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Avatar } from "@/components/ui/avatar";
@@ -44,6 +45,10 @@ export default async function ContactDetailPage({
     where: { id: contactId, workspaceId, deletedAt: null },
   });
   if (!contact) notFound();
+
+  // F14: bez udostępnienia kartę widzi tylko autor, opiekun i administrator.
+  const canSee = await viewerCanSee("CONTACT", { role: ctx.role, userId: ctx.userId }, contact.id, [contact.creatorId, contact.ownerId]);
+  if (!canSee) notFound();
 
   // Seed default deal stages so the per-contact pipeline always has columns
   // to render — same lazy seeding /sales does on first visit.

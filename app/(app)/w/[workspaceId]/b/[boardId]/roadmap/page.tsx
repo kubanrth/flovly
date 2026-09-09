@@ -10,6 +10,7 @@ import { BoardHeaderServer } from "@/components/view/board-header-server";
 import { BoardLinksServer } from "@/components/board/board-links-server";
 import { parseEnabledViews } from "@/lib/board-views";
 import { backgroundToCss, type BackgroundConfig } from "@/lib/schemas/background";
+import { taskVisibilityWhere } from "@/lib/access-queries";
 
 export default async function RoadmapPage({
   params,
@@ -18,6 +19,8 @@ export default async function RoadmapPage({
 }) {
   const { workspaceId, boardId } = await params;
   const ctx = await requireWorkspaceMembership(workspaceId);
+  // F14: zadania zawężone do innych osób nie mogą wejść do widoku.
+  const taskWhere = await taskVisibilityWhere(workspaceId, ctx);
 
   // F12-K121: board + memberships paralel (były sequential) — board ma
   // deep includes (milestones + assignee + tasks + parentLinks + child),
@@ -40,7 +43,7 @@ export default async function RoadmapPage({
           include: {
             assignee: { select: { id: true, name: true, email: true, avatarUrl: true } },
             tasks: {
-              where: { deletedAt: null },
+              where: { deletedAt: null, ...taskWhere },
               take: 50,
               select: {
                 id: true,

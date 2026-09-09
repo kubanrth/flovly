@@ -81,6 +81,8 @@ export interface TaskDetailProps {
   workspaceBoards: MoveTargetBoard[];
   contactId: string | null;
   workspaceContacts: { id: string; label: string }[];
+  /** F14: komu udostępniono to zadanie. Pusta lista = widzą wszyscy z dostępem do tablicy. */
+  accessUserIds: string[];
   // Redesign extras (read by page.tsx via readTaskMeta; optional so lib/task-fetch stays untouched).
   meta?: TaskMeta | null;
   mode?: TaskViewMode;
@@ -171,6 +173,7 @@ export function TaskDetail(props: TaskDetailProps) {
   const detailsProps: TaskDetailsProps = {
     mode, workspaceId, task, milestones: props.milestones, allMembers, assigneeIds: props.assigneeIds, allTags: props.allTags, tagIds: props.tagIds,
     canEdit, customColumns: props.customColumns, customValues: props.customValues, meta: meta ?? null, lastActor, onMutate,
+    taskTitle: task.title, accessUserIds: props.accessUserIds,
   };
   const mentionMembers = allMembers;
   const timeEntries = meta?.timeEntries ?? [];

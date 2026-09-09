@@ -20,6 +20,7 @@ import {
   type ContactRow,
 } from "./contact-model";
 import { InitialsTile } from "./initials-tile";
+import { AccessControl, type AccessMember } from "@/components/access/access-control";
 
 export interface ContactBoardRef {
   id: string;
@@ -58,6 +59,8 @@ export function ContactCardPanel({
   people,
   history,
   canEdit,
+  accessMembers,
+  accessUserIds,
   onClose,
 }: {
   workspaceId: string;
@@ -66,6 +69,10 @@ export function ContactCardPanel({
   people: ContactRow[];
   history: ContactHistoryEntry[];
   canEdit: boolean;
+  /** F14: osoby przestrzeni, którym można udostępnić kontakt. */
+  accessMembers: AccessMember[];
+  /** F14: komu już udostępniono ten kontakt. */
+  accessUserIds: string[];
   onClose: () => void;
 }) {
   const [composing, setComposing] = useState(false);
@@ -88,6 +95,14 @@ export function ContactCardPanel({
     >
       <header className="flex h-11 shrink-0 items-center gap-2 border-b border-border px-3.5">
         <h2 className="flex-1 truncate text-sm font-semibold">Karta kontaktu</h2>
+        <AccessControl
+          kind="CONTACT"
+          resourceId={contact.id}
+          resourceName={name}
+          members={accessMembers}
+          value={accessUserIds}
+          canManage={canEdit}
+        />
         {canEdit && (
           <Button
             variant="ghost"

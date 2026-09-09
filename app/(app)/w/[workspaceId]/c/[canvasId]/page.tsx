@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
+import { viewerCanSee } from "@/lib/access-queries";
 import { CanvasEditorLazy } from "@/components/canvas/canvas-editor-lazy";
 
 export default async function CanvasEditorPage({
@@ -32,6 +33,11 @@ export default async function CanvasEditorPage({
     },
   });
   if (!canvas) notFound();
+
+  // F14: whiteboard jest prywatny — bez udostępnienia widzi go tylko autor
+  // i administrator. Ta sama reguła co na liście, tylko dla jednego obiektu.
+  const canSee = await viewerCanSee("CANVAS", { role: ctx.role, userId: ctx.userId }, canvas.id, [canvas.creatorId]);
+  if (!canSee) notFound();
 
   const canEdit = can(ctx.role, "canvas.edit");
   const canCreateTask = can(ctx.role, "task.create");

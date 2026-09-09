@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireWorkspaceAction } from "@/lib/workspace-guard";
+import { dropResourceAccess, viewerCanSee } from "@/lib/access-queries";
 
 const CYCLES = ["MONTHLY", "YEARLY"] as const;
 
@@ -39,6 +40,25 @@ export async function createSubscriptionAction(formData: FormData): Promise<
   return { ok: true, id: row.id };
 }
 
+
+// Kto może ruszyć ten wiersz: musi go widzieć. Widoczność = projekt (F12-K141)
+// plus lista dostępu per subskrypcja (F14). Bez tego znajomość id wystarczyłaby,
+// żeby edytować cudzą subskrypcję i poznać kwotę.
+async function canSeeSubscription(
+  ctx: { role: "ADMIN" | "MEMBER" | "VIEWER"; userId: string },
+  row: { id: string; projectId: string | null },
+): Promise<boolean> {
+  if (ctx.role === "ADMIN") return true;
+  if (row.projectId) {
+    const member = await db.workspaceProjectMember.findFirst({
+      where: { projectId: row.projectId, userId: ctx.userId },
+      select: { userId: true },
+    });
+    if (!member) return false;
+  }
+  return viewerCanSee("SUBSCRIPTION", { role: ctx.role, userId: ctx.userId }, row.id, []);
+}
+
 const patchSchema = z.object({
   id: z.string().min(1),
   name: z.string().max(200).optional(),
@@ -65,11 +85,12 @@ export async function patchSubscriptionAction(formData: FormData) {
 
   const row = await db.subscription.findUnique({
     where: { id: parsed.data.id },
-    select: { workspaceId: true, deletedAt: true },
+    select: { id: true, workspaceId: true, deletedAt: true, projectId: true },
   });
   if (!row || row.deletedAt) return;
 
-  await requireWorkspaceAction(row.workspaceId, "subscription.manage");
+  const ctx = await requireWorkspaceAction(row.workspaceId, "subscription.manage");
+  if (!(await canSeeSubscription(ctx, row))) return;
 
   const data: Record<string, unknown> = {};
   if (parsed.data.name !== undefined) data.name = parsed.data.name.trim();
@@ -113,15 +134,17 @@ export async function deleteSubscriptionAction(formData: FormData) {
 
   const row = await db.subscription.findUnique({
     where: { id: parsed.data.id },
-    select: { workspaceId: true, deletedAt: true },
+    select: { id: true, workspaceId: true, deletedAt: true, projectId: true },
   });
   if (!row || row.deletedAt) return;
 
-  await requireWorkspaceAction(row.workspaceId, "subscription.manage");
+  const ctx = await requireWorkspaceAction(row.workspaceId, "subscription.manage");
+  if (!(await canSeeSubscription(ctx, row))) return;
 
   await db.subscription.update({
     where: { id: parsed.data.id },
     data: { deletedAt: new Date() },
   });
+  await dropResourceAccess("SUBSCRIPTION", parsed.data.id);
   revalidatePath(`/w/${row.workspaceId}/subscriptions`);
 }

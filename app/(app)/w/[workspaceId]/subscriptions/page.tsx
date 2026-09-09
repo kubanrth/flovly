@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
+import { accessMapFor, hiddenRestrictedIds } from "@/lib/access-queries";
 import { SubscriptionsTable } from "@/components/subscriptions/subscriptions-table";
 
 // F12-K140/141: moduł zarządzania subskrypcjami z projektami i dostępami.
@@ -8,6 +9,9 @@ import { SubscriptionsTable } from "@/components/subscriptions/subscriptions-tab
 //   - workspace ADMIN → wszystko
 //   - członek → subskrypcje bez projektu + z projektów w których jest
 //     członkiem projektu (projekty są wspólne z Zapotrzebowaniem)
+// F14: na to nakłada się lista dostępu per subskrypcja — pusta znaczy „jak
+// dotąd", a niepusta zawęża widoczność wiersza (czyli i kwoty) do wskazanych
+// osób i administratorów.
 export default async function SubscriptionsPage({
   params,
 }: {
@@ -16,6 +20,7 @@ export default async function SubscriptionsPage({
   const { workspaceId } = await params;
   const ctx = await requireWorkspaceMembership(workspaceId);
   const isAdmin = ctx.role === "ADMIN";
+  const hidden = isAdmin ? [] : await hiddenRestrictedIds(workspaceId, "SUBSCRIPTION", ctx.userId);
 
   const [rows, projects, memberships] = await Promise.all([
     db.subscription.findMany({
@@ -29,6 +34,7 @@ export default async function SubscriptionsPage({
                 { projectId: null },
                 { project: { members: { some: { userId: ctx.userId } } } },
               ],
+              ...(hidden.length > 0 ? { id: { notIn: hidden } } : {}),
             }),
       },
       orderBy: { createdAt: "asc" },
@@ -66,6 +72,8 @@ export default async function SubscriptionsPage({
     }),
   ]);
 
+  const accessMap = await accessMapFor("SUBSCRIPTION", rows.map((r) => r.id));
+
   return (
     <SubscriptionsTable
       workspaceId={workspaceId}
@@ -77,6 +85,7 @@ export default async function SubscriptionsPage({
         name: p.name,
         memberIds: p.members.map((m) => m.userId),
       }))}
+      accessMap={accessMap}
       members={memberships.map((m) => ({
         id: m.user.id,
         name: m.user.name ?? m.user.email,

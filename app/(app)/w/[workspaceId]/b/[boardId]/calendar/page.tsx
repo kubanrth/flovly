@@ -15,6 +15,7 @@ import {
   type CalendarMilestone,
   type CalendarTask,
 } from "@/components/calendar/calendar-board";
+import { taskVisibilityWhere } from "@/lib/access-queries";
 
 // Kalendarz tablicy (B7): miesięczny grid zadań po startAt/stopAt + milestone'y.
 export default async function BoardCalendarPage({
@@ -24,6 +25,8 @@ export default async function BoardCalendarPage({
 }) {
   const { workspaceId, boardId } = await params;
   const ctx = await requireWorkspaceMembership(workspaceId);
+  // F14: zadania zawężone do innych osób nie mogą wejść do widoku.
+  const taskWhere = await taskVisibilityWhere(workspaceId, ctx);
 
   const memberships = await db.workspaceMembership.findMany({
     where: { workspaceId },
@@ -42,6 +45,7 @@ export default async function BoardCalendarPage({
           deletedAt: null,
           // Tylko z datą — kalendarz bez startAt/stopAt nie ma sensu.
           OR: [{ startAt: { not: null } }, { stopAt: { not: null } }],
+          ...taskWhere,
         },
         select: {
           id: true,

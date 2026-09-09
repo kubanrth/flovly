@@ -25,6 +25,7 @@ import { hueForColor } from "@/components/ui/status-hue";
 import { formatDayTime, formatStamp } from "@/components/task/format";
 import type { TaskMeta } from "@/components/task/task-detail-reads";
 import type { TaskViewMode } from "@/components/task/task-shell-context";
+import { AccessControl } from "@/components/access/access-control";
 
 export interface Member { id: string; name: string | null; email: string; avatarUrl: string | null }
 export interface Tag { id: string; name: string; colorHex: string }
@@ -47,6 +48,9 @@ export interface TaskDetailsProps {
   customValues: Record<string, string>;
   meta: TaskMeta | null;
   lastActor: string | null;
+  /** F14: tytuł do dialogu „kto widzi" i lista osób z dostępem. */
+  taskTitle: string;
+  accessUserIds: string[];
   onMutate?: () => void;
 }
 
@@ -75,6 +79,7 @@ function useRows(p: TaskDetailsProps): Row[] {
   const timerEmpty = task.timeTrackedSeconds === 0 && !task.timerStartedAt && !task.timerCompletedAt;
   const rows: Row[] = [
     { key: "assignees", label: "Przypisani", grupa: "osoby" as const, empty: p.assigneeIds.size === 0, node: <AssigneesField {...p} /> },
+    { key: "access", label: "Dostęp", grupa: "osoby" as const, empty: p.accessUserIds.length === 0, node: <AccessField {...p} /> },
     ...(mode === "panel" && !mobile
       ? [
           { key: "start", label: "Start", grupa: "terminy" as const, empty: !task.startAt, node: <DatesField {...p} only="startAt" /> },
@@ -181,6 +186,23 @@ export function TaskDetailsCard(p: TaskDetailsProps) {
 }
 
 /* ───────────── fields ───────────── */
+
+// F14: zawężenie widoczności zadania do wskazanych osób — pusta lista znaczy
+// „wszyscy, którzy widzą tablicę", więc domyślnie nic się nie zmienia.
+function AccessField({ task, taskTitle, allMembers, accessUserIds, canEdit }: TaskDetailsProps) {
+  return (
+    <AccessControl
+      kind="TASK"
+      resourceId={task.id}
+      resourceName={taskTitle}
+      members={allMembers.map((m) => ({ id: m.id, name: memberName(m), avatarUrl: m.avatarUrl }))}
+      value={accessUserIds}
+      canManage={canEdit}
+      variant="compact"
+      className="-mx-1"
+    />
+  );
+}
 
 function AssigneesField({ task, allMembers, assigneeIds, canEdit, mode, mobile }: TaskDetailsProps) {
   const people = allMembers.map((m) => ({ id: m.id, name: memberName(m), avatar: m.avatarUrl }));

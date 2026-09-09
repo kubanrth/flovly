@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
+import { taskVisibilityWhere } from "@/lib/access-queries";
 import { WorkspaceCalendar } from "@/components/workspace/workspace-calendar";
 
 // Workspace-wide calendar: every task + custom events visible to all members,
@@ -10,7 +11,9 @@ export default async function WorkspaceCalendarPage({
   params: Promise<{ workspaceId: string }>;
 }) {
   const { workspaceId } = await params;
-  await requireWorkspaceMembership(workspaceId);
+  const ctx = await requireWorkspaceMembership(workspaceId);
+  // F14: kalendarz pokazuje tylko zadania, które ta osoba może widzieć.
+  const taskWhere = await taskVisibilityWhere(workspaceId, ctx);
 
   const [workspace, tasks, events] = await Promise.all([
     db.workspace.findUnique({
@@ -22,6 +25,7 @@ export default async function WorkspaceCalendarPage({
         workspaceId,
         deletedAt: null,
         OR: [{ startAt: { not: null } }, { stopAt: { not: null } }],
+        ...taskWhere,
       },
       include: {
         statusColumn: { select: { name: true, colorHex: true } },

@@ -8,6 +8,7 @@ import { parseEnabledViews } from "@/lib/board-views";
 import { backgroundToCss, type BackgroundConfig } from "@/lib/schemas/background";
 import { BoardSummary, type ActivityEntry } from "@/components/summary/board-summary";
 import { activityPhrase, activityTime, summarize } from "@/components/summary/aggregate";
+import { taskVisibilityWhere } from "@/lib/access-queries";
 
 // B8 „Podsumowanie” — read-only board dashboard. Same scoping as /overview:
 // workspace membership is the boundary, board must belong to the workspace.
@@ -17,7 +18,9 @@ export default async function BoardSummaryPage({
   params: Promise<{ workspaceId: string; boardId: string }>;
 }) {
   const { workspaceId, boardId } = await params;
-  await requireWorkspaceMembership(workspaceId);
+  const ctx = await requireWorkspaceMembership(workspaceId);
+  // F14: zadania zawężone do innych osób nie mogą wejść do widoku.
+  const taskWhere = await taskVisibilityWhere(workspaceId, ctx);
 
   const [board, memberships] = await Promise.all([
     db.board.findFirst({
@@ -26,13 +29,13 @@ export default async function BoardSummaryPage({
         workspace: { select: { enabledViews: true } },
         statusColumns: { orderBy: { order: "asc" }, select: { id: true, name: true, colorHex: true, order: true } },
         tasks: {
-          where: { deletedAt: null },
+          where: { deletedAt: null, ...taskWhere },
           select: { id: true, displayId: true, statusColumnId: true, stopAt: true, assignees: { select: { userId: true } } },
         },
         milestones: {
           where: { deletedAt: null },
           orderBy: [{ stopAt: "asc" }],
-          select: { id: true, title: true, stopAt: true, tasks: { where: { deletedAt: null }, select: { statusColumnId: true } } },
+          select: { id: true, title: true, stopAt: true, tasks: { where: { deletedAt: null, ...taskWhere }, select: { statusColumnId: true } } },
         },
       },
     }),

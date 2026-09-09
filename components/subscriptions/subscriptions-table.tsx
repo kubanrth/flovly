@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/icons";
 import { Select } from "@/components/ui/select";
 import { ProjectsDialog, type ProjectMemberItem, type WorkspaceProjectItem } from "@/components/projects/projects-dialog";
+import { AccessControl } from "@/components/access/access-control";
 import { plPlural } from "@/lib/pluralize";
 import { cn } from "@/lib/utils";
 import { centsToInput, formatPln, formatPlnRounded, parseAmountPln, rollUp, type Cycle } from "./money";
@@ -69,12 +70,15 @@ export function SubscriptionsTable({
   rows: serverRows,
   projects,
   members,
+  accessMap,
 }: {
   workspaceId: string;
   isAdmin: boolean;
   /** `subscription.manage` — bez tego wiersze są tylko do odczytu. */
   canManage: boolean;
   rows: SubscriptionRow[];
+  /** F14: `subscriptionId → id osób, które widzą ten wiersz i jego kwotę`. */
+  accessMap: Record<string, string[]>;
   projects: SubscriptionProjectItem[];
   members: WorkspaceMemberItem[];
 }) {
@@ -216,6 +220,9 @@ export function SubscriptionsTable({
                   key={r.id}
                   row={r}
                   projectItems={projectItems}
+                  members={members}
+                  accessUserIds={accessMap[r.id] ?? []}
+                  canManage={canManage}
                   autoFocus={r.id === focusId}
                   onPatchLocal={patchLocal}
                   onSend={send}
@@ -262,6 +269,9 @@ function Tile({ label, value }: { label: string; value: string }) {
 function Row({
   row,
   projectItems,
+  members,
+  accessUserIds,
+  canManage,
   autoFocus,
   onPatchLocal,
   onSend,
@@ -269,6 +279,9 @@ function Row({
 }: {
   row: SubscriptionRow;
   projectItems: { value: string; label: string }[];
+  members: WorkspaceMemberItem[];
+  accessUserIds: string[];
+  canManage: boolean;
   autoFocus: boolean;
   onPatchLocal: (id: string, patch: Partial<SubscriptionRow>) => void;
   onSend: (id: string, fields: Record<string, string>) => void;
@@ -360,6 +373,15 @@ function Row({
             Aktywna
           </Chip>
           <span className="flex-1" />
+          <AccessControl
+            kind="SUBSCRIPTION"
+            resourceId={row.id}
+            resourceName={row.name || "subskrypcja bez nazwy"}
+            members={members}
+            value={accessUserIds}
+            canManage={canManage}
+            variant="compact"
+          />
           <Menu>
             <MenuTrigger
               aria-label={`Opcje subskrypcji ${row.name || "bez nazwy"}`}

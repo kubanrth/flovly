@@ -17,6 +17,7 @@ import { BoardLinksServer } from "@/components/board/board-links-server";
 import { parseEnabledViews } from "@/lib/board-views";
 import { backgroundToCss, type BackgroundConfig } from "@/lib/schemas/background";
 import { taskInclude, toTableTask } from "@/components/table/table-reads";
+import { taskVisibilityWhere } from "@/lib/access-queries";
 
 export default async function BoardTablePage({
   params,
@@ -25,6 +26,8 @@ export default async function BoardTablePage({
 }) {
   const { workspaceId, boardId } = await params;
   const ctx = await requireWorkspaceMembership(workspaceId);
+  // F14: zadania zawężone do innych osób nie mogą wejść do widoku.
+  const taskWhere = await taskVisibilityWhere(workspaceId, ctx);
 
   const memberships = await db.workspaceMembership.findMany({
     where: { workspaceId },
@@ -47,7 +50,7 @@ export default async function BoardTablePage({
       customColumns: { orderBy: { order: "asc" } },
       views: { where: { type: "TABLE", name: null } },
       tasks: {
-        where: { deletedAt: null },
+        where: { deletedAt: null, ...taskWhere },
         orderBy: [{ statusColumn: { order: "asc" } }, { rowOrder: "asc" }],
         include: taskInclude,
       },

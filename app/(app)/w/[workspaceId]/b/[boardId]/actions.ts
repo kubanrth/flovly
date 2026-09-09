@@ -15,6 +15,7 @@ import { backgroundSchema, updateBackgroundSchema } from "@/lib/schemas/backgrou
 import { requireWorkspaceAction } from "@/lib/workspace-guard";
 import { writeAudit } from "@/lib/audit";
 import { parseEnabledViews, viewTypeToName } from "@/lib/board-views";
+import { dropResourceAccess } from "@/lib/access-queries";
 
 const NICE_COLORS = [
   "#64748B",
@@ -427,6 +428,7 @@ export async function deleteBoardViewAction(formData: FormData) {
   if (remaining === 0) return;
 
   await db.boardView.delete({ where: { id: parsed.data.viewId } });
+  await dropResourceAccess("BOARD_VIEW", parsed.data.viewId);
 
   await writeAudit({
     workspaceId: view.board.workspaceId,

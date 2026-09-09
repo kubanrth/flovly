@@ -19,6 +19,7 @@ import { IconPlus, IconTrash, IconWhiteboard } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { plPlural } from "@/lib/pluralize";
+import { AccessControl, type AccessMember } from "@/components/access/access-control";
 
 export interface CanvasRow {
   id: string;
@@ -34,12 +35,17 @@ export function CanvasesList({
   canCreate,
   canEdit,
   canDelete,
+  accessMap,
+  members,
 }: {
   workspaceId: string;
   canvases: CanvasRow[];
   canCreate: boolean;
   canEdit: boolean;
   canDelete: boolean;
+  /** F14: `canvasId → id osób, którym udostępniono`. */
+  accessMap: Record<string, string[]>;
+  members: AccessMember[];
 }) {
   const router = useRouter();
 
@@ -120,14 +126,24 @@ export function CanvasesList({
                     {c.nodeCount} {plPlural(c.nodeCount, "węzeł", "węzły", "węzłów")} ·{" "}
                     {c.edgeCount} {plPlural(c.edgeCount, "krawędź", "krawędzie", "krawędzi")} · {c.authorName}
                   </p>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="mt-1 self-start"
-                    render={<Link href={`/w/${workspaceId}/c/${c.id}`} />}
-                  >
-                    Otwórz
-                  </Button>
+                  <div className="mt-1 flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      render={<Link href={`/w/${workspaceId}/c/${c.id}`} />}
+                    >
+                      Otwórz
+                    </Button>
+                    <AccessControl
+                      kind="CANVAS"
+                      resourceId={c.id}
+                      resourceName={c.name}
+                      members={members}
+                      value={accessMap[c.id] ?? []}
+                      canManage={canEdit}
+                      className="ml-auto"
+                    />
+                  </div>
                 </article>
               </li>
             ))}

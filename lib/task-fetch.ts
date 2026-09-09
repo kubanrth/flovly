@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership, userCanAccessBoard } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
+import { accessMapFor, taskVisibilityWhere } from "@/lib/access-queries";
+import { canSeeResource } from "@/lib/resource-access";
 import { createSignedDownloadUrls, isImageMime } from "@/lib/storage";
 import type { TaskDetailProps } from "@/components/task/task-detail";
 import type { RichTextDoc } from "@/components/task/rich-text-editor";
@@ -131,8 +133,10 @@ export async function fetchTaskDetail(
   // a PRIVATE board could otherwise still load the task page. Sprawdzenie
   // idzie rownolegle z resztą odczytow (jeden round-trip mniej); wynik nadal
   // decyduje przed zwroceniem czegokolwiek.
-  const [canAccess, members, tags, comments, auditEntries, attachmentRows, candidateRows, workspaceBoardRows] = await Promise.all([
+  const [canAccess, taskAccess, members, tags, comments, auditEntries, attachmentRows, candidateRows, workspaceBoardRows] = await Promise.all([
     userCanAccessBoard(task.boardId, ctx.userId, ctx.role),
+    // F14: lista „kto widzi to zadanie" — pusta znaczy „wszyscy z dostępem do tablicy".
+    accessMapFor("TASK", [taskId]),
     db.workspaceMembership.findMany({
       where: { workspaceId },
       include: {
@@ -172,7 +176,7 @@ export async function fetchTaskDetail(
     // tasks picker open ~rzadko; gdy user szuka konkretnego task'a, polega
     // na search input. Większy pool nie pomaga UX a kosztuje fetch.
     db.task.findMany({
-      where: { workspaceId, deletedAt: null, id: { not: taskId } },
+      where: { workspaceId, deletedAt: null, id: { not: taskId }, ...(await taskVisibilityWhere(workspaceId, ctx)) },
       orderBy: { updatedAt: "desc" },
       take: 100,
       select: { id: true, title: true, displayId: true },
@@ -191,6 +195,16 @@ export async function fetchTaskDetail(
   ]);
 
   if (!canAccess) notFound();
+
+  // F14: zadanie zawężone do wskazanych osób. Autor i przypisani widzą zawsze —
+  // inaczej dałoby się komuś przypisać zadanie, którego nie może otworzyć.
+  const accessUserIds = taskAccess[taskId] ?? [];
+  const canSeeTask = canSeeResource(
+    "TASK",
+    { role: ctx.role, userId: ctx.userId },
+    { ownerIds: [task.creatorId, ...task.assignees.map((a) => a.userId)], accessUserIds },
+  );
+  if (!canSeeTask) notFound();
 
   // Pre-sign image thumbnails so browser renders them without round-trip.
   // Non-image URLs minted on demand — don't waste signatures on files
@@ -363,6 +377,8 @@ export async function fetchTaskDetail(
       workspaceName: b.workspace.name,
     })),
     contactId: task.contactId,
+    // F14: kto widzi to zadanie (pusto = wszyscy z dostępem do tablicy).
+    accessUserIds,
     // F12-K105: workspaceContacts pusta — ContactField nie renderowany na
     // karcie task'a (wyciągnięty w F12-K67). Jeśli ContactField wróci na
     // task drawer, dodaj fetch z powrotem do Promise.all powyżej.

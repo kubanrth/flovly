@@ -15,6 +15,7 @@ import { docHasText } from "@/lib/prosemirror-text";
 import { BoardLinksServer } from "@/components/board/board-links-server";
 import { parseEnabledViews } from "@/lib/board-views";
 import { backgroundToCss, type BackgroundConfig } from "@/lib/schemas/background";
+import { taskVisibilityWhere } from "@/lib/access-queries";
 
 export default async function BoardKanbanPage({
   params,
@@ -23,6 +24,8 @@ export default async function BoardKanbanPage({
 }) {
   const { workspaceId, boardId } = await params;
   const ctx = await requireWorkspaceMembership(workspaceId);
+  // F14: zadania zawężone do innych osób nie mogą wejść do widoku.
+  const taskWhere = await taskVisibilityWhere(workspaceId, ctx);
 
   const board = await db.board.findFirst({
     where: { id: boardId, workspaceId, deletedAt: null },
@@ -31,7 +34,7 @@ export default async function BoardKanbanPage({
       statusColumns: { orderBy: { order: "asc" } },
       views: { where: { type: "KANBAN" } },
       tasks: {
-        where: { deletedAt: null },
+        where: { deletedAt: null, ...taskWhere },
         orderBy: [{ statusColumn: { order: "asc" } }, { rowOrder: "asc" }],
         include: {
           assignees: {

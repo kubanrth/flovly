@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
+import { accessMapFor, allowedResourceIds } from "@/lib/access-queries";
+import { needsAccessFilter } from "@/lib/resource-access";
 import { ContactsView } from "@/components/contacts/contacts-view";
 import type { ContactBoardRef, ContactHistoryEntry } from "@/components/contacts/contact-card-panel";
 import { docText, formatLastContact, type ContactRow } from "@/components/contacts/contact-model";
@@ -32,9 +34,17 @@ export default async function ContactsListPage({
   const canDelete = can(ctx.role, "contact.delete");
   const trash = kosz === "1" && canDelete;
 
+  // F14: kontakt jest prywatny, dopóki ktoś go nie udostępni — widzi go ADMIN,
+  // autor, opiekun i osoby z listy dostępu.
+  const viewer = { role: ctx.role, userId: ctx.userId };
+  const allowed = needsAccessFilter(viewer) ? await allowedResourceIds(workspaceId, "CONTACT", ctx.userId) : null;
+  const visibleWhere = allowed
+    ? { OR: [{ ownerId: ctx.userId }, { creatorId: ctx.userId }, { id: { in: allowed } }] }
+    : {};
+
   const [contacts, trashCount, memberships, activities, messages, taskBoards] = await Promise.all([
     db.contact.findMany({
-      where: { workspaceId, deletedAt: trash ? { not: null } : null },
+      where: { workspaceId, deletedAt: trash ? { not: null } : null, ...visibleWhere },
       orderBy: [{ updatedAt: "desc" }],
       take: ROW_LIMIT,
       select: {
@@ -44,7 +54,7 @@ export default async function ContactsListPage({
         _count: { select: { deals: true } },
       },
     }),
-    canDelete ? db.contact.count({ where: { workspaceId, deletedAt: { not: null } } }) : Promise.resolve(0),
+    canDelete ? db.contact.count({ where: { workspaceId, deletedAt: { not: null }, ...visibleWhere } }) : Promise.resolve(0),
     db.workspaceMembership.findMany({
       where: { workspaceId },
       orderBy: { joinedAt: "asc" },
@@ -112,6 +122,8 @@ export default async function ContactsListPage({
     if (!list.some((b) => b.id === t.board.id)) list.push(t.board);
   }
 
+  const accessMap = await accessMapFor("CONTACT", contacts.map((c) => c.id));
+
   const rows: ContactRow[] = contacts
     .map((c) => ({
       id: c.id,
@@ -135,6 +147,7 @@ export default async function ContactsListPage({
       workspaceId={workspaceId}
       rows={rows}
       members={memberships.map((m) => m.user)}
+      accessMap={accessMap}
       boardsByContact={boardsByContact}
       historyByContact={historyByContact}
       canCreate={canCreate}

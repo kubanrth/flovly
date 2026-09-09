@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
+import { hiddenRestrictedIds } from "@/lib/access-queries";
 import { BoardHeader, type BoardMember } from "@/components/view/board-header";
 import type { CustomViewDescriptor } from "@/components/view/view-switcher";
 import {
@@ -52,7 +53,11 @@ export async function BoardHeaderServer({
     }),
     db.workspace.findUnique({ where: { id: workspaceId }, select: { name: true } }),
   ]);
-  const custom = allViews.filter((v) => v.name !== null);
+  // F14: widok tablicy zawężony do wskazanych osób znika z pasków innym —
+  // pusta lista dostępu (norma) niczego nie zmienia.
+  const hiddenViews =
+    ctx.role === "ADMIN" ? [] : await hiddenRestrictedIds(workspaceId, "BOARD_VIEW", ctx.userId);
+  const custom = allViews.filter((v) => v.name !== null && !hiddenViews.includes(v.id));
   const defaults = allViews.filter((v) => v.name === null);
   const defaultTypes = defaults.map((v) => v.type);
   // Map default ViewName → BoardView id so the ViewSwitcher knows which

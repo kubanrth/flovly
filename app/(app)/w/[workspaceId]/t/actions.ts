@@ -19,6 +19,7 @@ import {
   updateTaskSchema,
 } from "@/lib/schemas/task";
 import { checkLimit } from "@/lib/rate-limit";
+import { canSeeTask, dropResourceAccess, visibleTaskIds } from "@/lib/access-queries";
 
 type CreateFieldErrors = { title?: string };
 type UpdateFieldErrors = {
@@ -232,11 +233,12 @@ export async function setTaskPriorityAction(
 
   const task = await db.task.findUnique({
     where: { id: parsed.data.taskId },
-    select: { id: true, workspaceId: true, boardId: true, priority: true },
+    select: { id: true, workspaceId: true, boardId: true, priority: true, creatorId: true },
   });
   if (!task) return { ok: false, error: "Zadanie nie istnieje." };
 
   const ctx = await requireWorkspaceAction(task.workspaceId, "task.update");
+  if (!(await canSeeTask(ctx, task.id, task.creatorId))) return { ok: false, error: "Brak dostępu do zadania." };
 
   // No-op gdy bez zmiany (oszczędzamy audit / broadcast).
   if (task.priority === parsed.data.priority) return { ok: true };
@@ -301,6 +303,7 @@ export async function updateTaskAction(
   if (!existing) return { ok: false, error: "Zadanie nie istnieje." };
 
   const ctx = await requireWorkspaceAction(existing.workspaceId, "task.update");
+  if (!(await canSeeTask(ctx, existing.id, existing.creatorId))) return { ok: false, error: "Brak dostępu do zadania." };
 
   const startAt = parseDate(formData.get("startAt"));
   const stopAt = parseDate(formData.get("stopAt"));
@@ -377,14 +380,16 @@ export async function deleteTaskAction(formData: FormData) {
   // against its real workspaceId, then require the form value to match.
   const existing = await db.task.findUnique({
     where: { id },
-    select: { id: true, workspaceId: true, deletedAt: true },
+    select: { id: true, workspaceId: true, deletedAt: true, creatorId: true },
   });
   if (!existing || existing.deletedAt) return;
   if (existing.workspaceId !== formWorkspaceId) return;
 
   const ctx = await requireWorkspaceAction(existing.workspaceId, "task.delete");
+  if (!(await canSeeTask(ctx, existing.id, existing.creatorId))) return;
 
   await db.task.update({ where: { id }, data: { deletedAt: new Date() } });
+  await dropResourceAccess("TASK", id);
   await writeAudit({
     workspaceId: existing.workspaceId,
     objectType: "Task",
@@ -502,9 +507,12 @@ export async function bulkDeleteTasksAction(formData: FormData) {
   const ids = idsRaw.split(",").filter(Boolean);
   if (!workspaceId || ids.length === 0) return;
   const ctx = await requireWorkspaceAction(workspaceId, "task.delete");
+  // F14: z listy wypadają zadania zawężone do innych osób.
+  const allowedIds = await visibleTaskIds(workspaceId, ctx, ids);
+  if (allowedIds.length === 0) return;
 
   await db.task.updateMany({
-    where: { id: { in: ids }, workspaceId },
+    where: { id: { in: allowedIds }, workspaceId },
     data: { deletedAt: new Date() },
   });
   await writeAudit({
@@ -526,9 +534,11 @@ export async function bulkUpdateStatusAction(formData: FormData) {
   const ids = idsRaw.split(",").filter(Boolean);
   if (!workspaceId || ids.length === 0) return;
   const ctx = await requireWorkspaceAction(workspaceId, "task.update");
+  const allowedIds = await visibleTaskIds(workspaceId, ctx, ids);
+  if (allowedIds.length === 0) return;
 
   await db.task.updateMany({
-    where: { id: { in: ids }, workspaceId },
+    where: { id: { in: allowedIds }, workspaceId },
     data: { statusColumnId: statusColumnId || null },
   });
   await writeAudit({
@@ -556,9 +566,11 @@ export async function bulkSetPriorityAction(formData: FormData) {
     .safeParse(priorityRaw);
   if (!parsed.success) return;
   const ctx = await requireWorkspaceAction(workspaceId, "task.update");
+  const allowedIds = await visibleTaskIds(workspaceId, ctx, ids);
+  if (allowedIds.length === 0) return;
 
   await db.task.updateMany({
-    where: { id: { in: ids }, workspaceId },
+    where: { id: { in: allowedIds }, workspaceId },
     data: { priority: parsed.data },
   });
   await writeAudit({
@@ -762,6 +774,8 @@ export async function bulkAssignAction(formData: FormData) {
   const ids = idsRaw.split(",").filter(Boolean);
   if (!workspaceId || ids.length === 0 || !userId) return;
   const ctx = await requireWorkspaceAction(workspaceId, "task.update");
+  const allowedIds = await visibleTaskIds(workspaceId, ctx, ids);
+  if (allowedIds.length === 0) return;
 
   // Walidacja: user istnieje w workspace'ie?
   const member = await db.workspaceMembership.findUnique({
@@ -772,12 +786,12 @@ export async function bulkAssignAction(formData: FormData) {
 
   if (mode === "remove") {
     await db.taskAssignee.deleteMany({
-      where: { taskId: { in: ids }, userId },
+      where: { taskId: { in: allowedIds }, userId },
     });
   } else {
     // createMany + skipDuplicates: na taskach gdzie user już jest, no-op.
     await db.taskAssignee.createMany({
-      data: ids.map((taskId) => ({ taskId, userId })),
+      data: allowedIds.map((taskId) => ({ taskId, userId })),
       skipDuplicates: true,
     });
   }
@@ -811,6 +825,7 @@ export async function updateTaskDescriptionAction(formData: FormData) {
   const existing = await db.task.findUnique({ where: { id: parsed.data.id } });
   if (!existing) return;
   const ctx = await requireWorkspaceAction(existing.workspaceId, "task.update");
+  if (!(await canSeeTask(ctx, existing.id, existing.creatorId))) return;
 
   let doc: Prisma.InputJsonValue | null = null;
   if (parsed.data.descriptionJson && parsed.data.descriptionJson.length > 0) {
@@ -866,6 +881,7 @@ async function patchTaskActionInner(formData: FormData) {
   const existing = await db.task.findUnique({ where: { id } });
   if (!existing) return;
   const ctx = await requireWorkspaceAction(existing.workspaceId, "task.update");
+  if (!(await canSeeTask(ctx, existing.id, existing.creatorId))) return;
 
   const data: Record<string, unknown> = {};
   const keys = ["title", "statusColumnId", "startAt", "stopAt", "rowOrder", "contactId", "reminderOffset"] as const;
@@ -1048,6 +1064,7 @@ export async function toggleAssigneeAction(formData: FormData) {
   if (!task) return;
 
   const ctx = await requireWorkspaceAction(task.workspaceId, "task.assignUsers");
+  if (!(await canSeeTask(ctx, task.id, task.creatorId))) return;
 
   // Assignee must be a member of the workspace.
   const membership = await db.workspaceMembership.findUnique({
@@ -1146,6 +1163,7 @@ export async function toggleTagAction(formData: FormData) {
   if (!task) return;
 
   const ctx = await requireWorkspaceAction(task.workspaceId, "task.update");
+  if (!(await canSeeTask(ctx, task.id, task.creatorId))) return;
 
   const existing = await db.taskTag.findUnique({
     where: { taskId_tagId: { taskId: parsed.data.taskId, tagId: parsed.data.tagId } },

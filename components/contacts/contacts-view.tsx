@@ -56,6 +56,8 @@ export interface ContactsViewProps {
   canCreate: boolean;
   canEdit: boolean;
   canDelete: boolean;
+  /** F14: `contactId → id osób, którym udostępniono kontakt`. */
+  accessMap: Record<string, string[]>;
   /** Trash mode: `rows` are soft-deleted contacts and the only action is „Przywróć”. */
   trash: boolean;
   trashCount: number;
@@ -70,6 +72,7 @@ export function ContactsView({
   canCreate,
   canEdit,
   canDelete,
+  accessMap,
   trash,
   trashCount,
 }: ContactsViewProps) {
@@ -288,6 +291,8 @@ export function ContactsView({
             people={people}
             history={historyByContact[selected.id] ?? []}
             canEdit={canEdit}
+            accessMembers={members.map((m) => ({ id: m.id, name: m.name ?? m.email.split("@")[0] ?? m.email, avatarUrl: m.avatarUrl }))}
+            accessUserIds={accessMap[selected.id] ?? []}
             onClose={() => setSelectedId(null)}
           />
         )}

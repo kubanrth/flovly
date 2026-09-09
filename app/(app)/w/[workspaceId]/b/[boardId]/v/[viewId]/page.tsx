@@ -21,6 +21,8 @@ import { docHasText } from "@/lib/prosemirror-text";
 import { BoardLinksServer } from "@/components/board/board-links-server";
 import { parseEnabledViews, viewTypeToName } from "@/lib/board-views";
 import { backgroundToCss, type BackgroundConfig } from "@/lib/schemas/background";
+import { accessMapFor, taskVisibilityWhere, taskVisibilityWhereFor, viewerCanSee } from "@/lib/access-queries";
+import { AccessControl } from "@/components/access/access-control";
 
 // Unified route for any custom BoardView; renderer is picked by BoardView.type.
 export default async function CustomBoardViewPage({
@@ -30,11 +32,17 @@ export default async function CustomBoardViewPage({
 }) {
   const { workspaceId, boardId, viewId } = await params;
   const ctx = await requireWorkspaceMembership(workspaceId);
+  // F14: zadania zawężone do innych osób nie mogą wejść do widoku.
+  const taskWhere = await taskVisibilityWhere(workspaceId, ctx);
 
   const view = await db.boardView.findFirst({
     where: { id: viewId, boardId },
   });
   if (!view || !view.name) notFound();
+
+  // F14: widok zawężony do wskazanych osób jest dla reszty niewidoczny — także
+  // po wpisaniu adresu z ręki.
+  if (!(await viewerCanSee("BOARD_VIEW", { role: ctx.role, userId: ctx.userId }, view.id, []))) notFound();
 
   const viewTypeName = viewTypeToName(view.type) ?? "table";
   const background = (view.background ?? null) as BackgroundConfig | null;
@@ -54,7 +62,32 @@ export default async function CustomBoardViewPage({
   const canEdit = can(ctx.role, "task.update");
   const canManageBoard = can(ctx.role, "board.update");
 
-  const actions =
+  // „Kto widzi ten widok" — obok akcji nagłówka, bo dostęp nadaje się do
+  // konkretnego widoku, a nie do całej tablicy.
+  const [viewAccess, viewMembers] = await Promise.all([
+    accessMapFor("BOARD_VIEW", [view.id]),
+    db.workspaceMembership.findMany({
+      where: { workspaceId },
+      orderBy: { joinedAt: "asc" },
+      select: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+    }),
+  ]);
+  const accessButton = (
+    <AccessControl
+      kind="BOARD_VIEW"
+      resourceId={view.id}
+      resourceName={view.name}
+      members={viewMembers.map((m) => ({
+        id: m.user.id,
+        name: m.user.name ?? m.user.email.split("@")[0]!,
+        avatarUrl: m.user.avatarUrl,
+      }))}
+      value={viewAccess[view.id] ?? []}
+      canManage={canManageBoard}
+    />
+  );
+
+  const createButton =
     // F12-K73/78: TASKLINE / CALENDAR / WHITEBOARD — bez Create Task button'a
     // (kanwa lub gęsta siatka, button niczego nie wnosi).
     view.type === "WHITEBOARD" ||
@@ -64,6 +97,12 @@ export default async function CustomBoardViewPage({
       : canCreate
         ? <CreateTaskButton workspaceId={workspaceId} boardId={boardId} viewId={viewId} />
         : null;
+  const actions = (
+    <>
+      {accessButton}
+      {createButton}
+    </>
+  );
 
   const header = (toolbar?: React.ReactNode) => (
     <BoardHeaderServer
@@ -161,6 +200,7 @@ async function TableRenderer({
   configJson: unknown;
   header: React.ReactNode;
 }) {
+  const taskWhere = await taskVisibilityWhereFor(workspaceId);
   const memberships = await db.workspaceMembership.findMany({
     where: { workspaceId },
     include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
@@ -195,6 +235,7 @@ async function TableRenderer({
         where: {
           deletedAt: null,
           taskViews: { some: { viewId } },
+          ...taskWhere,
         },
         orderBy: [{ statusColumn: { order: "asc" } }, { rowOrder: "asc" }],
         include: taskInclude,
@@ -238,6 +279,7 @@ async function KanbanRenderer({
   viewId: string;
   canManageBoard: boolean;
 }) {
+  const taskWhere = await taskVisibilityWhereFor(workspaceId);
   const [board, memberships] = await Promise.all([
     db.board.findFirst({
       where: { id: boardId },
@@ -249,6 +291,7 @@ async function KanbanRenderer({
           where: {
             deletedAt: null,
             taskViews: { some: { viewId } },
+            ...taskWhere,
           },
           orderBy: [{ statusColumn: { order: "asc" } }, { rowOrder: "asc" }],
           include: {
@@ -332,6 +375,7 @@ async function RoadmapRenderer({
   canUpdate: boolean;
   canDelete: boolean;
 }) {
+  const taskWhere = await taskVisibilityWhereFor(workspaceId);
   const [board, memberships] = await Promise.all([
     db.board.findFirst({
       where: { id: boardId },
@@ -344,7 +388,7 @@ async function RoadmapRenderer({
           include: {
             assignee: { select: { id: true, name: true, email: true, avatarUrl: true } },
             tasks: {
-              where: { deletedAt: null },
+              where: { deletedAt: null, ...taskWhere },
               select: { id: true, title: true, statusColumnId: true },
             },
           },
@@ -401,6 +445,7 @@ async function GanttRenderer({
   canEdit: boolean;
   canCreate: boolean;
 }) {
+  const taskWhere = await taskVisibilityWhereFor(workspaceId);
   const board = await db.board.findFirst({
     where: { id: boardId },
     include: {
@@ -413,7 +458,7 @@ async function GanttRenderer({
         // F12-K134: named GANTT view pokazuje tylko taski przypisane do
         // view'a (mirror K131 table/kanban) — bez tego custom Gantt
         // duplikował cały board.
-        where: { deletedAt: null, taskViews: { some: { viewId } } },
+        where: { deletedAt: null, taskViews: { some: { viewId } }, ...taskWhere },
         orderBy: [{ startAt: "asc" }, { rowOrder: "asc" }],
         include: ganttTaskInclude,
       },
@@ -450,6 +495,7 @@ async function WhiteboardRenderer({
   userId: string;
   boardName: string;
 }) {
+  const taskWhere = await taskVisibilityWhereFor(workspaceId);
   // F12-K134: każdy custom whiteboard view dostaje WŁASNY canvas —
   // kind = "view:<viewId>" (para boardId+kind jest unique). Wcześniej
   // custom whiteboards współdzieliły canvas z default /whiteboard →
@@ -485,7 +531,7 @@ async function WhiteboardRenderer({
   }
 
   const boardTasks = await db.task.findMany({
-    where: { boardId, deletedAt: null },
+    where: { boardId, deletedAt: null, ...taskWhere },
     orderBy: { updatedAt: "desc" },
     take: 300,
     select: { id: true, title: true },

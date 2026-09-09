@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { requireWorkspaceAction, requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { writeAudit } from "@/lib/audit";
+import { dropResourceAccess, viewerCanSee } from "@/lib/access-queries";
 import {
   ATTACHMENTS_BUCKET,
   MAX_ATTACHMENT_BYTES,
@@ -50,6 +51,15 @@ export type CreateCanvasState =
   | { ok: true; canvasId: string }
   | { ok: false; error?: string; fieldErrors?: CreateCanvasFieldErrors }
   | null;
+
+// F14: whiteboard jest prywatny, dopóki ktoś go nie udostępni. Samo uprawnienie
+// `canvas.edit` nie wystarcza — trzeba jeszcze widzieć ten konkretny whiteboard.
+async function canSeeCanvas(
+  ctx: { role: "ADMIN" | "MEMBER" | "VIEWER"; userId: string },
+  canvas: { id: string; creatorId: string },
+): Promise<boolean> {
+  return viewerCanSee("CANVAS", { role: ctx.role, userId: ctx.userId }, canvas.id, [canvas.creatorId]);
+}
 
 export async function createCanvasAction(
   _prev: CreateCanvasState,
@@ -101,6 +111,7 @@ export async function renameCanvasAction(formData: FormData) {
   if (!existing || existing.deletedAt) return;
 
   const ctx = await requireWorkspaceAction(existing.workspaceId, "canvas.edit");
+  if (!(await canSeeCanvas(ctx, existing))) return;
 
   await db.processCanvas.update({
     where: { id: parsed.data.id },
@@ -128,11 +139,13 @@ export async function deleteCanvasAction(formData: FormData) {
   if (!existing || existing.deletedAt) return;
 
   const ctx = await requireWorkspaceAction(existing.workspaceId, "canvas.delete");
+  if (!(await canSeeCanvas(ctx, existing))) return;
 
   await db.processCanvas.update({
     where: { id: parsed.data.id },
     data: { deletedAt: new Date() },
   });
+  await dropResourceAccess("CANVAS", existing.id);
 
   await writeAudit({
     workspaceId: existing.workspaceId,
@@ -165,11 +178,12 @@ export async function saveCanvasSnapshotAction(
 
   const canvas = await db.processCanvas.findUnique({
     where: { id: parsed.data.id },
-    select: { id: true, workspaceId: true, deletedAt: true },
+    select: { id: true, workspaceId: true, deletedAt: true, creatorId: true },
   });
   if (!canvas || canvas.deletedAt) return { ok: false, error: "Kanwa nie istnieje." };
 
   const ctx = await requireWorkspaceAction(canvas.workspaceId, "canvas.edit");
+  if (!(await canSeeCanvas(ctx, canvas))) return { ok: false, error: "Brak dostępu do whiteboardu." };
 
   // Validate edge endpoints point at nodes in the snapshot.
   const snapshotNodeIds = new Set(parsed.data.nodes.map((n) => n.id));
@@ -292,10 +306,11 @@ export async function saveCanvasSnapshotAction(
 export async function getCanvasSnapshotAction(id: string) {
   const canvas = await db.processCanvas.findUnique({
     where: { id },
-    select: { id: true, workspaceId: true, deletedAt: true },
+    select: { id: true, workspaceId: true, deletedAt: true, creatorId: true },
   });
   if (!canvas || canvas.deletedAt) return null;
-  await requireWorkspaceMembership(canvas.workspaceId);
+  const ctx = await requireWorkspaceMembership(canvas.workspaceId);
+  if (!(await canSeeCanvas(ctx, canvas))) return null;
   const [nodes, edges] = await Promise.all([
     db.processNode.findMany({ where: { canvasId: id } }),
     db.processEdge.findMany({ where: { canvasId: id } }),
@@ -344,11 +359,12 @@ export async function requestCanvasImageUploadAction(
 
   const canvas = await db.processCanvas.findUnique({
     where: { id: parsed.data.canvasId },
-    select: { id: true, workspaceId: true },
+    select: { id: true, workspaceId: true, creatorId: true },
   });
   if (!canvas) return { ok: false, error: "Whiteboard nie istnieje." };
 
-  await requireWorkspaceAction(canvas.workspaceId, "task.update");
+  const uploadCtx = await requireWorkspaceAction(canvas.workspaceId, "task.update");
+  if (!(await canSeeCanvas(uploadCtx, canvas))) return { ok: false, error: "Brak dostępu do whiteboardu." };
 
   const safe = sanitizeFilename(parsed.data.filename);
   const rand = randomBytes(9).toString("base64url");
@@ -426,13 +442,14 @@ export async function setFlowMarkAction(
 
   const canvas = await db.processCanvas.findUnique({
     where: { id: parsed.data.canvasId },
-    select: { id: true, workspaceId: true, deletedAt: true, kind: true },
+    select: { id: true, workspaceId: true, deletedAt: true, kind: true, creatorId: true },
   });
   if (!canvas || canvas.deletedAt) {
     return { ok: false, error: "Canvas nie istnieje." };
   }
 
   const ctx = await requireWorkspaceAction(canvas.workspaceId, "canvas.edit");
+  if (!(await canSeeCanvas(ctx, canvas))) return { ok: false, error: "Brak dostępu do whiteboardu." };
 
   const node = await db.processNode.findUnique({
     where: { id: parsed.data.nodeId },

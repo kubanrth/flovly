@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { requireWorkspaceAction } from "@/lib/workspace-guard";
+import { dropResourceAccess, viewerCanSee } from "@/lib/access-queries";
 import { writeAudit } from "@/lib/audit";
 import { contactFieldsSchema, hasIdentity } from "@/lib/schemas/contact";
 import { sendEmail } from "@/lib/email";
@@ -124,6 +125,15 @@ export type ContactNoteState =
   | { ok: false; error: string }
   | null;
 
+// F14: kontakt jest prywatny, dopóki ktoś go nie udostępni. Uprawnienie
+// `contact.update` nie wystarcza — trzeba jeszcze widzieć ten kontakt.
+async function canSeeContact(
+  ctx: { role: "ADMIN" | "MEMBER" | "VIEWER"; userId: string },
+  contact: { id: string; creatorId: string | null; ownerId: string | null },
+): Promise<boolean> {
+  return viewerCanSee("CONTACT", { role: ctx.role, userId: ctx.userId }, contact.id, [contact.creatorId, contact.ownerId]);
+}
+
 export async function createContactNoteAction(
   workspaceId: string,
   contactId: string,
@@ -146,13 +156,14 @@ export async function createContactNoteAction(
 
   const contact = await db.contact.findUnique({
     where: { id: contactId },
-    select: { workspaceId: true, deletedAt: true },
+    select: { id: true, workspaceId: true, deletedAt: true, creatorId: true, ownerId: true },
   });
   if (!contact || contact.workspaceId !== workspaceId || contact.deletedAt) {
     return { ok: false, error: "Kontakt nie istnieje." };
   }
 
   const ctx = await requireWorkspaceAction(workspaceId, "contact.update");
+  if (!(await canSeeContact(ctx, contact))) return { ok: false, error: "Brak dostępu do kontaktu." };
 
   const activity = await db.contactActivity.create({
     data: {
@@ -278,6 +289,7 @@ export async function updateContactAction(
       email: true,
       phone: true,
       ownerId: true,
+      creatorId: true,
     },
   });
   if (!existing || existing.workspaceId !== workspaceId || existing.deletedAt) {
@@ -285,6 +297,7 @@ export async function updateContactAction(
   }
 
   const ctx = await requireWorkspaceAction(workspaceId, "contact.update");
+  if (!(await canSeeContact(ctx, existing))) return { ok: false, error: "Brak dostępu do kontaktu." };
 
   let ownerId: string | null = null;
   if (parsed.data.ownerId && parsed.data.ownerId.length > 0) {
@@ -392,16 +405,19 @@ export async function deleteContactAction(formData: FormData) {
 
   const existing = await db.contact.findUnique({
     where: { id: contactId },
-    select: { id: true, workspaceId: true, deletedAt: true },
+    select: { id: true, workspaceId: true, deletedAt: true, creatorId: true, ownerId: true },
   });
   if (!existing || existing.workspaceId !== workspaceId || existing.deletedAt) return;
 
   const ctx = await requireWorkspaceAction(workspaceId, "contact.delete");
+  if (!(await canSeeContact(ctx, existing))) return;
 
   await db.contact.update({
     where: { id: contactId },
     data: { deletedAt: new Date() },
   });
+  // Dostępy znikają razem z kontaktem — po przywróceniu trzeba nadać je od nowa.
+  await dropResourceAccess("CONTACT", contactId);
   await writeAudit({
     workspaceId,
     objectType: "Contact",
@@ -421,11 +437,12 @@ export async function restoreContactAction(formData: FormData) {
 
   const existing = await db.contact.findUnique({
     where: { id: contactId },
-    select: { id: true, workspaceId: true },
+    select: { id: true, workspaceId: true, creatorId: true, ownerId: true },
   });
   if (!existing || existing.workspaceId !== workspaceId) return;
 
   const ctx = await requireWorkspaceAction(workspaceId, "contact.update");
+  if (!(await canSeeContact(ctx, existing))) return;
 
   await db.contact.update({
     where: { id: contactId },
@@ -475,6 +492,7 @@ export async function sendContactMessageAction(
       firstName: true,
       lastName: true,
       ownerId: true,
+      creatorId: true,
     },
   });
   if (!contact || contact.workspaceId !== workspaceId || contact.deletedAt) {
@@ -488,6 +506,7 @@ export async function sendContactMessageAction(
   }
 
   const ctx = await requireWorkspaceAction(workspaceId, "contact.update");
+  if (!(await canSeeContact(ctx, contact))) return { ok: false, error: "Brak dostępu do kontaktu." };
 
   // Sender = wybrany ręcznie email (z dropdown'a) ALBO email opiekuna ALBO
   // email zalogowanego usera. Resend wyśle z weryfikowanego EMAIL_FROM,

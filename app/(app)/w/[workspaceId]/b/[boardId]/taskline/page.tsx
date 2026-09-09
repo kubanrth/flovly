@@ -15,6 +15,7 @@ import type {
   TaskLineStage,
   TaskLineTask,
 } from "@/components/canvas/taskline-stages";
+import { taskVisibilityWhere } from "@/lib/access-queries";
 
 // F12-K73 v3: Task Line jako multi-line linear flow.
 async function ensureTaskLineCanvas(
@@ -83,6 +84,8 @@ export default async function BoardTaskLinePage({
 }) {
   const { workspaceId, boardId } = await params;
   const ctx = await requireWorkspaceMembership(workspaceId);
+  // F14: zadania zawężone do innych osób nie mogą wejść do widoku.
+  const taskWhere = await taskVisibilityWhere(workspaceId, ctx);
 
   const board = await db.board.findFirst({
     where: { id: boardId, workspaceId, deletedAt: null },
@@ -96,7 +99,7 @@ export default async function BoardTaskLinePage({
   const [canvas, tasks, memberships] = await Promise.all([
     ensureTaskLineCanvas(board.id, workspaceId, ctx.userId, board.name),
     db.task.findMany({
-      where: { boardId, deletedAt: null },
+      where: { boardId, deletedAt: null, ...taskWhere },
       orderBy: [{ statusColumn: { order: "asc" } }, { rowOrder: "asc" }],
       take: 500,
       select: {

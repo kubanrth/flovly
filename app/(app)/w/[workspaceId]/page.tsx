@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
+import { taskVisibilityWhere } from "@/lib/access-queries";
 import { can } from "@/lib/permissions";
 import { parseEnabledViews } from "@/lib/board-views";
 import { activityPhrase } from "@/components/summary/aggregate";
@@ -116,7 +117,13 @@ export default async function WorkspaceOverviewPage({
   const auditTasks =
     auditTaskIds.length > 0
       ? await db.task.findMany({
-          where: { id: { in: auditTaskIds }, deletedAt: null, boardId: { in: boards.map((b) => b.id) } },
+          // F14: tytuł zawężonego zadania nie może wyciec przez feed aktywności.
+          where: {
+            id: { in: auditTaskIds },
+            deletedAt: null,
+            boardId: { in: boards.map((b) => b.id) },
+            ...(await taskVisibilityWhere(workspaceId, ctx)),
+          },
           select: { id: true, title: true },
         })
       : [];

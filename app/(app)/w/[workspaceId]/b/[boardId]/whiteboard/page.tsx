@@ -10,6 +10,7 @@ import { ViewTransition } from "@/components/view/view-transition";
 import { BoardHeaderServer } from "@/components/view/board-header-server";
 import { BoardLinksServer } from "@/components/board/board-links-server";
 import { parseEnabledViews } from "@/lib/board-views";
+import { taskVisibilityWhere } from "@/lib/access-queries";
 
 // One canvas per board, auto-created on first visit (zero-config whiteboard).
 async function ensureBoardCanvas(
@@ -47,6 +48,8 @@ export default async function BoardWhiteboardPage({
 }) {
   const { workspaceId, boardId } = await params;
   const ctx = await requireWorkspaceMembership(workspaceId);
+  // F14: zadania zawężone do innych osób nie mogą wejść do widoku.
+  const taskWhere = await taskVisibilityWhere(workspaceId, ctx);
 
   const board = await db.board.findFirst({
     where: { id: boardId, workspaceId, deletedAt: null },
@@ -67,7 +70,7 @@ export default async function BoardWhiteboardPage({
 
   const [boardTasks, me] = await Promise.all([
     db.task.findMany({
-      where: { boardId, deletedAt: null },
+      where: { boardId, deletedAt: null, ...taskWhere },
       orderBy: { updatedAt: "desc" },
       take: 300,
       select: {

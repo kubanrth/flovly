@@ -19,6 +19,8 @@
 
 import { db } from "@/lib/db";
 import type { ChatTool } from "@/lib/llm";
+import { taskVisibilityWhere } from "@/lib/access-queries";
+import type { AccessRole } from "@/lib/resource-access";
 
 export type ToolContext = {
   workspaceId: string;
@@ -227,6 +229,20 @@ export async function executeChatTool(
       }`,
     };
   }
+}
+
+
+// F14: zadania zawężone do innych osób nie mogą trafić do odpowiedzi asystenta
+// — dostęp do tablicy to osobna warstwa (getAccessibleBoardIds), ta jest obok.
+async function taskAccessWhere(ctx: ToolContext) {
+  const membership = await db.workspaceMembership.findUnique({
+    where: { workspaceId_userId: { workspaceId: ctx.workspaceId, userId: ctx.userId } },
+    select: { role: true },
+  });
+  return taskVisibilityWhere(ctx.workspaceId, {
+    role: (membership?.role ?? "VIEWER") as AccessRole,
+    userId: ctx.userId,
+  });
 }
 
 // ─────────── Pomocnik: getAccessibleBoardIds ──────────────────────────────
@@ -503,6 +519,7 @@ async function toolCountTasksByStatus(
       workspaceId: ctx.workspaceId,
       deletedAt: null,
       boardId: boardId ?? { in: accessibleBoards },
+      ...(await taskAccessWhere(ctx)),
       ...(includeCompleted ? {} : { timerCompletedAt: null }),
       ...(assigneeUserId
         ? { assignees: { some: { userId: assigneeUserId } } }
@@ -607,6 +624,7 @@ async function toolListTasks(ctx: ToolContext, args: Record<string, unknown>) {
     workspaceId: ctx.workspaceId,
     deletedAt: null,
     boardId: boardId ?? { in: accessibleBoards },
+    ...(await taskAccessWhere(ctx)),
     ...(includeCompleted ? {} : { timerCompletedAt: null }),
     ...(assigneeUserId
       ? { assignees: { some: { userId: assigneeUserId } } }
@@ -730,6 +748,7 @@ async function toolListOverdueTasks(
       workspaceId: ctx.workspaceId,
       deletedAt: null,
       boardId: boardId ?? { in: accessibleBoards },
+      ...(await taskAccessWhere(ctx)),
       stopAt: { lt: now },
       timerCompletedAt: null,
       ...(assigneeUserId
@@ -842,6 +861,7 @@ async function toolGetUserActivity(
             id: { in: taskIds },
             workspaceId: ctx.workspaceId,
             boardId: { in: accessibleBoardIds },
+            ...(await taskAccessWhere(ctx)),
           },
           select: { id: true, title: true, displayId: true },
         })
