@@ -17,7 +17,7 @@ async function figSrc(name) {
   if (cache.has(name)) return cache.get(name);
   const p = resolve(here, "img", `${name}.png`);
   if (!existsSync(p)) { console.warn("brak zrzutu:", name); cache.set(name, null); return null; }
-  const buf = await sharp(p).resize({ width: 1600, withoutEnlargement: true }).jpeg({ quality: 84 }).toBuffer();
+  const buf = await sharp(p).resize({ width: 1440, withoutEnlargement: true }).jpeg({ quality: 74, mozjpeg: true }).toBuffer();
   const src = `data:image/jpeg;base64,${buf.toString("base64")}`;
   cache.set(name, src); return src;
 }
@@ -240,9 +240,10 @@ const html = `<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>
   .toc { break-after: page; } .toc h1 { font-size: 20pt; } .toc ul { columns: 2; column-gap: 14mm; padding-left: 5mm; margin: 0; } .toc li { break-inside: avoid; margin-bottom: 1.5mm; } .toc li ul { columns: 1; color: #6b665e; font-size: 9pt; margin: 1mm 0 2mm; } .toc a { color: inherit; text-decoration: none; font-weight: 600; }
   .chapter { break-before: page; }
   h1 { font-size: 20pt; margin: 0 0 6mm; padding-bottom: 2mm; border-bottom: 2pt solid #FF5C00; letter-spacing: -0.01em; }
-  article { break-before: page; }
-  article:first-of-type { break-before: avoid; }
-  h2 { font-size: 15pt; margin: 0 0 2mm; } .lead { margin: 0 0 4mm; font-size: 10.5pt; }
+  /* Moduly plyna jeden po drugim (bez wymuszonych lamań) - lamanie tylko przed rozdzialem. */
+  article { margin-top: 9mm; }
+  article:first-of-type { margin-top: 0; }
+  h2 { font-size: 15pt; margin: 0 0 2mm; break-after: avoid; } .lead { margin: 0 0 4mm; font-size: 10.5pt; }
   .boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 4mm; margin-bottom: 3mm; break-inside: avoid; }
   .boxes:has(> :only-child) { grid-template-columns: 1fr; }
   .box { border: 1pt solid #E6E3DE; border-radius: 3mm; padding: 3mm 4mm; margin: 0; break-inside: avoid; font-size: 9.5pt; }
