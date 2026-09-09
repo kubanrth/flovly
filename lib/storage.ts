@@ -73,6 +73,16 @@ export function buildAttachmentKey(params: {
   return `w/${params.workspaceId}/t/${params.taskId}/${rand}-${safe}`;
 }
 
+// Plik przypiety do przestrzeni, nie do zadania: `w/{ws}/{rodzaj}/{rand}-{nazwa}`.
+// Wspolny dla Dokumentow i plikow umow — trzeci rodzaj mial juz swoja kopie.
+export function buildWorkspaceFileKey(workspaceId: string, kind: "doc" | "contract", filename: string): string {
+  return `w/${workspaceId}/${kind}/${randomId()}-${sanitizeFilename(filename)}`;
+}
+
+export function workspaceFilePrefix(workspaceId: string, kind: "doc" | "contract"): string {
+  return `w/${workspaceId}/${kind}/`;
+}
+
 function sanitizeFilename(name: string): string {
   // Keep it ASCII-ish, strip path separators and control chars, cap length.
   const stripped = name

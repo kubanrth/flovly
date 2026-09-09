@@ -104,6 +104,7 @@ model User {
   // F13: „Dokumenty" — wgrane pliki i nadane dostępy.
   uploadedDocuments  Document[]            @relation("DocumentUploader")
   documentAccess     DocumentAccess[]      @relation("DocumentAccessUser")
+  contractFiles      ContractFile[]        @relation("ContractFileUploader")
   // F13: „Umowy" utworzone przez uzytkownika.
   contracts          Contract[]            @relation("ContractCreator")
   // F13: „Zapotrzebowanie" — zgloszenia zakupow.
@@ -330,8 +331,29 @@ model Contract {
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   creator   User      @relation("ContractCreator", fields: [creatorId], references: [id])
+  files     ContractFile[]
 
   @@index([workspaceId, deletedAt])
+}
+
+// F13: skan/PDF umowy. Ten sam bucket co zalaczniki zadan i Dokumenty, klucz
+// `w/{ws}/contract/…`. Kasowanie umowy zabiera pliki (rekordy kaskada, obiekty
+// w storage czysci akcja).
+model ContractFile {
+  id         String    @id @default(cuid())
+  contractId String
+  uploaderId String
+  filename   String
+  mimeType   String
+  sizeBytes  Int
+  storageKey String
+  createdAt  DateTime  @default(now())
+  deletedAt  DateTime?
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  uploader User     @relation("ContractFileUploader", fields: [uploaderId], references: [id])
+
+  @@index([contractId, deletedAt])
 }
 
 // F13: „Zapotrzebowanie" — zgloszenia rzeczy do kupienia: projekt (tekst),

@@ -37,6 +37,17 @@ test.describe("umowy", () => {
     await expect(dialog).toBeHidden({ timeout: 20_000 });
     await expect(karta).toContainText("3 lata", { timeout: 20_000 });
 
+    // Plik umowy: dolaczenie, pobranie pod wlasna nazwa i usuniecie.
+    const plik = `umowa-${Date.now()}.pdf`;
+    await karta.locator('input[type="file"]').setInputFiles({ name: plik, mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n%%EOF\n") });
+    await expect(karta.getByText(plik)).toBeVisible({ timeout: 25_000 });
+    const pobranie = page.waitForEvent("download", { timeout: 20_000 });
+    await karta.getByRole("button", { name: `Pobierz ${plik}` }).click();
+    expect((await pobranie).suggestedFilename()).toBe(plik);
+    page.once("dialog", (d) => d.accept());
+    await karta.getByRole("button", { name: `Usuń plik ${plik}` }).click();
+    await expect(karta.getByText(plik)).toHaveCount(0, { timeout: 20_000 });
+
     // Usuniecie — karta znika.
     page.once("dialog", (d) => d.accept());
     await karta.getByRole("button", { name: `Usuń umowę ${tytul}` }).click();

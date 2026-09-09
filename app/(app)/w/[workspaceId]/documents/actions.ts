@@ -17,22 +17,17 @@ import { canSeeDocument } from "@/components/documents/documents-model";
 import { requireWorkspaceAction, requireWorkspaceMembership } from "@/lib/workspace-guard";
 import {
   MAX_ATTACHMENT_BYTES,
+  buildWorkspaceFileKey,
   createSignedDownloadUrl,
   createSignedUploadUrl,
   deleteAttachmentObject,
   isAllowedMime,
   storageObjectExists,
+  workspaceFilePrefix,
 } from "@/lib/storage";
 
-// ponytail: klucz budowany tu, nie w lib/storage — tamten jest przypięty do
-// zadania (w/{ws}/t/{task}/…). Jeśli dojdzie trzeci rodzaj plików, przenieść
-// wspólny builder do lib/storage.
-function buildDocumentKey(workspaceId: string, filename: string): string {
-  const safe = filename.replace(/[\\/]/g, "_").replace(/[^\w.\-]/g, "_").replace(/_+/g, "_").slice(-120) || "file";
-  const rand = Buffer.from(crypto.getRandomValues(new Uint8Array(9))).toString("base64url");
-  return `w/${workspaceId}/doc/${rand}-${safe}`;
-}
-const keyPrefix = (workspaceId: string) => `w/${workspaceId}/doc/`;
+const buildDocumentKey = (workspaceId: string, filename: string) => buildWorkspaceFileKey(workspaceId, "doc", filename);
+const keyPrefix = (workspaceId: string) => workspaceFilePrefix(workspaceId, "doc");
 
 const fileSchema = z.object({
   workspaceId: z.string().min(1),

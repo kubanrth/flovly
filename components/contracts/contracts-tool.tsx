@@ -14,11 +14,13 @@ import { Input, InputGroup } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IconClose, IconDoc, IconEdit, IconPlus, IconSearch, IconTrash } from "@/components/ui/icons";
 import { MAX_DETAILS, type ContractDetail } from "@/components/contracts/contracts-model";
+import { ContractFiles, type ContractFileItem } from "@/components/contracts/contract-files";
 import { deleteContractAction, saveContractAction, type SaveContractState } from "@/app/(app)/w/[workspaceId]/contracts/actions";
 
 export interface ContractItem {
   id: string; title: string; details: ContractDetail[]; createdAt: string; updatedAt: string;
   creator: { id: string; name: string | null; email: string };
+  files: ContractFileItem[];
 }
 
 const kto = (u: ContractItem["creator"]) => u.name?.trim() || u.email.split("@")[0]!;
@@ -32,7 +34,8 @@ export function ContractsTool({ workspaceId, canManage, contracts }: { workspace
 
   const q = query.trim().toLowerCase();
   const visible = contracts.filter((c) =>
-    !q || c.title.toLowerCase().includes(q) || c.details.some((d) => d.label.toLowerCase().includes(q) || d.value.toLowerCase().includes(q)),
+    !q || c.title.toLowerCase().includes(q) || c.files.some((f) => f.filename.toLowerCase().includes(q)) ||
+    c.details.some((d) => d.label.toLowerCase().includes(q) || d.value.toLowerCase().includes(q)),
   );
 
   return (
@@ -114,6 +117,7 @@ function ContractCard({ contract, canManage, onEdit }: { contract: ContractItem;
           </dl>
         )}
       </div>
+      <ContractFiles contractId={contract.id} contractTitle={contract.title} files={contract.files} canManage={canManage} />
     </article>
   );
 }

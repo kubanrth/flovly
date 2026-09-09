@@ -12,7 +12,11 @@ export default async function ContractsPage({ params }: { params: Promise<{ work
   const rows = await db.contract.findMany({
     where: { workspaceId, deletedAt: null },
     orderBy: { createdAt: "desc" },
-    select: { id: true, title: true, details: true, createdAt: true, updatedAt: true, creator: { select: { id: true, name: true, email: true } } },
+    select: {
+      id: true, title: true, details: true, createdAt: true, updatedAt: true,
+      creator: { select: { id: true, name: true, email: true } },
+      files: { where: { deletedAt: null }, orderBy: { createdAt: "asc" }, select: { id: true, filename: true, sizeBytes: true } },
+    },
   });
   return (
     <ContractsTool
@@ -21,7 +25,7 @@ export default async function ContractsPage({ params }: { params: Promise<{ work
       contracts={rows.map((c) => ({
         id: c.id, title: c.title, details: parseDetails(c.details),
         createdAt: c.createdAt.toISOString(), updatedAt: c.updatedAt.toISOString(),
-        creator: c.creator,
+        creator: c.creator, files: c.files,
       }))}
     />
   );
