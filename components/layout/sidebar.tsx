@@ -318,9 +318,9 @@ function Eyebrow({ className, children }: { className?: string; children: ReactN
   return <div className={cn("eyebrow flex items-end px-2", className)}>{children}</div>;
 }
 
-function WsTile({ name, size }: { name: string; size: 16 | 18 }) {
+function WsTile({ name, size }: { name: string; size: 16 | 18 | 22 }) {
   return (
-    <span aria-hidden className={cn("grid shrink-0 place-items-center rounded-sm bg-orange-100 text-[9px] font-bold leading-none text-orange-800", size === 16 ? "size-4" : "size-[18px]")}>
+    <span aria-hidden className={cn("grid shrink-0 place-items-center rounded-sm bg-orange-100 font-bold leading-none text-orange-800", size === 16 ? "size-4 text-[9px]" : size === 18 ? "size-[18px] text-[9px]" : "size-[22px] text-[11px]")}>
       {name.trim().charAt(0).toUpperCase()}
     </span>
   );
@@ -339,7 +339,7 @@ function NavRow({
   href,
   onClick,
   icon: Icon,
-  iconSize = 16,
+  iconSize,
   label,
   badge,
   active = false,
@@ -351,7 +351,7 @@ function NavRow({
   href?: string;
   onClick?: () => void;
   icon: IconType;
-  iconSize?: 14 | 16;
+  iconSize?: 14 | 16 | 20;
   label: string;
   badge?: ReactNode;
   active?: boolean;
@@ -362,13 +362,16 @@ function NavRow({
 }) {
   const cls = cn(
     "flex w-full items-center rounded-md text-left outline-none",
-    mobile ? "h-11 gap-3 px-2.5 text-base text-foreground" : "h-8 gap-2 px-2 text-sm text-n-700",
-    indent && (mobile ? "pl-[34px]" : "pl-[30px]"),
+    // Telefon: 52 px wiersz (natywne listy iOS/Androida maja 48-56, nie 44),
+    // wieksza ikona i tekst 17 px — inaczej menu wyglada jak zmniejszony desktop.
+    mobile ? "min-h-[52px] gap-3.5 px-3 text-[17px] text-foreground" : "h-8 gap-2 px-2 text-sm text-n-700",
+    indent && (mobile ? "pl-[46px]" : "pl-[30px]"),
     active ? "bg-selected font-medium text-foreground shadow-[inset_2px_0_0_var(--orange-500)]" : "hover:bg-n-100 active:bg-n-200",
   );
+  const size = iconSize ?? (mobile ? 20 : 16);
   const inner = (
     <>
-      <Icon width={iconSize} height={iconSize} className={cn("shrink-0", active ? "text-orange-700" : "text-fg-3")} />
+      <Icon width={size} height={size} className={cn("shrink-0", active ? "text-orange-700" : "text-fg-3")} />
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {badge}
       {trailing}
@@ -405,7 +408,7 @@ function SavedGroup({ icon, label, items, pathname, mobile = false }: { icon: Ic
         (items.length === 0 ? (
           <div className={cn("flex h-8 items-center text-xs text-muted-foreground", mobile ? "pl-[34px]" : "pl-[30px]")}>Brak</div>
         ) : (
-          items.map((it) => <NavRow key={`${it.type}:${it.id}`} href={it.href} icon={IconBoards} iconSize={14} label={it.label} indent mobile={mobile} active={isActive(pathname, it.href)} />)
+          items.map((it) => <NavRow key={`${it.type}:${it.id}`} href={it.href} icon={IconBoards} iconSize={mobile ? 16 : 14} label={it.label} indent mobile={mobile} active={isActive(pathname, it.href)} />)
         ))}
     </>
   );
@@ -630,14 +633,14 @@ function MobileDrawer({
             <IconClose />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-2">
-          <Eyebrow className="h-[26px] px-2.5">Dla Ciebie</Eyebrow>
+        <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-3 pb-8">
+          <Eyebrow className="h-9 items-center px-3 tracking-[.12em]">Dla Ciebie</Eyebrow>
           {forYou.map((i) => (
             <NavRow key={i.key} mobile href={i.href} icon={i.icon} label={i.label} badge={i.badge} active={isActive(pathname, i.href)} />
           ))}
-          <div className="mt-1 flex h-[30px] items-end justify-between px-2.5">
-            <span className="eyebrow">Przestrzenie</span>
-            <Link href="/workspaces?new=1" aria-label="Nowa przestrzeń" className="grid size-6 place-items-center rounded-sm text-fg-3 hover:bg-n-100 active:bg-n-200">
+          <div className="mt-2 flex h-11 items-center justify-between px-3">
+            <span className="eyebrow tracking-[.12em]">Przestrzenie</span>
+            <Link href="/workspaces?new=1" aria-label="Nowa przestrzeń" className="grid size-9 place-items-center rounded-md text-fg-3 hover:bg-n-100 active:bg-n-200">
               <IconPlus />
             </Link>
           </div>
@@ -646,7 +649,7 @@ function MobileDrawer({
             const wsActive = ws.id === activeWsId && !pathname.startsWith(`/w/${ws.id}/b/`);
             return (
               <div key={ws.id}>
-                <div className={cn("flex h-11 items-center gap-2.5 rounded-md px-2.5 text-base", wsActive ? "bg-selected shadow-[inset_2px_0_0_var(--orange-500)]" : "hover:bg-n-100")}>
+                <div className={cn("flex min-h-[52px] items-center gap-3 rounded-md px-3 text-[17px]", wsActive ? "bg-selected shadow-[inset_2px_0_0_var(--orange-500)]" : "hover:bg-n-100")}>
                   <button
                     type="button"
                     aria-label={open ? "Zwiń tablice" : "Rozwiń tablice"}
@@ -658,39 +661,42 @@ function MobileDrawer({
                         return next;
                       })
                     }
-                    className="-mx-2 grid size-8 shrink-0 place-items-center rounded-sm outline-none"
+                    className="-mx-2 grid size-10 shrink-0 place-items-center rounded-md outline-none"
                   >
                     <Chevron open={open} />
                   </button>
                   <Link href={`/w/${ws.id}`} prefetch={false} className="flex min-w-0 flex-1 items-center gap-2.5 self-stretch font-medium text-foreground outline-none">
-                    <WsTile name={ws.name} size={18} />
+                    <WsTile name={ws.name} size={22} />
                     <span className="truncate">{ws.name}</span>
                   </Link>
                 </div>
-                {open &&
-                  ws.boards.map((b) => (
-                    <NavRow key={b.id} mobile indent href={`/w/${ws.id}/b/${b.id}/table`} icon={IconBoards} iconSize={14} label={b.name} active={pathname.startsWith(`/w/${ws.id}/b/${b.id}`)} />
-                  ))}
+                {open && (
+                  <div className="space-y-1 pt-1">
+                    {ws.boards.map((b) => (
+                      <NavRow key={b.id} mobile indent href={`/w/${ws.id}/b/${b.id}/table`} icon={IconBoards} iconSize={16} label={b.name} active={pathname.startsWith(`/w/${ws.id}/b/${b.id}`)} />
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
-          <div className="h-1" />
+          <div className="h-3" />
           <NavRow mobile icon={IconSliders} label="Narzędzia" onClick={() => setToolsOpen((v) => !v)} ariaExpanded={toolsOpen} trailing={<Chevron open={toolsOpen} />} />
-          {toolsOpen && tools.map((i) => <NavRow key={i.key} mobile indent href={i.href} icon={i.icon} label={i.label} badge={i.badge} active={isActive(pathname, i.href)} />)}
+          {toolsOpen && <div className="space-y-1 pt-1">{tools.map((i) => <NavRow key={i.key} mobile indent href={i.href} icon={i.icon} label={i.label} badge={i.badge} active={isActive(pathname, i.href)} />)}</div>}
           <NavRow mobile icon={IconGrid} label="Więcej" onClick={() => setMoreOpen((v) => !v)} ariaExpanded={moreOpen} trailing={<Chevron open={moreOpen} />} />
           {moreOpen && (
-            <>
+            <div className="space-y-1 pt-1">
               {more.map((i) => (
                 <NavRow key={i.key} mobile indent href={i.href} icon={i.icon} label={i.label} active={isActive(pathname, i.href)} />
               ))}
               <NavRow mobile indent icon={IconSliders} label="Dostosuj pasek" onClick={onCustomize} />
-            </>
+            </div>
           )}
         </div>
-        <div className="flex h-[60px] shrink-0 items-center gap-2.5 border-t border-border px-4">
+        <div className="flex h-[68px] shrink-0 items-center gap-3 border-t border-border px-4">
           <Avatar name={displayName} src={user.avatarUrl} size={32} />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-base font-medium leading-[18px] text-foreground">{displayName}</div>
+            <div className="truncate text-[17px] font-medium leading-[20px] text-foreground">{displayName}</div>
             <div className="truncate text-2xs leading-[14px] text-muted-foreground">{roleLabel}</div>
           </div>
           <AvatarMenu user={user} align="end" trigger={<MoreButton className="size-11" />} />
