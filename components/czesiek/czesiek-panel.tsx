@@ -211,7 +211,7 @@ export function CzesiekPanel({
         // mobile browser chrome i adresbar) gwarantuje true fullscreen na
         // iOS Safari. Na desktop wysokość liczona z inset-0 (top:0+bottom:0).
         // rounded-none na mobile (bez border-radius na fullscreen overlay).
-        className="fixed inset-0 z-50 flex translate-x-full flex-col border-l border-border bg-background opacity-0 transition-[transform,opacity] duration-300 ease-out data-[open=true]:translate-x-0 data-[open=true]:opacity-100 max-md:h-dvh max-md:rounded-none md:left-auto md:w-[480px] md:shadow-e2"
+        className="fixed inset-0 z-50 flex translate-x-full flex-col border-l border-border bg-background opacity-0 transition-[transform,opacity] duration-300 ease-out data-[open=true]:translate-x-0 data-[open=true]:opacity-100 max-md:h-dvh max-md:rounded-none md:left-auto md:w-[min(760px,92vw)] md:shadow-e2"
         style={{ pointerEvents: open ? "auto" : "none" }}
       >
         {/* Header — F12-K81 v4 brand polish:
@@ -221,7 +221,7 @@ export function CzesiekPanel({
             - F12-K88: hamburger (mobile only) po lewej do toggla sessions
               drawer; powiększony X close po prawej (h-10 mobile / h-7 desktop)
               dla touch-friendly 40px target (WCAG 2.5.8 min 24px met). */}
-        <header className="flex items-center justify-between gap-2 border-b border-border bg-card px-3.5 py-2.5">
+        <header className="flex items-center justify-between gap-2 border-b border-border bg-card px-4 py-3">
           <div className="flex min-w-0 items-center gap-2.5">
             <button
               type="button"
@@ -239,10 +239,10 @@ export function CzesiekPanel({
               At
             </span>
             <div className="flex min-w-0 flex-col">
-              <span className="truncate font-display text-[0.95rem] font-bold leading-none">
+              <span className="truncate font-display text-md font-bold leading-none">
                 Ateron AI
               </span>
-              <span className="mt-1 truncate font-mono text-[0.58rem] uppercase tracking-[0.12em] text-muted-foreground/70">
+              <span className="mt-1 truncate font-mono text-2xs uppercase tracking-[0.12em] text-fg-3">
                 Twój asystent workspace&apos;u
               </span>
             </div>

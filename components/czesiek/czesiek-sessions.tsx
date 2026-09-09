@@ -20,22 +20,22 @@ export function CzesiekSessions({
   onDelete: (id: string) => void;
 }) {
   return (
-    <aside className="flex w-[180px] shrink-0 flex-col gap-1.5 border-r border-border bg-card/40 p-2 max-md:w-[260px] max-md:bg-card max-md:h-dvh">
+    <aside className="flex w-[236px] shrink-0 flex-col gap-2 border-r border-border bg-canvas p-3 max-md:h-dvh max-md:w-[280px] max-md:bg-card">
       <button
         type="button"
         onClick={onNew}
-        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-background font-mono text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground transition-[border-color,color] hover:border-primary/60 hover:text-foreground"
+        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-card text-sm font-medium text-fg-2 transition-[border-color,color] hover:border-orange-400 hover:text-foreground"
       >
-        <Plus size={11} />
+        <Plus size={14} />
         <span>Nowa</span>
       </button>
 
       {sessions.length === 0 ? (
-        <p className="mt-2 px-2 text-[0.72rem] leading-[1.45] text-muted-foreground/70">
+        <p className="mt-1 px-1 text-xs leading-[1.5] text-fg-3">
           Brak rozmów. Zacznij pytaniem &mdash; Ateron odpowie.
         </p>
       ) : (
-        <ul className="flex flex-1 flex-col gap-0.5 overflow-y-auto pt-1">
+        <ul className="flex flex-1 flex-col gap-1 overflow-y-auto">
           {sessions.map((s) => (
             <SessionRow
               key={s.id}
@@ -67,18 +67,20 @@ function SessionRow({
   return (
     <li
       data-active={active ? "true" : "false"}
-      className="group flex items-center gap-1 rounded-md px-1.5 py-1 text-[0.78rem] data-[active=true]:bg-primary/10"
+      className="group flex items-start gap-1.5 rounded-md px-2 py-1.5 text-[13px] data-[active=true]:bg-orange-50"
     >
       <button
         type="button"
         onClick={onSelect}
-        className="flex flex-1 items-center gap-1.5 text-left"
+        className="flex min-w-0 flex-1 items-start gap-2 text-left"
       >
         <MessageSquare
-          size={11}
-          className="shrink-0 text-muted-foreground group-data-[active=true]:text-primary"
+          size={14}
+          className="mt-0.5 shrink-0 text-fg-3 group-data-[active=true]:text-orange-700"
         />
-        <span className="truncate text-foreground group-data-[active=true]:font-semibold">
+        {/* Dwie linie zamiast ucinania — tytul rozmowy to cale pytanie i po
+            obcieciu w polowie slowa rozmowy byly nie do odroznienia. */}
+        <span className="line-clamp-2 min-w-0 leading-[1.35] text-foreground group-data-[active=true]:font-semibold">
           {session.title}
         </span>
       </button>
@@ -86,10 +88,10 @@ function SessionRow({
         <button
           type="button"
           onClick={onDelete}
-          className="grid h-5 w-5 place-items-center rounded text-rose-500 hover:bg-rose-500/10"
+          className="grid size-7 shrink-0 place-items-center rounded-md text-danger-text hover:bg-chip-red-bg"
           title="Tak, skasuj"
         >
-          <Trash2 size={10} />
+          <Trash2 size={13} />
         </button>
       ) : (
         <button
@@ -99,10 +101,10 @@ function SessionRow({
             setConfirming(true);
             setTimeout(() => setConfirming(false), 2000);
           }}
-          className="grid h-5 w-5 place-items-center rounded text-muted-foreground/0 group-hover:text-muted-foreground hover:bg-accent hover:text-rose-500"
+          className="grid size-7 shrink-0 place-items-center rounded-md text-transparent group-hover:text-fg-3 hover:bg-n-100 hover:text-danger-text"
           title="Skasuj"
         >
-          <Trash2 size={10} />
+          <Trash2 size={13} />
         </button>
       )}
     </li>

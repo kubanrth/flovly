@@ -8,7 +8,7 @@ import type { ChatMessageRow } from "./czesiek-types";
 // - assistant: lewa strona, neutralna karta + ikonka bota
 // - tool: collapsed inline marker "Sprawdzam zadania..." (technical detail dla
 //   transparentności, ale nie zaśmieca głównego flow konwersacji)
-export function CzesiekMessage({ msg }: { msg: ChatMessageRow }) {
+export function CzesiekMessage({ msg, showAvatar = true }: { msg: ChatMessageRow; showAvatar?: boolean }) {
   if (msg.role === "tool") {
     return <ToolMarker name={msg.toolName ?? "tool"} />;
   }
@@ -17,14 +17,19 @@ export function CzesiekMessage({ msg }: { msg: ChatMessageRow }) {
   const isUser = msg.role === "user";
 
   return (
-    <div className={`flex gap-2 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
-      {!isUser && (
-        <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-white shadow-sm">
-          <Bot size={14} />
-        </div>
-      )}
+    // Awatar tylko przy pierwszej wiadomosci z serii — przy kazdej robil pas
+    // pomaranczowych kolek i zjadal szerokosc dymka.
+    <div className={`flex gap-2.5 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+      {!isUser &&
+        (showAvatar ? (
+          <div className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-white shadow-sm">
+            <Bot size={16} />
+          </div>
+        ) : (
+          <span className="size-8 shrink-0" aria-hidden />
+        ))}
       <div
-        className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[0.88rem] leading-[1.55] ${
+        className={`max-w-[88%] rounded-2xl px-4 py-3 text-[15px] leading-[1.6] ${
           isUser
             ? "rounded-tr-md bg-primary text-white "
             : "rounded-tl-md border border-border bg-card text-foreground"
@@ -41,8 +46,8 @@ export function CzesiekMessage({ msg }: { msg: ChatMessageRow }) {
 function ToolMarker({ name }: { name: string }) {
   const label = TOOL_LABELS[name] ?? name;
   return (
-    <div className="flex items-center gap-1.5 pl-9 font-mono text-[0.62rem] uppercase tracking-[0.12em] text-muted-foreground/70">
-      <Wrench size={10} />
+    <div className="flex items-center gap-1.5 pl-[42px] font-mono text-2xs uppercase tracking-[0.12em] text-fg-3">
+      <Wrench size={12} />
       <span>{label}</span>
     </div>
   );
