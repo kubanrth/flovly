@@ -191,7 +191,7 @@ export function ImportTasksDialog({ workspaceId, boardId }: { workspaceId: strin
           {n} {taskPl(n)} {plPlural(n, "trafi", "trafią", "trafi")} do tablicy <strong className="font-semibold text-n-700">{meta?.boardName ?? "…"}</strong>
         </span>
       )}
-      <span className="flex-1" />
+      <span className="flex-1 max-md:hidden" />
       {step === 1 ? (
         <Button variant="secondary" size={size} onClick={() => handleOpenChange(false)}>Anuluj</Button>
       ) : (

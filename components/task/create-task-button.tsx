@@ -70,8 +70,10 @@ export function ResponsiveDialog({ open, onOpenChange, title, size = "md", dataU
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">{children}</div>
           {/* Wiekszy odstep od dolu niz zwykly `.safe-bottom`: w Safari z widocznym
               dolnym paskiem wciecie bezpiecznego obszaru wynosi 0, a przyciski
-              akcji stały wtedy tuz przy krawedzi, pod polprzezroczystym paskiem. */}
-          <SheetFooter className="flex-wrap pb-[max(env(safe-area-inset-bottom),1.5rem)]">{footer}</SheetFooter>
+              akcji stały wtedy tuz przy krawedzi, pod polprzezroczystym paskiem.
+              Przyciski na pelna szerokosc i 44 px wysokosci — reszta formularza
+              na telefonie ma h-11, a domyslne h-9 bylo za male na palec. */}
+          <SheetFooter className="flex-wrap pb-[max(env(safe-area-inset-bottom),1.5rem)] [&>button]:h-11 [&>button]:min-w-0 [&>button]:flex-1">{footer}</SheetFooter>
         </SheetContent>
       </Sheet>
     );
@@ -236,7 +238,7 @@ export function CreateTaskDialog({ workspaceId, boardId, boards = [], viewId, op
   const footer = (
     <>
       <span className="text-xs text-fg-3 max-md:hidden">Utwórz i dodaj kolejne <Kbd className="px-1 text-[10px]">⇧Enter</Kbd></span>
-      <span className="flex-1" />
+      <span className="flex-1 max-md:hidden" />
       <Button variant="secondary" size={size} onClick={() => handleOpenChange(false)}>Anuluj</Button>
       <Button variant="primary" size={size} loading={pending} disabled={!board || pending || poza} onClick={() => submit(false)}>Utwórz zadanie</Button>
     </>
