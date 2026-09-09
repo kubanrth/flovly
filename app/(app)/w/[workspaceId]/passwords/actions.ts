@@ -12,7 +12,9 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { requireWorkspaceAction } from "@/lib/workspace-guard";
+import { requireWorkspaceAction, requireWorkspaceMembership } from "@/lib/workspace-guard";
+import { canSeeResource } from "@/lib/resource-access";
+import { dropResourceAccess } from "@/lib/access-queries";
 import { encrypt, decrypt } from "@/lib/vault-crypto";
 
 const createSchema = z.object({
@@ -102,6 +104,7 @@ export async function revealSecretAction(input: {
     where: { id: parsed.data.id, deletedAt: null },
     select: {
       workspaceId: true,
+      ownerId: true,
       passwordEnc: true,
       passwordIv: true,
       notesEnc: true,
@@ -109,6 +112,17 @@ export async function revealSecretAction(input: {
     },
   });
   if (!item) return { ok: false, error: "Nie znaleziono." };
+
+  // F14: samo `secret.read` nie wystarcza — wpis musi być dla tej osoby widoczny.
+  // Bez tego znajomość id starczyłaby do odszyfrowania cudzego hasła.
+  const me = await requireWorkspaceMembership(item.workspaceId);
+  const access = await db.resourceAccess.findMany({
+    where: { kind: "SECRET", resourceId: parsed.data.id },
+    select: { userId: true },
+  });
+  if (!canSeeResource("SECRET", { role: me.role, userId: me.userId }, { ownerIds: [item.ownerId], accessUserIds: access.map((a) => a.userId) })) {
+    return { ok: false, error: "Nie masz dostępu do tego wpisu." };
+  }
 
   await requireWorkspaceAction(item.workspaceId, "secret.read");
 
@@ -141,6 +155,8 @@ export async function deleteSecretAction(formData: FormData) {
     where: { id: parsed.data.id },
     data: { deletedAt: new Date() },
   });
+  // `resourceId` nie ma klucza obcego — wpisy dostępu trzeba sprzątnąć samemu.
+  await dropResourceAccess("SECRET", parsed.data.id);
 
   revalidatePath(`/w/${item.workspaceId}/passwords`);
 }

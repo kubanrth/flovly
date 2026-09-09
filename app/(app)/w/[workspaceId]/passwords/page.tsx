@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { requireWorkspaceMembership } from "@/lib/workspace-guard";
 import { can } from "@/lib/permissions";
+import { accessMapFor, allowedResourceIds } from "@/lib/access-queries";
+import { needsAccessFilter } from "@/lib/resource-access";
 import { SecretVault } from "@/components/passwords/secret-vault";
 import { changedLabel } from "@/components/passwords/vault-model";
 
@@ -19,9 +21,18 @@ export default async function PasswordVaultPage({
   const { workspaceId } = await params;
   const ctx = await requireWorkspaceMembership(workspaceId);
 
+  // F14: wpis jest prywatny, dopóki ktoś go nie udostępni — widzi go ADMIN,
+  // osoba, która go dodała, i osoby z listy dostępu.
+  const viewer = { role: ctx.role, userId: ctx.userId };
+  const allowed = needsAccessFilter(viewer) ? await allowedResourceIds(workspaceId, "SECRET", ctx.userId) : null;
+
   const [items, memberships] = await Promise.all([
     db.secretItem.findMany({
-      where: { workspaceId, deletedAt: null },
+      where: {
+        workspaceId,
+        deletedAt: null,
+        ...(allowed ? { OR: [{ ownerId: ctx.userId }, { id: { in: allowed } }] } : {}),
+      },
       orderBy: [{ category: "asc" }, { name: "asc" }],
       select: {
         id: true,
@@ -42,6 +53,7 @@ export default async function PasswordVaultPage({
   ]);
 
   const now = new Date().getTime();
+  const accessMap = await accessMapFor("SECRET", items.map((i) => i.id));
 
   return (
     <SecretVault
@@ -49,6 +61,7 @@ export default async function PasswordVaultPage({
       currentUserId={ctx.userId}
       canReveal={can(ctx.role, "secret.read")}
       canManage={can(ctx.role, "secret.manage")}
+      accessMap={accessMap}
       items={items.map((i) => ({
         id: i.id,
         name: i.name,

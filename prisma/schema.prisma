@@ -105,6 +105,7 @@ model User {
   uploadedDocuments  Document[]            @relation("DocumentUploader")
   documentAccess     DocumentAccess[]      @relation("DocumentAccessUser")
   contractFiles      ContractFile[]        @relation("ContractFileUploader")
+  resourceAccess     ResourceAccess[]      @relation("ResourceAccessUser")
   // F13: „Umowy" utworzone przez uzytkownika.
   contracts          Contract[]            @relation("ContractCreator")
   // F13: „Zapotrzebowanie" — zgloszenia zakupow.
@@ -217,6 +218,7 @@ model Workspace {
   backups              WorkspaceBackup[]
   // F12-K59: kontakty B2B (CRM-lite).
   contacts             Contact[]
+  resourceAccess       ResourceAccess[]
   // F12-K60: sales pipeline.
   dealStages           DealStage[]
   deals                Deal[]
@@ -2010,4 +2012,38 @@ model ChatMessage {
   session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, createdAt])
+}
+
+// Kto widzi pojedynczy obiekt. Jedna tabela dla wszystkich modułów, bo to
+// wszędzie to samo pojęcie („ten user widzi ten wiersz"), a rozbicie na sześć
+// tabel rozjechałoby UI i audyt. Klucz obcy jest tylko do przestrzeni i usera —
+// `resourceId` wskazuje różne tabele, więc wpisy kasuje akcja usuwająca obiekt.
+//
+// Dwa tryby (lib/resource-access.ts):
+//   private  — SECRET / CONTACT / CANVAS: pusta lista = widzi tylko ADMIN i autor,
+//   restrict — SUBSCRIPTION / TASK / BOARD_VIEW: pusta lista = jak dotąd,
+//              niepusta = tylko wskazani (i ADMIN).
+enum ResourceKind {
+  SECRET
+  CONTACT
+  CANVAS
+  SUBSCRIPTION
+  TASK
+  BOARD_VIEW
+}
+
+model ResourceAccess {
+  id          String       @id @default(cuid())
+  workspaceId String
+  kind        ResourceKind
+  resourceId  String
+  userId      String
+  createdAt   DateTime     @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation("ResourceAccessUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([kind, resourceId, userId])
+  @@index([workspaceId, kind, userId])
+  @@index([kind, resourceId])
 }

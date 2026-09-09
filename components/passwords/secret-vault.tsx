@@ -16,7 +16,8 @@
 //     porzuca — nie renderuje go i nie zapala trybu odsłonięcia.
 
 import { startTransition, useActionState, useCallback, useEffect, useRef, useState } from "react";
-import { Avatar, AvatarStack } from "@/components/ui/avatar";
+import { Avatar } from "@/components/ui/avatar";
+import { AccessControl } from "@/components/access/access-control";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { DataTable, DataTd, DataTh, DataThead, DataTr } from "@/components/ui/data-table";
@@ -116,6 +117,7 @@ export function SecretVault({
   currentUserId,
   items,
   members,
+  accessMap,
   canReveal,
   canManage,
 }: {
@@ -123,6 +125,8 @@ export function SecretVault({
   currentUserId: string;
   items: SecretListItem[];
   members: VaultMember[];
+  /** F14: id osób z dostępem, per wpis. */
+  accessMap: Record<string, string[]>;
   /** `secret.read` — bez tego 👁 i „Kopiuj hasło" nie mają po co istnieć. */
   canReveal: boolean;
   /** `secret.manage` — tworzenie i usuwanie wpisów. */
@@ -150,7 +154,7 @@ export function SecretVault({
     );
   });
 
-  const people = members.map((m) => ({ name: personName(m), src: m.avatarUrl }));
+  const people = members.map((m) => ({ id: m.id, name: personName(m), avatarUrl: m.avatarUrl }));
   const revealedCount = revealedIds.filter((id) => filtered.some((it) => it.id === id)).length;
 
   return (
@@ -240,6 +244,7 @@ export function SecretVault({
                   key={item.id}
                   item={item}
                   people={people}
+                  access={accessMap[item.id] ?? []}
                   revealed={revealedIds.includes(item.id)}
                   onRevealChange={setRevealed}
                   canReveal={canReveal}
@@ -263,13 +268,16 @@ export function SecretVault({
 function SecretRow({
   item,
   people,
+  access,
   revealed,
   onRevealChange,
   canReveal,
   canManage,
 }: {
   item: SecretListItem;
-  people: { name: string; src?: string | null }[];
+  people: { id: string; name: string; avatarUrl?: string | null }[];
+  /** F14: id osób, którym udostępniono ten wpis. */
+  access: string[];
   revealed: boolean;
   onRevealChange: (id: string, on: boolean) => void;
   canReveal: boolean;
@@ -449,7 +457,14 @@ function SecretRow({
         </DataTd>
 
         <DataTd>
-          <AvatarStack people={people} max={3} size={20} className="align-middle" />
+          <AccessControl
+            kind="SECRET"
+            resourceId={item.id}
+            resourceName={item.name}
+            members={people}
+            value={access}
+            canManage={canManage}
+          />
         </DataTd>
 
         <DataTd>
