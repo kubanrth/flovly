@@ -10,6 +10,7 @@ const task = (over: Partial<BoardTableTask>): BoardTableTask => ({
   id: "t", displayId: 1, title: "x", statusColumnId: null, priority: "NONE", startAt: null, stopAt: null,
   createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z", assignees: [], tags: [], customValues: {},
   attachments: [], milestone: null, hasDescription: false, commentCount: 0, subtaskCount: 0, subtaskDoneCount: 0, linkedCount: 0,
+  parentId: null, subtasks: [], linked: [],
   ...over,
 });
 const budget: CustomTableColumn = { id: "b", name: "Budżet", type: "NUMBER", options: { numberFormat: "integer" } };

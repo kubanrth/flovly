@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { flattenTree, nestTasks } from "./gantt-nesting";
+import { flattenTree, nestTasks } from "./task-tree";
 
 const t = (id: string, parentId: string | null = null) => ({ id, parentId });
 const tasks = [t("epik"), t("a", "epik"), t("b", "epik"), t("luzne"), t("wnuk", "a"), t("sierota", "nie-ma")];
@@ -16,4 +16,11 @@ assert.deepEqual(flattenTree(roots, childrenOf, new Set()).map((r) => [r.t.id, r
 assert.deepEqual(flattenTree(roots, childrenOf, new Set(["epik"])).map((r) => `${r.t.id}@${r.depth}`), ["epik@0", "a@1", "b@1", "luzne@0", "sierota@0"]);
 assert.deepEqual(flattenTree(roots, childrenOf, new Set(["epik", "a"])).map((r) => `${r.t.id}@${r.depth}`), ["epik@0", "a@1", "wnuk@2", "b@1", "luzne@0", "sierota@0"]);
 
-console.log("gantt-nesting: OK");
+// Lista grupuje przed zagniezdzeniem: dziecko w innej grupie niz rodzic musi
+// zostac wlasnym wierszem, inaczej zniknieoby z tabeli.
+const grupa = [t("a"), t("b", "epik")];
+const g = nestTasks(grupa);
+assert.deepEqual(g.roots.map((x) => x.id), ["a", "b"]);
+assert.deepEqual(flattenTree(g.roots, g.childrenOf, new Set()).map((r) => r.childCount), [0, 0]);
+
+console.log("task-tree: OK");

@@ -42,6 +42,14 @@ test.describe("zadania podrzedne", () => {
     await wiersz.getByRole("link", { name: tytul }).click();
     await expect(page.locator('[data-ui="task-parent-link"]')).toContainText(rodzicTytul.slice(0, 20), { timeout: 20_000 });
 
+    // Lista: rodzic dostaje strzalke, dziecko wchodzi pod niego jako wciety wiersz.
+    await gotoFirstBoard(page);
+    const rodzicWierszListy = page.locator('[data-ui="list-row"]').filter({ hasText: rodzicTytul.slice(0, 20) }).first();
+    await expect(rodzicWierszListy).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator('[data-ui="list-row"]').filter({ hasText: tytul })).toHaveCount(0);
+    await rodzicWierszListy.getByRole("button", { name: /Rozwiń szczegóły/ }).click();
+    await expect(page.locator('[data-ui="list-row"][data-depth="1"]').filter({ hasText: tytul })).toBeVisible();
+
     // Os czasu: rodzic ma rozwiniecie, dziecko siedzi pod nim, wciete.
     await openGantt(page);
     const os = page.locator('[data-ui="gantt-view"]');
@@ -58,5 +66,20 @@ test.describe("zadania podrzedne", () => {
     await page.locator('[data-ui="task-detail"] [data-ui="task-actions"]').getByRole("button", { name: "Więcej" }).click();
     await page.getByRole("menuitem", { name: "Usuń" }).click();
     await expect(page.locator('[data-ui="task-detail"]')).toBeHidden({ timeout: 20_000 });
+  });
+
+  test("rozwinięty wiersz pokazuje podzadania i powiązania", async ({ page }) => {
+    await gotoFirstBoard(page);
+    // Dowolny wiersz z checklistą albo powiązaniem — takie ma strzałkę.
+    const pierwszy = page.locator('[data-ui="list-row"]').filter({ has: page.getByRole("button", { name: /Rozwiń szczegóły/ }) }).first();
+    await expect(pierwszy).toBeVisible({ timeout: 20_000 });
+    // Etykieta przycisku zmienia sie po rozwinieciu — wiersz trzymamy po id.
+    const wiersz = page.locator(`[data-ui="list-row"][data-task-id="${await pierwszy.getAttribute("data-task-id")}"]`);
+    await wiersz.getByRole("button", { name: /szczegóły zadania/ }).click();
+    const pasek = page.locator('[data-ui="list-detail"]').first();
+    await expect(pasek).toBeVisible();
+    await expect(pasek).toContainText(/Podzadania|Powiązane zadania/);
+    await wiersz.getByRole("button", { name: /szczegóły zadania/ }).click();
+    await expect(page.locator('[data-ui="list-detail"]')).toHaveCount(0);
   });
 });

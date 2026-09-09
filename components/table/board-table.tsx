@@ -14,6 +14,7 @@ import { useIsMobile } from "@/hooks/use-is-mobile";
 import { plPlural, taskPl } from "@/lib/pluralize";
 import { PRIORITY_WEIGHT } from "@/lib/task-priority";
 import { compareValues, matchesFilter, type TableFilter, type TableSort } from "@/lib/table-filters";
+import { flattenTree, nestTasks } from "@/lib/task-tree";
 import { parseFieldOptions, type FieldOptions } from "@/lib/table-fields";
 import { useAssignHotkey } from "@/components/task/assign-hotkey";
 import { cn } from "@/lib/utils";
@@ -21,7 +22,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { nextSelection } from "./selection";
 import { StatusChip } from "@/components/ui/chip";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
-import { IconChevronDown, IconPlus, IconRoadmap } from "@/components/ui/icons";
+import { IconChevronDown, IconChevronRight, IconPlus, IconRoadmap } from "@/components/ui/icons";
 import { useListState } from "@/components/table/list-state";
 import { BUILTIN_COLUMNS, CHECKBOX_W, FROZEN_IDS, customColId, defaultWidthForType, isCustomColId, orderedColumnIds, rawColId, sortKindFor } from "@/components/table/columns";
 import { TableHeaderCell } from "@/components/table/header-cell";
@@ -38,6 +39,7 @@ import { MobileList } from "@/components/table/mobile-list";
 import { groupTasks, type GroupBucket } from "@/components/table/grouping";
 import { isActiveFilter, newFilter } from "@/components/table/filter-builder";
 import { memberName, type BoardTableTask, type CustomTableColumn } from "@/components/table/types";
+import { LinkedTaskList, SubtaskChecklist, detailHeight, hasDetail } from "@/components/table/row-details";
 
 export type { BoardTableColumn, BoardTableTask, CustomTableColumn } from "@/components/table/types";
 
@@ -63,7 +65,8 @@ interface ColumnModel {
 
 type Item =
   | { kind: "group"; g: GroupBucket; h: number }
-  | { kind: "row"; t: BoardTableTask; i: number; h: number }
+  | { kind: "row"; t: BoardTableTask; i: number; h: number; depth: number; childCount: number }
+  | { kind: "detail"; t: BoardTableTask; h: number }
   | { kind: "add"; h: number };
 
 // Raw string per (task, filter) the way lib/table-filters expects it; list-like
@@ -159,22 +162,42 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
       else n.add(key);
       return n;
     });
+  // F13: strzalka w wierszu. Zadania podrzedne wchodza pod rodzica (wciete
+  // wiersze), a podzadania i powiazania pokazuje pasek pod nim. Drzewo liczone
+  // per grupa — dziecko w innej grupie niz rodzic zostaje wlasnym wierszem.
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
+  const toggleExpand = useCallback((id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+  const treeGroups = useMemo(
+    () => groups.map((g) => {
+      const { roots, childrenOf } = nestTasks(g.rows);
+      return { g, rows: flattenTree(roots, childrenOf, expanded) };
+    }),
+    [groups, expanded],
+  );
   const { items, rows, rowItemIndex } = useMemo(() => {
     const items: Item[] = [];
     const rows: BoardTableTask[] = [];
     const rowItemIndex: number[] = [];
-    for (const g of groups) {
+    for (const { g, rows: nested } of treeGroups) {
       if (config.groupBy) items.push({ kind: "group", g, h: GROUP_H });
       if (collapsed.has(g.key)) continue;
-      for (const t of g.rows) {
+      for (const r of nested) {
         rowItemIndex.push(items.length);
-        items.push({ kind: "row", t, i: rows.length, h: rowH });
-        rows.push(t);
+        items.push({ kind: "row", t: r.t, i: rows.length, h: rowH, depth: r.depth, childCount: r.childCount });
+        rows.push(r.t);
+        if (expanded.has(r.t.id) && hasDetail(r.t)) items.push({ kind: "detail", t: r.t, h: detailHeight(r.t) });
       }
     }
     if (canEdit) items.push({ kind: "add", h: ADD_H });
     return { items, rows, rowItemIndex };
-  }, [groups, collapsed, config.groupBy, rowH, canEdit]);
+  }, [treeGroups, collapsed, expanded, config.groupBy, rowH, canEdit]);
 
   // ─── selection ─────────────────────────────────────────────────────────
   const [selection, setSelection] = useState<Record<string, boolean>>({});
@@ -441,7 +464,7 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
   // Snapshot per mount — „po terminie” doesn't need to tick.
   const [now] = useState(() => Date.now());
 
-  const renderCell = (c: ColumnModel, t: BoardTableTask) => {
+  const renderCell = (c: ColumnModel, t: BoardTableTask, tree?: { depth: number; childCount: number }) => {
     if (c.custom) {
       return <FieldCell taskId={t.id} columnId={c.custom.id} type={c.custom.type} raw={t.customValues[c.custom.id] ?? ""} options={c.fieldOptions ?? null} disabled={!canEdit} members={members} computed={{ createdAt: t.createdAt, updatedAt: t.updatedAt, autoNumber: t.displayId }} />;
     }
@@ -450,8 +473,28 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
         return <span className="font-mono text-xs text-fg-2">{t.displayId}</span>;
       case "title": {
         const title = titleOverride[t.id] ?? t.title;
+        const depth = tree?.depth ?? 0;
+        const childCount = tree?.childCount ?? 0;
+        const open = expanded.has(t.id);
+        const canExpand = childCount > 0 || hasDetail(t);
+        // Slot na strzalke jest zawsze — inaczej tytuly skakalyby w poziomie.
+        const chevron = canExpand ? (
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-label={`${open ? "Zwiń" : "Rozwiń"} szczegóły zadania ${title}`}
+            onClick={() => toggleExpand(t.id)}
+            className="inline-flex size-4 shrink-0 items-center justify-center rounded-sm text-fg-3 outline-none hover:bg-n-100 hover:text-foreground focus-visible:shadow-[0_0_0_2px_var(--orange-500)]"
+          >
+            <IconChevronRight width={11} height={11} className={cn("transition-transform duration-150", open && "rotate-90")} />
+          </button>
+        ) : (
+          <span className="size-4 shrink-0" aria-hidden />
+        );
         if (editingId === t.id && canEdit) {
           return (
+            <span className="flex min-w-0 items-center gap-1" style={{ paddingLeft: depth * 16 }}>
+              {chevron}
             <input
               autoFocus
               defaultValue={title}
@@ -464,11 +507,13 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
               }}
               className="h-7 w-full min-w-0 bg-transparent text-sm text-foreground outline-none focus-visible:shadow-none"
             />
+            </span>
           );
         }
         const href = `/w/${workspaceId}/t/${t.id}`;
         return (
-          <span className="flex min-w-0 items-center gap-2">
+          <span className="flex min-w-0 items-center gap-1" style={{ paddingLeft: depth * 16 }}>
+            {chevron}
             <Link
               href={href}
               lang="pl"
@@ -484,7 +529,7 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
             >
               {title}
             </Link>
-            <RowHints task={t} />
+            <RowHints task={t} childCount={open ? 0 : childCount} />
           </span>
         );
       }
@@ -542,10 +587,12 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
           workspaceId={workspaceId}
           boardId={boardId}
           viewId={viewId}
-          groups={groups}
+          groups={treeGroups}
           grouped={Boolean(config.groupBy)}
           collapsed={collapsed}
           onToggleGroup={toggleGroup}
+          expanded={expanded}
+          onToggleExpand={toggleExpand}
           selection={selection}
           onToggleSelect={toggleSelect}
           statusColumns={statusColumns}
@@ -692,6 +739,9 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
               if (it.kind === "add") {
                 return <AddRowInline key="add" workspaceId={workspaceId} boardId={boardId} viewId={viewId} colCount={colCount} width={viewW} />;
               }
+              if (it.kind === "detail") {
+                return <DetailRow key={`d:${it.t.id}`} t={it.t} workspaceId={workspaceId} colCount={colCount} width={viewW} height={it.h} canEdit={canEdit} />;
+              }
               const t = it.t;
               const selected = !!selection[t.id];
               return (
@@ -699,6 +749,7 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
                   key={t.id}
                   data-ui="list-row"
                   data-task-id={t.id}
+                  data-depth={it.depth || undefined}
                   data-selected={selected || undefined}
                   className="group/row h-(--row-h) bg-card hover:bg-row-hover data-selected:bg-selected data-selected:shadow-[inset_2px_0_0_var(--orange-500)] data-selected:hover:bg-selected"
                   {...assign.rowProps(t.id, t.assignees.map((a) => a.id))}
@@ -733,7 +784,7 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
                           editingId === t.id && c.id === "title" && "shadow-[inset_0_0_0_2px_var(--orange-500)]",
                         )}
                       >
-                        {renderCell(c, t)}
+                        {renderCell(c, t, it)}
                       </td>
                     );
                   })}
@@ -818,6 +869,27 @@ function AddRowInline({ workspaceId, boardId, viewId, colCount, width }: { works
               Dodaj zadanie
             </button>
           )}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+// Rozwiniety wiersz w tabeli — tresc wspolna z lista mobilna (row-details).
+function DetailRow({ t, workspaceId, colCount, width, height, canEdit }: {
+  t: BoardTableTask;
+  workspaceId: string;
+  colCount: number;
+  width: number;
+  height: number;
+  canEdit: boolean;
+}) {
+  return (
+    <tr data-ui="list-detail" data-task-id={t.id} className="bg-canvas" style={{ height }}>
+      <td colSpan={colCount} className="border-b border-table-grid p-0 align-top">
+        <div className="sticky left-0 flex gap-8 overflow-hidden px-3 py-2" style={{ width, height }}>
+          {t.subtasks.length > 0 && <SubtaskChecklist subtasks={t.subtasks} canEdit={canEdit} />}
+          {t.linked.length > 0 && <LinkedTaskList linked={t.linked} workspaceId={workspaceId} />}
         </div>
       </td>
     </tr>

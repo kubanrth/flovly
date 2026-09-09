@@ -255,9 +255,11 @@ async function main() {
     { userId: admin.id, type: "poll.created", payload: { workspaceId: W, taskId: c1.id, taskTitle: c1.title, question: poll.question, authorName: marta.name }, createdAt: d(-6, 10), readAt: d(-6, 11) },
   ] });
   await db.personalReminder.createMany({ data: [
-    { creatorId: admin.id, recipientId: admin.id, title: "Wysłać fakturę za wrzesień — Bistro Verde", body: "Kwota 6 500 zł netto, termin 14 dni.", dueAt: d(1, 10) },
-    { creatorId: marta.id, recipientId: admin.id, title: "Akcept key visualu przed prezentacją", dueAt: d(2, 9) },
-    { creatorId: admin.id, recipientId: piotr.id, title: "Odesłać makietę formularza", dueAt: d(0, 15) },
+    // Terminy w przyszlosci — przypomnienie z minionym terminem wyskakuje jako
+    // popup nad cala aplikacja i przechwytuje klikniecia (testy, zrzuty).
+    { creatorId: admin.id, recipientId: admin.id, title: "Wysłać fakturę za wrzesień — Bistro Verde", body: "Kwota 6 500 zł netto, termin 14 dni.", dueAt: d(3, 10) },
+    { creatorId: marta.id, recipientId: admin.id, title: "Akcept key visualu przed prezentacją", dueAt: d(5, 9) },
+    { creatorId: admin.id, recipientId: piotr.id, title: "Odesłać makietę formularza", dueAt: d(2, 15) },
   ] });
   await db.vacationRequest.createMany({ data: [
     { requesterId: kasia.id, startDate: d(10), endDate: d(14), reason: "Urlop wypoczynkowy", status: "pending" },

@@ -36,7 +36,7 @@ import {
   type GanttZoom,
 } from "@/components/roadmap/timeline-utils";
 import type { GanttMilestoneItem, GanttTaskItem } from "@/components/gantt/gantt-reads";
-import { flattenTree, nestTasks } from "@/components/gantt/gantt-nesting";
+import { flattenTree, nestTasks } from "@/lib/task-tree";
 
 export type { GanttMilestoneItem, GanttTaskItem } from "@/components/gantt/gantt-reads";
 

@@ -1,5 +1,5 @@
-// F13: drzewo zadan w Osi czasu. Czysta logika, bez React.
-// Self-check: `npx tsx components/gantt/gantt-nesting.check.ts`.
+// F13: drzewo zadan (rodzic → podrzedne) dla Osi czasu i Listy. Czysta logika,
+// bez React. Self-check: `npx tsx lib/task-tree.check.ts`.
 
 export interface Nestable { id: string; parentId: string | null }
 

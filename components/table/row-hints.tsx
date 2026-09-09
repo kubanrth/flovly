@@ -1,10 +1,12 @@
-import { IconAttachment, IconComment, IconDoc, IconLink, IconTodo } from "@/components/ui/icons";
+import { IconAttachment, IconComment, IconDoc, IconLink, IconTasks, IconTodo } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import type { BoardTableTask } from "@/components/table/types";
 
 // Tiny „there's more inside” hints next to the title (B1: ☑2/5 💬3 📎1). Null when quiet.
-export function RowHints({ task, className }: { task: Pick<BoardTableTask, "hasDescription" | "commentCount" | "subtaskCount" | "subtaskDoneCount" | "linkedCount" | "attachments">; className?: string }) {
+export function RowHints({ task, childCount = 0, className }: { task: Pick<BoardTableTask, "hasDescription" | "commentCount" | "subtaskCount" | "subtaskDoneCount" | "linkedCount" | "attachments">; childCount?: number; className?: string }) {
   const items: { key: string; icon: React.ReactNode; text?: string; title: string }[] = [];
+  // Zwiniete zadania podrzedne znikaja z listy — licznik mowi, ze tam sa.
+  if (childCount > 0) items.push({ key: "kids", icon: <IconTasks />, text: String(childCount), title: `Zadania podrzędne: ${childCount}` });
   if (task.subtaskCount > 0) items.push({ key: "sub", icon: <IconTodo />, text: `${task.subtaskDoneCount}/${task.subtaskCount}`, title: `${task.subtaskDoneCount} z ${task.subtaskCount} podzadań` });
   if (task.commentCount > 0) items.push({ key: "com", icon: <IconComment />, text: String(task.commentCount), title: `Komentarze: ${task.commentCount}` });
   if (task.attachments.length > 0) items.push({ key: "att", icon: <IconAttachment />, text: String(task.attachments.length), title: `Załączniki: ${task.attachments.length}` });

@@ -2,6 +2,10 @@ import type { TaskPriorityValue } from "@/lib/task-priority";
 import type { FieldType } from "@/lib/table-fields";
 import type { AttachmentCellItem } from "@/components/table/attachment-cell";
 
+export interface SubtaskLine { id: string; title: string; completed: boolean }
+/** Zadanie po drugiej stronie powiazania (TaskLink) — do rozwinietego wiersza. */
+export interface LinkedTaskLine { id: string; displayId: number; title: string; otherBoard: boolean }
+
 export interface BoardTableTask {
   id: string;
   // Human, per-workspace sequential id (#123). 0 = legacy task before backfill.
@@ -24,7 +28,14 @@ export interface BoardTableTask {
   subtaskCount: number;
   subtaskDoneCount: number;
   linkedCount: number;
+  // F13: zadanie nadrzedne — Lista i Os czasu zagniezdzaja pod nim podrzedne.
+  parentId: string | null;
+  subtasks: SubtaskLine[];
+  linked: LinkedTaskLine[];
 }
+
+/** Wiersz Listy po splaszczeniu drzewa (lib/task-tree). */
+export interface TreeRow { t: BoardTableTask; depth: number; childCount: number }
 
 export interface BoardTableColumn {
   id: string;
