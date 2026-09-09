@@ -7,7 +7,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { requireWorkspaceAction, requireWorkspaceMembership } from "@/lib/workspace-guard";
+import { requireWorkspaceAction } from "@/lib/workspace-guard";
 
 const CYCLES = ["MONTHLY", "YEARLY"] as const;
 
@@ -87,7 +87,7 @@ export async function patchSubscriptionAction(formData: FormData) {
       data.projectId = null;
     } else {
       // Guard: projekt musi istnieć w TYM workspace.
-      const project = await db.subscriptionProject.findFirst({
+      const project = await db.workspaceProject.findFirst({
         where: { id: parsed.data.projectId, workspaceId: row.workspaceId, deletedAt: null },
         select: { id: true },
       });
@@ -102,115 +102,8 @@ export async function patchSubscriptionAction(formData: FormData) {
 
 // ─── F12-K141: projekty + dostępy (zarządza workspace ADMIN) ───
 
-const createProjectSchema = z.object({
-  workspaceId: z.string().min(1),
-  name: z.string().trim().min(1).max(120),
-});
-
-export async function createSubscriptionProjectAction(formData: FormData) {
-  const parsed = createProjectSchema.safeParse({
-    workspaceId: formData.get("workspaceId"),
-    name: formData.get("name"),
-  });
-  if (!parsed.success) return;
-
-  const ctx = await requireWorkspaceMembership(parsed.data.workspaceId);
-  if (ctx.role !== "ADMIN") return;
-
-  await db.subscriptionProject.create({
-    data: { workspaceId: parsed.data.workspaceId, name: parsed.data.name },
-  });
-  revalidatePath(`/w/${parsed.data.workspaceId}/subscriptions`);
-}
-
-const toggleMemberSchema = z.object({
-  projectId: z.string().min(1),
-  userId: z.string().min(1),
-});
-
-export async function toggleSubscriptionProjectMemberAction(formData: FormData) {
-  const parsed = toggleMemberSchema.safeParse({
-    projectId: formData.get("projectId"),
-    userId: formData.get("userId"),
-  });
-  if (!parsed.success) return;
-
-  const project = await db.subscriptionProject.findUnique({
-    where: { id: parsed.data.projectId },
-    select: { workspaceId: true, deletedAt: true },
-  });
-  if (!project || project.deletedAt) return;
-
-  const ctx = await requireWorkspaceMembership(project.workspaceId);
-  if (ctx.role !== "ADMIN") return;
-
-  // Grantowany user musi być członkiem workspace'u.
-  const target = await db.workspaceMembership.findUnique({
-    where: {
-      workspaceId_userId: {
-        workspaceId: project.workspaceId,
-        userId: parsed.data.userId,
-      },
-    },
-    select: { userId: true },
-  });
-  if (!target) return;
-
-  const existing = await db.subscriptionProjectMember.findUnique({
-    where: {
-      projectId_userId: {
-        projectId: parsed.data.projectId,
-        userId: parsed.data.userId,
-      },
-    },
-  });
-  if (existing) {
-    await db.subscriptionProjectMember.delete({
-      where: {
-        projectId_userId: {
-          projectId: parsed.data.projectId,
-          userId: parsed.data.userId,
-        },
-      },
-    });
-  } else {
-    await db.subscriptionProjectMember.create({
-      data: { projectId: parsed.data.projectId, userId: parsed.data.userId },
-    });
-  }
-  revalidatePath(`/w/${project.workspaceId}/subscriptions`);
-}
-
-const deleteProjectSchema = z.object({ projectId: z.string().min(1) });
-
-export async function deleteSubscriptionProjectAction(formData: FormData) {
-  const parsed = deleteProjectSchema.safeParse({
-    projectId: formData.get("projectId"),
-  });
-  if (!parsed.success) return;
-
-  const project = await db.subscriptionProject.findUnique({
-    where: { id: parsed.data.projectId },
-    select: { workspaceId: true, deletedAt: true },
-  });
-  if (!project || project.deletedAt) return;
-
-  const ctx = await requireWorkspaceMembership(project.workspaceId);
-  if (ctx.role !== "ADMIN") return;
-
-  // Soft-delete projektu + odpięcie subskrypcji (wracają do "wspólnych").
-  await db.$transaction([
-    db.subscription.updateMany({
-      where: { projectId: parsed.data.projectId },
-      data: { projectId: null },
-    }),
-    db.subscriptionProject.update({
-      where: { id: parsed.data.projectId },
-      data: { deletedAt: new Date() },
-    }),
-  ]);
-  revalidatePath(`/w/${project.workspaceId}/subscriptions`);
-}
+// Projekty i dostepy: app/(app)/w/[workspaceId]/project-actions.ts — wspolne
+// z Zapotrzebowaniem.
 
 const deleteSchema = z.object({ id: z.string().min(1) });
 

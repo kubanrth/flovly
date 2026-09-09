@@ -7,7 +7,7 @@ import { SubscriptionsTable } from "@/components/subscriptions/subscriptions-tab
 // Widoczność wierszy:
 //   - workspace ADMIN → wszystko
 //   - członek → subskrypcje bez projektu + z projektów w których jest
-//     członkiem (SubscriptionProjectMember)
+//     członkiem projektu (projekty są wspólne z Zapotrzebowaniem)
 export default async function SubscriptionsPage({
   params,
 }: {
@@ -42,7 +42,7 @@ export default async function SubscriptionsPage({
         projectId: true,
       },
     }),
-    db.subscriptionProject.findMany({
+    db.workspaceProject.findMany({
       where: {
         workspaceId,
         deletedAt: null,

@@ -14,29 +14,43 @@ import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTi
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input, InputGroup } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { IconCart, IconEdit, IconExternal, IconPlus, IconSearch, IconTrash } from "@/components/ui/icons";
+import { Select } from "@/components/ui/select";
+import { IconCart, IconEdit, IconExternal, IconFolder, IconPlus, IconSearch, IconTrash } from "@/components/ui/icons";
+import { ProjectsDialog, type ProjectMemberItem, type WorkspaceProjectItem } from "@/components/projects/projects-dialog";
 import { formatPln } from "@/components/subscriptions/money";
 import { linkHost } from "@/components/purchases/purchases-model";
 import { deletePurchaseAction, savePurchaseAction, type SavePurchaseState } from "@/app/(app)/w/[workspaceId]/purchases/actions";
 
 export interface PurchaseItem {
-  id: string; project: string; link: string | null; costCents: number | null; createdAt: string;
+  id: string; projectId: string | null; link: string | null; costCents: number | null; createdAt: string;
   requester: { id: string; name: string | null; email: string; avatarUrl: string | null };
 }
+
+// Sentinele <Select> — pusty string jest nieodrozniamy od „nic nie wybrano".
+const ALL = "all";
+const NONE = "none";
+const WSPOLNE = "— wspólne —";
 
 const kto = (u: PurchaseItem["requester"]) => u.name?.trim() || u.email.split("@")[0]!;
 const kiedy = (iso: string) => new Date(iso).toLocaleDateString("pl-PL", { day: "numeric", month: "short", year: "numeric" });
 /** Do pola formularza: „129,99" bez jednostki (formatPln daje „129,99 zł"). */
 const doPola = (cents: number | null) => (cents === null ? "" : (cents / 100).toFixed(2).replace(".", ","));
 
-export function PurchasesTool({ workspaceId, currentUserId, canManage, items }: {
-  workspaceId: string; currentUserId: string; canManage: boolean; items: PurchaseItem[];
+export function PurchasesTool({ workspaceId, currentUserId, canManage, isAdmin, items, projects, members }: {
+  workspaceId: string; currentUserId: string; canManage: boolean; isAdmin: boolean;
+  items: PurchaseItem[]; projects: WorkspaceProjectItem[]; members: ProjectMemberItem[];
 }) {
   const [query, setQuery] = useState("");
   const [dialog, setDialog] = useState<null | "new" | PurchaseItem>(null);
+  const [projectsOpen, setProjectsOpen] = useState(false);
+  const [filter, setFilter] = useState(ALL);
 
+  const nazwaProjektu = (id: string | null) => (id ? projects.find((p) => p.id === id)?.name ?? "Projekt bez dostępu" : WSPOLNE);
   const q = query.trim().toLowerCase();
-  const visible = items.filter((i) => !q || i.project.toLowerCase().includes(q) || (i.link ?? "").toLowerCase().includes(q) || kto(i.requester).toLowerCase().includes(q));
+  const visible = items.filter((i) => {
+    if (filter === NONE ? i.projectId !== null : filter !== ALL && i.projectId !== filter) return false;
+    return !q || nazwaProjektu(i.projectId).toLowerCase().includes(q) || (i.link ?? "").toLowerCase().includes(q) || kto(i.requester).toLowerCase().includes(q);
+  });
   const suma = visible.reduce((acc, i) => acc + (i.costCents ?? 0), 0);
 
   return (
@@ -58,6 +72,24 @@ export function PurchasesTool({ workspaceId, currentUserId, canManage, items }: 
 
       <div className="flex shrink-0 items-center gap-2 border-b border-border px-8 pt-3 pb-2.5 max-md:px-4">
         <InputGroup size="sm" type="search" className="w-[260px] max-md:w-full" leading={<IconSearch />} placeholder="Szukaj projektu, linku, osoby…" aria-label="Szukaj zgłoszenia" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <Select
+          size="sm"
+          className="w-[200px] max-md:w-full"
+          aria-label="Filtr projektu"
+          value={filter}
+          onValueChange={setFilter}
+          items={[
+            { value: ALL, label: "Wszystkie projekty" },
+            { value: NONE, label: "Bez projektu" },
+            ...projects.map((p) => ({ value: p.id, label: p.name })),
+          ]}
+        />
+        {isAdmin && (
+          <Button variant="secondary" size="sm" className="shrink-0" onClick={() => setProjectsOpen(true)}>
+            <IconFolder width={14} height={14} />
+            Projekty i dostępy
+          </Button>
+        )}
       </div>
 
       {visible.length === 0 ? (
@@ -87,7 +119,7 @@ export function PurchasesTool({ workspaceId, currentUserId, canManage, items }: 
           <tbody>
             {visible.map((i) => (
               <DataTr key={i.id} data-ui="purchase-row" className="h-11">
-                <DataTd className="font-medium">{i.project}</DataTd>
+                <DataTd className={cn("font-medium", i.projectId === null && "font-normal text-fg-3")}>{nazwaProjektu(i.projectId)}</DataTd>
                 <DataTd>
                   {i.link ? (
                     <a href={i.link} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1 text-link no-underline hover:underline">
@@ -107,9 +139,9 @@ export function PurchasesTool({ workspaceId, currentUserId, canManage, items }: 
                 {canManage && (
                   <DataTd>
                     <span className="flex items-center gap-0.5">
-                      <Button variant="ghost" size="sm" iconOnly aria-label={`Edytuj zgłoszenie ${i.project}`} onClick={() => setDialog(i)}><IconEdit /></Button>
-                      <Button variant="ghost" size="sm" iconOnly aria-label={`Usuń zgłoszenie ${i.project}`} className="text-fg-3 hover:text-danger-text" onClick={() => {
-                        if (!confirm(`Usunąć zgłoszenie „${i.project}”?`)) return;
+                      <Button variant="ghost" size="sm" iconOnly aria-label={`Edytuj zgłoszenie ${nazwaProjektu(i.projectId)}`} onClick={() => setDialog(i)}><IconEdit /></Button>
+                      <Button variant="ghost" size="sm" iconOnly aria-label={`Usuń zgłoszenie ${nazwaProjektu(i.projectId)}`} className="text-fg-3 hover:text-danger-text" onClick={() => {
+                        if (!confirm(`Usunąć zgłoszenie z projektu „${nazwaProjektu(i.projectId)}”?`)) return;
                         const fd = new FormData(); fd.set("id", i.id);
                         startTransition(() => deletePurchaseAction(fd));
                       }}><IconTrash /></Button>
@@ -123,13 +155,27 @@ export function PurchasesTool({ workspaceId, currentUserId, canManage, items }: 
       )}
 
       {dialog !== null && (
-        <PurchaseDialog key={dialog === "new" ? "new" : dialog.id} workspaceId={workspaceId} initial={dialog === "new" ? undefined : dialog} onClose={() => setDialog(null)} />
+        <PurchaseDialog
+          key={dialog === "new" ? "new" : dialog.id}
+          workspaceId={workspaceId}
+          projects={projects}
+          initial={dialog === "new" ? undefined : dialog}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {isAdmin && (
+        <ProjectsDialog co="zgłoszenia zakupowe" open={projectsOpen} onOpenChange={setProjectsOpen} workspaceId={workspaceId} projects={projects} members={members} />
       )}
     </div>
   );
 }
 
-function PurchaseDialog({ workspaceId, initial, onClose }: { workspaceId: string; initial?: PurchaseItem; onClose: () => void }) {
+function PurchaseDialog({ workspaceId, projects, initial, onClose }: {
+  workspaceId: string; projects: WorkspaceProjectItem[]; initial?: PurchaseItem; onClose: () => void;
+}) {
+  // `projectId` idzie do formularza przez ukryte pole — <Select> nie jest natywnym
+  // <select>, wiec sam nic nie wysyla.
+  const [projectId, setProjectId] = useState(initial?.projectId ?? "");
   const [state, formAction, pending] = useActionState<SavePurchaseState, FormData>(savePurchaseAction, null);
   useEffect(() => { if (state?.ok) onClose(); }, [state, onClose]);
   const err = (k: "project" | "link" | "cost") => (state && !state.ok ? state.fieldErrors?.[k] : undefined);
@@ -143,7 +189,17 @@ function PurchaseDialog({ workspaceId, initial, onClose }: { workspaceId: string
           <DialogBody className="flex flex-col gap-3">
             <div>
               <Label htmlFor="pr-project" className="mb-[5px]">Projekt</Label>
-              <Input id="pr-project" name="project" required maxLength={200} autoFocus defaultValue={initial?.project ?? ""} placeholder="np. Sesja zdjęciowa — jesień" error={err("project")} />
+              <input type="hidden" name="projectId" value={projectId} />
+              <Select
+                id="pr-project"
+                value={projectId || NONE}
+                onValueChange={(v) => setProjectId(v === NONE ? "" : v)}
+                items={[{ value: NONE, label: WSPOLNE }, ...projects.map((p) => ({ value: p.id, label: p.name }))]}
+              />
+              <p className="mt-1 text-2xs text-fg-3">
+                {projectId ? "Zgłoszenie zobaczą osoby z tego projektu i administratorzy." : "Bez projektu — zgłoszenie widzi cała przestrzeń."}
+              </p>
+              {err("project") && <p className="mt-1 text-xs text-danger-text">{err("project")}</p>}
             </div>
             <div>
               <Label htmlFor="pr-link" className="mb-[5px]">Link</Label>

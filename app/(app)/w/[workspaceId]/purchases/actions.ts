@@ -14,7 +14,8 @@ import { MAX_LINK, normalizeLink } from "@/components/purchases/purchases-model"
 const saveSchema = z.object({
   workspaceId: z.string().min(1),
   id: z.string().min(1).optional(),
-  project: z.string().trim().min(1, "Podaj projekt.").max(200, "Za długa nazwa projektu."),
+  // Pusty = zgloszenie wspolne (widoczne dla calej przestrzeni).
+  projectId: z.string().trim().max(60).optional(),
   link: z.string().trim().max(MAX_LINK, "Za długi link.").optional(),
   cost: z.string().trim().max(40).optional(),
 });
@@ -28,7 +29,7 @@ export async function savePurchaseAction(_prev: SavePurchaseState, formData: For
   const parsed = saveSchema.safeParse({
     workspaceId: formData.get("workspaceId"),
     id: formData.get("id") || undefined,
-    project: formData.get("project"),
+    projectId: formData.get("projectId") || undefined,
     link: formData.get("link") || undefined,
     cost: formData.get("cost") || undefined,
   });
@@ -36,11 +37,12 @@ export async function savePurchaseAction(_prev: SavePurchaseState, formData: For
     const fe: { project?: string; link?: string; cost?: string } = {};
     for (const i of parsed.error.issues) {
       const k = i.path[0];
-      if (k === "project" || k === "link" || k === "cost") fe[k] = i.message;
+      if (k === "projectId") fe.project = i.message;
+      else if (k === "link" || k === "cost") fe[k] = i.message;
     }
     return { ok: false, fieldErrors: fe };
   }
-  const { workspaceId, id, project } = parsed.data;
+  const { workspaceId, id } = parsed.data;
   const link = parsed.data.link ? normalizeLink(parsed.data.link) : null;
   if (parsed.data.link && !link) return { ok: false, fieldErrors: { link: "To nie wygląda na adres strony." } };
   let costCents: number | null = null;
@@ -50,16 +52,31 @@ export async function savePurchaseAction(_prev: SavePurchaseState, formData: For
   }
   const ctx = await requireWorkspaceAction(workspaceId, "purchase.manage");
 
+  // Projekt musi byc z tej przestrzeni i zywy; nie-admin moze wybrac tylko taki,
+  // do ktorego sam ma dostep — inaczej schowalby zgloszenie przed soba.
+  let projectId: string | null = null;
+  if (parsed.data.projectId) {
+    const project = await db.workspaceProject.findFirst({
+      where: {
+        id: parsed.data.projectId, workspaceId, deletedAt: null,
+        ...(ctx.role === "ADMIN" ? {} : { members: { some: { userId: ctx.userId } } }),
+      },
+      select: { id: true },
+    });
+    if (!project) return { ok: false, fieldErrors: { project: "Nie ma takiego projektu." } };
+    projectId = project.id;
+  }
+
   if (id) {
     const existing = await db.purchaseRequest.findUnique({ where: { id }, select: { workspaceId: true, deletedAt: true } });
     if (!existing || existing.deletedAt || existing.workspaceId !== workspaceId) return { ok: false, error: "Zgłoszenie nie istnieje." };
-    await db.purchaseRequest.update({ where: { id }, data: { project, link, costCents } });
-    await writeAudit({ workspaceId, objectType: "PurchaseRequest", objectId: id, actorId: ctx.userId, action: "purchase.updated", diff: { project, costCents } });
+    await db.purchaseRequest.update({ where: { id }, data: { projectId, link, costCents } });
+    await writeAudit({ workspaceId, objectType: "PurchaseRequest", objectId: id, actorId: ctx.userId, action: "purchase.updated", diff: { projectId, costCents } });
     revalidatePath(`/w/${workspaceId}/purchases`);
     return { ok: true, id };
   }
-  const created = await db.purchaseRequest.create({ data: { workspaceId, requesterId: ctx.userId, project, link, costCents } });
-  await writeAudit({ workspaceId, objectType: "PurchaseRequest", objectId: created.id, actorId: ctx.userId, action: "purchase.created", diff: { project, costCents } });
+  const created = await db.purchaseRequest.create({ data: { workspaceId, requesterId: ctx.userId, projectId, link, costCents } });
+  await writeAudit({ workspaceId, objectType: "PurchaseRequest", objectId: created.id, actorId: ctx.userId, action: "purchase.created", diff: { projectId, costCents } });
   revalidatePath(`/w/${workspaceId}/purchases`);
   return { ok: true, id: created.id };
 }
@@ -67,10 +84,10 @@ export async function savePurchaseAction(_prev: SavePurchaseState, formData: For
 export async function deletePurchaseAction(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  const existing = await db.purchaseRequest.findUnique({ where: { id }, select: { workspaceId: true, deletedAt: true, project: true } });
+  const existing = await db.purchaseRequest.findUnique({ where: { id }, select: { workspaceId: true, deletedAt: true, projectId: true } });
   if (!existing || existing.deletedAt) return;
   const ctx = await requireWorkspaceAction(existing.workspaceId, "purchase.manage");
   await db.purchaseRequest.update({ where: { id }, data: { deletedAt: new Date() } });
-  await writeAudit({ workspaceId: existing.workspaceId, objectType: "PurchaseRequest", objectId: id, actorId: ctx.userId, action: "purchase.deleted", diff: { project: existing.project } });
+  await writeAudit({ workspaceId: existing.workspaceId, objectType: "PurchaseRequest", objectId: id, actorId: ctx.userId, action: "purchase.deleted", diff: { projectId: existing.projectId } });
   revalidatePath(`/w/${existing.workspaceId}/purchases`);
 }

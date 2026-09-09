@@ -216,8 +216,8 @@ async function main() {
   await secret("Google Ads — konto agencyjne", "ads", "https://ads.google.com", "ads@nova.agency", "Demo-Haslo-2!", marta.id);
   await secret("Hosting — panel klienta", "hosting", "https://panel.hosting.pl", "nova-agency", "Demo-Haslo-3!", piotr.id);
   await secret("WiFi biuro", "biuro", "", "Nova-Guest", "Demo-Haslo-4!", admin.id);
-  const projA = await db.subscriptionProject.create({ data: { workspaceId: W, name: "Bistro Verde", members: { create: [{ userId: marta.id }, { userId: admin.id }] } } });
-  const projB = await db.subscriptionProject.create({ data: { workspaceId: W, name: "Narzędzia agencji", members: { create: [{ userId: admin.id }, { userId: marta.id }, { userId: piotr.id }, { userId: kasia.id }] } } });
+  const projA = await db.workspaceProject.create({ data: { workspaceId: W, name: "Bistro Verde", members: { create: [{ userId: marta.id }, { userId: admin.id }] } } });
+  const projB = await db.workspaceProject.create({ data: { workspaceId: W, name: "Narzędzia agencji", members: { create: [{ userId: admin.id }, { userId: marta.id }, { userId: piotr.id }, { userId: kasia.id }] } } });
   await db.subscription.createMany({ data: [
     { workspaceId: W, projectId: projB.id, name: "Figma Professional", url: "https://figma.com", amountCents: 6_000, cycle: "MONTHLY", notes: "3 edytory" },
     { workspaceId: W, projectId: projB.id, name: "Adobe Creative Cloud", url: "https://adobe.com", amountCents: 24_900, cycle: "MONTHLY" },
@@ -231,11 +231,13 @@ async function main() {
     { workspaceId: W, creatorId: marta.id, title: "Kawiarnie Ziarno — rebranding", details: [{ label: "Kontrahent", value: "Ziarno Coffee S.A." }, { label: "Zakres", value: "Logo, identyfikacja, księga znaku" }, { label: "Wartość", value: "28 000 zł netto" }, { label: "Stały rabat hurtowy", value: "6%" }] },
     { workspaceId: W, creatorId: admin.id, title: "Drukarnia Kolor — umowa ramowa", details: [{ label: "Czas trwania umowy", value: "2 lata" }, { label: "Stały rabat hurtowy", value: "6%" }, { label: "Termin płatności", value: "21 dni" }] },
   ] });
+  // Projekty sa wspolne z Subskrypcjami — dostep do projektu decyduje, kto widzi
+  // zgloszenie; bez projektu = widzi cala przestrzen.
   await db.purchaseRequest.createMany({ data: [
-    { workspaceId: W, requesterId: kasia.id, project: "Bistro Verde", link: "https://www.shutterstock.com/", costCents: 39_900 },
-    { workspaceId: W, requesterId: piotr.id, project: "Strona www — redesign", link: "https://themeforest.net/", costCents: 25_900 },
-    { workspaceId: W, requesterId: marta.id, project: "Narzędzia agencji", link: "https://www.notion.so/pricing", costCents: 8_000 },
-    { workspaceId: W, requesterId: admin.id, project: "Biuro", costCents: 149_000 },
+    { workspaceId: W, requesterId: kasia.id, projectId: projA.id, link: "https://www.shutterstock.com/", costCents: 39_900 },
+    { workspaceId: W, requesterId: piotr.id, projectId: projB.id, link: "https://themeforest.net/", costCents: 25_900 },
+    { workspaceId: W, requesterId: marta.id, projectId: projB.id, link: "https://www.notion.so/pricing", costCents: 8_000 },
+    { workspaceId: W, requesterId: admin.id, costCents: 149_000 },
   ] });
   await db.document.createMany({ data: [
     { workspaceId: W, uploaderId: marta.id, filename: "Brief_Bistro_Verde_Q4.pdf", mimeType: "application/pdf", sizeBytes: 842_000, storageKey: `w/${W}/doc/demo-brief.pdf` },

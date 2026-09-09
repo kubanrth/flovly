@@ -112,7 +112,7 @@ model User {
   // F12-K133: TimeCamp-like time entries + approvals.
   timeEntries        TimeEntry[]           @relation("TimeEntryUser")
   // F12-K141: członkostwa w projektach subskrypcji.
-  subscriptionProjectMemberships SubscriptionProjectMember[]
+  projectMemberships WorkspaceProjectMember[]
   approvedTimeEntries TimeEntry[]          @relation("TimeEntryApprover")
 
   @@index([isBanned])
@@ -245,7 +245,7 @@ model Workspace {
   // F12-K140: subskrypcje firmy.
   subscriptions        Subscription[]
   // F12-K141: projekty subskrypcji.
-  subscriptionProjects SubscriptionProject[]
+  projects             WorkspaceProject[]
 
   @@index([ownerId])
   @@index([deletedAt])
@@ -362,17 +362,21 @@ model PurchaseRequest {
   id          String    @id @default(cuid())
   workspaceId String
   requesterId String
-  project     String
+  // Pusty = zgloszenie wspolne, widoczne dla calej przestrzeni (jak subskrypcja
+  // bez projektu). Wczesniej byla tu nazwa projektu wpisywana recznie.
+  projectId   String?
   link        String?
   costCents   Int?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  requester User      @relation("PurchaseRequester", fields: [requesterId], references: [id])
+  workspace Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  requester User              @relation("PurchaseRequester", fields: [requesterId], references: [id])
+  project   WorkspaceProject? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, deletedAt])
+  @@index([projectId])
 }
 
 // F12-K133: TimeCamp-like time tracking.
@@ -438,7 +442,7 @@ model Subscription {
   deletedAt   DateTime?
 
   workspace Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  project   SubscriptionProject? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  project   WorkspaceProject?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, deletedAt])
 }
@@ -446,7 +450,10 @@ model Subscription {
 // F12-K141: projekt w module subskrypcji — nazwa + lista userów z dostępem.
 // Workspace ADMIN zarządza projektami i dostępami; członek projektu widzi
 // (i może weryfikować) koszty subskrypcji przypisanych do projektu.
-model SubscriptionProject {
+// Projekt przestrzeni: grupuje koszty (Subskrypcje) i zgloszenia zakupowe
+// (Zapotrzebowanie), a lista czlonkow decyduje, kto je widzi. Tabela nazywa sie
+// jeszcze `SubscriptionProject` — z czasow, gdy projekty mialy tylko subskrypcje.
+model WorkspaceProject {
   id          String    @id @default(cuid())
   workspaceId String
   name        String
@@ -455,21 +462,25 @@ model SubscriptionProject {
   deletedAt   DateTime?
 
   workspace     Workspace                   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  members       SubscriptionProjectMember[]
+  members       WorkspaceProjectMember[]
+  purchases     PurchaseRequest[]
   subscriptions Subscription[]
 
   @@index([workspaceId, deletedAt])
+
+  @@map("SubscriptionProject")
 }
 
-model SubscriptionProjectMember {
+model WorkspaceProjectMember {
   projectId String
   userId    String
 
-  project SubscriptionProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project WorkspaceProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([projectId, userId])
   @@index([userId])
+  @@map("SubscriptionProjectMember")
 }
 
 model WorkspaceMembership {
