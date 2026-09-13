@@ -9,7 +9,7 @@ import type { BoardTableTask, CustomTableColumn } from "./types";
 const task = (over: Partial<BoardTableTask>): BoardTableTask => ({
   id: "t", displayId: 1, title: "x", statusColumnId: null, priority: "NONE", startAt: null, stopAt: null,
   createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z", assignees: [], tags: [], customValues: {},
-  attachments: [], milestone: null, hasDescription: false, commentCount: 0, subtaskCount: 0, subtaskDoneCount: 0, linkedCount: 0,
+  attachments: [], milestone: null, category: null, hasDescription: false, commentCount: 0, subtaskCount: 0, subtaskDoneCount: 0, linkedCount: 0,
   parentId: null, subtasks: [], linked: [],
   ...over,
 });
@@ -30,6 +30,19 @@ const g = groupTasks(
 assert.deepEqual(g.map((x) => [x.key, x.label, x.hue, x.rows.length]), [["_empty", "Bez statusu", "gray", 1], ["s1", "Do zrobienia", "gray", 1], ["s2", "Gotowe", "green", 1]]);
 assert.equal(g[2]!.sums[0]!.text, "5");
 assert.equal(groupTasks([task({})], null, { statusColumns: [], customColumns: [] })[0]!.key, "_all");
+
+// F15: grupowanie po kategorii — kolejność z ustawień tablicy, „— brak —" na końcu, kolor z kategorii.
+{
+  const kreacja = { id: "k1", name: "Kreacja", colorHex: "#FF5C00" };
+  const media = { id: "k2", name: "Media", colorHex: "#2F6FE8" };
+  const gk = groupTasks(
+    [task({ id: "a", category: media }), task({ id: "b" }), task({ id: "c", category: kreacja }), task({ id: "d", category: media })],
+    "category",
+    { statusColumns: [], customColumns: [], categories: [kreacja, media] },
+  );
+  assert.deepEqual(gk.map((x) => [x.key, x.label, x.rows.length]), [["k1", "Kreacja", 1], ["k2", "Media", 2], ["_empty", "— brak —", 1]]);
+  assert.equal(gk[0]!.hue, hueForColor("#FF5C00"));
+}
 
 const cols = [{ id: "statusColumnId", label: "Status", kind: "BUILTIN_STATUS" as const, options: [{ value: "s1", label: "W toku" }] }, { id: "title", label: "Tytuł", kind: "BUILTIN_TITLE" as const }];
 assert.equal(describeFilter({ columnId: "statusColumnId", kind: "BUILTIN_STATUS", op: "equals", value: "s1" }, cols), "Status: W toku");

@@ -25,6 +25,7 @@ export const BUILTIN_COLUMNS: BuiltinColumnDef[] = [
   { id: "startAt", label: "Start", width: 96, minWidth: 72, kind: "BUILTIN_DATE" },
   { id: "stopAt", label: "Koniec", width: 96, minWidth: 72, kind: "BUILTIN_DATE" },
   { id: "attachments", label: "Załączniki", width: 96, minWidth: 64, kind: "NUMBER" },
+  { id: "category", label: "Kategoria", width: 136, minWidth: 90, kind: "TEXT" },
   { id: "milestone", label: "Milestone", width: 136, minWidth: 90, kind: "TEXT" },
 ];
 

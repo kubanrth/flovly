@@ -8,7 +8,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { useUiPref } from "@/hooks/use-ui-pref";
 import type { TaskPriorityValue } from "@/lib/task-priority";
-import type { KanbanGroupBy, KanbanMember, KanbanSort, KanbanStatusColumn } from "@/components/kanban/kanban-model";
+import type { KanbanCategory, KanbanGroupBy, KanbanMember, KanbanSort, KanbanStatusColumn } from "@/components/kanban/kanban-model";
 
 export interface KanbanMeta {
   workspaceId: string;
@@ -19,6 +19,8 @@ export interface KanbanMeta {
   canManageBoard: boolean;
   statusColumns: KanbanStatusColumn[];
   members: KanbanMember[];
+  // F15: tory „Kategoria" w trybie swimlane.
+  categories: KanbanCategory[];
 }
 
 interface KanbanPrefs {

@@ -223,7 +223,7 @@ export function BoardToolbar(p: BoardToolbarProps) {
       )}
 
       {p.sections &&
-        popoverButton(p.sectionsLabel ?? "Sekcje", p.sections, {
+        popoverButton(p.sectionsLabel ?? "Kategorie", p.sections, {
           className: BORDERED,
           active: p.sectionsActive,
         })}

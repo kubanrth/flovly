@@ -227,6 +227,7 @@ async function TableRenderer({
     include: {
       statusColumns: { orderBy: { order: "asc" } },
       customColumns: { orderBy: { order: "asc" } },
+      categories: { orderBy: { order: "asc" }, select: { id: true, name: true, colorHex: true } },
       tasks: {
         // F12-K131: named views (custom) pokazują TYLKO task'i explicit
         // przypisane przez TaskView join. Default view (`/table`) pokazuje
@@ -256,6 +257,7 @@ async function TableRenderer({
         customColumns: board.customColumns.map((c) => ({ id: c.id, name: c.name, type: c.type as CustomTableColumn["type"], options: c.options })),
         members: memberships.map((m) => m.user),
         allTags,
+        categories: board.categories,
         workspaceBoards,
       }}
       initialConfig={parseListConfig(configJson)}
@@ -285,6 +287,7 @@ async function KanbanRenderer({
       where: { id: boardId },
       include: {
         statusColumns: { orderBy: { order: "asc" } },
+        categories: { orderBy: { order: "asc" }, select: { id: true, name: true, colorHex: true } },
         tasks: {
           // F12-K131: filter przez TaskView join — named view = tylko
           // task'i explicit przypisane. Kanban path (custom KANBAN view).
@@ -299,6 +302,7 @@ async function KanbanRenderer({
               include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
             },
             tags: { include: { tag: true } },
+            category: { select: { id: true, name: true, colorHex: true } },
             _count: {
               select: {
                 comments: { where: { deletedAt: null } },
@@ -324,6 +328,7 @@ async function KanbanRenderer({
       workspaceId={workspaceId}
       boardId={boardId}
       canManageBoard={canManageBoard}
+      categories={board.categories}
       statusColumns={board.statusColumns.map((c) => ({
         id: c.id,
         name: c.name,
@@ -348,6 +353,7 @@ async function KanbanRenderer({
           name: tt.tag.name,
           colorHex: tt.tag.colorHex,
         })),
+        category: t.category,
         hasDescription: docHasText(t.descriptionJson),
         commentCount: t._count.comments,
         subtaskCount: t.subtasks.length,

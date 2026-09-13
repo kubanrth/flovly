@@ -14,6 +14,8 @@ export interface BoardMeta {
   // Do wyboru milestone'a przy tworzeniu zadania. Daty sa potrzebne, zeby
   // pokazac zakres i ostrzec, zanim serwer odrzuci przypisanie.
   milestones: { id: string; title: string; startAt: string; stopAt: string }[];
+  // F15: kategorie tablicy — do wyboru od razu przy tworzeniu.
+  categories: { id: string; name: string; colorHex: string }[];
 }
 
 export async function getBoardMetaAction(workspaceId: string, boardId: string): Promise<BoardMeta | null> {
@@ -26,6 +28,7 @@ export async function getBoardMetaAction(workspaceId: string, boardId: string): 
         statusColumns: { orderBy: { order: "asc" }, select: { id: true, name: true, colorHex: true } },
         views: { where: { name: { not: null } }, orderBy: { createdAt: "asc" }, select: { id: true, name: true } },
         milestones: { where: { deletedAt: null }, orderBy: { startAt: "asc" }, select: { id: true, title: true, startAt: true, stopAt: true } },
+        categories: { orderBy: { order: "asc" }, select: { id: true, name: true, colorHex: true } },
       },
     }),
     db.workspaceMembership.findMany({
@@ -43,5 +46,6 @@ export async function getBoardMetaAction(workspaceId: string, boardId: string): 
     milestones: board.milestones.map((m) => ({
       id: m.id, title: m.title, startAt: m.startAt.toISOString(), stopAt: m.stopAt.toISOString(),
     })),
+    categories: board.categories,
   };
 }

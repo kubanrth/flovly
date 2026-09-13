@@ -13,6 +13,8 @@ export const createTaskSchema = z.object({
   priority: taskPriorityZ.optional(),
   // F13: tworzenie zadania podrzednego z panelu rodzica.
   parentId: z.string().min(1).optional(),
+  // F15: kategoria wybrana od razu w dialogu „Nowe zadanie".
+  categoryId: z.string().min(1).optional(),
 });
 
 // Loose ProseMirror doc shape. We don't deeply validate content nodes —

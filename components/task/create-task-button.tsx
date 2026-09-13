@@ -28,6 +28,7 @@ import {
   toggleAssigneeAction,
 } from "@/app/(app)/w/[workspaceId]/t/actions";
 import { assignTaskToMilestoneAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/milestone-actions";
+import { createTaskCategoryAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/category-actions";
 import type { TaskPriorityValue } from "@/lib/task-priority";
 import type { ShellBoard } from "@/components/layout/shell-types";
 import { getBoardMetaAction, type BoardMeta } from "./create-task-meta";
@@ -101,6 +102,8 @@ const PRIORITY_ITEMS = [
 ];
 const DEFAULT_VIEW = "default";
 const NO_MILESTONE = "none";
+const NO_CATEGORY = "none";
+const NEW_CATEGORY = "__new__";
 
 const dzien = (iso: string) => new Date(iso).toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
 const zakres = (od: string, do_: string) => `${dzien(od)} – ${dzien(do_)}`;
@@ -150,6 +153,10 @@ export function CreateTaskDialog({ workspaceId, boardId, boards = [], viewId, op
   const [assignees, setAssignees] = useState<string[]>([]);
   const [view, setView] = useState<string | null>(viewId ?? null);
   const [milestone, setMilestone] = useState<string | null>(null);
+  // F15: kategoria od razu przy tworzeniu; „Nowa kategoria…" zakłada ją w locie.
+  const [category, setCategory] = useState<string | null>(null);
+  const [newCategory, setNewCategory] = useState<string | null>(null);
+  const [extraCategories, setExtraCategories] = useState<{ id: string; name: string; colorHex: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const status = statusId && meta?.statuses.some((s) => s.id === statusId) ? statusId : (meta?.statuses[0]?.id ?? null);
@@ -165,8 +172,25 @@ export function CreateTaskDialog({ workspaceId, boardId, boards = [], viewId, op
     wybranyMilestone && stopAt && new Date(stopAt) > new Date(wybranyMilestone.stopAt),
   );
 
+  const categories = [...(meta?.categories ?? []), ...extraCategories.filter((e) => !meta?.categories.some((c) => c.id === e.id))];
+  const addCategory = () => {
+    const name = newCategory?.trim();
+    if (!name || !board) return;
+    const fd = new FormData();
+    fd.set("boardId", board);
+    fd.set("name", name);
+    startTransition(async () => {
+      const res = await createTaskCategoryAction(fd);
+      if (!res.ok) { setError(res.error); return; }
+      setExtraCategories((e) => [...e, res.category]);
+      setCategory(res.category.id);
+      setNewCategory(null);
+    });
+  };
+
   const reset = () => {
     setTitle(""); setStatusId(null); setPriority("MEDIUM"); setStopAt(""); setAssignees([]); setView(viewId ?? null); setMilestone(null); setError(null);
+    setCategory(null); setNewCategory(null);
     if (!boardId) setPickedBoard(null);
   };
   const handleOpenChange = (o: boolean) => { if (!o) reset(); onOpenChange(o); };
@@ -181,6 +205,7 @@ export function CreateTaskDialog({ workspaceId, boardId, boards = [], viewId, op
     if (status) fd.set("statusColumnId", status);
     fd.set("priority", priority);
     if (view && view !== DEFAULT_VIEW) fd.set("viewId", view);
+    if (category && category !== NO_CATEGORY) fd.set("categoryId", category);
     startTransition(async () => {
       const res = await createTaskAction(null, fd);
       if (!res?.ok) {
@@ -292,6 +317,24 @@ export function CreateTaskDialog({ workspaceId, boardId, boards = [], viewId, op
             })}
             <span className="truncate text-fg-3">Dodaj osobę…</span>
           </PersonPicker>
+        </div>
+        <div>
+          <Label className="mb-[5px]">Kategoria <span className="font-normal text-fg-3">(opcjonalnie)</span></Label>
+          <Select aria-label="Kategoria" size={size} placeholder="Bez kategorii" value={newCategory !== null ? NEW_CATEGORY : (category ?? NO_CATEGORY)}
+            onValueChange={(v) => { if (v === NEW_CATEGORY) { setNewCategory(""); return; } setNewCategory(null); setCategory(v); }}
+            items={[
+              { value: NO_CATEGORY, label: "Bez kategorii" },
+              ...categories.map((c) => ({ value: c.id, label: <StatusChip label={c.name} hue={hueForColor(c.colorHex)} /> })),
+              { value: NEW_CATEGORY, label: <span className="inline-flex items-center gap-1"><IconPlus width={12} height={12} /> Nowa kategoria…</span> },
+            ]} />
+          {newCategory !== null && (
+            <div className="mt-1.5 flex gap-1.5">
+              <Input size={size} autoFocus maxLength={60} placeholder="Nazwa kategorii" aria-label="Nazwa nowej kategorii" value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); addCategory(); } if (e.key === "Escape") setNewCategory(null); }} />
+              <Button type="button" size={size} variant="secondary" disabled={!newCategory.trim() || pending} onClick={addCategory}>Dodaj</Button>
+            </div>
+          )}
         </div>
         <div>
           <Label className="mb-[5px]">Milestone <span className="font-normal text-fg-3">(opcjonalnie)</span></Label>

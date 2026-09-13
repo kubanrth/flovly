@@ -38,6 +38,7 @@ export interface TaskDetailProps {
     statusColumnId: string | null;
     priority: TaskPriorityValue;
     milestoneId: string | null;
+    categoryId: string | null;
     startAt: string | null;
     stopAt: string | null;
     reminderAt: string | null;
@@ -50,6 +51,8 @@ export interface TaskDetailProps {
   };
   statusColumns: { id: string; name: string; colorHex: string }[];
   milestones: { id: string; title: string; startAt: string; stopAt: string }[];
+  // F15: kategorie tablicy — pole „Kategoria" w szczegółach.
+  categories: { id: string; name: string; colorHex: string }[];
   allMembers: { id: string; name: string | null; email: string; avatarUrl: string | null }[];
   assigneeIds: Set<string>;
   allTags: { id: string; name: string; colorHex: string }[];
@@ -174,6 +177,7 @@ export function TaskDetail(props: TaskDetailProps) {
     mode, workspaceId, task, milestones: props.milestones, allMembers, assigneeIds: props.assigneeIds, allTags: props.allTags, tagIds: props.tagIds,
     canEdit, customColumns: props.customColumns, customValues: props.customValues, meta: meta ?? null, lastActor, onMutate,
     taskTitle: task.title, accessUserIds: props.accessUserIds,
+    boardId: props.boardId, categories: props.categories,
   };
   const mentionMembers = allMembers;
   const timeEntries = meta?.timeEntries ?? [];

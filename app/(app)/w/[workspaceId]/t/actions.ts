@@ -75,6 +75,7 @@ export async function createTaskAction(
     statusColumnId: formData.get("statusColumnId") || undefined,
     priority: formData.get("priority") || undefined,
     parentId: formData.get("parentId") || undefined,
+    categoryId: formData.get("categoryId") || undefined,
   });
   // F12-K131: viewId (opcjonalne) — jeśli task tworzony w custom named
   // view context, dodajemy TaskView entry po create. Default view (bez
@@ -105,6 +106,17 @@ export async function createTaskAction(
       select: { id: true, milestoneId: true },
     });
     if (!parent) return { ok: false, error: "Zadanie nadrzędne nie istnieje na tej tablicy." };
+  }
+
+  // F15: kategoria musi należeć do tej tablicy — id z formularza nie jest zaufane.
+  let categoryId: string | null = null;
+  if (parsed.data.categoryId) {
+    const category = await db.taskCategory.findFirst({
+      where: { id: parsed.data.categoryId, boardId: parsed.data.boardId },
+      select: { id: true },
+    });
+    if (!category) return { ok: false, error: "Kategoria nie istnieje na tej tablicy." };
+    categoryId = category.id;
   }
 
   // Prefer caller-supplied column (Kanban inline-add); fall back to board's first column.
@@ -158,6 +170,7 @@ export async function createTaskAction(
       // ustawiamy od razu — bez konieczności edycji po utworzeniu.
       ...(parsed.data.priority ? { priority: parsed.data.priority } : {}),
       ...(parent ? { parentId: parent.id, milestoneId: parent.milestoneId } : {}),
+      ...(categoryId ? { categoryId } : {}),
     },
   });
 

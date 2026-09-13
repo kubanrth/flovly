@@ -3,6 +3,7 @@
 import { startTransition, useState, type ReactNode } from "react";
 import { createTagAction, patchTaskAction, toggleAssigneeAction, toggleTagAction } from "@/app/(app)/w/[workspaceId]/t/actions";
 import { assignTaskToMilestoneAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/milestone-actions";
+import { createTaskCategoryAction, setTaskCategoryAction } from "@/app/(app)/w/[workspaceId]/b/[boardId]/category-actions";
 import { FieldCell } from "@/components/table/field-cells";
 import { parseFieldOptions, type FieldType } from "@/lib/table-fields";
 import { TAG_PALETTE } from "@/lib/colors";
@@ -35,10 +36,13 @@ export interface TaskDetailsProps {
   mobile?: boolean;
   workspaceId: string;
   task: {
-    id: string; milestoneId: string | null; startAt: string | null; stopAt: string | null; reminderAt: string | null; reminderOffset: string | null;
+    id: string; milestoneId: string | null; categoryId: string | null; startAt: string | null; stopAt: string | null; reminderAt: string | null; reminderOffset: string | null;
     recurrenceRule: RecurrenceRule | null; recurrenceParentId: string | null; timeTrackedSeconds: number; timerStartedAt: string | null; timerCompletedAt: string | null;
   };
   milestones: { id: string; title: string }[];
+  // F15: kategorie tablicy; `boardId` potrzebne, żeby dołożyć nową z panelu.
+  boardId: string;
+  categories: { id: string; name: string; colorHex: string }[];
   allMembers: Member[];
   assigneeIds: Set<string>;
   allTags: Tag[];
@@ -86,6 +90,7 @@ function useRows(p: TaskDetailsProps): Row[] {
           { key: "stop", label: "Koniec", grupa: "terminy" as const, empty: !task.stopAt, node: <DatesField {...p} only="stopAt" /> },
         ]
       : [{ key: "dates", label: "Start · Koniec", grupa: "terminy" as const, empty: !task.startAt && !task.stopAt, node: <DatesField {...p} /> }]),
+    { key: "category", label: "Kategoria", grupa: "plan" as const, empty: !task.categoryId, node: <CategoryField {...p} /> },
     { key: "milestone", label: "Milestone", grupa: "plan" as const, empty: !task.milestoneId, node: <MilestoneField {...p} /> },
     { key: "tags", label: "Tagi", grupa: "plan" as const, empty: p.tagIds.size === 0, node: <TagsField {...p} /> },
     { key: "reminder", label: "Przypomnienie", grupa: "terminy" as const, empty: !task.reminderAt, node: <ReminderField {...p} /> },
@@ -261,6 +266,69 @@ function DatesField({ task, canEdit, onMutate, only, mobile }: TaskDetailsProps 
       <div className="min-w-0 flex-1">{start}</div>
       <span className="shrink-0 text-fg-3">→</span>
       <div className="min-w-0 flex-1">{stop}</div>
+    </div>
+  );
+}
+
+// F15: kategoria tablicy — druga oś obok milestone'u. „Nowa kategoria…" zakłada
+// ją od razu tutaj, żeby nie chodzić do ustawień listy.
+const NEW_CATEGORY = "__new__";
+function CategoryField({ task, boardId, categories, canEdit, onMutate }: TaskDetailsProps) {
+  const [value, setValue] = useState(task.categoryId ?? NONE);
+  const [prev, setPrev] = useState(task.categoryId);
+  if (task.categoryId !== prev) { setPrev(task.categoryId); setValue(task.categoryId ?? NONE); }
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState("");
+  const [extra, setExtra] = useState<{ id: string; name: string; colorHex: string }[]>([]);
+  const all = [...categories, ...extra.filter((e) => !categories.some((c) => c.id === e.id))];
+
+  const assign = (categoryId: string) => {
+    const previous = value;
+    setValue(categoryId);
+    const fd = new FormData();
+    fd.set("taskId", task.id);
+    fd.set("categoryId", categoryId === NONE ? "" : categoryId);
+    startTransition(async () => {
+      const result = await setTaskCategoryAction(fd);
+      if (!result.ok) { setValue(previous); alert(result.error); return; }
+      onMutate?.();
+    });
+  };
+  const create = () => {
+    const n = name.trim();
+    if (!n) return;
+    const fd = new FormData();
+    fd.set("boardId", boardId);
+    fd.set("name", n);
+    startTransition(async () => {
+      const result = await createTaskCategoryAction(fd);
+      if (!result.ok) { alert(result.error); return; }
+      setExtra((e) => [...e, result.category]);
+      setCreating(false);
+      setName("");
+      assign(result.category.id);
+    });
+  };
+  return (
+    <div className="-mx-1 flex flex-col gap-1">
+      <Select
+        aria-label="Wybierz kategorię"
+        value={value}
+        onValueChange={(v) => (v === NEW_CATEGORY ? setCreating(true) : assign(v))}
+        disabled={!canEdit}
+        className="h-7 border-transparent bg-transparent px-1 hover:border-input-border data-popup-open:border-orange-500"
+        items={[
+          { value: NONE, label: <span className="text-fg-3">— brak —</span> },
+          ...all.map((c) => ({ value: c.id, label: <Chip hue={hueForColor(c.colorHex)} size="sm">{c.name}</Chip> })),
+          ...(canEdit ? [{ value: NEW_CATEGORY, label: <span className="inline-flex items-center gap-1 text-fg-2"><IconPlus width={11} height={11} /> Nowa kategoria…</span> }] : []),
+        ]}
+      />
+      {creating && (
+        <form className="flex items-center gap-1" onSubmit={(e) => { e.preventDefault(); create(); }}>
+          <Input size="sm" autoFocus value={name} onChange={(e) => setName(e.target.value)} maxLength={60} placeholder="Nazwa kategorii" aria-label="Nazwa nowej kategorii" onKeyDown={(e) => { if (e.key === "Escape") { setCreating(false); setName(""); } }} />
+          <Button type="submit" size="sm" disabled={!name.trim()}>Dodaj</Button>
+        </form>
+      )}
     </div>
   );
 }

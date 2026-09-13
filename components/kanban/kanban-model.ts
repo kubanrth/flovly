@@ -26,7 +26,11 @@ export interface KanbanTask {
   subtaskDoneCount: number;
   linkedCount: number;
   attachmentCount: number;
+  // F15: kategoria tablicy — tor w trybie swimlane.
+  category: KanbanCategory | null;
 }
+
+export interface KanbanCategory { id: string; name: string; colorHex: string }
 
 export interface KanbanStatusColumn {
   id: string;
@@ -40,13 +44,14 @@ export const NO_STATUS = "__none__";
 export const memberLabel = (m: KanbanMember) => m.name ?? m.email;
 
 // ── toolbar state ──────────────────────────────────────────────────────────
-export type KanbanGroupBy = "status" | "assignee" | "priority";
+export type KanbanGroupBy = "status" | "assignee" | "priority" | "category";
 export type KanbanSort = "manual" | "priority" | "stopAt" | "title";
 
 export const GROUP_LABEL: Record<KanbanGroupBy, string> = {
   status: "Status",
   assignee: "Przypisany",
   priority: "Priorytet",
+  category: "Kategoria",
 };
 export const SORT_LABEL: Record<KanbanSort, string> = {
   manual: "Ręcznie",
@@ -155,6 +160,7 @@ export function buildSwimlanes(
   groupBy: Exclude<KanbanGroupBy, "status">,
   members: KanbanMember[],
   sort: KanbanSort = "manual",
+  categories: KanbanCategory[] = [],
 ): SwimlaneRow[] {
   const empty = () => Object.fromEntries(columnIds.map((id) => [id, [] as KanbanTask[]]));
   const rows = new Map<string, SwimlaneRow>();
@@ -179,6 +185,10 @@ export function buildSwimlanes(
       if (t.assignees.length === 0) put(lane("_none", "Nieprzypisane"), t);
       else for (const a of t.assignees) put(lane(a.id, memberLabel(a), { name: memberLabel(a), src: a.avatarUrl }), t);
     }
+  } else if (groupBy === "category") {
+    // Puste tory z ustawień tablicy odpadają niżej (count > 0); kolejność jak w ustawieniach.
+    for (const c of categories) lane(c.id, c.name);
+    for (const t of tasks) put(t.category ? lane(t.category.id, t.category.name) : lane("_none", "Bez kategorii"), t);
   } else {
     const label = (p: TaskPriorityValue) => (p === "NONE" ? "Bez priorytetu" : `${PRIORITY_META[p].shortCode} ${PRIORITY_META[p].label}`);
     for (const p of PRIORITY_VALUES) lane(p, label(p));

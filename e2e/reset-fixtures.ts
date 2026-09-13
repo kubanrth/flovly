@@ -100,12 +100,21 @@ void (async () => {
     data: { deletedAt: new Date() },
   });
 
+  // Zaległe przypomnienia wyświetlają toast nad całą aplikacją (`toast-card`,
+  // pointer-events-auto), który przechwytuje kliknięcia i wywraca dowolny test.
+  // Seed demo ma terminy względne, więc po kilku dniach zawsze coś się „przeterminuje"
+  // — przed każdym przebiegiem przesuwamy je w przyszłość.
+  const reminders = await db.personalReminder.updateMany({
+    where: { dismissedAt: null, dueAt: { lt: new Date(now + 2 * DAY) } },
+    data: { dueAt: new Date(now + 14 * DAY) },
+  });
+
   // Seed data predates CALENDAR and TASKLINE, so those tabs never rendered.
   await db.workspace.updateMany({
     where: { slug: "demo" },
     data: { enabledViews: ["TABLE", "KANBAN", "ROADMAP", "GANTT", "CALENDAR", "WHITEBOARD", "TASKLINE"] },
   });
 
-  console.log(`reset ${reset.count} view(s); ${junk.count} stale board(s); ${stale.count} stale task(s); ${tasks.length} my-tasks buckets on board ${board.id}`);
+  console.log(`reset ${reset.count} view(s); ${junk.count} stale board(s); ${stale.count} stale task(s); ${reminders.count} reminder(s) moved; ${tasks.length} my-tasks buckets on board ${board.id}`);
   await db.$disconnect();
 })();

@@ -13,7 +13,7 @@ test.describe("task creation", () => {
     // Poll: the popup scales in from .98 (150ms), so a one-shot boundingBox can land mid-animation.
     await expect.poll(async () => Math.abs((await dialog.boundingBox())!.width - 480)).toBeLessThanOrEqual(2);
     await expect(dialog.locator("label")).toHaveText([
-      "Tytuł", "Tablica", "Status", "Priorytet", "Termin", "Przypisani", /^Milestone/, /^Dodaj do widoku/,
+      "Tytuł", "Tablica", "Status", "Priorytet", "Termin", "Przypisani", /^Kategoria/, /^Milestone/, /^Dodaj do widoku/,
     ]);
     await expect(dialog.locator('input[name="title"]')).toBeFocused();
     await expect(dialog.getByText("Utwórz i dodaj kolejne")).toBeVisible();
@@ -57,6 +57,32 @@ test.describe("task creation", () => {
     await expect(dialog).toBeHidden();
     await expect(page.locator("table tbody").getByText(title).first()).toBeVisible({ timeout: 10_000 });
   });
+  // F15: kategoria od razu w dialogu, z założeniem nowej „w locie". Po
+  // utworzeniu zadanie otwiera się w panelu, gdzie kategoria jest widoczna.
+  test("dialog Nowe zadanie pozwala założyć i wybrać kategorię", async ({ page }) => {
+    await gotoFirstBoard(page);
+    await page.getByRole("button", { name: "Nowe zadanie" }).first().click();
+    const dialog = page.locator('[data-ui="create-task-dialog"]');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByLabel("Tablica")).not.toContainText("Wybierz tablicę");
+
+    const nazwa = `Kat-${Date.now().toString().slice(-6)}`;
+    const pole = dialog.getByLabel("Kategoria");
+    await pole.click();
+    await page.getByRole("option", { name: /Nowa kategoria/ }).click();
+    await dialog.getByLabel("Nazwa nowej kategorii").fill(nazwa);
+    await dialog.getByRole("button", { name: "Dodaj" }).click();
+    await expect(pole).toContainText(nazwa);
+
+    const tytul = `e2e-kategoria-${Date.now()}`;
+    await dialog.getByLabel("Tytuł").fill(tytul);
+    await dialog.getByRole("button", { name: "Utwórz zadanie" }).click();
+    await expect(dialog).toBeHidden({ timeout: 20_000 });
+    const panel = page.locator('[data-ui="task-panel"]');
+    await expect(panel).toBeVisible({ timeout: 15_000 });
+    await expect(panel.getByLabel("Wybierz kategorię")).toContainText(nazwa);
+  });
+
   // Milestone dalo sie ustawic dopiero po utworzeniu zadania, w panelu.
   test("dialog Nowe zadanie pozwala wybrac milestone", async ({ page }) => {
     await gotoFirstBoard(page);

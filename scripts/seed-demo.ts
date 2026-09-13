@@ -65,7 +65,6 @@ async function main() {
       customColumns: { create: [
         { name: "Budżet", type: "NUMBER", order: 0, options: { numberFormat: "currency", numberCurrency: "PLN", numberPrecision: 0 } },
         { name: "Kanał", type: "SINGLE_SELECT", order: 1, options: { selectOptions: [{ value: "Meta", color: "#2F6FE8" }, { value: "Google", color: "#1E9E5A" }, { value: "WWW", color: "#E8A100" }, { value: "PR", color: "#7A33EC" }] } },
-        { name: "Sekcje", type: "SINGLE_SELECT", order: 2, options: { selectOptions: [{ value: "Kreacja", color: "#FF5C00" }, { value: "Media", color: "#2F6FE8" }, { value: "Technologia", color: "#1E9E5A" }] } },
         { name: "Termin klienta", type: "DATE", order: 3, options: {} },
         { name: "Ocena klienta", type: "RATING", order: 4, options: { ratingMax: 5, ratingIcon: "star" } },
         { name: "Zaakceptowane", type: "CHECKBOX", order: 5, options: {} },
@@ -77,6 +76,11 @@ async function main() {
   const B = board.id;
   const st = Object.fromEntries(board.statusColumns.map((s) => [s.name, s.id]));
   const col = Object.fromEntries(board.customColumns.map((c) => [c.name, c.id]));
+  // F15: kategorie tablicy (druga oś grupowania obok milestone'ów).
+  const kat: Record<string, string> = {};
+  for (const [i, [name, colorHex]] of [["Kreacja", "#FF5C00"], ["Media", "#2F6FE8"], ["Technologia", "#1E9E5A"]].entries()) {
+    kat[name!] = (await db.taskCategory.create({ data: { boardId: B, name: name!, colorHex: colorHex!, order: i } })).id;
+  }
 
   const ms = async (title: string, start: number, stop: number, i: number, assigneeId?: string) =>
     db.milestone.create({ data: { workspaceId: W, boardId: B, creatorId: admin.id, assigneeId, title, startAt: d(start), stopAt: d(stop), orderIndex: i, descriptionJson: doc(p(`Etap „${title}” kampanii Q4.`)) } });
@@ -85,13 +89,13 @@ async function main() {
   const m3 = await ms("Publikacja i optymalizacja", 14, 60, 2, kasia.id);
 
   let n = 0;
-  type T = { title: string; status: string; prio?: "NONE" | "LOW" | "MEDIUM" | "HIGH" | "URGENT"; who?: string[]; tags?: string[]; start?: number; stop?: number; ms?: string; desc?: string; custom?: Record<string, string>; parentId?: string; reminder?: number; recur?: { freq: "daily" | "weekly" | "monthly"; day?: number }; tracked?: number };
+  type T = { title: string; status: string; prio?: "NONE" | "LOW" | "MEDIUM" | "HIGH" | "URGENT"; who?: string[]; tags?: string[]; start?: number; stop?: number; ms?: string; desc?: string; custom?: Record<string, string>; parentId?: string; reminder?: number; recur?: { freq: "daily" | "weekly" | "monthly"; day?: number }; tracked?: number; kat?: string };
   const task = async (t: T) => {
     n += 1;
     return db.task.create({
       data: {
         workspaceId: W, boardId: B, displayId: n, creatorId: admin.id, title: t.title, statusColumnId: st[t.status], priority: t.prio ?? "NONE", rowOrder: n,
-        milestoneId: t.ms, parentId: t.parentId, startAt: t.start !== undefined ? d(t.start) : undefined, stopAt: t.stop !== undefined ? d(t.stop, 17) : undefined,
+        milestoneId: t.ms, parentId: t.parentId, categoryId: t.kat ? kat[t.kat] : undefined, startAt: t.start !== undefined ? d(t.start) : undefined, stopAt: t.stop !== undefined ? d(t.stop, 17) : undefined,
         reminderAt: t.reminder !== undefined ? d(t.reminder, 8) : undefined, recurrenceRule: t.recur, timeTrackedSeconds: t.tracked ?? 0,
         descriptionJson: t.desc ? doc(p(t.desc), ul("Uzgodnić z klientem", "Przygotować wersję do akceptacji", "Wysłać do review")) : undefined,
         assignees: { create: (t.who ?? []).map((userId) => ({ userId })) },
@@ -101,19 +105,19 @@ async function main() {
     });
   };
 
-  const epic = await task({ title: "Kampania social media Q4", status: "W trakcie", prio: "HIGH", who: [marta.id], tags: [tMarketing.id, tKlient.id], start: -14, stop: 30, ms: m2.id, desc: "Zadanie główne kampanii w social mediach. Podrzędne zadania to poszczególne formaty i kanały.", custom: { Budżet: "24000", Kanał: "Meta", Sekcje: "Media", "Termin klienta": d(28).toISOString().slice(0, 10), "Ocena klienta": "4", Zaakceptowane: "true" } });
-  const c1 = await task({ title: "Key visual i 3 warianty grafik", status: "Done", prio: "HIGH", who: [kasia.id], tags: [tDesign.id], start: -14, stop: -6, ms: m1.id, parentId: epic.id, desc: "Key visual kampanii w 3 wariantach kolorystycznych, format 1:1 i 9:16.", custom: { Sekcje: "Kreacja", Kanał: "Meta", Zaakceptowane: "true" }, tracked: 5 * 3600 + 20 * 60 });
-  const c2 = await task({ title: "Copy do 12 postów (PL)", status: "Review", prio: "MEDIUM", who: [piotr.id], tags: [tMarketing.id], start: -5, stop: 3, ms: m2.id, parentId: epic.id, desc: "12 postów: 6 produktowych, 4 lifestyle, 2 promocyjne.", custom: { Sekcje: "Kreacja", Kanał: "Meta" }, tracked: 2 * 3600 });
-  const c3 = await task({ title: "Konfiguracja kampanii Meta Ads", status: "Do zrobienia", prio: "URGENT", who: [marta.id], tags: [tMarketing.id, tPilne.id], start: 2, stop: 9, ms: m2.id, parentId: epic.id, desc: "Grupy odbiorców, budżety dzienne, piksel na landing page.", custom: { Budżet: "18000", Sekcje: "Media", Kanał: "Meta" }, reminder: 1 });
-  const lp = await task({ title: "Landing page z formularzem rezerwacji", status: "W trakcie", prio: "HIGH", who: [piotr.id, kasia.id], tags: [tKlient.id], start: -10, stop: 7, ms: m2.id, desc: "Jednostronicowy landing na Next.js, formularz rezerwacji zintegrowany z kalendarzem restauracji.", custom: { Budżet: "9500", Sekcje: "Technologia", Kanał: "WWW", "Termin klienta": d(7).toISOString().slice(0, 10), "Ocena klienta": "5" }, tracked: 11 * 3600 });
-  const ga = await task({ title: "Kampania Google Ads — słowa kluczowe", status: "Do zrobienia", prio: "MEDIUM", who: [marta.id], tags: [tMarketing.id], start: 8, stop: 16, ms: m3.id, desc: "Research słów kluczowych, 3 grupy reklam, rozszerzenia.", custom: { Budżet: "6000", Sekcje: "Media", Kanał: "Google" } });
-  await task({ title: "Sesja zdjęciowa dań sezonowych", status: "Done", prio: "MEDIUM", who: [kasia.id], tags: [tDesign.id], start: -20, stop: -15, ms: m1.id, desc: "Sesja w restauracji, 40 zdjęć po obróbce.", custom: { Budżet: "3200", Sekcje: "Kreacja" }, tracked: 7 * 3600 });
-  await task({ title: "Brief kreatywny i moodboard", status: "Done", prio: "LOW", who: [marta.id], start: -21, stop: -17, ms: m1.id, custom: { Sekcje: "Kreacja" } });
-  await task({ title: "Raport tygodniowy dla klienta", status: "Do zrobienia", prio: "LOW", who: [marta.id], tags: [tKlient.id], start: 4, stop: 4, ms: m3.id, recur: { freq: "weekly", day: 5 }, desc: "Co piątek: zasięgi, kliknięcia, rezerwacje, rekomendacje na kolejny tydzień.", custom: { Sekcje: "Media" } });
-  await task({ title: "Newsletter październikowy", status: "Backlog", prio: "LOW", who: [piotr.id], start: 12, stop: 18, ms: m3.id, custom: { Kanał: "PR", Sekcje: "Kreacja" } });
-  await task({ title: "Nota prasowa — otwarcie ogródka zimowego", status: "Backlog", prio: "NONE", tags: [tKlient.id], custom: { Kanał: "PR", Sekcje: "Kreacja" } });
-  await task({ title: "Optymalizacja kampanii — tydzień 1", status: "Backlog", prio: "MEDIUM", who: [marta.id], start: 21, stop: 25, ms: m3.id, custom: { Sekcje: "Media", Kanał: "Meta" } });
-  await task({ title: "Testy A/B nagłówków landing page", status: "Backlog", prio: "MEDIUM", who: [piotr.id], start: 16, stop: 22, ms: m3.id, custom: { Sekcje: "Technologia", Kanał: "WWW" } });
+  const epic = await task({ title: "Kampania social media Q4", status: "W trakcie", prio: "HIGH", who: [marta.id], tags: [tMarketing.id, tKlient.id], start: -14, stop: 30, ms: m2.id, desc: "Zadanie główne kampanii w social mediach. Podrzędne zadania to poszczególne formaty i kanały.", custom: { Budżet: "24000", Kanał: "Meta", "Termin klienta": d(28).toISOString().slice(0, 10), "Ocena klienta": "4", Zaakceptowane: "true" }, kat: "Media" });
+  const c1 = await task({ title: "Key visual i 3 warianty grafik", status: "Done", prio: "HIGH", who: [kasia.id], tags: [tDesign.id], start: -14, stop: -6, ms: m1.id, parentId: epic.id, desc: "Key visual kampanii w 3 wariantach kolorystycznych, format 1:1 i 9:16.", custom: { Kanał: "Meta", Zaakceptowane: "true" }, tracked: 5 * 3600 + 20 * 60, kat: "Kreacja" });
+  const c2 = await task({ title: "Copy do 12 postów (PL)", status: "Review", prio: "MEDIUM", who: [piotr.id], tags: [tMarketing.id], start: -5, stop: 3, ms: m2.id, parentId: epic.id, desc: "12 postów: 6 produktowych, 4 lifestyle, 2 promocyjne.", custom: { Kanał: "Meta" }, tracked: 2 * 3600, kat: "Kreacja" });
+  const c3 = await task({ title: "Konfiguracja kampanii Meta Ads", status: "Do zrobienia", prio: "URGENT", who: [marta.id], tags: [tMarketing.id, tPilne.id], start: 2, stop: 9, ms: m2.id, parentId: epic.id, desc: "Grupy odbiorców, budżety dzienne, piksel na landing page.", custom: { Budżet: "18000", Kanał: "Meta" }, reminder: 1, kat: "Media" });
+  const lp = await task({ title: "Landing page z formularzem rezerwacji", status: "W trakcie", prio: "HIGH", who: [piotr.id, kasia.id], tags: [tKlient.id], start: -10, stop: 7, ms: m2.id, desc: "Jednostronicowy landing na Next.js, formularz rezerwacji zintegrowany z kalendarzem restauracji.", custom: { Budżet: "9500", Kanał: "WWW", "Termin klienta": d(7).toISOString().slice(0, 10), "Ocena klienta": "5" }, tracked: 11 * 3600, kat: "Technologia" });
+  const ga = await task({ title: "Kampania Google Ads — słowa kluczowe", status: "Do zrobienia", prio: "MEDIUM", who: [marta.id], tags: [tMarketing.id], start: 8, stop: 16, ms: m3.id, desc: "Research słów kluczowych, 3 grupy reklam, rozszerzenia.", custom: { Budżet: "6000", Kanał: "Google" }, kat: "Media" });
+  await task({ title: "Sesja zdjęciowa dań sezonowych", status: "Done", prio: "MEDIUM", who: [kasia.id], tags: [tDesign.id], start: -20, stop: -15, ms: m1.id, desc: "Sesja w restauracji, 40 zdjęć po obróbce.", custom: { Budżet: "3200" }, tracked: 7 * 3600, kat: "Kreacja" });
+  await task({ title: "Brief kreatywny i moodboard", status: "Done", prio: "LOW", who: [marta.id], start: -21, stop: -17, ms: m1.id, kat: "Kreacja" });
+  await task({ title: "Raport tygodniowy dla klienta", status: "Do zrobienia", prio: "LOW", who: [marta.id], tags: [tKlient.id], start: 4, stop: 4, ms: m3.id, recur: { freq: "weekly", day: 5 }, desc: "Co piątek: zasięgi, kliknięcia, rezerwacje, rekomendacje na kolejny tydzień.", kat: "Media" });
+  await task({ title: "Newsletter październikowy", status: "Backlog", prio: "LOW", who: [piotr.id], start: 12, stop: 18, ms: m3.id, custom: { Kanał: "PR" }, kat: "Kreacja" });
+  await task({ title: "Nota prasowa — otwarcie ogródka zimowego", status: "Backlog", prio: "NONE", tags: [tKlient.id], custom: { Kanał: "PR" }, kat: "Kreacja" });
+  await task({ title: "Optymalizacja kampanii — tydzień 1", status: "Backlog", prio: "MEDIUM", who: [marta.id], start: 21, stop: 25, ms: m3.id, custom: { Kanał: "Meta" }, kat: "Media" });
+  await task({ title: "Testy A/B nagłówków landing page", status: "Backlog", prio: "MEDIUM", who: [piotr.id], start: 16, stop: 22, ms: m3.id, custom: { Kanał: "WWW" }, kat: "Technologia" });
 
   // Podzadania (checklista), linki, ankieta, komentarze, wpisy czasu
   await db.subtask.createMany({ data: [

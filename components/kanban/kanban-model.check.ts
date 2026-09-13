@@ -9,6 +9,7 @@ const member = (id: string, name: string): KanbanMember => ({ id, name, email: `
 const task = (over: Partial<KanbanTask>): KanbanTask => ({
   id: "t", displayId: 1, title: "x", statusColumnId: null, rowOrder: 0, priority: "NONE", startAt: null, stopAt: null,
   assignees: [], tags: [], hasDescription: false, commentCount: 0, subtaskCount: 0, subtaskDoneCount: 0, linkedCount: 0, attachmentCount: 0,
+  category: null,
   ...over,
 });
 const cols = [{ id: "s1", name: "Do zrobienia", colorHex: "#64748B" }, { id: "s2", name: "W toku", colorHex: "#0A84FF" }];
@@ -74,3 +75,21 @@ assert.deepEqual(sortTasks(s, "title").map((t) => t.id), ["b", "a"]);
 assert.deepEqual([1, 3, 5].map(lanePl), ["tor", "tory", "torów"]);
 
 console.log("kanban helpers ok");
+
+// F15: tory po kategorii — kolejność z ustawień tablicy, „Bez kategorii" na końcu, puste tory znikają.
+{
+  const kreacja = { id: "k1", name: "Kreacja", colorHex: "#FF5C00" };
+  const media = { id: "k2", name: "Media", colorHex: "#2F6FE8" };
+  const lanes = buildSwimlanes(
+    [task({ id: "a", statusColumnId: "s1", category: media }), task({ id: "b", statusColumnId: "s1" }), task({ id: "c", statusColumnId: "s2", category: kreacja })],
+    ["s1", "s2"],
+    "category",
+    [],
+    "manual",
+    [kreacja, media, { id: "k3", name: "Pusta", colorHex: "#64748B" }],
+  );
+  assert.deepEqual(lanes.map((l) => l.label), ["Kreacja", "Media", "Bez kategorii"]);
+  assert.deepEqual(lanes[1]!.cells["s1"]!.map((t) => t.id), ["a"]);
+}
+
+console.log("kanban-model: OK (kategorie)");

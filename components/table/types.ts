@@ -6,6 +6,8 @@ export interface SubtaskLine { id: string; title: string; completed: boolean }
 /** Zadanie po drugiej stronie powiazania (TaskLink) — do rozwinietego wiersza. */
 export interface LinkedTaskLine { id: string; displayId: number; title: string; otherBoard: boolean }
 
+export interface TaskCategoryRef { id: string; name: string; colorHex: string }
+
 export interface BoardTableTask {
   id: string;
   // Human, per-workspace sequential id (#123). 0 = legacy task before backfill.
@@ -23,6 +25,8 @@ export interface BoardTableTask {
   customValues: Record<string, string>;
   attachments: AttachmentCellItem[];
   milestone: { id: string; title: string } | null;
+  // F15: kategoria tablicy (druga oś grupowania obok milestone'ów).
+  category: TaskCategoryRef | null;
   hasDescription: boolean;
   commentCount: number;
   subtaskCount: number;

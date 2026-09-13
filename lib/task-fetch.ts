@@ -58,6 +58,8 @@ export async function fetchTaskDetail(
             select: { id: true, title: true, startAt: true, stopAt: true },
           },
           customColumns: { orderBy: { order: "asc" } },
+          // F15: kategorie tablicy do wyboru w panelu.
+          categories: { orderBy: { order: "asc" }, select: { id: true, name: true, colorHex: true } },
         },
       },
       assignees: { select: { userId: true } },
@@ -268,6 +270,7 @@ export async function fetchTaskDetail(
       statusColumnId: task.statusColumnId,
       priority: task.priority,
       milestoneId: task.milestoneId,
+      categoryId: task.categoryId,
       startAt: task.startAt ? task.startAt.toISOString() : null,
       stopAt: task.stopAt ? task.stopAt.toISOString() : null,
       reminderAt: task.reminderAt ? task.reminderAt.toISOString() : null,
@@ -294,6 +297,7 @@ export async function fetchTaskDetail(
       startAt: m.startAt.toISOString(),
       stopAt: m.stopAt.toISOString(),
     })),
+    categories: task.board.categories,
     statusColumns: task.board.statusColumns.map((c) => ({
       id: c.id,
       name: c.name,

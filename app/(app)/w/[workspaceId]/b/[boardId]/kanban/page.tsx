@@ -32,6 +32,7 @@ export default async function BoardKanbanPage({
     include: {
       workspace: { select: { enabledViews: true } },
       statusColumns: { orderBy: { order: "asc" } },
+      categories: { orderBy: { order: "asc" }, select: { id: true, name: true, colorHex: true } },
       views: { where: { type: "KANBAN" } },
       tasks: {
         where: { deletedAt: null, ...taskWhere },
@@ -41,6 +42,7 @@ export default async function BoardKanbanPage({
             include: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
           },
           tags: { include: { tag: true } },
+          category: { select: { id: true, name: true, colorHex: true } },
           _count: {
             select: {
               comments: { where: { deletedAt: null } },
@@ -82,6 +84,7 @@ export default async function BoardKanbanPage({
           canManageBoard,
           statusColumns: board.statusColumns.map((c) => ({ id: c.id, name: c.name, colorHex: c.colorHex })),
           members: memberships.map((m) => m.user),
+          categories: board.categories,
         }}
       >
         <BoardHeaderServer
@@ -127,6 +130,7 @@ export default async function BoardKanbanPage({
                 name: tt.tag.name,
                 colorHex: tt.tag.colorHex,
               })),
+              category: t.category,
               hasDescription: docHasText(t.descriptionJson),
               commentCount: t._count.comments,
               subtaskCount: t.subtasks.length,

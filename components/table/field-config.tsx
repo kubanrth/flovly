@@ -105,7 +105,7 @@ export function SelectOptionsEditor({ value, onChange }: { value: SelectOption[]
   );
 }
 
-function ColorSwatch({ color, onPick }: { color: string; onPick: (c: string) => void }) {
+export function ColorSwatch({ color, onPick }: { color: string; onPick: (c: string) => void }) {
   return (
     <Popover>
       <PopoverTrigger aria-label="Zmień kolor" className="block size-4 shrink-0 rounded-full outline-none hover:shadow-[0_0_0_2px_var(--n-300)]" style={{ background: color }} />

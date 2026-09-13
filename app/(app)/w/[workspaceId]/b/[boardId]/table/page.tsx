@@ -48,6 +48,7 @@ export default async function BoardTablePage({
       workspace: { select: { enabledViews: true } },
       statusColumns: { orderBy: { order: "asc" } },
       customColumns: { orderBy: { order: "asc" } },
+      categories: { orderBy: { order: "asc" }, select: { id: true, name: true, colorHex: true } },
       views: { where: { type: "TABLE", name: null } },
       tasks: {
         where: { deletedAt: null, ...taskWhere },
@@ -87,6 +88,7 @@ export default async function BoardTablePage({
           customColumns: board.customColumns.map((c) => ({ id: c.id, name: c.name, type: c.type as CustomTableColumn["type"], options: c.options })),
           members: memberships.map((m) => m.user),
           allTags,
+          categories: board.categories,
           workspaceBoards,
         }}
         initialConfig={parseListConfig(tableView?.configJson)}

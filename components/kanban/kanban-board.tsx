@@ -27,7 +27,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { IconPlus } from "@/components/ui/icons";
 import {
   GROUP_LABEL, NO_STATUS, buildSwimlanes, columnBuckets, columnPl, filterTasks, lanePl, visibleColumnIds,
-  type KanbanMember, type KanbanStatusColumn, type KanbanTask,
+  type KanbanCategory, type KanbanMember, type KanbanStatusColumn, type KanbanTask,
 } from "@/components/kanban/kanban-model";
 import { COL_DRAG_PREFIX, columnIdFromDragId, columnOfDropTarget, isColumnDragId, nextColumnOrder } from "@/components/kanban/column-order";
 import { KanbanCard } from "@/components/kanban/kanban-card";
@@ -191,7 +191,7 @@ export function KanbanBoardView({ initialTasks }: { initialTasks: KanbanTask[] }
   }
 
   if (s.groupBy !== "status") {
-    const lanes = buildSwimlanes(visible, columnIds, s.groupBy, s.members, s.sort);
+    const lanes = buildSwimlanes(visible, columnIds, s.groupBy, s.members, s.sort, s.categories);
     return (
       <div data-ui="kanban-view" className="-mx-6 -my-4 flex min-h-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 overflow-auto bg-canvas px-6 py-3">
@@ -374,6 +374,7 @@ export function KanbanBoard({
   viewId,
   statusColumns,
   members,
+  categories = [],
   canManageBoard,
   initialTasks,
 }: {
@@ -382,13 +383,14 @@ export function KanbanBoard({
   viewId?: string;
   statusColumns: KanbanStatusColumn[];
   members: KanbanMember[];
+  categories?: KanbanCategory[];
   canManageBoard: boolean;
   // displayId nieobowiązkowe — starsze wywołania go nie przekazują (karta ukrywa wtedy #ID).
   initialTasks: (Omit<KanbanTask, "displayId"> & { displayId?: number })[];
 }) {
   return (
     <KanbanStateProvider
-      meta={{ workspaceId, boardId, viewId, canEdit: true, canCreate: true, canManageBoard, statusColumns, members }}
+      meta={{ workspaceId, boardId, viewId, canEdit: true, canCreate: true, canManageBoard, statusColumns, members, categories }}
     >
       <KanbanBoardView initialTasks={initialTasks.map((t) => ({ ...t, displayId: t.displayId ?? 0 }))} />
     </KanbanStateProvider>

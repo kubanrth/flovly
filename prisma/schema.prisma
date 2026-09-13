@@ -581,6 +581,7 @@ model Board {
   customColumns TableColumn[]
   tasks         Task[]
   milestones    Milestone[]
+  categories    TaskCategory[]
   links         BoardLink[]
   linkFolders   LinkFolder[]
   // F12-K73: Board ma teraz wiele canvasów rozróżnianych przez kind
@@ -767,6 +768,22 @@ model TaskCustomValue {
   @@index([columnId])
 }
 
+// F15: kategorie zadań per tablica (np. Kreacja / Media / Technologia).
+// Zwykły słownik jak StatusColumn: nazwa, kolor, kolejność. Zadanie ma jedną.
+model TaskCategory {
+  id        String   @id @default(cuid())
+  boardId   String
+  name      String
+  colorHex  String   @default("#64748B")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  board Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  tasks Task[]
+
+  @@index([boardId, order])
+}
+
 model StatusColumn {
   id        String   @id @default(cuid())
   boardId   String
@@ -834,6 +851,9 @@ model Task {
   // F13: zadanie nadrzedne (jak epik w Jirze). Podrzedne to pelnoprawne
   // zadania z wlasnym numerem i statusem; checklista `Subtask` zostaje osobno.
   parentId              String?
+  // F15: kategoria tablicy — druga oś grupowania obok milestone'ów (klient:
+  // „żeby jednego nie mieszać z drugim"). Skasowanie kategorii odpina zadania.
+  categoryId            String?
   // F12-K40: per-task time tracking. Klient: 'do każdego zadania muszę
   // dodać start/stop'. Trzy stany:
   //   - Idle:      timerStartedAt=null, timerCompletedAt=null  → "Rozpocznij"
@@ -853,6 +873,7 @@ model Task {
   board        Board                 @relation(fields: [boardId], references: [id], onDelete: Cascade)
   statusColumn StatusColumn?         @relation(fields: [statusColumnId], references: [id])
   milestone    Milestone?            @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  category     TaskCategory?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   creator      User                  @relation("TaskCreator", fields: [creatorId], references: [id])
   assignees    TaskAssignee[]
   tags         TaskTag[]
@@ -881,6 +902,7 @@ model Task {
   @@index([boardId, updatedAt(sort: Desc)])
   @@index([workspaceId, deletedAt])
   @@index([milestoneId])
+  @@index([categoryId])
   @@index([reminderAt, reminderSentAt])
   // F11-17: cron query — find tasks with recurrence not spawned today.
   @@index([recurrenceLastSpawnAt])

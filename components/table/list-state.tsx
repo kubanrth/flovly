@@ -17,6 +17,7 @@ import type { ListConfig } from "@/components/table/list-config";
 export type { ListConfig } from "@/components/table/list-config";
 import { memberName, type BoardTableColumn, type CustomTableColumn, type ListMember } from "@/components/table/types";
 import type { MoveTargetBoard } from "@/components/task/move-task-menu";
+import type { TaskCategoryRef } from "@/components/table/types";
 
 export interface ListMeta {
   workspaceId: string;
@@ -28,6 +29,8 @@ export interface ListMeta {
   customColumns: CustomTableColumn[];
   members: ListMember[];
   allTags: { id: string; name: string; colorHex: string }[];
+  // F15: kategorie tablicy — kolumna, grupowanie, filtr i edytor w pasku.
+  categories: TaskCategoryRef[];
   // Cele dla „Przenies" w akcjach masowych — ta sama lista co w panelu zadania.
   workspaceBoards?: MoveTargetBoard[];
 }
@@ -145,6 +148,7 @@ export function ListStateProvider({ meta, initialConfig, children }: { meta: Lis
     { id: "startAt", label: "Start", kind: "BUILTIN_DATE" },
     { id: "stopAt", label: "Koniec", kind: "BUILTIN_DATE" },
     { id: "attachments", label: "Załączniki", kind: "ATTACHMENT" },
+    { id: "category", label: "Kategoria", kind: "SINGLE_SELECT", options: meta.categories.map((c) => ({ value: c.id, label: c.name, hue: hueForColor(c.colorHex) })) },
     { id: "milestone", label: "Milestone", kind: "TEXT" },
     ...meta.customColumns.map<FilterColumn>((c) => {
       const opts = parseFieldOptions(c.options).selectOptions;
@@ -158,7 +162,7 @@ export function ListStateProvider({ meta, initialConfig, children }: { meta: Lis
           : undefined,
       };
     }),
-  ], [meta.statusColumns, meta.members, meta.allTags, meta.customColumns]);
+  ], [meta.statusColumns, meta.members, meta.allTags, meta.categories, meta.customColumns]);
 
   const value = useMemo<ListState>(() => ({
     ...meta, config, setFilters, setSort, setGroupBy, setColumnPrefs, search, setSearch,

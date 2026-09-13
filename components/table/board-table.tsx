@@ -40,6 +40,7 @@ import { groupTasks, type GroupBucket } from "@/components/table/grouping";
 import { isActiveFilter, newFilter } from "@/components/table/filter-builder";
 import { memberName, type BoardTableTask, type CustomTableColumn } from "@/components/table/types";
 import { LinkedTaskList, SubtaskChecklist, detailHeight, hasDetail } from "@/components/table/row-details";
+import { CategoryCell } from "@/components/table/category-cell";
 
 export type { BoardTableColumn, BoardTableTask, CustomTableColumn } from "@/components/table/types";
 
@@ -83,13 +84,14 @@ function filterValue(t: BoardTableTask, f: TableFilter): string {
     case "stopAt": return t.stopAt ?? "";
     case "attachments": return arr(t.attachments.map((a) => a.id));
     case "milestone": return t.milestone?.title ?? "";
+    case "category": return f.kind === "MULTI_SELECT" ? arr(t.category ? [t.category.id] : []) : (t.category?.id ?? "");
     default: return t.customValues[f.columnId] ?? "";
   }
 }
 
 export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
   const s = useListState();
-  const { workspaceId, boardId, viewId, canEdit, canManagePrefs, statusColumns, customColumns, members, allTags, config, search } = s;
+  const { workspaceId, boardId, viewId, canEdit, canManagePrefs, statusColumns, customColumns, categories, members, allTags, config, search } = s;
   const router = useRouter();
   useWorkspaceRealtime(workspaceId);
   const assign = useAssignHotkey({ members, workspaceId });
@@ -136,6 +138,7 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
       case "stopAt": return t.stopAt ?? "";
       case "attachments": return String(t.attachments.length);
       case "milestone": return t.milestone?.title ?? "";
+      case "category": return t.category?.name ?? "";
       default: return t.customValues[sort.columnId] ?? "";
     }
   }, [statusIndex]);
@@ -153,7 +156,7 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
   }, [tasks, activeFilters, deferredSearch, config.sort, sortKey]);
 
   // ─── groups + flat item list ───────────────────────────────────────────
-  const groups = useMemo(() => groupTasks(filteredSorted, config.groupBy, { statusColumns, customColumns }), [filteredSorted, config.groupBy, statusColumns, customColumns]);
+  const groups = useMemo(() => groupTasks(filteredSorted, config.groupBy, { statusColumns, customColumns, categories }), [filteredSorted, config.groupBy, statusColumns, customColumns, categories]);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const toggleGroup = (key: string) =>
     setCollapsed((c) => {
@@ -395,10 +398,10 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
   useEffect(() => {
     registerExport(() => {
       const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
-      const head = ["#ID", "Tytuł", "Status", "Priorytet", "Przypisani", "Tagi", "Start", "Koniec", "Milestone", ...customColumns.map((c) => c.name)];
+      const head = ["#ID", "Tytuł", "Status", "Priorytet", "Przypisani", "Tagi", "Start", "Koniec", "Kategoria", "Milestone", ...customColumns.map((c) => c.name)];
       const lines = filteredSorted.map((t) => [
         String(t.displayId), t.title, statusColumns.find((st) => st.id === t.statusColumnId)?.name ?? "", t.priority === "NONE" ? "" : t.priority,
-        t.assignees.map(memberName).join(", "), t.tags.map((x) => x.name).join(", "), t.startAt ?? "", t.stopAt ?? "", t.milestone?.title ?? "",
+        t.assignees.map(memberName).join(", "), t.tags.map((x) => x.name).join(", "), t.startAt ?? "", t.stopAt ?? "", t.category?.name ?? "", t.milestone?.title ?? "",
         ...customColumns.map((c) => t.customValues[c.id] ?? ""),
       ].map(esc).join(";"));
       const blob = new Blob([`﻿${[head.map(esc).join(";"), ...lines].join("\n")}`], { type: "text/csv;charset=utf-8" });
@@ -414,7 +417,7 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
   // ─── header actions ────────────────────────────────────────────────────
   const sortIdFor = (c: ColumnModel) => (c.custom ? c.custom.id : c.id);
   const filterColumnFor = (c: ColumnModel) => s.filterColumns.find((f) => f.id === sortIdFor(c));
-  const groupIdFor = (c: ColumnModel) => (c.custom ? c.custom.id : c.id === "tags" ? "preset:tagsAlpha" : ["statusColumnId", "priority", "title", "startAt", "stopAt", "milestone"].includes(c.id) ? c.id : null);
+  const groupIdFor = (c: ColumnModel) => (c.custom ? c.custom.id : c.id === "tags" ? "preset:tagsAlpha" : ["statusColumnId", "priority", "title", "startAt", "stopAt", "category", "milestone"].includes(c.id) ? c.id : null);
 
   // ─── column resize (pointer drag on the header edge) ───────────────────
   const startResize = (c: ColumnModel) => (e: React.PointerEvent<HTMLDivElement>) => {
@@ -560,6 +563,8 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
       }
       case "attachments":
         return <AttachmentCell taskId={t.id} attachments={t.attachments} canEdit={canEdit} />;
+      case "category":
+        return <CategoryCell taskId={t.id} current={t.category} categories={categories} canEdit={canEdit} />;
       case "milestone":
         return t.milestone ? (
           <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 text-xs text-n-700">

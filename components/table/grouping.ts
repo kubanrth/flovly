@@ -3,7 +3,7 @@ import { PRIORITY_META, PRIORITY_VALUES, type TaskPriorityValue } from "@/lib/ta
 import { formatCellValue, parseFieldOptions } from "@/lib/table-fields";
 import { bucketForPreset } from "@/lib/group-presets";
 import { hueForColor } from "@/components/ui/status-hue";
-import type { BoardTableColumn, BoardTableTask, CustomTableColumn } from "@/components/table/types";
+import type { BoardTableColumn, BoardTableTask, CustomTableColumn, TaskCategoryRef } from "@/components/table/types";
 
 export interface GroupBucket {
   key: string;
@@ -37,7 +37,7 @@ export function sumNumberColumns(rows: BoardTableTask[], numberColumns: CustomTa
 export function groupTasks(
   rows: BoardTableTask[],
   groupBy: string | null,
-  ctx: { statusColumns: BoardTableColumn[]; customColumns: CustomTableColumn[] },
+  ctx: { statusColumns: BoardTableColumn[]; customColumns: CustomTableColumn[]; categories?: TaskCategoryRef[] },
 ): GroupBucket[] {
   const numberColumns = ctx.customColumns.filter((c) => c.type === "NUMBER");
   const finish = (b: Omit<GroupBucket, "sums">): GroupBucket => ({ ...b, sums: sumNumberColumns(b.rows, numberColumns) });
@@ -69,6 +69,24 @@ export function groupTasks(
       .map(([k, r]) => {
         const s = ctx.statusColumns.find((x) => x.id === k);
         return finish({ key: k || "_empty", label: s?.name ?? "Bez statusu", hue: s ? hueForColor(s.colorHex) : "gray", rows: r });
+      });
+  }
+
+  // F15: kategorie w kolejności z ustawień tablicy, „— brak —" na końcu.
+  if (groupBy === "category") {
+    const order = (ctx.categories ?? []).map((c) => c.id);
+    const map = new Map<string, BoardTableTask[]>();
+    for (const t of rows) {
+      const k = t.category?.id ?? "_empty";
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(t);
+    }
+    const poz = (k: string) => (k === "_empty" ? Number.MAX_SAFE_INTEGER : order.indexOf(k) === -1 ? Number.MAX_SAFE_INTEGER - 1 : order.indexOf(k));
+    return [...map.entries()]
+      .sort((a, b) => poz(a[0]) - poz(b[0]))
+      .map(([k, r]) => {
+        const c = (ctx.categories ?? []).find((x) => x.id === k) ?? r[0]?.category ?? null;
+        return finish({ key: k, label: k === "_empty" ? "— brak —" : (c?.name ?? k), hue: c ? hueForColor(c.colorHex) : "gray", rows: r });
       });
   }
 

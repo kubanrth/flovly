@@ -129,39 +129,38 @@ test.describe("table view", () => {
     await page.getByRole("menuitemradio", { name: "Brak" }).click();
     await expect(headers).toHaveCount(0);
   });
-  // Sekcje: wlasne nagłówki na liscie, ten sam uklad co grupowanie po
-  // milestonach, tylko z nazwami uzytkownika.
-  test("Sekcje: przycisk zaklada pole, dodaje nazwy i dzieli liste", async ({ page }) => {
-    const przycisk = page.getByRole("button", { name: /^Sekcje/ }).first();
+  // Kategorie (F15): własne nagłówki na liście, osobno od milestone'ów. Test
+  // zakłada kategorię, włącza podział, sprawdza nagłówki i kasuje ją po sobie.
+  test("Kategorie: panel dodaje kategorię, dzieli listę i sprząta po sobie", async ({ page }) => {
+    const przycisk = page.getByRole("button", { name: /^Kategorie/ }).first();
     await expect(przycisk).toBeVisible();
     await przycisk.click();
     const panel = page.locator('[data-slot="popover-content"]').last();
     await expect(panel).toBeVisible();
 
-    // Pierwsze wejscie: pole jeszcze nie istnieje.
-    const utworz = panel.getByRole("button", { name: "Utwórz sekcje" });
-    if (await utworz.count()) {
-      await utworz.click();
-      // Kolumna wraca z serwera — panel przelacza sie w edytor nazw.
-      await expect(panel.getByPlaceholder("Dodaj opcję…")).toBeVisible({ timeout: 20_000 });
-    }
-
-    const nazwa = `Sekcja-${Date.now()}`;
-    await panel.getByPlaceholder("Dodaj opcję…").fill(nazwa);
+    const nazwa = `Kategoria-${Date.now()}`;
+    await panel.getByPlaceholder("Dodaj kategorię…").fill(nazwa);
     await page.keyboard.press("Enter");
-    await expect(panel.getByLabel("Nazwa opcji").filter({ hasText: "" })).not.toHaveCount(0);
-    expect(await panel.getByLabel("Nazwa opcji").evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value))).toContain(nazwa);
+    await expect(panel.getByLabel("Nazwa kategorii").last()).toHaveValue(nazwa);
 
-    // Wlacz podzial, jesli jeszcze nie dziala.
-    const wlacz = panel.getByRole("button", { name: "Pokaż listę w sekcjach" });
+    const wlacz = panel.getByRole("button", { name: "Pokaż listę w kategoriach" });
     if (await wlacz.count()) await wlacz.click();
     await page.keyboard.press("Escape");
 
-    // Lista jest pogrupowana, a zadania bez sekcji sa na koncu.
+    // Lista jest pogrupowana, a zadania bez kategorii są na końcu.
     const naglowki = page.locator('[data-ui="group-header"]');
     await expect(naglowki.first()).toBeVisible({ timeout: 20_000 });
     const etykiety = (await naglowki.allInnerTexts()).map((t) => t.split("\n")[0]!.trim());
     expect(etykiety.at(-1)).toBe("— brak —");
+
+    // Sprzątanie: kategoria z tego przebiegu znika, podział zostaje wyłączony.
+    await przycisk.click();
+    await expect(panel).toBeVisible();
+    await panel.getByRole("button", { name: `Usuń kategorię ${nazwa}` }).click();
+    await expect.poll(async () => (await panel.getByLabel("Nazwa kategorii").evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value))).includes(nazwa)).toBe(false);
+    await panel.getByRole("button", { name: "Wyłącz podział na kategorie" }).click();
+    await page.keyboard.press("Escape");
+    await expect(page.locator('[data-ui="group-header"]')).toHaveCount(0);
   });
   // „Przenies" bylo tylko w naglowku pojedynczego zadania. W akcjach masowych
   // przenosimy cale zaznaczenie do innej tablicy — i tu z powrotem, zeby

@@ -8,6 +8,7 @@ export const taskInclude = {
   tags: { include: { tag: true } },
   customValues: true,
   milestone: { select: { id: true, title: true } },
+  category: { select: { id: true, name: true, colorHex: true } },
   attachments: {
     where: { deletedAt: null },
     select: { id: true, filename: true, mimeType: true, sizeBytes: true },
@@ -44,6 +45,7 @@ export function toTableTask(t: TaskRow, hasDescription: boolean): BoardTableTask
     customValues: Object.fromEntries(t.customValues.map((v) => [v.columnId, v.valueText ?? ""])),
     attachments: t.attachments.map((a) => ({ id: a.id, filename: a.filename, mimeType: a.mimeType, sizeBytes: a.sizeBytes })),
     milestone: t.milestone ? { id: t.milestone.id, title: t.milestone.title } : null,
+    category: t.category ? { id: t.category.id, name: t.category.name, colorHex: t.category.colorHex } : null,
     hasDescription,
     commentCount: t._count.comments,
     subtaskCount: t.subtasks.length,
