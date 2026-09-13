@@ -65,12 +65,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           },
         })
         .then((rows) => rows.filter((r) => !makeIsDone(r.board.statusColumns)(r.statusColumnId)).length),
-      // Top 5 for Cmd+K (K85).
+      // Ostatnie zadania do palety ⌘K (K85) — z numerem, tablicą i statusem,
+      // żeby wiersz wyniku mówił od razu, o które zadanie chodzi.
       db.task.findMany({
         where: { assignees: { some: { userId } }, deletedAt: null, board: { deletedAt: null, workspace: { deletedAt: null } } },
         orderBy: { updatedAt: "desc" },
-        take: 5,
-        select: { id: true, title: true, boardId: true, workspaceId: true, workspace: { select: { name: true } } },
+        take: 8,
+        select: {
+          id: true, title: true, displayId: true, boardId: true, workspaceId: true,
+          workspace: { select: { name: true } },
+          board: { select: { name: true } },
+          statusColumn: { select: { name: true, colorHex: true } },
+        },
       }),
     ]);
   if (!user) redirect("/secure-access-portal");
@@ -102,7 +108,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     workspaces: workspaces.map((w) => ({ id: w.id, name: w.name })),
     boards,
     tasks: myAssignedTasks.map((t) => ({
-      id: t.id, title: t.title, boardId: t.boardId, workspaceId: t.workspaceId, workspaceName: t.workspace.name,
+      id: t.id, title: t.title, displayId: t.displayId, boardId: t.boardId, boardName: t.board.name,
+      workspaceId: t.workspaceId, workspaceName: t.workspace.name, status: t.statusColumn,
     })),
   };
 
