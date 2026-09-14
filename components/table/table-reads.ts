@@ -52,6 +52,7 @@ export function toTableTask(t: TaskRow, hasDescription: boolean): BoardTableTask
     subtaskDoneCount: t.subtasks.filter((s) => s.completed).length,
     linkedCount: linked.length,
     parentId: t.parentId,
+    rowOrder: t.rowOrder,
     subtasks: t.subtasks.map((s) => ({ id: s.id, title: s.title, completed: s.completed })),
     linked,
   };

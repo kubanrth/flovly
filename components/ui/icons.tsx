@@ -25,6 +25,7 @@ export const IconInbox = IconBell;
 export function IconHelp(p: IconProps) { return <Svg {...p}><circle cx="8" cy="8" r="6.2" {...s} strokeWidth={1.5} /><path d="M6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.5-.8 1v.3" {...s} strokeWidth={1.5} /><circle cx="8" cy="11.4" r=".8" {...f} /></Svg>; }
 export function IconSettings(p: IconProps) { return <Svg {...p}><circle cx="8" cy="8" r="2" {...s} strokeWidth={1.5} /><path d="M8 1.8v2M8 12.2v2M1.8 8h2M12.2 8h2M3.6 3.6l1.4 1.4M11 11l1.4 1.4M12.4 3.6L11 5M5 11l-1.4 1.4" {...s} strokeWidth={1.5} /></Svg>; }
 export function IconMore(p: IconProps) { return <Svg {...p}><circle cx="3.5" cy="8" r="1.2" {...f} /><circle cx="8" cy="8" r="1.2" {...f} /><circle cx="12.5" cy="8" r="1.2" {...f} /></Svg>; }
+export function IconGrip(p: IconProps) { return <Svg {...p}><circle cx="5.5" cy="3.5" r="1.2" {...f} /><circle cx="10.5" cy="3.5" r="1.2" {...f} /><circle cx="5.5" cy="8" r="1.2" {...f} /><circle cx="10.5" cy="8" r="1.2" {...f} /><circle cx="5.5" cy="12.5" r="1.2" {...f} /><circle cx="10.5" cy="12.5" r="1.2" {...f} /></Svg>; }
 export function IconClose(p: IconProps) { return <Svg {...p}><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" {...s} strokeWidth={1.5} /></Svg>; }
 export function IconCheck(p: IconProps) { return <Svg {...p}><path d="M3 8.5l3.5 3.5L13 5" {...s} strokeWidth={1.6} /></Svg>; }
 export function IconCheckCircle(p: IconProps) { return <Svg {...p}><circle cx="8" cy="8" r="6.5" {...s} strokeWidth={1.5} /><path d="M5.4 8.2l1.8 1.8 3.4-4" {...s} strokeWidth={1.5} /></Svg>; }

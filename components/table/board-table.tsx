@@ -5,7 +5,12 @@
 // Filters/sort/group/columns come from ListStateProvider (shared with the toolbar).
 
 import { startTransition, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
+import {
+  DndContext, DragOverlay, KeyboardSensor, PointerSensor, closestCenter, useDraggable, useDroppable, useSensor, useSensors,
+  type DragEndEvent, type DragMoveEvent, type DragStartEvent,
+} from "@dnd-kit/core";
 import { useRouter } from "next/navigation";
 import { createTaskAction, patchTaskAction } from "@/app/(app)/w/[workspaceId]/t/actions";
 import { useWorkspaceRealtime } from "@/hooks/use-workspace-realtime";
@@ -22,7 +27,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { nextSelection } from "./selection";
 import { StatusChip } from "@/components/ui/chip";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
-import { IconChevronDown, IconChevronRight, IconPlus, IconRoadmap } from "@/components/ui/icons";
+import { IconChevronDown, IconChevronRight, IconGrip, IconPlus, IconRoadmap } from "@/components/ui/icons";
 import { useListState } from "@/components/table/list-state";
 import { BUILTIN_COLUMNS, CHECKBOX_W, FROZEN_IDS, customColId, defaultWidthForType, isCustomColId, orderedColumnIds, rawColId, sortKindFor } from "@/components/table/columns";
 import { TableHeaderCell } from "@/components/table/header-cell";
@@ -41,6 +46,7 @@ import { isActiveFilter, newFilter } from "@/components/table/filter-builder";
 import { memberName, type BoardTableTask, type CustomTableColumn } from "@/components/table/types";
 import { LinkedTaskList, SubtaskChecklist, detailHeight, hasDetail } from "@/components/table/row-details";
 import { CategoryCell } from "@/components/table/category-cell";
+import { planDrop, resortByStatus, type DropEdge } from "@/components/table/reorder";
 
 export type { BoardTableColumn, BoardTableTask, CustomTableColumn } from "@/components/table/types";
 
@@ -89,8 +95,19 @@ function filterValue(t: BoardTableTask, f: TableFilter): string {
   }
 }
 
-export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
+export function BoardTable({ tasks: serverTasks }: { tasks: BoardTableTask[] }) {
   const s = useListState();
+  // F16: po przeciągnięciu wiersz od razu siedzi na nowym miejscu; serwer
+  // dosyła prawdę po zapisie. W trakcie przeciągania nie nadpisujemy — cudzy
+  // broadcast wyrwałby wiersz spod kursora.
+  const [localTasks, setLocalTasks] = useState(serverTasks);
+  const draggingRef = useRef(false);
+  useEffect(() => {
+    if (draggingRef.current) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLocalTasks(serverTasks);
+  }, [serverTasks]);
+  const tasks = localTasks;
   const { workspaceId, boardId, viewId, canEdit, canManagePrefs, statusColumns, customColumns, categories, members, allTags, config, search } = s;
   const router = useRouter();
   useWorkspaceRealtime(workspaceId);
@@ -184,14 +201,16 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
     }),
     [groups, expanded],
   );
-  const { items, rows, rowItemIndex } = useMemo(() => {
+  const { items, rows, rowItemIndex, groupOf } = useMemo(() => {
     const items: Item[] = [];
     const rows: BoardTableTask[] = [];
     const rowItemIndex: number[] = [];
+    const groupOf = new Map<string, string>();
     for (const { g, rows: nested } of treeGroups) {
       if (config.groupBy) items.push({ kind: "group", g, h: GROUP_H });
       if (collapsed.has(g.key)) continue;
       for (const r of nested) {
+        groupOf.set(r.t.id, g.key);
         rowItemIndex.push(items.length);
         items.push({ kind: "row", t: r.t, i: rows.length, h: rowH, depth: r.depth, childCount: r.childCount });
         rows.push(r.t);
@@ -199,8 +218,51 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
       }
     }
     if (canEdit) items.push({ kind: "add", h: ADD_H });
-    return { items, rows, rowItemIndex };
+    return { items, rows, rowItemIndex, groupOf };
   }, [treeGroups, collapsed, expanded, config.groupBy, rowH, canEdit]);
+
+  // ─── ręczna kolejność (F16): uchwyt w komórce #ID ───────────────────────
+  // Tylko bez sortowania — przy sortowaniu ręczne miejsce nie ma znaczenia.
+  const dnd = canEdit && !config.sort;
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [drop, setDrop] = useState<{ id: string; edge: DropEdge } | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor),
+  );
+  const onDragStart = (e: DragStartEvent) => {
+    draggingRef.current = true;
+    setDragId(String(e.active.id));
+    setDrop(null);
+  };
+  // Liczone przy każdym ruchu, nie tylko przy zmianie wiersza docelowego —
+  // `onDragOver` odpala się raz na wejście w wiersz, więc krawędź z tamtej
+  // chwili (zwykle „po", bo wchodzi się od dołu) zostawała nieaktualna.
+  const onDragMove = (e: DragMoveEvent) => {
+    const overId = e.over ? String(e.over.id).replace(/^drop:/, "") : null;
+    const rect = e.active.rect.current.translated;
+    if (!e.over || !overId || !rect || overId === String(e.active.id)) { setDrop(null); return; }
+    // Górna czy dolna połowa wiersza docelowego decyduje, po której stronie wyląduje.
+    const mid = e.over.rect.top + e.over.rect.height / 2;
+    const edge: DropEdge = rect.top + rect.height / 2 < mid ? "before" : "after";
+    setDrop((cur) => (cur && cur.id === overId && cur.edge === edge ? cur : { id: overId, edge }));
+  };
+  const finishDrag = () => { draggingRef.current = false; setDragId(null); setDrop(null); };
+  const onDragEnd = (e: DragEndEvent) => {
+    const id = String(e.active.id);
+    const target = drop;
+    finishDrag();
+    if (!target) return;
+    const plan = planDrop(rows, id, target.id, target.edge, config.groupBy && config.groupBy !== "statusColumnId" ? (x) => groupOf.get(x) : undefined);
+    if (!plan) return;
+    setLocalTasks((prev) => resortByStatus(prev.map((t) => (t.id === id ? { ...t, ...plan } : t)), statusIndex));
+    const fd = new FormData();
+    fd.set("id", id);
+    fd.set("statusColumnId", plan.statusColumnId ?? "");
+    fd.set("rowOrder", String(plan.rowOrder));
+    startTransition(() => { void patchTaskAction(fd); });
+  };
+  const dragTask = dragId ? tasks.find((t) => t.id === dragId) ?? null : null;
 
   // ─── selection ─────────────────────────────────────────────────────────
   const [selection, setSelection] = useState<Record<string, boolean>>({});
@@ -473,7 +535,7 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
     }
     switch (c.id) {
       case "displayId":
-        return <span className="font-mono text-xs text-fg-2">{t.displayId}</span>;
+        return <IdCell taskId={t.id} displayId={t.displayId} title={t.title} dnd={dnd} />;
       case "title": {
         const title = titleOverride[t.id] ?? t.title;
         const depth = tree?.depth ?? 0;
@@ -614,6 +676,7 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
 
   const cellBase = "h-(--row-h) border-b border-r border-table-grid bg-inherit px-2.5 align-middle outline-none";
   return (
+    <DndContext id="list-dnd" sensors={sensors} collisionDetection={closestCenter} onDragStart={onDragStart} onDragMove={onDragMove} onDragEnd={onDragEnd} onDragCancel={finishDrag}>
     <div data-ui="list-view" className="-mx-6 -my-4 flex flex-col">
       <div ref={scrollRef} onScroll={onScroll} className="relative min-h-0 overflow-auto" style={{ height: 600 }}>
         <table
@@ -756,6 +819,8 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
                   data-task-id={t.id}
                   data-depth={it.depth || undefined}
                   data-selected={selected || undefined}
+                  data-drop={drop?.id === t.id ? drop.edge : undefined}
+                  data-dragging={dragId === t.id || undefined}
                   className="group/row h-(--row-h) bg-card hover:bg-row-hover data-selected:bg-selected data-selected:shadow-[inset_2px_0_0_var(--orange-500)] data-selected:hover:bg-selected"
                   {...assign.rowProps(t.id, t.assignees.map((a) => a.id))}
                 >
@@ -805,6 +870,7 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
         <span>
           {filteredSorted.length === tasks.length ? `${tasks.length} ${taskPl(tasks.length)}` : `${filteredSorted.length} z ${tasks.length} ${taskPl(tasks.length)}`}
           {selectedCount > 0 && ` · ${selectedCount} ${plPlural(selectedCount, "zaznaczone", "zaznaczone", "zaznaczonych")}`}
+          {dragTask && ` · przeciąganie: #${dragTask.displayId} ${dragTask.title}`}
         </span>
         <span className="ml-auto text-fg-3">
           gęstość {rowH} px
@@ -817,6 +883,51 @@ export function BoardTable({ tasks }: { tasks: BoardTableTask[] }) {
       {bulk}
       {live}
     </div>
+    {typeof document !== "undefined" &&
+      createPortal(
+        // Portal pod <body>: DragOverlay jest position:fixed, więc transform w
+        // przodkach przesunąłby duszka względem kursora.
+        <DragOverlay dropAnimation={null}>
+          {dragTask ? (
+            <div className="flex h-8 w-[360px] max-w-[80vw] items-center gap-2 rounded-lg border border-border bg-card px-2.5 text-sm shadow-[var(--shadow-e2)]">
+              <IconGrip width={10} height={10} className="shrink-0 text-n-400" />
+              <span className="shrink-0 font-mono text-xs text-fg-2">#{dragTask.displayId}</span>
+              <span className="min-w-0 truncate">{dragTask.title}</span>
+            </div>
+          ) : null}
+        </DragOverlay>,
+        document.body,
+      )}
+    </DndContext>
+  );
+}
+
+// Komórka #ID: numer plus uchwyt do przeciągania (F16). Cała komórka jest celem
+// upuszczenia — dla `closestCenter` liczy się jej środek, czyli środek wiersza.
+function IdCell({ taskId, displayId, title, dnd }: { taskId: string; displayId: number; title: string; dnd: boolean }) {
+  const { setNodeRef: setDropRef } = useDroppable({ id: `drop:${taskId}`, disabled: !dnd });
+  const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({ id: taskId, disabled: !dnd });
+  return (
+    <span ref={setDropRef} className="flex h-full items-center gap-1">
+      {dnd && (
+        <button
+          ref={setDragRef}
+          type="button"
+          data-ui="row-grip"
+          aria-label={`Przeciągnij zadanie ${title}`}
+          title="Przeciągnij, żeby zmienić kolejność"
+          {...attributes}
+          {...listeners}
+          className={cn(
+            "grid size-4 shrink-0 cursor-grab place-items-center rounded-sm text-n-400 opacity-0 outline-none hover:bg-n-100 hover:text-fg-2 focus-visible:opacity-100 focus-visible:shadow-[var(--focus)] group-hover/row:opacity-100 active:cursor-grabbing",
+            isDragging && "opacity-100",
+          )}
+        >
+          <IconGrip width={10} height={10} />
+        </button>
+      )}
+      <span className="font-mono text-xs text-fg-2">{displayId}</span>
+    </span>
   );
 }
 

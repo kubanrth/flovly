@@ -162,6 +162,34 @@ test.describe("table view", () => {
     await page.keyboard.press("Escape");
     await expect(page.locator('[data-ui="group-header"]')).toHaveCount(0);
   });
+  // F16: kolejność ręczna — uchwyt w komórce #ID. Skutku upuszczenia nie
+  // asertujemy (zależy od animacji i obciążenia, jak w Kanbanie); arytmetyka
+  // ma własny sprawdzian: components/table/reorder.check.ts.
+  test("wiersz ma uchwyt do przeciągania, a podniesienie pokazuje, co niesiemy", async ({ page }) => {
+    const wiersze = page.locator('[data-ui="list-row"]');
+    await expect(wiersze.nth(1)).toBeVisible();
+    const uchwyty = page.locator('[data-ui="row-grip"]');
+    expect(await uchwyty.count()).toBe(await wiersze.count());
+    await expect(uchwyty.first()).toHaveAttribute("aria-roledescription", "draggable");
+    await expect(uchwyty.first()).toHaveCSS("cursor", "grab");
+
+    // Uchwyt jest niewidoczny do najechania — inaczej zaśmiecałby kolumnę #ID.
+    await expect(uchwyty.first()).toHaveCSS("opacity", "0");
+    await wiersze.first().hover();
+    await expect(uchwyty.first()).toHaveCSS("opacity", "1");
+
+    const a = (await uchwyty.first().boundingBox())!;
+    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(a.x + a.width / 2, a.y + 60, { steps: 8 });
+    await expect(page.locator('[data-ui="list-footer"]')).toContainText("przeciąganie: #");
+    await expect(page.locator('[data-ui="list-row"][data-drop]')).toHaveCount(1);
+    // Upuszczamy tam, skąd wzięliśmy — brak zmiany, test nie przestawia fixture'ów.
+    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2, { steps: 8 });
+    await page.mouse.up();
+    await expect(page.locator('[data-ui="list-footer"]')).not.toContainText("przeciąganie");
+  });
+
   // „Przenies" bylo tylko w naglowku pojedynczego zadania. W akcjach masowych
   // przenosimy cale zaznaczenie do innej tablicy — i tu z powrotem, zeby
   // fixture zostal jak byl. Cel i zrodlo po id: w fixture sa trzy tablice o tej

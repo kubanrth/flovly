@@ -34,6 +34,8 @@ export interface BoardTableTask {
   linkedCount: number;
   // F13: zadanie nadrzedne — Lista i Os czasu zagniezdzaja pod nim podrzedne.
   parentId: string | null;
+  // F16: pozycja w ręcznej kolejności (przeciąganie na Liście).
+  rowOrder: number;
   subtasks: SubtaskLine[];
   linked: LinkedTaskLine[];
 }
