@@ -919,7 +919,8 @@ function IdCell({ taskId, displayId, title, dnd }: { taskId: string; displayId: 
           {...attributes}
           {...listeners}
           className={cn(
-            "grid size-4 shrink-0 cursor-grab place-items-center rounded-sm text-n-400 opacity-0 outline-none hover:bg-n-100 hover:text-fg-2 focus-visible:opacity-100 focus-visible:shadow-[var(--focus)] group-hover/row:opacity-100 active:cursor-grabbing",
+            // Lekko widoczny zawsze — schowany do najechania nikt go nie znajdował.
+            "grid size-4 shrink-0 cursor-grab place-items-center rounded-sm text-n-400 opacity-40 outline-none hover:bg-n-100 hover:text-fg-2 focus-visible:opacity-100 focus-visible:shadow-[var(--focus)] group-hover/row:opacity-100 active:cursor-grabbing",
             isDragging && "opacity-100",
           )}
         >

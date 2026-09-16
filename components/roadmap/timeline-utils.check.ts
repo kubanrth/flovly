@@ -8,7 +8,9 @@ import {
   ganttDaysFromPx,
   ganttTs,
   ganttX,
+  isoWeek,
   shiftIsoDays,
+  unitLabel,
 } from "./timeline-utils";
 
 // ── column width per zoom ────────────────────────────────────────────────────
@@ -51,6 +53,15 @@ assert.equal(scale.todayX, 240);
 assert.equal(scale.columns[0]!.w, 56);
 assert.equal(scale.width, scale.columns.reduce((a, c) => a + c.w, 0));
 assert.deepEqual(scale.headers.map((h) => h.label), ["lipiec", "sierpień", "wrzesień", "październik"]);
+// Kolumny tygodni mają własne etykiety (dzień startu) i pełny tytuł z numerem ISO.
+// `\S`, nie `\w` — „paź" ma polski znak.
+assert.ok(scale.columns.every((c) => /^\d{1,2} \S{3}/.test(c.label)), scale.columns.map((c) => c.label).join(","));
+assert.match(scale.columns[0]!.title!, /^Tydzień \d{1,2}: /);
+assert.equal(isoWeek(new Date(2026, 8, 14)), 38); // pon. 14 wrz 2026
+assert.equal(isoWeek(new Date(2026, 0, 1)), 1);
+assert.equal(isoWeek(new Date(2027, 0, 1)), 53); // 1 sty 2027 to piątek → jeszcze tydzień 53 roku 2026
+assert.equal(unitLabel(new Date(2026, 8, 1), "months").label, "wrzesień");
+assert.equal(unitLabel(new Date(2026, 9, 1), "quarters").label, "IV kw.");
 assert.equal(scale.headers[0]!.x, 0);
 assert.equal(Math.round(scale.headers.at(-1)!.x + scale.headers.at(-1)!.w), Math.round(scale.width));
 

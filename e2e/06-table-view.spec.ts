@@ -173,8 +173,8 @@ test.describe("table view", () => {
     await expect(uchwyty.first()).toHaveAttribute("aria-roledescription", "draggable");
     await expect(uchwyty.first()).toHaveCSS("cursor", "grab");
 
-    // Uchwyt jest niewidoczny do najechania — inaczej zaśmiecałby kolumnę #ID.
-    await expect(uchwyty.first()).toHaveCSS("opacity", "0");
+    // Uchwyt jest lekko widoczny zawsze (żeby dało się go znaleźć) i pełny po najechaniu.
+    await expect(uchwyty.first()).toHaveCSS("opacity", "0.4");
     await wiersze.first().hover();
     await expect(uchwyty.first()).toHaveCSS("opacity", "1");
 

@@ -349,6 +349,34 @@ export function GanttView({
         ]}
         onClearChips={() => { setMilestoneFilter(null); setDoneFilter("all"); setPeople([]); setSearch(""); }}
         hideListControls
+        // Skala w pasku, nie w rogu siatki — w rogu nikt jej nie zauważał
+        // i „Oś czasu pokazuje tylko miesiące" wracało jako zgłoszenie.
+        trailing={
+          <div data-ui="gantt-zoom" role="radiogroup" aria-label="Skala osi czasu" className="inline-flex shrink-0 gap-0.5 rounded-md border border-border bg-card p-0.5">
+            <button
+              type="button"
+              onClick={centerToday}
+              className="inline-flex h-6 items-center rounded-sm border border-transparent px-2.5 text-xs font-medium text-n-600 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
+            >
+              Dzisiaj
+            </button>
+            {GANTT_ZOOMS.map((z) => (
+              <button
+                key={z}
+                type="button"
+                role="radio"
+                aria-checked={zoom === z}
+                onClick={() => setZoom(z)}
+                className={cn(
+                  "inline-flex h-6 items-center rounded-sm border px-2.5 text-xs font-medium outline-none active:bg-n-200",
+                  zoom === z ? "border-border bg-n-100 text-foreground" : "border-transparent text-n-600 hover:bg-n-100 hover:text-foreground",
+                )}
+              >
+                {GANTT_ZOOM_LABEL[z]}
+              </button>
+            ))}
+          </div>
+        }
       />
       <div ref={scrollRef} className="relative flex min-h-0 overflow-auto bg-card" style={{ height: 600 }}>
         {/* ── left table ─────────────────────────────────────────────── */}
@@ -410,19 +438,36 @@ export function GanttView({
 
         {/* ── timeline grid ──────────────────────────────────────────── */}
         <div data-ui="gantt-grid" className="relative flex flex-none flex-col" style={{ width: Math.max(scale.width, 320) }}>
-          <div className="sticky top-0 z-10 flex shrink-0 border-b border-border bg-canvas" style={{ height: HEAD_H }}>
-            {scale.headers.map((h) => (
-              <span
-                key={h.key}
-                className="flex flex-none items-end overflow-hidden whitespace-nowrap border-r border-table-grid px-2 pb-1 text-2xs font-semibold uppercase tracking-[.06em] text-n-600"
-                style={{ width: h.w }}
-              >
-                {h.label}
-              </span>
-            ))}
+          {/* Dwa rzędy: pasmo (miesiąc / kwartał / rok) i jednostki (tydzień /
+              miesiąc / kwartał). Sam rząd pasm w skali „Tygodnie" wyglądał jak
+              same miesiące z kreskami — klient nie widział tygodni. */}
+          <div className="sticky top-0 z-10 flex shrink-0 flex-col border-b border-border bg-canvas" style={{ height: HEAD_H }}>
+            <div className="flex h-4 shrink-0">
+              {scale.headers.map((h) => (
+                <span
+                  key={h.key}
+                  className="flex flex-none items-center overflow-hidden whitespace-nowrap border-r border-b border-table-grid px-2 text-[10px] font-semibold uppercase tracking-[.06em] text-n-600"
+                  style={{ width: h.w }}
+                >
+                  {h.label}
+                </span>
+              ))}
+            </div>
+            <div data-ui="gantt-units" className="flex h-5 shrink-0">
+              {scale.columns.map((c) => (
+                <span
+                  key={c.key}
+                  title={c.title}
+                  className="flex flex-none items-center overflow-hidden whitespace-nowrap border-r border-table-grid px-1.5 font-mono text-[10px] text-fg-3"
+                  style={{ width: c.w }}
+                >
+                  {c.label}
+                </span>
+              ))}
+            </div>
             {scale.todayX !== null && (
               <span
-                className="pointer-events-none absolute top-[9px] z-[3] inline-flex h-[18px] -translate-x-1/2 items-center rounded-sm bg-orange-500 px-1.5 text-[10px] font-bold text-ink"
+                className="pointer-events-none absolute top-[17px] z-[3] inline-flex h-[17px] -translate-x-1/2 items-center rounded-sm bg-orange-500 px-1.5 text-[10px] font-bold text-ink"
                 style={{ left: scale.todayX }}
               >
                 Dziś
@@ -519,30 +564,6 @@ export function GanttView({
             <IconInfo width={14} height={14} />
           </button>
         </Tooltip>
-        <div data-ui="gantt-zoom" role="radiogroup" aria-label="Skala osi czasu" className="inline-flex gap-0.5 rounded-md border border-border bg-card p-0.5 shadow-e1">
-          <button
-            type="button"
-            onClick={centerToday}
-            className="inline-flex h-6 items-center rounded-sm border border-transparent px-2.5 text-xs font-medium text-n-600 outline-none hover:bg-n-100 hover:text-foreground active:bg-n-200"
-          >
-            Dzisiaj
-          </button>
-          {GANTT_ZOOMS.map((z) => (
-            <button
-              key={z}
-              type="button"
-              role="radio"
-              aria-checked={zoom === z}
-              onClick={() => setZoom(z)}
-              className={cn(
-                "inline-flex h-6 items-center rounded-sm border px-2.5 text-xs font-medium outline-none active:bg-n-200",
-                zoom === z ? "border-border bg-n-100 text-foreground" : "border-transparent text-n-600 hover:bg-n-100 hover:text-foreground",
-              )}
-            >
-              {GANTT_ZOOM_LABEL[z]}
-            </button>
-          ))}
-        </div>
         <button
           type="button"
           aria-label={expanded.size > 0 ? "Zwiń wszystkie milestone'y" : "Rozwiń wszystkie milestone'y"}

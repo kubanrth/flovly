@@ -146,6 +146,8 @@ export function shiftIsoDays(iso: string, days: number): string {
 export interface GanttBand {
   key: string;
   label: string;
+  /** Pełna nazwa do `title` (np. „Tydzień 38: 14–20 wrz 2026"). */
+  title?: string;
   x: number;
   w: number;
 }
@@ -213,6 +215,38 @@ function bandStep(d: Date, zoom: GanttZoom): Date {
   return next;
 }
 
+const monthShort = new Intl.DateTimeFormat("pl-PL", { month: "short" });
+const monthLong = new Intl.DateTimeFormat("pl-PL", { month: "long" });
+const dayMonth = new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "short" });
+
+/** Numer tygodnia ISO 8601 (poniedziałek–niedziela, tydzień 1 zawiera 4 stycznia). */
+export function isoWeek(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = Date.UTC(d.getUTCFullYear(), 0, 1);
+  return Math.ceil(((d.getTime() - yearStart) / DAY_MS + 1) / 7);
+}
+
+/**
+ * Etykieta kolumny (jednostki) pod pasmem nagłówka — bez niej „Tygodnie" wyglądały
+ * jak same miesiące z kreskami. Tydzień: dzień startu („14 wrz"), miesiąc: nazwa,
+ * kwartał: „III kw.". `title` niesie pełną wersję.
+ */
+export function unitLabel(d: Date, zoom: GanttZoom): { label: string; title: string } {
+  if (zoom === "weeks") {
+    const end = new Date(d);
+    end.setDate(end.getDate() + 6);
+    return {
+      label: dayMonth.format(d),
+      title: `Tydzień ${isoWeek(d)}: ${dayMonth.format(d)} – ${dayMonth.format(end)} ${end.getFullYear()}`,
+    };
+  }
+  if (zoom === "months") return { label: monthLong.format(d), title: `${monthLong.format(d)} ${d.getFullYear()}` };
+  const q = QUARTER_PL[Math.floor(d.getMonth() / 3)]!;
+  return { label: `${q} kw.`, title: `${q} kw. ${d.getFullYear()} (${monthShort.format(d)} – ${monthShort.format(new Date(d.getFullYear(), d.getMonth() + 2, 1))})` };
+}
+
 function bandLabel(d: Date, zoom: GanttZoom): string {
   if (zoom === "weeks") return d.toLocaleDateString("pl-PL", { month: "long" });
   if (zoom === "months") return `${QUARTER_PL[Math.floor(d.getMonth() / 3)]} kw. ${d.getFullYear()}`;
@@ -265,7 +299,8 @@ export function buildGanttScale(
   for (let d = origin; d.getTime() < endTs; d = unitStep(d, zoom, 1)) {
     const next = unitStep(d, zoom, 1);
     const x = at(d.getTime());
-    columns.push({ key: String(d.getTime()), label: "", x, w: at(Math.min(next.getTime(), endTs)) - x });
+    const u = unitLabel(d, zoom);
+    columns.push({ key: String(d.getTime()), label: u.label, title: u.title, x, w: at(Math.min(next.getTime(), endTs)) - x });
   }
 
   const headers: GanttBand[] = [];

@@ -59,6 +59,8 @@ export interface BoardToolbarProps {
   onDensity?: (d: Density) => void;
   // Menu items for the trailing ⋯ (rendered inside <MenuContent>).
   more?: ReactNode;
+  /** Kontrolki widoku przed „⋯" (np. skala Osi czasu). */
+  trailing?: ReactNode;
   /**
    * Ukrywa kontrolki, których dany widok nie obsługuje (Grupuj / Sortuj /
    * Kolumny / Gęstość / „+ Filtr"). Wyszarzony przycisk, który nic nie robi,
@@ -272,6 +274,7 @@ export function BoardToolbar(p: BoardToolbarProps) {
       </Menu>
       )}
 
+      {p.trailing}
       <span aria-hidden="true" className="h-4 w-px shrink-0 bg-border" />
 
       {p.more ? (
