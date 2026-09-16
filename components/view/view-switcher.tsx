@@ -221,7 +221,7 @@ export function ViewSwitcher({
         aria-current={t.active ? "page" : undefined}
         data-active={t.active ? "" : undefined}
         data-tab-key={t.key}
-        className={cn(TAB, t.deleteId && "pr-7")}
+        className={cn(TAB, t.deleteId && "pr-7 max-md:pr-9")}
       >
         {t.icon}
         {t.label}
@@ -235,7 +235,9 @@ export function ViewSwitcher({
           <MenuTrigger
             aria-label={`Opcje widoku ${t.label}`}
             className={cn(
-              "absolute top-1/2 right-1 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-fg-3 opacity-0 outline-none hover:bg-n-100 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 data-popup-open:opacity-100 [&_svg]:size-3.5",
+              // Na telefonie nie ma najechania — bez `max-md:opacity-100` menu
+              // widoku było niewidoczne i nie dało się usunąć widoku.
+              "absolute top-1/2 right-1 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded-sm text-fg-3 opacity-0 outline-none hover:bg-n-100 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 data-popup-open:opacity-100 max-md:size-7 max-md:opacity-100 [&_svg]:size-3.5",
               t.active && "opacity-100",
             )}
           >

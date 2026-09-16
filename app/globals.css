@@ -250,6 +250,17 @@
 .rdp-host .rdp-button_previous, .rdp-host .rdp-button_next { color: var(--fg-2); border-radius: 6px; }
 .rdp-host .rdp-button_previous:hover, .rdp-host .rdp-button_next:hover { background-color: var(--n-100); }
 
+/* Telefon: kalendarz w arkuszu daty ma wypełnić szerokość i mieć cele dotyku
+   44 px. Bez tego siatka trzymała stałe 32 px komórki, zajmowała pół ekranu
+   i w dni trudno było trafić palcem (zgłoszenie klienta 2026-09-16). */
+.rdp-host-mobile .rdp-root { --rdp-day-height: 44px; --rdp-day-width: 100%; --rdp-day_button-height: 40px; --rdp-day_button-width: 40px; --rdp-day_button-border-radius: 8px; --rdp-nav_button-height: 40px; --rdp-nav_button-width: 40px; --rdp-nav-height: 44px; }
+.rdp-host-mobile .rdp-months, .rdp-host-mobile .rdp-month { width: 100%; }
+.rdp-host-mobile .rdp-month_grid { width: 100%; table-layout: fixed; }
+.rdp-host-mobile .rdp-day { width: auto; }
+.rdp-host-mobile .rdp-day_button { margin: 0 auto; font-size: 16px; }
+.rdp-host-mobile .rdp-month_caption { font-size: 16px; }
+.rdp-host-mobile .rdp-weekday { font-size: 12px; }
+
 /* ─── Motion (opacity/transform only, ≤220ms) ─── */
 @keyframes toast-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes toast-out { to { opacity: 0; transform: translateY(-4px); } }

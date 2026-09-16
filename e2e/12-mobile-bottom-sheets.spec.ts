@@ -33,7 +33,10 @@ test.describe("mobile bottom sheets", () => {
       return { top: box.y, bottom: box.y + box.height };
     };
     await expect.poll(async () => (await edges()).bottom).toBeLessThanOrEqual(viewport.height + 1);
-    expect((await edges()).top).toBeGreaterThan(viewport.height / 3);
+    // Arkusz nie zajmuje całego ekranu (widać pod nim kartę zadania). Od
+    // 2026-09-16 kalendarz w środku jest pełnowymiarowy (44 px dni), więc
+    // arkusz jest wyraźnie wyższy niż dawne 2/3 ekranu — stąd luźniejszy próg.
+    expect((await edges()).top).toBeGreaterThan(64);
   });
   // Otwarcie zadania z tablicy: edytor komentarza powstaje zanim `useIsMobile`
   // przełączy się po hydratacji. Zostawał wtedy przy dłuższym, desktopowym
@@ -264,6 +267,73 @@ test.describe("mobile bottom sheets", () => {
   // Karta powiadomienia rozpychala liste w bok: wiersz akcji („Otworz zadanie",
   // „Przesun termin", termin, stempel) nie mial jak sie zawinac, a ikony akcji
   // — na telefonie widoczne zawsze — lezaly na pierwszej linii tekstu.
+  // Zgłoszenia klienta 2026-09-16 (trzy rzeczy nie do użycia na telefonie).
+  test("menu widoku jest widoczne, wiec da sie usunac widok", async ({ page }) => {
+    await gotoFirstBoard(page);
+    const opcje = page.getByRole("button", { name: /^Opcje widoku/ }).first();
+    await expect(opcje).toBeVisible();
+    // Bez najechania kursorem — na telefonie hover nie istnieje.
+    await expect(opcje).toHaveCSS("opacity", "1");
+    const pole = (await opcje.boundingBox())!;
+    expect(Math.min(pole.width, pole.height)).toBeGreaterThanOrEqual(28);
+    await opcje.click();
+    await expect(page.getByRole("menuitem", { name: "Usuń widok" })).toBeVisible();
+    await page.keyboard.press("Escape");
+  });
+
+  test("Przenies otwiera sie jako arkusz na cala szerokosc", async ({ page }) => {
+    await gotoFirstBoard(page);
+    await openFirstTask(page);
+    await page.getByRole("button", { name: "Przenieś", exact: true }).first().click();
+    const arkusz = page.locator('[data-ui="move-task-sheet"]');
+    await expect(arkusz).toBeVisible();
+    // Arkusz wjeżdża z dołu — mierzone w trakcie animacji dają przesunięcie.
+    await arkusz.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
+    const m = await arkusz.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return { x: Math.round(r.x), w: Math.round(r.width), dol: Math.round(r.bottom), okno: window.innerWidth, wysokosc: window.innerHeight };
+    });
+    expect(m.x).toBe(0);
+    expect(m.w).toBe(m.okno);
+    expect(m.dol).toBeGreaterThanOrEqual(m.wysokosc - 2);
+    await expect(arkusz.getByText("Przenieś do tablicy")).toBeVisible();
+  });
+
+  test("kalendarz w arkuszu daty wypelnia szerokosc i ma trafialne dni", async ({ page }) => {
+    await gotoFirstBoard(page);
+    await openFirstTask(page);
+    const pole = page.locator('[data-ui="task-details"]').getByRole("button", { name: /Data startu|Data końca|Start · Koniec/ }).first();
+    await pole.scrollIntoViewIfNeeded();
+    await pole.click();
+    const siatka = page.locator(".rdp-month_grid");
+    await expect(siatka).toBeVisible();
+    const m = await siatka.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const dzien = el.querySelector(".rdp-day_button")!.getBoundingClientRect();
+      return { w: Math.round(r.width), okno: window.innerWidth, dzien: Math.round(dzien.height) };
+    });
+    // Siatka zajmowała pół ekranu; teraz wypełnia arkusz (z marginesami 16 px).
+    expect(m.w).toBeGreaterThan(m.okno * 0.85);
+    expect(m.dzien).toBeGreaterThanOrEqual(40);
+  });
+
+  test("kalendarz tablicy ma tryb Agendy z lista dni", async ({ page }) => {
+    await gotoFirstBoard(page);
+    await page.goto(page.url().replace(/\/table(\?.*)?$/, "/calendar"));
+    const tryb = page.locator('[data-ui="calendar-mode"]');
+    await expect(tryb).toBeVisible();
+    await tryb.getByRole("radio", { name: "Agenda" }).click();
+    await expect(page.locator('[data-ui="calendar-agenda"]')).toBeVisible();
+    const dni = page.locator('[data-ui="agenda-day"]');
+    expect(await dni.count()).toBeGreaterThan(0);
+    await expect(dni.first().locator('[data-ui="calendar-card"]').first()).toBeVisible();
+    // Wybór trybu zostaje na urządzeniu. Bez `reload()` — WebKit zgłasza
+    // przerwane prefetche RSC jako błąd strony i wywraca fixture konsoli.
+    expect(await page.evaluate(() => window.localStorage.getItem("ui:calendar-mobile-mode"))).toBe('"agenda"');
+    await tryb.getByRole("radio", { name: "Miesiąc" }).click();
+    await expect(page.locator('[data-ui="calendar-grid"]')).toBeVisible();
+  });
+
   test("powiadomienia mieszcza sie w szerokosci ekranu", async ({ page }) => {
     await page.goto("/inbox");
     const karta = page.locator('[data-ui="inbox-card"]').first();

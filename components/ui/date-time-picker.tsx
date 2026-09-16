@@ -107,21 +107,31 @@ export function DateTimePicker({ name, form, defaultValue, disabled, placeholder
 
   const body = (mobile: boolean) => (
     <>
-      <div className={cn("flex items-center gap-1.5 px-3 pt-3", mobile && "px-4")}>
+      <div className={cn("flex items-center gap-1.5 px-3 pt-3", mobile && "gap-2 px-4")}>
         {PRESETS.map(([l, d]) => (
-          <button key={l} type="button" onClick={() => preset(d)} className="h-6 rounded-sm bg-n-100 px-2 text-2xs font-medium text-muted-foreground outline-none hover:bg-n-200 hover:text-foreground">{l}</button>
+          <button
+            key={l}
+            type="button"
+            onClick={() => preset(d)}
+            className={cn(
+              "rounded-sm bg-n-100 font-medium text-muted-foreground outline-none hover:bg-n-200 hover:text-foreground",
+              mobile ? "h-9 flex-1 text-sm" : "h-6 px-2 text-2xs",
+            )}
+          >
+            {l}
+          </button>
         ))}
       </div>
-      <div className="rdp-host px-3 pt-2">
+      <div className={cn("rdp-host px-3 pt-2", mobile && "rdp-host-mobile px-4 pt-3")}>
         <DayPicker mode="single" selected={date ?? undefined} onSelect={onDaySelect} locale={pl} weekStartsOn={1} showOutsideDays captionLayout="label" />
       </div>
       {!dateOnly && (
-        <div className="flex items-center gap-3 border-t border-border bg-canvas px-3 py-2.5">
+        <div className={cn("flex items-center gap-3 border-t border-border bg-canvas px-3 py-2.5", mobile && "px-4 py-3")}>
           <span className="eyebrow">Godzina</span>
           <div className="ml-auto flex items-center gap-1.5">
-            <TimeStepper value={date?.getHours() ?? 9} min={0} max={23} ariaLabel="Godzina" onChange={(v) => setTime(v, date?.getMinutes() ?? 0)} />
+            <TimeStepper value={date?.getHours() ?? 9} min={0} max={23} ariaLabel="Godzina" mobile={mobile} onChange={(v) => setTime(v, date?.getMinutes() ?? 0)} />
             <span className="font-mono text-sm font-semibold text-muted-foreground">:</span>
-            <TimeStepper value={date?.getMinutes() ?? 0} min={0} max={59} step={5} ariaLabel="Minuty" onChange={(v) => setTime(date?.getHours() ?? 9, v)} />
+            <TimeStepper value={date?.getMinutes() ?? 0} min={0} max={59} step={5} ariaLabel="Minuty" mobile={mobile} onChange={(v) => setTime(date?.getHours() ?? 9, v)} />
           </div>
         </div>
       )}
@@ -161,9 +171,10 @@ export function DateTimePicker({ name, form, defaultValue, disabled, placeholder
   );
 }
 
-function TimeStepper({ value, min, max, step = 1, ariaLabel, onChange }: { value: number; min: number; max: number; step?: number; ariaLabel: string; onChange: (v: number) => void }) {
+function TimeStepper({ value, min, max, step = 1, ariaLabel, mobile, onChange }: { value: number; min: number; max: number; step?: number; ariaLabel: string; mobile?: boolean; onChange: (v: number) => void }) {
   const wrap = (v: number) => (v < min ? max : v > max ? min : v);
-  const btn = "grid h-[15px] w-5 place-items-center text-fg-3 outline-none hover:bg-n-100 hover:text-foreground";
+  // Na telefonie strzałki mają po 22 px wysokości (razem 44 px) — w 15 px nie dało się trafić.
+  const btn = cn("grid place-items-center text-fg-3 outline-none hover:bg-n-100 hover:text-foreground", mobile ? "h-[22px] w-8" : "h-[15px] w-5");
   return (
     <div className="flex items-stretch overflow-hidden rounded-sm border border-input-border bg-card">
       <input
@@ -175,7 +186,7 @@ function TimeStepper({ value, min, max, step = 1, ariaLabel, onChange }: { value
           if (Number.isFinite(n)) onChange(Math.max(min, Math.min(max, n)));
         }}
         aria-label={ariaLabel}
-        className="w-9 bg-transparent text-center font-mono text-sm tabular-nums outline-none focus-visible:bg-n-100 focus-visible:shadow-none"
+        className={cn("bg-transparent text-center font-mono tabular-nums outline-none focus-visible:bg-n-100 focus-visible:shadow-none", mobile ? "w-12 text-base" : "w-9 text-sm")}
       />
       <div className="flex flex-col border-l border-input-border">
         <button type="button" onClick={() => onChange(wrap(value + step))} aria-label={`${ariaLabel} +${step}`} className={btn}><IconChevronUp width={11} height={11} /></button>
